@@ -6,7 +6,10 @@ Current plugin list:
 - [x] Amplenote Omnivore Plugin
 
 # Building, Testing, and Running
-To use, first install the dependencies with `npm install`. Next, change the project folder in `package.json` to the plugin you want to build, test, or run.
+To use, first install the dependencies with `npm install`. Next, specify the plugin folder in `package.json` to the plugin you want to build, test, or run. For example, in the config below, the plugin folder is set as `/src-omnivore`.
+
+![image](https://github.com/debanjandhar12/my-amplenote-plugins-v2/assets/49021233/2f123d9b-d195-4dfd-9a00-f62bccf715b5)
+
 
 ## Building
 To build the plugin:
