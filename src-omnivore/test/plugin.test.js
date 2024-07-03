@@ -2,7 +2,9 @@ import {mockApp, mockNote, mockPlugin} from "../../test-helpers/test-helpers.js"
 import pluginObject from "../plugin.js"
 import {deleteOmnivoreItem, saveOmnivoreItem} from "../omnivore/api-extended.js";
 import 'cross-fetch/polyfill';
-import {OMINOVRE_API_ENDPOINT, OMNIVORE_API_KEY_SETTING} from "../constants.js";
+import {OMINOVRE_API_ENDPOINT, OMNIVORE_API_KEY_SETTING, OMNIVORE_DASHBOARD_COLUMNS_SETTING} from "../constants.js";
+import {generateDashboardTable} from "../amplenote/generate-markdown.js";
+import {marked} from "marked";
 
 describe("_syncStateWithOmnivore", () => {
     it('when adding / deleting articles, correct ' +
@@ -60,4 +62,49 @@ describe("_syncStateWithOmnivore", () => {
         expect(itemFirstFetch.updatedAt).not.toBe(itemSecondFetch.updatedAt);
         await deleteOmnivoreItem(process.env.OMNIVORE_KEY, newItem1.id, OMINOVRE_API_ENDPOINT);
     }, 20000);
+});
+
+
+describe('generateDashboardTable - Optional Columns', () => {
+    function countColumnsInMarkdownTable(markdown) {
+        const tokens = marked.lexer(markdown);
+        for (const token of tokens) {
+            if (token.type === 'table') {
+                // Assuming the first row is the header and it defines the number of columns
+                return token.header.length;
+            }
+        }
+        return 0; // Return 0 if no table is found
+    }
+    it('should correctly handle optional columns', async () => {
+        const omnivoreItemsState = [{
+            image: 'http://example.com/image.png',
+            title: 'Test Title',
+            author: 'Test Author',
+            description: 'Test Description',
+            updatedAt: '2023-01-01',
+            savedAt: '2023-01-02',
+            pageType: 'Article',
+            readingProgressPercent: 50,
+            slug: 'test-title'
+        }];
+        const optionalColumnsConfigurations = [
+            [],
+            ['Author'],
+            ['Description', 'UpdatedAt'],
+            ['PageType'],
+            ['UpdatedAt'],
+            ['SavedAt', 'PageType', 'ReadingProgressPercent']
+        ];
+        const fixedColumnsCount = 3; // Cover, Title, Omnivore Link
+
+        for (const optionalColumns of optionalColumnsConfigurations) {
+            const appSettings = {};
+            appSettings[OMNIVORE_DASHBOARD_COLUMNS_SETTING] = optionalColumns.join(',');
+            const markdown = await generateDashboardTable(omnivoreItemsState, appSettings, () => 'http://example.com');
+            const columnCount = countColumnsInMarkdownTable(markdown);
+            const expectedColumnCount = fixedColumnsCount + optionalColumns.length;
+            expect(columnCount).toBe(expectedColumnCount);
+        }
+    });
 });

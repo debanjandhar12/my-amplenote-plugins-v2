@@ -1,7 +1,8 @@
 import {OMNIVORE_APP_URL, OMNIVORE_DASHBOARD_COLUMNS_SETTING} from "../constants.js";
 
 export async function generateDashboardTable(omnivoreItemsState, appSettings, getNoteUrlFromTitle) {
-    const optionalColumns = appSettings[OMNIVORE_DASHBOARD_COLUMNS_SETTING].split(',').map(c => c.trim()) || [];
+    let optionalColumns = (appSettings[OMNIVORE_DASHBOARD_COLUMNS_SETTING] || '').split(',').map(c => c.trim()) || [];
+    optionalColumns = optionalColumns.filter(c => ['Author', 'Description', 'UpdatedAt', 'SavedAt', 'PageType', 'ReadingProgressPercent'].includes(c));
     const headers = '|**Cover**|**Title**'
     + `${optionalColumns.includes('Author') ? '|**Author**' : ''}`
     + `${optionalColumns.includes('Description') ? '|**Description**' : ''}`
