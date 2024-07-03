@@ -21,7 +21,7 @@
   },
   "name": "yappy",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-fetch jest --testPathPattern=src-omnivore",
+    "test": "jest --testPathPattern=src-omnivore",
     "build": "node esbuild.js $(pwd)/src-omnivore"
   },
   "testEnvironment": "jsdom",
