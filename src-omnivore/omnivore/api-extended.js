@@ -5,7 +5,7 @@ const baseUrl = endpoint => endpoint.replace(/\/api\/graphql$/, "")
 export const saveOmnivoreItem = async (apiKey, itemUrl, endpoint) => {
     const omnivore = new Omnivore({
         apiKey,
-        baseUrl: endpoint,
+        baseUrl: baseUrl(endpoint),
         timeoutMs: 10000
     })
 
