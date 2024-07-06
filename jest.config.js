@@ -1,16 +1,12 @@
 import dotenv from "dotenv"
+import {esbuildOptions} from "./esbuild.js";
 
 dotenv.config();
 
 export default {
   "transform": {
     "^.+\\.(jsx?|tsx?)$": [
-      "esbuild-jest",
-      {
-        sourcemap: true,
-        platform: 'browser',
-        bundle: true,
-      }
+      "esbuild-jest"
     ]
   },
   testEnvironment: 'jsdom',
