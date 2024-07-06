@@ -1,4 +1,11 @@
-import {OMNIVORE_APP_URL, OMNIVORE_DASHBOARD_COLUMNS_SETTING} from "../constants.js";
+import {
+    NOTE_HIGHLIGHT_ORDER_SETTING, NOTE_HIGHLIGHT_ORDER_SETTING_DEFAULT,
+    OMNIVORE_APP_URL,
+    OMNIVORE_DASHBOARD_COLUMNS_SETTING,
+    OMNIVORE_DASHBOARD_ORDER_SETTING,
+    OMNIVORE_DASHBOARD_ORDER_SETTING_DEFAULT
+} from "../constants.js";
+import {sortOmnivoreItems, sortOmnivoreItemHighlights} from "./util.js";
 
 export async function generateDashboardTable(omnivoreItemsState, appSettings, getNoteUrlFromTitle) {
     let optionalColumns = (appSettings[OMNIVORE_DASHBOARD_COLUMNS_SETTING] || '').split(',').map(c => c.trim()) || [];
@@ -16,7 +23,9 @@ export async function generateDashboardTable(omnivoreItemsState, appSettings, ge
         + `${optionalColumns.map(() => '|---').join('')}`
         + '|---'
         + '|';
-    const rows = await Promise.all(omnivoreItemsState.map(async note => {
+    const omnivoreItemsStateSorted = sortOmnivoreItems(omnivoreItemsState, appSettings[OMNIVORE_DASHBOARD_ORDER_SETTING]
+        || OMNIVORE_DASHBOARD_ORDER_SETTING_DEFAULT);
+    const rows = await Promise.all(omnivoreItemsStateSorted.map(async note => {
         const row = `|![\\|180](${note.image})`
             + `|${note.url ? `[${note.title}](${await getNoteUrlFromTitle(note.title)})` : note.title}`
             + `${optionalColumns.includes('Author') ? `|${note.author}` : ''}`
@@ -35,7 +44,9 @@ export async function generateDashboardTable(omnivoreItemsState, appSettings, ge
 // Generate highlight section for the Highlight note
 export function generateNoteHighlightSectionMarkdown(omnivoreItemsState, appSettings) {
     const highlights = omnivoreItemsState.highlights || [];
-    const properHighlights = highlights.map(highlight => {
+    const highlightsSorted = sortOmnivoreItemHighlights(highlights, appSettings[NOTE_HIGHLIGHT_ORDER_SETTING]
+        || NOTE_HIGHLIGHT_ORDER_SETTING_DEFAULT);
+    const properHighlights = highlightsSorted.map(highlight => {
        if (!highlight.quote) return null;
        return `**Highlight [↗️](${OMNIVORE_APP_URL}/me/${omnivoreItemsState.slug}#${highlight.id}):**\n`+
               `> ${highlight.quote.split('\n').join(' ')}\n`;
