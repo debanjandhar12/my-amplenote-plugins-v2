@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
+import { readFile } from 'fs/promises';
 
 const esbuildSharedOptions = {
   bundle: true,
@@ -37,6 +38,14 @@ async function processRepository(ctx, repositoryPath) {
     // Add a process.env.NODE_ENV = "production" to the beginning of the file
     result = result.replace(/^\(\(\) => \{$/gm,
         "(() => {\n  var process = {env: {NODE_ENV: \"production\"}};");
+    // Add git repositoryLink to beginning of the file
+    const {repositoryLink, author} = await (readFile('./package.json').then((data) => {
+        return {repositoryLink: JSON.parse(data).repository, author: JSON.parse(data).author};
+    }));
+    const targetFolderName = repositoryPath.split('/').pop();
+    result = result.replace(/^\(\(\) => \{$/gm,
+        "/***\n * Source Code: " + repositoryLink + "\n * Author: " + author +
+        "\n * Target Folder: " + targetFolderName + "\n ***/\n");
     // Remove any lines attempting to import module using the esbuild __require
     result = result.replace(/^\s+var import_.+= (?:__toESM\()?__require\(".+"\).*;/gm, "");
     const outputFile = `${distDir}/out.plugin.js`;

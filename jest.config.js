@@ -15,6 +15,6 @@ export default {
   },
   testEnvironment: 'jsdom',
   testEnvironmentOptions: {
-      url: 'https://localhost:3000/'
+      url: 'https://plugins.amplenote.com/'
   }
 };

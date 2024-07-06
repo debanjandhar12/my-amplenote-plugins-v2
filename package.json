@@ -1,4 +1,9 @@
 {
+  "name": "amplenote-plugin-dev-env",
+  "author": "debajandhar12",
+  "version": "0.1.2",
+  "type": "module",
+  "repository": "https://github.com/debanjandhar12/my-amplenote-plugins-v2",
   "dependencies": {
     "@omnivore-app/api": "^1.0.4",
     "date-fns": "^3.6.0",
@@ -19,12 +24,9 @@
     "jest-environment-jsdom": "^29.5.0",
     "ts-jest": "^29.1.0"
   },
-  "name": "yappy",
   "scripts": {
     "test": "jest --testPathPattern=src-omnivore",
     "build": "node esbuild.js $(pwd)/src-omnivore"
   },
-  "testEnvironment": "jsdom",
-  "type": "module",
-  "version": "0.1.1"
+  "testEnvironment": "jsdom"
 }
