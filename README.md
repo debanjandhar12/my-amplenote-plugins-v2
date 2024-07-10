@@ -1,9 +1,10 @@
 # Amplenote Plugin Dev Environment
 
-This is a custom dev environment for Amplenote plugin. It is meant to host all of my amplenote plugins in a single workspace.
+This is a dev environment for my Amplenote plugin (heavily customized). It is meant to host all of my amplenote plugins in a single workspace.
 
 Current plugin list:
-- [x] Amplenote Omnivore Plugin
+- [x] Amplenote Omnivore Plugin (In progress)
+- [ ] Amplenote Charts Plugin (In progress)
 
 # Building, Testing, and Running Plugins
 To use, first install the dependencies with `npm install`. Next, specify the target folder in `package.json` to the plugin you want to build, test, or run. For example, in the config below, the target folder is set as `/src-omnivore`.
