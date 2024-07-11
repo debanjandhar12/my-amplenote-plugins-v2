@@ -26,9 +26,9 @@
     "ts-jest": "^29.1.0"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-excalidraw",
-    "build": "node esbuild.js $(pwd)/src-excalidraw",
-    "dev": "node esbuild.js $(pwd)/src-excalidraw --watch --server"
+    "test": "jest --testPathPattern=src-omnivore",
+    "build": "node esbuild.js $(pwd)/src-omnivore",
+    "dev": "node esbuild.js $(pwd)/src-omnivore --watch --server"
   },
   "testEnvironment": "jsdom"
 }

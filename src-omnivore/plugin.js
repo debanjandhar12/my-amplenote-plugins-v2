@@ -20,24 +20,39 @@ import {SAMPLE_OMNIVORE_SEARCH_DATA} from "./test/test-data.js";
 const plugin = {
     appOption: {
         "Sync all": async function (app) {
-            if (app.settings[OMNIVORE_API_KEY_SETTING] === ""
-                || app.settings[OMNIVORE_API_KEY_SETTING] === undefined ||
-                app.settings[OMNIVORE_API_KEY_SETTING] === null) {
-                app.alert("Please set your Omnivore API Key in the settings.");
-                return;
-            }
-            try {
-                const {omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems} = await this._syncStateWithOmnivore(app);
-                // const omnivoreItemsState = SAMPLE_OMNIVORE_SEARCH_DATA;
-                // const omnivoreItemsStateDelta = omnivoreItemsState;
-                await this._syncHighlightsToNotes(omnivoreItemsStateDelta, [], app);
-                await this._syncCatalogToDashboard(omnivoreItemsState, app);
-                app.alert("Syncing complete.");
-            } catch (e) {
-                console.error(e);
-                app.alert("Error encountered: " + e.message);
-            }
+            await this._syncAll(app);
         },
+    },
+    noteOption: {
+        "Sync all": {
+            run: async function(app, noteUUID) {
+                await this._syncAll(app);
+            },
+            check: async function(app, noteUUID) {
+                const noteObject = await app.findNote({uuid: noteUUID});
+                const noteTitle = noteObject.name;
+                return noteTitle === app.settings[OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING] || noteTitle === OMNIVORE_DASHBOARD_NOTE_TITLE_DEFAULT;
+            },
+        }
+    },
+    _syncAll: async function (app) {
+        if (app.settings[OMNIVORE_API_KEY_SETTING] === ""
+            || app.settings[OMNIVORE_API_KEY_SETTING] === undefined ||
+            app.settings[OMNIVORE_API_KEY_SETTING] === null) {
+            app.alert("Please set your Omnivore API Key in the settings.");
+            return;
+        }
+        try {
+            const {omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems} = await this._syncStateWithOmnivore(app);
+            // const omnivoreItemsState = SAMPLE_OMNIVORE_SEARCH_DATA;
+            // const omnivoreItemsStateDelta = omnivoreItemsState;
+            await this._syncHighlightsToNotes(omnivoreItemsStateDelta, [], app);
+            await this._syncCatalogToDashboard(omnivoreItemsState, app);
+            app.alert("Syncing complete.");
+        } catch (e) {
+            console.error(e);
+            app.alert("Error encountered: " + e.message);
+        }
     },
     _syncStateWithOmnivore: async function (app) {
         const lastSyncPluginVersion = app.settings["lastSyncPluginVersion"];
