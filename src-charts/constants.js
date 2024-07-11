@@ -3,4 +3,4 @@
 // Setting Titles
 
 // Other constants
-export const EXCALIDRAW_PLUGIN_VERSION = "1.0.1";
+export const CHARTS_PLUGIN_VERSION = "1.0.1";
