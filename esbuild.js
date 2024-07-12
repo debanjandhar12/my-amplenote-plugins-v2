@@ -17,10 +17,19 @@ const postProcessAndWritePlugin = {
                 console.error(count === 0 ? `[${new Date()}] Build failed. - ${targetFolderName}` : `[${new Date()}] Rebuild failed. - ${targetFolderName}`);
                 return;
             }
+            let pluginJSResult = '';
             for (const outFile of result.outputFiles) {
                 let result = outFile.text;
                 if (outFile.path.split('/').pop() === 'plugin.js') {
                     result = await handleProcessingPluginJS(result);
+                    pluginJSResult = result;
+                }
+                else if (outFile.path.split('/').pop() === 'plugin.about.js') {
+                    result = await handleProcessingPluginAboutJS(result, pluginJSResult);
+                    outFile.path = outFile.path.replace('plugin.about.js', 'out.plugin.about.md');
+                }
+                else if (outFile.path.split('/').pop() === 'plugin.about.js.map') {
+                    continue;
                 }
                 const distDir = outFile.path.split('/').slice(0, -1).join('/');
                 try {
@@ -49,6 +58,32 @@ const postProcessAndWritePlugin = {
             // Remove any lines attempting to import module using the esbuild __require
             result = result.replace(/^\s+var import_.+= (?:__toESM\()?__require\(".+"\).*;/gm, "");
             return result;
+        }
+        const handleProcessingPluginAboutJS = async (result, pluginJSResult) => {
+            try {
+                result = result.replace(/^}\)\(\);$/gm, "  return plugin_about_default;\n})()");
+                const pluginAboutObj = eval(result);
+                const { name, description, settings, version, template } = pluginAboutObj;
+                let markdown = `| | |\n|-|-|\n`;
+                markdown += name ? `| name | ${name} |\n` : '';
+                markdown += description ? `| description | ${description} |\n` : '';
+                if (settings && typeof settings === 'object') {
+                    for (const setting of settings) {
+                        markdown += `| setting | ${setting} |\n`;
+                    }
+                }
+                markdown += name ? `# ${name} ${version ? `(v${version})` : ''}\n` : '';
+                let code = '';
+                code += '```js\n';
+                code += pluginJSResult;
+                code += '```';
+                if (template) {
+                    markdown += template.replace('<<Code>>', code);
+                }
+                return markdown;
+            } catch (error) {
+                console.error('Error generating markdown:', error);
+            }
         }
     },
 }
@@ -150,7 +185,6 @@ export const esbuildOptions = {
     write: false, // Don't write to disk, instead return outputFiles
     platform: 'browser',
     outdir: 'dist',
-    format: 'iife',
     plugins: [customHTMLLoader]
 }
 
@@ -212,8 +246,9 @@ async function main() {
     }
 
     const opts = _.cloneDeep(esbuildOptions);
-    opts.plugins.push(postProcessAndWritePlugin);
     if (process.env.NODE_ENV !== 'test') {
+        opts.format = 'iife';
+        opts.plugins.push(postProcessAndWritePlugin);
         try {
             const htmlFiles = (await fs.readdir((`${pluginTargetPath}/embed`))).filter(file => file.endsWith('.html'));
             htmlFiles.forEach(file => {
@@ -221,19 +256,24 @@ async function main() {
             });
         } catch {}
         opts.entryPoints = [`${pluginTargetPath}/plugin.js`];
+        try {
+            await fs.access(`${pluginTargetPath}/plugin.about.js`);
+            opts.entryPoints.push(`${pluginTargetPath}/plugin.about.js`);
+        }
+        catch { }
     }
     const ctx = await esbuild.context(opts);
 
-        if (process.argv.includes('--watch')) {
-            await ctx.watch();
-        }
-        else {
-            await ctx.rebuild();
-            await ctx.dispose();
-        }
-        if (process.argv.includes('--server')) {
-            await startServer(ctx, pluginTargetPath);
-        }
+    if (process.argv.includes('--watch')) {
+        await ctx.watch();
+    }
+    else {
+        await ctx.rebuild();
+        await ctx.dispose();
+    }
+    if (process.argv.includes('--server')) {
+        await startServer(ctx, pluginTargetPath);
+    }
 }
 
 main().catch((e) => {

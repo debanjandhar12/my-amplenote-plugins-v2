@@ -6,7 +6,8 @@ dotenv.config();
 export default {
   "transform": {
     "^.+\\.(jsx?|tsx?)$": [
-      "esbuild-jest"
+      "esbuild-jest",
+      esbuildOptions
     ]
   },
   testEnvironment: 'jsdom',
