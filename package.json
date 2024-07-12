@@ -19,6 +19,7 @@
     "dotenv": "^16.0.3",
     "esbuild": "0.17.15",
     "esbuild-jest": "^0.5.0",
+    "uglify-js": "^3.18.0",
     "express": "^4.19.2",
     "isomorphic-fetch": "^3.0.0",
     "jest": "^29.5.0",
@@ -28,7 +29,7 @@
   "scripts": {
     "test": "jest --testPathPattern=src-omnivore",
     "test:watch": "jest --testPathPattern=src-omnivore --watch",
-    "build:prod": "node esbuild.js $(pwd)/src-omnivore",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-omnivore",
     "build:dev": "node esbuild.js $(pwd)/src-omnivore --watch --server"
   },
   "testEnvironment": "jsdom"

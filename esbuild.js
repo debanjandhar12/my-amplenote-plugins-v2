@@ -5,6 +5,7 @@ import path from 'path';
 import cors from 'cors';
 import {readFile} from 'fs/promises';
 import _ from 'lodash';
+import UglifyJS from "uglify-js";
 
 // -- Custom Plugins for ESBuild --
 const postProcessAndWritePlugin = {
@@ -52,11 +53,13 @@ const postProcessAndWritePlugin = {
             const {repositoryLink, author} = await(readFile('./package.json').then((data) => {
                 return {repositoryLink: JSON.parse(data).repository, author: JSON.parse(data).author};
             }));
-            result = result.replace(/^\(\(\) => \{$/gm,
-                "/***\n * Source Code: " + repositoryLink + "\n * Author: " + author +
-                "\n * Target Folder: " + targetFolderName + "\n ***/\n\n(() => {");
             // Remove any lines attempting to import module using the esbuild __require
             result = result.replace(/^\s+var import_.+= (?:__toESM\()?__require\(".+"\).*;/gm, "");
+            if (process.env.NODE_ENV === 'production') {
+                result = UglifyJS.minify(result, {expression: true}).code;
+            }
+            result = "/***\n * Source Code: " + repositoryLink + "\n * Author: " + author +
+                "\n * Target Folder: " + targetFolderName + "\n ***/\n" + result;
             return result;
         }
         const handleProcessingPluginAboutJS = async (result, pluginJSResult) => {
@@ -76,7 +79,7 @@ const postProcessAndWritePlugin = {
                 let code = '';
                 code += '```js\n';
                 code += pluginJSResult;
-                code += '```';
+                code += '\n```';
                 if (template) {
                     markdown += template.replace('<<Code>>', code);
                 }
