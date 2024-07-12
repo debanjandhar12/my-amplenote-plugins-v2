@@ -46,9 +46,9 @@ const postProcessAndWritePlugin = {
         // -- Handle processing different types of files --
         const handleProcessingPluginJS = async (result) => {
             result = result.replace(/^}\)\(\);$/gm, "  return plugin;\n})()");
-            // Add a process.env.NODE_ENV = "production" to the beginning of the file
+            // Add a process.env.NODE_ENV to the beginning of the file
             result = result.replace(/^\(\(\) => \{$/gm,
-                "(() => {\n  var process = {env: {NODE_ENV: \"production\"}};");
+                `(() => {\n  var process = {env: {NODE_ENV: "${process.env.NODE_ENV || "development"}"}};`);
             // Add git repositoryLink to beginning of the file
             const {repositoryLink, author} = await(readFile('./package.json').then((data) => {
                 return {repositoryLink: JSON.parse(data).repository, author: JSON.parse(data).author};
@@ -251,6 +251,7 @@ async function main() {
     const opts = _.cloneDeep(esbuildOptions);
     if (process.env.NODE_ENV !== 'test') {
         opts.format = 'iife';
+        opts.entryPoints = [];
         opts.plugins.push(postProcessAndWritePlugin);
         try {
             const htmlFiles = (await fs.readdir((`${pluginTargetPath}/embed`))).filter(file => file.endsWith('.html'));
@@ -258,7 +259,7 @@ async function main() {
                 opts.entryPoints.push(`${pluginTargetPath}/embed/${file}`);
             });
         } catch {}
-        opts.entryPoints = [`${pluginTargetPath}/plugin.js`];
+        opts.entryPoints.push(`${pluginTargetPath}/plugin.js`);
         try {
             await fs.access(`${pluginTargetPath}/plugin.about.js`);
             opts.entryPoints.push(`${pluginTargetPath}/plugin.about.js`);

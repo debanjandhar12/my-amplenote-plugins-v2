@@ -27,10 +27,10 @@
     "ts-jest": "^29.1.0"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-omnivore",
-    "test:watch": "jest --testPathPattern=src-omnivore --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-omnivore",
-    "build:dev": "node esbuild.js $(pwd)/src-omnivore --watch --server"
+    "test": "jest --testPathPattern=src-charts",
+    "test:watch": "jest --testPathPattern=src-charts --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-charts",
+    "build:dev": "node esbuild.js $(pwd)/src-charts --watch --server"
   },
   "testEnvironment": "jsdom"
 }
