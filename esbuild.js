@@ -6,6 +6,7 @@ import cors from 'cors';
 import {readFile} from 'fs/promises';
 import _ from 'lodash';
 import UglifyJS from "uglify-js";
+import {nodeModulesPolyfillPlugin} from "esbuild-plugins-node-modules-polyfill";
 
 // -- Custom Plugins for ESBuild --
 const postProcessAndWritePlugin = {
@@ -46,9 +47,6 @@ const postProcessAndWritePlugin = {
         // -- Handle processing different types of files --
         const handleProcessingPluginJS = async (result) => {
             result = result.replace(/^}\)\(\);$/gm, "  return plugin;\n})()");
-            // Add a process.env.NODE_ENV to the beginning of the file
-            result = result.replace(/^\(\(\) => \{$/gm,
-                `(() => {\n  var process = {env: {NODE_ENV: "${process.env.NODE_ENV || "development"}"}};`);
             // Add git repositoryLink to beginning of the file
             const {repositoryLink, author} = await(readFile('./package.json').then((data) => {
                 return {repositoryLink: JSON.parse(data).repository, author: JSON.parse(data).author};
@@ -188,7 +186,7 @@ export const esbuildOptions = {
     write: false, // Don't write to disk, instead return outputFiles
     platform: 'browser',
     outdir: 'dist',
-    plugins: [customHTMLLoader]
+    plugins: [customHTMLLoader, nodeModulesPolyfillPlugin({globals: { process: true }})]
 }
 
 // -- Start the server --
