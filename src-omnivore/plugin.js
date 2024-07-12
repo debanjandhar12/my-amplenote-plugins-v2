@@ -15,7 +15,7 @@ import {
     generateNoteHighlightSectionMarkdown,
     generateNoteSummarySectionMarkdown
 } from "./amplenote/generate-markdown.js";
-import {SAMPLE_OMNIVORE_SEARCH_DATA} from "./test/test-data.js";
+import {SAMPLE_OMNIVORE_STATE_DATA} from "./test/test-data.js";
 
 const plugin = {
     appOption: {
@@ -43,12 +43,20 @@ const plugin = {
             return;
         }
         try {
-            const {omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems} = await this._syncStateWithOmnivore(app);
-            // const omnivoreItemsState = SAMPLE_OMNIVORE_SEARCH_DATA;
-            // const omnivoreItemsStateDelta = omnivoreItemsState;
-            await this._syncHighlightsToNotes(omnivoreItemsStateDelta, [], app);
-            await this._syncCatalogToDashboard(omnivoreItemsState, app);
-            app.alert("Syncing complete.");
+            if (await this._checkOmnivoreApiKey(app)) {
+                const {
+                    omnivoreItemsState,
+                    omnivoreItemsStateDelta,
+                    omnivoreDeletedItems
+                } = await this._syncStateWithOmnivore(app);
+                const suppressedErrorMessages = await this._syncHighlightsToNotes(omnivoreItemsStateDelta, omnivoreDeletedItems, app);
+                await this._syncCatalogToDashboard(omnivoreItemsState, app);
+                app.alert("Syncing complete. "
+                    + `${suppressedErrorMessages.length > 0 ? "Some errors were encountered: " + suppressedErrorMessages.join("\n") : ""}`);
+            }
+            else {
+                app.alert("Failed to connect to omnivore. It is likely Omnivore API Key provided in settings is invalid.");
+            }
         } catch (e) {
             console.error(e);
             app.alert("Error encountered: " + e.message);
@@ -90,9 +98,10 @@ const plugin = {
                 }
                 omnivoreItemsStateDelta.push(item);
             }
-            if (!hasNextPage) {
-                break
-            }
+            if (!hasNextPage)
+                break;
+            if (after % (5 * OMNIVORE_SYNC_BATCH_SIZE) === 0) // wait for 1 secs every 5 queries to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
         // Fetch all items to delete
@@ -109,9 +118,10 @@ const plugin = {
                 for (const item of deletedItems) {
                     omnivoreDeletedItems.push(item);
                 }
-                if (!hasNextPage) {
-                    break
-                }
+                if (!hasNextPage)
+                    break;
+                if (after % (5 * OMNIVORE_SYNC_BATCH_SIZE) === 0) // wait for 1 secs every 5 queries to avoid rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
         omnivoreItemsState = omnivoreItemsState.filter((item) => {
@@ -123,6 +133,25 @@ const plugin = {
         app.setSetting("lastOmnivoreItemsState", JSON.stringify(omnivoreItemsState));
 
         return {omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems};
+    },
+    _checkOmnivoreApiKey: async function (app) {
+        try {
+            const [items, hasNextPage] = await getOmnivoreItems(
+                app.settings[OMNIVORE_API_KEY_SETTING],
+                0,
+                OMNIVORE_SYNC_BATCH_SIZE,
+                new Date().toISOString(),
+                "",
+                false,
+                'highlightedMarkdown',
+                OMINOVRE_API_ENDPOINT
+            );
+        }
+        catch (e) {
+            if (e.message.includes("Unexpected server error"))
+                return false;
+        }
+        return true;
     },
     _syncCatalogToDashboard: async function (omnivoreItemsState, app) {
         const dashboardNoteTitle = app.settings[OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING] || OMNIVORE_DASHBOARD_NOTE_TITLE_DEFAULT;
@@ -148,9 +177,14 @@ const plugin = {
 
         // - Step 1: Delete archived notes -
         for (let omnivoreItem of omnivoreDeletedItems) {
-            const highlightNote = await app.findNote({ name: omnivoreItem.title });
+            let highlightNote = await app.findNote({ name: omnivoreItem.title });
             if (highlightNote) {
-                await app.deleteNote({ uuid: highlightNote.uuid });
+                highlightNote = await app.notes.find(highlightNote.uuid);
+                const content = await highlightNote.content();
+                if (content.includes("Summary") || content.includes("Highlights"))
+                    await app.deleteNote({ uuid: highlightNote.uuid });
+                else
+                    suppressedErrorMessages.push(`Failed to delete highlight note: ${omnivoreItem.title}`);
             }
         }
 

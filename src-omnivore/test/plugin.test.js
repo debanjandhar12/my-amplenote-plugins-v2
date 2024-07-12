@@ -5,7 +5,7 @@ import 'cross-fetch/polyfill';
 import {OMINOVRE_API_ENDPOINT, OMNIVORE_API_KEY_SETTING, OMNIVORE_DASHBOARD_COLUMNS_SETTING} from "../constants.js";
 import {generateDashboardTable} from "../amplenote/generate-markdown.js";
 import {marked} from "marked";
-import {SAMPLE_OMNIVORE_SEARCH_DATA} from "./test-data.js";
+import {SAMPLE_OMNIVORE_STATE_DATA} from "./test-data.js";
 
 describe("_syncStateWithOmnivore", () => {
     it('when adding / deleting articles, correct ' +
@@ -78,7 +78,7 @@ describe('generateDashboardTable - Optional Columns', () => {
         return 0; // Return 0 if no table is found
     }
     it('should correctly handle optional columns', async () => {
-        const omnivoreItemsState = SAMPLE_OMNIVORE_SEARCH_DATA;
+        const omnivoreItemsState = SAMPLE_OMNIVORE_STATE_DATA;
         const optionalColumnsConfigurations = [
             [],
             ['Author'],
