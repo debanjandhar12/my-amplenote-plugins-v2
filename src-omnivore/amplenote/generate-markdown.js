@@ -30,8 +30,8 @@ export async function generateDashboardTable(omnivoreItemsState, appSettings, ge
             + `|${note.url ? `[${note.title}](${await getNoteUrlFromTitle(note.title)})` : note.title}`
             + `${optionalColumns.includes('Author') ? `|${note.author}` : ''}`
             + `${optionalColumns.includes('Description') ? `|${note.description}` : ''}`
-            + `${optionalColumns.includes('UpdatedAt') ? `|${note.updatedAt}` : ''}`
-            + `${optionalColumns.includes('SavedAt') ? `|${note.savedAt}` : ''}`
+            + `${optionalColumns.includes('UpdatedAt') ? `|${new Date(note.updatedAt).toLocaleString()}` : ''}`
+            + `${optionalColumns.includes('SavedAt') ? `|${new Date(note.savedAt).toLocaleString()}` : ''}`
             + `${optionalColumns.includes('PageType') ? `|${note.pageType}` : ''}`
             + `${optionalColumns.includes('ReadingProgressPercent') ? `|${note.readingProgressPercent}%` : ''}`
             + `|[Omnivore Link](${OMNIVORE_APP_URL}/${note.slug})`
@@ -62,7 +62,7 @@ export function generateNoteSummarySectionMarkdown(omnivoreItemsState, appSettin
     return `**Author:** ${omnivoreItemsState.author}\n` +
            `**Description:** ${omnivoreItemsState.description}\n` +
            `**Page Type:** ${omnivoreItemsState.pageType}\n` +
-           `**Updated At:** ${omnivoreItemsState.updatedAt}\n` +
-           `**Saved At:** ${omnivoreItemsState.savedAt}\n` +
+           `**Updated At:** ${new Date(omnivoreItemsState.updatedAt).toLocaleString()}\n` +
+           `**Saved At:** ${new Date(omnivoreItemsState.savedAt).toLocaleString()}\n` +
            `**Reading Progress Percent:** ${omnivoreItemsState.readingProgressPercent} / 100\n`;
 }

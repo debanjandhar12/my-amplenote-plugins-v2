@@ -10,7 +10,7 @@
     "luxon": "^3.4.4",
     "markdown-escape": "^2.0.0",
     "cross-fetch": "^4.0.0",
-    "marked": "^13.0.1",
+    "markdown-it": "^14.1.0",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
@@ -28,10 +28,10 @@
     "ts-jest": "^29.1.0"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-text2dia",
-    "test:watch": "jest --testPathPattern=src-text2dia --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-text2dia",
-    "build:dev": "node esbuild.js $(pwd)/src-text2dia --watch --server"
+    "test": "jest --testPathPattern=src-omnivore",
+    "test:watch": "jest --testPathPattern=src-omnivore --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-omnivore",
+    "build:dev": "node esbuild.js $(pwd)/src-omnivore --watch --server"
   },
   "testEnvironment": "jsdom"
 }

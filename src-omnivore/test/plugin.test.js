@@ -4,8 +4,8 @@ import {deleteOmnivoreItem, saveOmnivoreItem} from "../omnivore/api-extended.js"
 import 'cross-fetch/polyfill';
 import {OMINOVRE_API_ENDPOINT, OMNIVORE_API_KEY_SETTING, OMNIVORE_DASHBOARD_COLUMNS_SETTING} from "../constants.js";
 import {generateDashboardTable} from "../amplenote/generate-markdown.js";
-import {marked} from "marked";
 import {SAMPLE_OMNIVORE_STATE_DATA} from "./test-data.js";
+import MarkdownIt from "markdown-it";
 
 describe("_syncStateWithOmnivore", () => {
     it('when adding / deleting articles, correct ' +
@@ -68,11 +68,24 @@ describe("_syncStateWithOmnivore", () => {
 
 describe('generateDashboardTable - Optional Columns', () => {
     function countColumnsInMarkdownTable(markdown) {
-        const tokens = marked.lexer(markdown);
-        for (const token of tokens) {
-            if (token.type === 'table') {
-                // Assuming the first row is the header and it defines the number of columns
-                return token.header.length;
+        const md = new MarkdownIt();
+        const tokens = md.parse(markdown);
+        for (let i = 0; i < tokens.length; i++) {
+            if (tokens[i].type === 'thead_open') {
+                // Find the first row of the table header
+                for (let j = i + 1; j < tokens.length; j++) {
+                    if (tokens[j].type === 'tr_open') {
+                        // Count the number of th_open tokens in this row
+                        let columnCount = 0;
+                        for (let k = j + 1; k < tokens.length; k++) {
+                            if (tokens[k].type === 'th_open') {
+                                columnCount++;
+                            } else if (tokens[k].type === 'tr_close') {
+                                return columnCount;
+                            }
+                        }
+                    }
+                }
             }
         }
         return 0; // Return 0 if no table is found

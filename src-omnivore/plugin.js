@@ -49,6 +49,7 @@ const plugin = {
                     omnivoreItemsStateDelta,
                     omnivoreDeletedItems
                 } = await this._syncStateWithOmnivore(app);
+                console.log(omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems);
                 const suppressedErrorMessages = await this._syncHighlightsToNotes(omnivoreItemsStateDelta, omnivoreDeletedItems, app);
                 await this._syncCatalogToDashboard(omnivoreItemsState, app);
                 app.alert("Syncing complete. "
