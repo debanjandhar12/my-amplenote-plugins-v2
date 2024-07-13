@@ -69,16 +69,18 @@ const postProcessAndWritePlugin = {
             try {
                 result = result.replace(/^}\)\(\);$/gm, "  return plugin_about_default;\n})()");
                 const pluginAboutObj = eval(result);
-                const { name, description, settings, version, template } = pluginAboutObj;
+                const { name, description, settings, version, icon, instructions, template } = pluginAboutObj;
                 let markdown = `| | |\n|-|-|\n`;
                 markdown += name ? `| name | ${name} |\n` : '';
                 markdown += description ? `| description | ${description} |\n` : '';
+                markdown += icon ? `| icon | ${icon} |\n` : '';
+                markdown += instructions ? `| instructions | ${instructions} |\n` : '';
                 if (settings && typeof settings === 'object') {
                     for (const setting of settings) {
                         markdown += `| setting | ${setting} |\n`;
                     }
                 }
-                markdown += name ? `# ${name} ${version ? `(v${version})` : ''}\n` : '';
+                markdown += name ? `\n\n\n# ${name} ${version ? `(v${version})` : ''}\n\n\n` : '';
                 let code = '';
                 code += '```js\n';
                 code += pluginJSResult;

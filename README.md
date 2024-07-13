@@ -56,6 +56,12 @@ npm install -D jest-environment-jsdom
   export default {
     name: 'Amplenote Omnivore Plugin',
     description: 'A plugin to sync Amplenote with omnivore',
+    icon: 'sync_alt',
+    instructions: `
+      1. Install the plugin.
+      2. Go to the plugin settings and configure the settings.
+      3. Enjoy!
+    `,
     settings: ["Setting 1", "Setting 2"],
     version: '1.0.0',
     body: `
