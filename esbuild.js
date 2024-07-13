@@ -14,7 +14,12 @@ const postProcessAndWritePlugin = {
     setup(build) {
         let count = 0;
         const targetFolderName = build.initialOptions.entryPoints[0].split('/').slice(-2, -1)[0];
+        const outFolderPath = build.initialOptions.entryPoints[0].split('/').slice(0, -1).join('/')
+                                    + '/../' + build.initialOptions.outdir;
         build.onEnd(async result => {
+            try {
+                await fs.rm(outFolderPath, {recursive: true});
+            } catch (e) { console.warn(e.message); }
             if (result.errors.length > 0) {
                 console.error(count === 0 ? `[${new Date()}] Build failed. - ${targetFolderName}` : `[${new Date()}] Rebuild failed. - ${targetFolderName}`);
                 return;
@@ -249,7 +254,7 @@ async function main() {
     const opts = _.cloneDeep(esbuildOptions);
     if (process.env.NODE_ENV !== 'test') {
         opts.format = 'iife';
-        opts.entryPoints = [];
+        opts.entryPoints = [`${pluginTargetPath}/plugin.js`];
         opts.plugins.push(postProcessAndWritePlugin);
         try {
             const htmlFiles = (await fs.readdir((`${pluginTargetPath}/embed`))).filter(file => file.endsWith('.html'));
@@ -257,7 +262,6 @@ async function main() {
                 opts.entryPoints.push(`${pluginTargetPath}/embed/${file}`);
             });
         } catch {}
-        opts.entryPoints.push(`${pluginTargetPath}/plugin.js`);
         try {
             await fs.access(`${pluginTargetPath}/plugin.about.js`);
             opts.entryPoints.push(`${pluginTargetPath}/plugin.about.js`);
