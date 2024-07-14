@@ -95,7 +95,7 @@ export const mockApp = seedNote => {
   app.notes.create = mockCreateNote;
 
   const mockSetSetting = jest.fn();
-    mockSetSetting.mockImplementation((key, value) => {
+    mockSetSetting.mockImplementation(async (key, value) => {
       app.settings[key] = value;
   });
   app.setSetting = mockSetSetting;

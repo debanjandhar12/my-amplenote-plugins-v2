@@ -50,7 +50,7 @@ const plugin = {
                     omnivoreDeletedItems
                 } = await this._syncStateWithOmnivore(app);
                 console.log(omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems);
-                const suppressedErrorMessages = await this._syncHighlightsToNotes(omnivoreItemsStateDelta, omnivoreDeletedItems, app);
+                const suppressedErrorMessages = await this._syncHighlightsToNotes(omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems, app);
                 await this._syncCatalogToDashboard(omnivoreItemsState, app);
                 app.alert("Syncing complete. "
                     + `${suppressedErrorMessages.length > 0 ? "Some errors were encountered: " + suppressedErrorMessages.join("\n") : ""}`);
@@ -66,8 +66,8 @@ const plugin = {
     _syncStateWithOmnivore: async function (app) {
         const lastSyncPluginVersion = app.settings["lastSyncPluginVersion"];
         if (lastSyncPluginVersion !== OMNIVORE_PLUGIN_VERSION) {
-            app.setSetting("lastSyncTime", "");
-            app.setSetting("lastOmnivoreItemsState", JSON.stringify([]));
+            await app.setSetting("lastSyncTime", "");
+            await app.setSetting("lastOmnivoreItemsState", JSON.stringify([]));
         }
         const lastSyncTime = app.settings["lastSyncTime"];
         let lastOmnivoreItemsState = [];
@@ -76,7 +76,7 @@ const plugin = {
         } catch (e) {}
 
 
-        // Fetch all omnivore items whcih are non-archived
+        // Fetch all omnivore items which are non-archived
         let omnivoreItemsState = JSON.parse(JSON.stringify(lastOmnivoreItemsState));
         const omnivoreItemsStateDelta = [];
         for (let after = 0; ; after += OMNIVORE_SYNC_BATCH_SIZE) {
@@ -107,7 +107,7 @@ const plugin = {
 
         // Fetch all items to delete
         const omnivoreDeletedItems = [];
-        if (lastSyncTime !== "" && lastSyncTime != null) {
+        if (lastSyncTime !== "" && lastSyncTime != null) {  // TODO: This if statement may need to be removed as it causes notes from last sync to not be deleted
             for (let after = 0; ; after += size) {
                 const [deletedItems, hasNextPage] = await getDeletedOmnivoreItems(
                     app.settings[OMNIVORE_API_KEY_SETTING],
@@ -129,9 +129,9 @@ const plugin = {
             return omnivoreDeletedItems.find((deletedItem) => deletedItem.id === item.id) === undefined;
         });
 
-        app.setSetting("lastSyncPluginVersion", OMNIVORE_PLUGIN_VERSION);
-        app.setSetting("lastSyncTime", new Date().toISOString());
-        app.setSetting("lastOmnivoreItemsState", JSON.stringify(omnivoreItemsState));
+        await app.setSetting("lastSyncPluginVersion", OMNIVORE_PLUGIN_VERSION);
+        await app.setSetting("lastSyncTime", new Date().toISOString());
+        await app.setSetting("lastOmnivoreItemsState", JSON.stringify(omnivoreItemsState));
 
         return {omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems};
     },
@@ -173,7 +173,7 @@ const plugin = {
         });
         await app.replaceNoteContent({ uuid: dashboardNote.uuid }, newDashboardContent);
     },
-    _syncHighlightsToNotes: async function (omnivoreItemsState, omnivoreDeletedItems, app) {
+    _syncHighlightsToNotes: async function (omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems, app) {
         const suppressedErrorMessages = [];
 
         // - Step 1: Delete archived notes -
@@ -189,8 +189,18 @@ const plugin = {
             }
         }
 
-        // - Step 2: Create or update highlight notes -
+        // - Step 2: Filter out which notes to create or update -
+        let omnivoreItemsStateFiltered = [];
         for (let omnivoreItem of omnivoreItemsState) {
+            if (omnivoreItem.title && omnivoreItem.title !== ""
+                && !(await app.findNote({ name: omnivoreItem.title }))) {
+                omnivoreItemsStateFiltered.push(omnivoreItem);  // Push items which don't exist in Amplenote
+            }
+        }
+        omnivoreItemsStateFiltered = [...omnivoreItemsStateFiltered, ...omnivoreItemsStateDelta];
+
+        // - Step 3: Create or update highlight notes -
+        for (let omnivoreItem of omnivoreItemsStateFiltered) {
             let highlightNote = await app.findNote({ name: omnivoreItem.title });
             if (!highlightNote) {
                 highlightNote = await app.notes.create(omnivoreItem.title, []);
@@ -233,7 +243,7 @@ const plugin = {
 
             const summaryContent = generateNoteSummarySectionMarkdown(omnivoreItem, app.settings);
             const highlightsContent = generateNoteHighlightSectionMarkdown(omnivoreItem, app.settings);
-            const content = `# Summary:\n${summaryContent}\n\n\n# Highlights\n${highlightsContent}`;
+            const content = `# Summary:\n${summaryContent}<br/>\n# Highlights\n${highlightsContent}`;
             await app.replaceNoteContent({ uuid: highlightNote.uuid }, content);
         }
 

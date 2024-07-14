@@ -34,7 +34,7 @@ export async function generateDashboardTable(omnivoreItemsState, appSettings, ge
             + `${optionalColumns.includes('SavedAt') ? `|${new Date(note.savedAt).toLocaleString()}` : ''}`
             + `${optionalColumns.includes('PageType') ? `|${note.pageType}` : ''}`
             + `${optionalColumns.includes('ReadingProgressPercent') ? `|${note.readingProgressPercent}%` : ''}`
-            + `|[Omnivore Link](${OMNIVORE_APP_URL}/${note.slug})`
+            + `|[Omnivore Link](${OMNIVORE_APP_URL}/me/${note.slug})`
             + '|';
         return row;
     }));
@@ -52,7 +52,7 @@ export function generateNoteHighlightSectionMarkdown(omnivoreItemsState, appSett
               `> ${highlight.quote.split('\n').join(' ')}\n`;
     }).filter(h => h);
     if (properHighlights.length === 0) {
-        return '(No highlights)';
+        return `(No highlights - [create one](${OMNIVORE_APP_URL}/me/${omnivoreItemsState.slug}))`;
     }
     return properHighlights.join('\n');
 }

@@ -12,7 +12,7 @@ describe("_syncStateWithOmnivore", () => {
         'omnivoreItemsState, omnivoreItemsStateDelta and omnivoreDeletedItems needs to be returned', async function() {
         const plugin = mockPlugin(pluginObject);
         global.app = mockApp(mockNote("Basic Note", "Name", "1", ""));
-        global.app.setSetting(OMNIVORE_API_KEY_SETTING, process.env.OMNIVORE_KEY);
+        await global.app.setSetting(OMNIVORE_API_KEY_SETTING, process.env.OMNIVORE_KEY);
 
         const firstFetch = await plugin._syncStateWithOmnivore.call(plugin, global.app);
         const firstFetchSize = firstFetch.omnivoreItemsState.length;
@@ -44,7 +44,7 @@ describe("_syncStateWithOmnivore", () => {
         'when adding highlights to articles', async function() {
         const plugin = mockPlugin(pluginObject);
         global.app = mockApp(mockNote("Basic Note", "Name", "1", ""));
-        global.app.setSetting(OMNIVORE_API_KEY_SETTING, process.env.OMNIVORE_KEY);
+        await global.app.setSetting(OMNIVORE_API_KEY_SETTING, process.env.OMNIVORE_KEY);
 
         const newItem1 = await saveOmnivoreItem(process.env.OMNIVORE_KEY,
             "https://github.com/omnivore-app/omnivore/blob/main/packages/api/src/schema.ts",
