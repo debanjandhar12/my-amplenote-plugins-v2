@@ -4,7 +4,7 @@
 // TODO: properly add variables in expected strings
 // TODO: test subsequent sync not changing existing entries
 import pluginObject from "../plugin.js"
-import { mockApp, mockPlugin, mockNote } from "../../test-helpers/test-helpers.js"
+import { mockApp, mockPlugin, mockNote } from "../../common-utils/test-helpers.js"
 import { _bookObjectFromReadwiseBook } from "../books.js";
 import { _markdownFromTableRow } from "../markdown.js";
 import { _tablePreambleFromHeaders } from "../markdown.js";

@@ -1,5 +1,5 @@
 import dotenv from "dotenv"
-import { jest } from "@jest/globals"
+import {jest} from "@jest/globals"
 
 dotenv.config();
 
@@ -166,8 +166,7 @@ function _replaceNoteContent(note, newContent, sectionObject = null) {
     }
 
     if (Number.isInteger(startIndex)) {
-      const revisedContent = `${ note.body.slice(0, startIndex) }${ newContent.trim() }\n${ note.body.slice(endIndex) }`;
-      note.body = revisedContent;
+      note.body = `${note.body.slice(0, startIndex)}${newContent.trim()}\n${note.body.slice(endIndex)}`;
     } else {
       throw new Error(`Could not find section ${ sectionObject.section.heading.text } in note ${ note.name }`);
     }

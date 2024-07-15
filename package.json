@@ -11,7 +11,8 @@
     "markdown-escape": "^2.0.0",
     "cross-fetch": "^4.0.0",
     "markdown-it": "^14.1.0",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "jsdom": "^24.1.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
