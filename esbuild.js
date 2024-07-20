@@ -87,7 +87,7 @@ const postProcessAndWritePlugin = {
                 markdown += name ? `\n\n\n# ${name} ${version ? `(v${version})` : ''}\n\n\n` : '';
                 let code = '';
                 code += '```js\n';
-                code += pluginJSResult;
+                code += pluginJSResult.length > 50000 ? '/* Plugin code too large to display */' : pluginJSResult;
                 code += '\n```';
                 if (template) {
                     markdown += template.replace('<<Code>>', code);

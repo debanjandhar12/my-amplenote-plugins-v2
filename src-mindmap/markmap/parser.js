@@ -11,7 +11,6 @@ const amplenoteLinksPlugin = definePlugin({
 
             md.renderer.rules.link_open = function (tokens, idx, options, env, self) {
                 const token = tokens[idx];
-                console.log(token);
                 const hrefIndex = token.attrIndex('href');
                 if (hrefIndex >= 0) {
                     const href = token.attrs[hrefIndex][1];

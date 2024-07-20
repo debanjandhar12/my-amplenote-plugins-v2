@@ -19,6 +19,8 @@ Some content`;
             case 'navigate':
                 window.open(args[0], '_blank');
                 return;
+            case 'getNoteTitle':
+                return 'Mock Note Title';
         }
     }
 }
@@ -26,7 +28,6 @@ Some content`;
 
 (async () => {
     const markdown = await window.callAmplenotePlugin('getNoteContent', noteUUID);
-    console.log('Got markdown', markdown);
     await initMarkMap(markdown);
 })();
 

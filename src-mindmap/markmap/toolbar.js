@@ -11,6 +11,9 @@ export function createToolbar(markmap) {
     .mm-toolbar-item[title="Toggle recursively"] {
         display: none;
     }
+    .mm-toolbar-item {
+        color: rgb(133, 147, 163);
+    }
     .mm-toolbar-item:hover {
         cursor: pointer;
         color: #007bff;
@@ -18,7 +21,6 @@ export function createToolbar(markmap) {
     .mm-toolbar-item svg {
         pointer-events: none;
     }
-    
     `;
     document.head.append(style);
 

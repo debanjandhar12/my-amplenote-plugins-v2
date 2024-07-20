@@ -11,13 +11,29 @@ export async function initMarkMap(markdown) {
     }
     try {
         const { root, features } = parseMarkdownAsMindMap(markdown);
-        // root.content = 'Mind Map';
+        root.content = root.content.trim() == '' ?
+            (await window.callAmplenotePlugin('getNoteTitle', noteUUID))
+            : root.content;
         console.log('Rendering', markdown, root, features);
         const markmap = Markmap.create(svgEl, options, root);
         createToolbar(markmap, svgEl);
+        addStyleForMarkMap();
     } catch (error) {
         console.error(error);
     }
+}
+
+function addStyleForMarkMap() {
+    const style = document.createElement('style');
+    style.textContent = `
+    #markmap-svg.markmap {
+      --markmap-text-color: rgb(249, 251, 252);
+    }
+    body {
+        background-color: #192025;
+    }
+    `;
+    document.head.append(style);
 }
 
 const initialHTML = document.body.outerHTML;
