@@ -5,14 +5,15 @@
   "type": "module",
   "repository": "https://github.com/debanjandhar12/my-amplenote-plugins-v2",
   "dependencies": {
-    "@omnivore-app/api": "^1.0.4",
     "date-fns": "^3.6.0",
-    "luxon": "^3.4.4",
-    "markdown-escape": "^2.0.0",
-    "cross-fetch": "^4.0.0",
-    "markdown-it": "^14.1.0",
     "lodash": "^4.17.21",
-    "jsdom": "^24.1.0"
+    "markdown-it": "^14.1.0",
+    "markdown-escape": "^2.0.0",
+    "luxon": "^3.4.4",
+    "@omnivore-app/api": "^1.0.4",
+    "markmap-view": "^0.17.0",
+    "markmap-lib": "^0.17.0",
+    "markmap-toolbar": "^0.17.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
@@ -26,13 +27,15 @@
     "isomorphic-fetch": "^3.0.0",
     "jest": "^29.5.0",
     "jest-environment-jsdom": "^29.5.0",
-    "ts-jest": "^29.1.0"
+    "ts-jest": "^29.1.0",
+    "jsdom": "^24.1.0",
+    "cross-fetch": "^4.0.0"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-omnivore",
-    "test:watch": "jest --testPathPattern=src-omnivore --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-omnivore",
-    "build:dev": "node esbuild.js $(pwd)/src-omnivore --watch --server"
+    "test": "jest --testPathPattern=src-mindmap",
+    "test:watch": "jest --testPathPattern=src-mindmap --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-mindmap",
+    "build:dev": "node esbuild.js $(pwd)/src-mindmap --watch --server"
   },
   "testEnvironment": "jsdom"
 }

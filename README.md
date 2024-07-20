@@ -3,8 +3,10 @@
 This is a template / dev env for my Amplenote plugins (heavily customized). It is meant to host all of my amplenote plugins in a single workspace. However, if you wish to fork this repo and use it for your own plugins, feel free to do so.
 
 Current plugin list:
-- [x] Amplenote Omnivore Plugin (In progress)
-- [ ] Amplenote Charts Plugin (In progress)
+- [ ] Amplenote Omnivore Plugin (70% complete)
+- [ ] Amplenote Charts Plugin (5% complete)
+- [ ] Amplenote Mindmap Plugin (70% complete)
+- [x] Amplenote Text2Dia Plugin
 
 # Building, Testing, and Running Plugins
 

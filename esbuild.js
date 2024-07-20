@@ -118,6 +118,7 @@ const customHTMLLoader = {
                     entryPoints: [absolutePath],
                     sourcemap: false,
                     metafile: true,
+                    format: 'iife'
                 });
                 const result = await ctx.rebuild();
                 let inlinedContent = result.outputFiles[0].text;
@@ -131,19 +132,19 @@ const customHTMLLoader = {
                 }
 
                 if (assetType === 'js') {
-                    html = html.replace(fullMatch, `<script>${inlinedContent}</script>`);
+                    html = html.replace(fullMatch, () => `<script>${inlinedContent}</script>`);
                 } else if (assetType === 'css') {
-                    html = html.replace(fullMatch, `<style>${inlinedContent}</style>`);
+                    html = html.replace(fullMatch, () => `<style>${inlinedContent}</style>`);
                 }
             }
 
             return [html, watchFiles, errors];
         }
 
-        build.onResolve({ filter: /^inline:/ }, args => {
+        build.onResolve({ filter: /.*\?inline$/ }, args => {
             try {
                 return {
-                    path: path.resolve(args.resolveDir, args.path.slice(7)),
+                    path: path.resolve(args.resolveDir, args.path.substring(0, args.path.length - 7)),
                     namespace: 'inline-html'
                 };
             } catch (error) {
@@ -193,6 +194,7 @@ export const esbuildOptions = {
     write: false, // Don't write to disk, instead return outputFiles
     platform: 'browser',
     outdir: 'dist',
+    target: 'es2019',
     plugins: [customHTMLLoader, nodeModulesPolyfillPlugin({globals: { process: true }})]
 }
 

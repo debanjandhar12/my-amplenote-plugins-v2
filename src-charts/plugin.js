@@ -1,4 +1,4 @@
-import chartHTML from 'inline:./embed/chart.html';
+import chartHTML from './embed/chart.html?inline';
 
 const plugin = {
     async insertText(app) {

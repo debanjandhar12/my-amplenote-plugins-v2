@@ -1,19 +1,22 @@
-import { JSDOM } from 'jsdom';
+export const addScriptToHtmlString = (htmlString, scriptContent) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
 
-export const addVariableToHtmlString = (htmlString, variableName, variableValue) => {
-    const dom = new JSDOM(htmlString);
-    const document = dom.window.document;
+    const script = doc.createElement('script');
+    script.textContent = scriptContent;
 
-    const script = document.createElement('script');
-    script.textContent = `var ${variableName} = ${JSON.stringify(variableValue)};`;
-
-    const head = document.head || document.getElementsByTagName('head')[0];
-
+    const head = doc.head;
     if (head.firstChild) {
         head.insertBefore(script, head.firstChild);
     } else {
         head.appendChild(script);
     }
 
-    return dom.serialize();
+    return doc.documentElement.outerHTML.replaceAll('\\x3Cscript>', () => '<script>');
+};
+
+export const addWindowVariableToHtmlString = (htmlString, variableName, variableValue) => {
+    const scriptContent = `window.${variableName} = ${JSON.stringify(variableValue)};`;
+
+    return addScriptToHtmlString(htmlString, scriptContent);
 };
