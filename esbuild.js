@@ -59,7 +59,11 @@ const postProcessAndWritePlugin = {
             // Remove any lines attempting to import module using the esbuild __require
             result = result.replace(/^\s+var import_.+= (?:__toESM\()?__require\(".+"\).*;/gm, "");
             if (process.env.NODE_ENV === 'production') {
-                result = UglifyJS.minify(result, {expression: true}).code;
+                result = UglifyJS.minify(result, {expression: true, output: {max_line_len: 2048}});
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                result = result.code;
             }
             result = "/***\n * Source Code: " + repositoryLink + "\n * Author: " + author +
                 "\n * Target Folder: " + targetFolderName + "\n ***/\n" + result;
@@ -118,7 +122,8 @@ const customHTMLLoader = {
                     entryPoints: [absolutePath],
                     sourcemap: false,
                     metafile: true,
-                    format: 'iife'
+                    format: 'iife',
+                    minify: process.env.NODE_ENV === 'production'
                 });
                 const result = await ctx.rebuild();
                 let inlinedContent = result.outputFiles[0].text;
