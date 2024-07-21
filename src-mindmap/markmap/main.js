@@ -11,9 +11,12 @@ export async function initMarkMap(markdown) {
     }
     try {
         const { root, features } = parseMarkdownAsMindMap(markdown);
-        root.content = root.content.trim() == '' ?
-            (await window.callAmplenotePlugin('getNoteTitle', noteUUID))
-            : root.content;
+        markdown = `---
+title: ${await window.callAmplenotePlugin('getNoteTitle', noteUUID)}
+---
+${markdown}
+`;
+        console.log('Root', root, features);
         console.log('Rendering', markdown, root, features);
         const markmap = Markmap.create(svgEl, options, root);
         createToolbar(markmap, svgEl);
