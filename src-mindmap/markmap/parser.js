@@ -1,5 +1,5 @@
-import { Transformer } from 'markmap-lib/no-plugins';
-import {definePlugin, pluginCheckbox, pluginFrontmatter, pluginHljs, pluginSourceLines} from "markmap-lib/plugins";
+import { Transformer } from '@debanjandhar12/markmap-lib/no-plugins';
+import {definePlugin, pluginCheckbox, pluginFrontmatter, pluginHljs, pluginSourceLines} from "@debanjandhar12/markmap-lib/plugins";
 
 const amplenoteLinksPlugin = definePlugin({
     name: "amplenoteLinksPlugin",
@@ -93,10 +93,10 @@ const losslessSelectorRules = {
 
 export function parseMarkdownAsMindMap(markdown) {
     const transformer = new Transformer([pluginCheckbox, pluginHljs, pluginSourceLines, amplenoteLinksPlugin]);
-    return transformer.transform(markdown, {selector: 'h1,h2,h3,h4,h5,h6,ul,ol,li,table,pre,p,img', selectorRules:losslessSelectorRules});
+    return transformer.transform(markdown, {selector: 'h1,h2,h3,h4,h5,h6,ul,ol,li,table,pre,p,img', selectorRules:losslessSelectorRules, lossless: true});
 }
 
-function addTitleToRootNode(root: INode, title: string) {
+function addTitleToRootNode(root, title) {
     if (root.content == "") root.content = title;
     else root = { content: title, children: [root], type: 'heading', depth: 0 }
 }

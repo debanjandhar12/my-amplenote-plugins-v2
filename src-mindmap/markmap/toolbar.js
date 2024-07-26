@@ -1,4 +1,4 @@
-import { Toolbar } from 'markmap-toolbar';
+import { Toolbar } from '@debanjandhar12/markmap-toolbar';
 import {reloadMarkMap} from "./main.js";
 
 export function createToolbar(markmap) {

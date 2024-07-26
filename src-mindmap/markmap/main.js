@@ -1,4 +1,4 @@
-import {Markmap} from "markmap-view";
+import {Markmap} from "@debanjandhar12/markmap-view";
 import {parseMarkdownAsMindMap} from "./parser.js";
 import {createToolbar} from "./toolbar.js";
 

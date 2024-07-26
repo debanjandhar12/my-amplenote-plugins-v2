@@ -11,9 +11,9 @@
     "markdown-escape": "^2.0.0",
     "luxon": "^3.4.4",
     "@omnivore-app/api": "^1.0.4",
-    "markmap-view": "^0.17.0",
-    "markmap-lib": "^0.17.0",
-    "markmap-toolbar": "^0.17.0"
+    "@debanjandhar12/markmap-view": "0.17.0-mod.3",
+    "@debanjandhar12/markmap-lib": "0.17.0-mod.3",
+    "@debanjandhar12/markmap-toolbar": "0.17.0-mod.3"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
