@@ -1,4 +1,11 @@
 import {initMarkMap} from "../markmap/main.js";
+import {
+    INITIAL_EXPAND_LEVEL_SETTING,
+    INITIAL_EXPAND_LEVEL_SETTING_DEFAULT, SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING,
+    SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING_DEFAULT,
+    TITLE_AS_DEFAULT_NODE_SETTING,
+    TITLE_AS_DEFAULT_NODE_SETTING_DEFAULT
+} from "../constants.js";
 
 // Mock data for dev environment
 if(!window.noteUUID && process.env.NODE_ENV === 'development') {
@@ -34,7 +41,17 @@ window.addEventListener('resize', function() {
 
 // On page load
 (async () => {
-    const markdown = await window.callAmplenotePlugin('getNoteContent', noteUUID);
-    await initMarkMap(markdown);
-    window.dispatchEvent(new Event('resize')); // Resize iframe height to fit content
+    try {
+        const markdown = await window.callAmplenotePlugin('getNoteContent', noteUUID);
+        if (!window.appSettings) window.appSettings = {};
+        window.appSettings = {
+            [TITLE_AS_DEFAULT_NODE_SETTING]: window.appSettings[TITLE_AS_DEFAULT_NODE_SETTING] || TITLE_AS_DEFAULT_NODE_SETTING_DEFAULT,
+            [INITIAL_EXPAND_LEVEL_SETTING]: window.appSettings[INITIAL_EXPAND_LEVEL_SETTING] || INITIAL_EXPAND_LEVEL_SETTING_DEFAULT,
+            [SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING]: window.appSettings[SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING] || SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING_DEFAULT
+        };
+        await initMarkMap(markdown);
+        window.dispatchEvent(new Event('resize')); // Resize iframe height to fit content
+    } catch (error) {
+        document.body.innerHTML = `<div style="color: red; font-size: 20px; padding: 20px;">${error.message}</div>`;
+    }
 })();
