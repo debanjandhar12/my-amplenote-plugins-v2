@@ -25,10 +25,13 @@ Hi3
 
 \\
 
-Hi4
+> Hi4
 \`\`\`javascript
 console.log('Hello world');
 \`\`\`
+
+- [ ] 🖌️ Rename this note if you want to keep your inbox note named something more creative
+- [ ] 🖌️ Rename2
 `;
             case 'navigate':
                 window.open(args[0], '_blank');

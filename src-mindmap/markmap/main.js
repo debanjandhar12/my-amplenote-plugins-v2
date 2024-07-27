@@ -42,6 +42,10 @@ function addAditionalStyleForMarkMap() {
       --markmap-text-color: rgb(249, 251, 252);
       --markmap-table-border: 1px solid #626d7a;
     }
+    #markmap-svg.markmap blockquote {
+      margin: 0;
+      font-style: oblique;
+    }
     body {
         background-color: #192025;
         color: rgb(249, 251, 252);

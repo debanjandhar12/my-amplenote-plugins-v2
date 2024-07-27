@@ -5,6 +5,12 @@ export const selectorRules = {
             queue: $node.children(),
         };
     },
+    'blockquote': ({ $node, getContent }) => {
+        // console.log('blockquote', $node);
+        return {
+            ...getContent($node),
+        }
+    },
     'h1,h2,h3,h4,h5,h6': ({ $node, getContent }) => {
         // console.log('heading', $node);
         return {
