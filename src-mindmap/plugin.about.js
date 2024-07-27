@@ -8,7 +8,7 @@ export default {
     icon: 'sync_alt',
     instructions: `
 Visualize your markdown notes in a mindmap.
-
+![](https://images.amplenote.com/073fd84a-46af-11ef-bbe6-26e37c279344/6cc8817a-f183-4899-a8ab-af980ff76101.gif)
 To use this plugin, select "Preview mindmap" from the note menu.
 `.trim().replaceAll('\n', '<br />'),
     template: `

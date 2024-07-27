@@ -22,3 +22,23 @@ export const amplenoteLinksPlugin = definePlugin({
         return {};
     },
 });
+
+export const amplenoteBackslashBreakPlugin = definePlugin({
+    name: "ampleNoteBackslashBreakPlugin",
+    transform(transformHooks) {
+        transformHooks.parser.tap((md) => {
+            md.inline.ruler.after('escape', 'backslash_newline', (state, silent) => {
+                const pos = state.pos;
+                if (state.src.charCodeAt(pos) !== '\\'.charCodeAt(0)) return;
+
+                if (!silent) {
+                    state.push('softbreak', 'br', 0);
+                }
+
+                state.pos++;
+                return true;
+            });
+        });
+        return {};
+    }
+});

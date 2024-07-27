@@ -1,11 +1,12 @@
 import { Markmap, loadCSS, loadJS } from '@debanjandhar12/markmap-view';
-import {addTitleToRootNode, parseMarkdownAsMindMap} from "./parser.js";
+import {parseMarkdownAsMindMap} from "./parser.js";
 import {createToolbar} from "./toolbar.js";
 import {
     INITIAL_EXPAND_LEVEL_SETTING,
     INITIAL_EXPAND_LEVEL_SETTING_DEFAULT,
     TITLE_AS_DEFAULT_NODE_SETTING
 } from "../constants.js";
+import {addTitleToRootNode, removeEmptyChildrenFromRoot} from "./parser-result-processor.js";
 
 export async function initMarkMap(markdown) {
     const svgEl = document.querySelector('#markmap-svg');
@@ -17,12 +18,13 @@ export async function initMarkMap(markdown) {
             parseInt(window.appSettings[INITIAL_EXPAND_LEVEL_SETTING]) : parseInt(INITIAL_EXPAND_LEVEL_SETTING_DEFAULT),
     }
     try {
-        const { root,  assets } = parseMarkdownAsMindMap(markdown);
+        let { root,  assets } = parseMarkdownAsMindMap(markdown);
         if (window.appSettings[TITLE_AS_DEFAULT_NODE_SETTING] === 'true' ||
             root.content === '') {
-            addTitleToRootNode(root,
+            root = addTitleToRootNode(root,
                 await window.callAmplenotePlugin('getNoteTitle', window.noteUUID));
         }
+        root = removeEmptyChildrenFromRoot(root);
         const markmap = Markmap.create(svgEl, options, root);
         if(assets.styles) loadCSS(assets.styles);
         if(assets.scripts) loadJS(assets.scripts);

@@ -5,7 +5,7 @@ This is a template / dev env for my Amplenote plugins (heavily customized). It i
 Current plugin list:
 - [ ] Amplenote Omnivore Plugin (70% complete)
 - [ ] Amplenote Charts Plugin (5% complete)
-- [ ] Amplenote Mindmap Plugin (70% complete)
+- [x] Amplenote Mindmap Plugin
 - [x] Amplenote Text2Dia Plugin
 
 # Building, Testing, and Running Plugins
