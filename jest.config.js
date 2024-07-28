@@ -10,6 +10,8 @@ export default {
       esbuildOptions
     ]
   },
+  "transformIgnorePatterns": [
+  ],
   testEnvironment: 'jsdom',
   testEnvironmentOptions: {
       url: 'https://plugins.amplenote.com/'

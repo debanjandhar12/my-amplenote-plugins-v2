@@ -5,7 +5,6 @@ import {visitParents} from 'unist-util-visit-parents'
 export async function autoLink(markdownText, pages) {
     // Extract text nodes from markdownText
     const ast = await parse(markdownText);
-    console.log('ast', ast);
     const flattenedTextNodes = [];
     visitParents(ast, 'text', (node, ancestors) => {
         const isInsideLink = ancestors.some(ancestor => ancestor.type === 'link');
