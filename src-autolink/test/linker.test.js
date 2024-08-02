@@ -1,6 +1,6 @@
-import {autoLink} from "../core/linker.js";
+import {autoLinkMarkdownWithPages} from "../core/linker.js";
 
-describe('autoLink', () => {
+describe('autoLinkMarkdownWithPages', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
@@ -9,7 +9,7 @@ describe('autoLink', () => {
         const markdownText = 'This is a note about JavaScript.';
         const pages = [{ name: 'JavaScript', uuid: '123' }];
 
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('This is a note about [JavaScript](https://www.amplenote.com/notes/123).');
     });
 
@@ -19,7 +19,7 @@ describe('autoLink', () => {
             { name: 'JavaScript', uuid: '123' },
             { name: 'Java', uuid: '456' }
         ];
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('This is a note about [JavaScript](https://www.amplenote.com/notes/123) and [Java](https://www.amplenote.com/notes/456).');
     });
 
@@ -27,7 +27,7 @@ describe('autoLink', () => {
         const markdownText = 'This is a note about Python.';
         const pages = [{ name: 'JavaScript', uuid: '123' }];
 
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('This is a note about Python.');
     });
 
@@ -35,7 +35,7 @@ describe('autoLink', () => {
         const markdownText = '';
         const pages = [{ name: 'JavaScript', uuid: '123' }];
 
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('');
     });
 
@@ -43,7 +43,7 @@ describe('autoLink', () => {
         const markdownText = 'This is a [JavaScript](https://example.com) note.';
         const pages = [{ name: 'JavaScript', uuid: '123' }];
 
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('This is a [JavaScript](https://example.com) note.');
     });
 
@@ -51,7 +51,7 @@ describe('autoLink', () => {
         const markdownText = 'This is an image ![JavaScript](https://example.com/JavaScript.png).';
         const pages = [{ name: 'JavaScript', uuid: '123' }];
 
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('This is an image ![JavaScript](https://example.com/JavaScript.png).');
     });
 
@@ -59,7 +59,7 @@ describe('autoLink', () => {
         const markdownText = 'This is an object <object data="JavaScript"></object>.';
         const pages = [{ name: 'JavaScript', uuid: '123' }];
 
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('This is an object <object data="JavaScript"></object>.');
     });
 
@@ -67,7 +67,7 @@ describe('autoLink', () => {
         const markdownText = 'This is a code block:\n```\nJavaScript\n```\n';
         const pages = [{ name: 'JavaScript', uuid: '123' }];
 
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('This is a code block:\n```\nJavaScript\n```\n');
     });
 
@@ -75,7 +75,7 @@ describe('autoLink', () => {
         const markdownText = 'This is inline code `JavaScript`.';
         const pages = [{ name: 'JavaScript', uuid: '123' }];
 
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('This is inline code `JavaScript`.');
     });
 
@@ -83,7 +83,7 @@ describe('autoLink', () => {
         const markdownText = 'This is **JavaScript**.';
         const pages = [{ name: 'JavaScript', uuid: '123' }];
 
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('This is **[JavaScript](https://www.amplenote.com/notes/123)**.');
     });
 
@@ -91,7 +91,7 @@ describe('autoLink', () => {
         const markdownText = 'This is *JavaScript*.';
         const pages = [{ name: 'JavaScript', uuid: '123' }];
 
-        const result = await autoLink(markdownText, pages);
+        const result = await autoLinkMarkdownWithPages(markdownText, pages);
         expect(result).toBe('This is *[JavaScript](https://www.amplenote.com/notes/123)*.');
     });
 });

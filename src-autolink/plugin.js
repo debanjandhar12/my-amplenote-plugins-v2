@@ -1,12 +1,18 @@
-import {autoLink} from "./core/linker.js";
+import {autoLinkMarkdownWithPages, autoLinkMarkdownWithSection} from "./core/linker.js";
 import {MIN_PAGE_LENGTH_SETTING_DEFAULT} from "./constants.js";
+import {getNoteLinksUUIDFromMarkdown} from "./core/getNoteLinksUUIDFromMarkdown.js";
 
 const plugin = {
     replaceText: async function (app, text) {
         try {
             const pages = await this._getSortedPages(app);
             const textWithFormatting = app.context.selectionContent;
-            let autoLinkedText = await autoLink(textWithFormatting, pages);
+            let autoLinkedText = await autoLinkMarkdownWithPages(textWithFormatting, pages);
+            if(autoLinkedText !== textWithFormatting) {
+                app.context.replaceSelection(autoLinkedText);
+            }
+            const sectionMap = await this._getSortedSections(app);
+            autoLinkedText = await autoLinkMarkdownWithSection(autoLinkedText, sectionMap);
             if(autoLinkedText !== textWithFormatting) {
                 app.context.replaceSelection(autoLinkedText);
             }
@@ -36,6 +42,57 @@ const plugin = {
             return sortedPages;
         } catch (e) {
             throw 'Failed _getSortedPages - ' + e;
+        }
+    },
+    async _getSortedSections(app) {
+        try {
+            // Get backlinks
+            const currentNoteBacklinks = await app.getNoteBacklinks({ uuid: app.context.noteUUID }); // [{"name": "Top 10 Amplenote Tips","tags": ["reference"],"uuid": "6e02d278-4c16-11ef-858e-26e37c279344","created": "2024-07-27T18:17:48+05:30","updated": "2024-07-27T19:25:22+05:30"},{"name": "July 27th, 2024","tags": ["daily-jots"],"uuid": "6e501c0e-4c16-11ef-858e-26e37c279344","created": "2024-07-27T18:17:47+05:30","updated": "2024-07-27T18:17:47+05:30"},{"name": null,"tags": [],"uuid": "2adf8258-4c1f-11ef-858e-26e37c279344","created": "2024-07-27T19:20:21+05:30","updated": "2024-08-02T20:58:08+05:30"}]
+            console.log('currentNoteBacklinks', currentNoteBacklinks);
+
+            // Get forward links
+            const currentNoteForwardLinks = [];
+            const currentPageContent = await app.getNoteContent({ uuid: app.context.noteUUID });
+            for (const uuid of (await getNoteLinksUUIDFromMarkdown(currentPageContent))) {
+                const page = await app.findNote({ uuid });
+                if (page) {
+                    currentNoteForwardLinks.push(page);
+                }
+            }
+
+            // Get current page
+            const currentPage = await app.findNote({ uuid: app.context.noteUUID });
+
+            // Get settings
+            app.settings["Min Page Name Length"] = app.settings["Min Page Name Length"] || MIN_PAGE_LENGTH_SETTING_DEFAULT;
+
+            // Build sections map
+            const sectionMap = {};
+            for (const note of [...currentNoteBacklinks, ...currentNoteForwardLinks, currentPage]) {
+                if (note.name && note.uuid) {
+                    const sections = await app.getNoteSections({ uuid: note.uuid });
+                    console.log('sections', sections);
+                    sections.forEach(section => {
+                       if (section.heading && section.heading.text &&
+                           section.heading.text.length > app.settings["Min Page Name Length"]
+                           && section.heading.text.trim() !== ''
+                           && section.heading.anchor
+                           && section.heading.anchor.length > app.settings["Min Page Name Length"]
+                           && section.heading.anchor.trim() !== '') {
+                           if (!sectionMap[section.heading.text]) {
+                               sectionMap[section.heading.text] = {
+                                   anchor: section.heading.anchor,
+                                   noteUUID: note.uuid
+                               }
+                           }
+                       }
+                    });
+                }
+            }
+            return sectionMap;
+        }
+        catch (e) {
+            throw 'Failed getSortedSections - ' + e;
         }
     }
 }
