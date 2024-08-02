@@ -5,7 +5,6 @@ import path from 'path';
 import cors from 'cors';
 import {readFile} from 'fs/promises';
 import _ from 'lodash';
-import UglifyJS from "uglify-js";
 import {nodeModulesPolyfillPlugin} from "esbuild-plugins-node-modules-polyfill";
 
 // -- Custom Plugins for ESBuild --
@@ -59,11 +58,16 @@ const postProcessAndWritePlugin = {
             // Remove any lines attempting to import module using the esbuild __require
             result = result.replace(/^\s+var import_.+= (?:__toESM\()?__require\(".+"\).*;/gm, "");
             if (process.env.NODE_ENV === 'production') {
-                result = UglifyJS.minify(result, {expression: true, output: {max_line_len: 2048}});
-                if (result.error) {
-                    throw new Error(result.error);
+                const minified = await esbuild.transform(result, {
+                    minify: true,
+                    format: 'cjs',
+                    legalComments: 'none'
+                });
+                if (result.errors && result.errors.length > 0) {
+                    throw new Error(result.errors[0].text);
                 }
-                result = result.code;
+                result = minified.code;
+                result = result.replace(/;\s*$/, ''); // remove ending semicolon if it exists
             }
             result = "/***\n * Source Code: " + repositoryLink + "\n * Author: " + author +
                 "\n * Target Folder: " + targetFolderName + "\n ***/\n" + result;
