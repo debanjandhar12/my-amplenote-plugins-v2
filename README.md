@@ -7,6 +7,7 @@ Current plugin list:
 - [ ] Amplenote Charts Plugin (5% complete)
 - [x] Amplenote Mindmap Plugin
 - [x] Amplenote Text2Dia Plugin
+- [x] Amplenote Autolink Plugin
 
 # Building, Testing, and Running Plugins
 

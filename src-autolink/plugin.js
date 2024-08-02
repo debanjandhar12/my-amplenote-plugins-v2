@@ -1,5 +1,9 @@
 import {autoLinkMarkdownWithPageLinks, autoLinkMarkdownWithSectionLinks} from "./core/linker.js";
-import {MIN_PAGE_LENGTH_SETTING, MIN_PAGE_LENGTH_SETTING_DEFAULT} from "./constants.js";
+import {
+    AUTOLINK_RELATED_NOTES_SECTION_SETTING, AUTOLINK_RELATED_NOTES_SECTION_SETTING_DEFAULT,
+    MIN_PAGE_LENGTH_SETTING,
+    MIN_PAGE_LENGTH_SETTING_DEFAULT
+} from "./constants.js";
 import {getNoteLinksUUIDFromMarkdown} from "./core/getNoteLinksUUIDFromMarkdown.js";
 
 const plugin = {
@@ -11,10 +15,12 @@ const plugin = {
             if(autoLinkedText !== textWithFormatting) {
                 await app.context.replaceSelection(autoLinkedText);
             }
-            const sectionMap = await this._getSortedSections(app);
-            autoLinkedText = await autoLinkMarkdownWithSectionLinks(autoLinkedText, sectionMap);
-            if(autoLinkedText !== textWithFormatting) {
-                await app.context.replaceSelection(autoLinkedText);
+            if (app.settings[AUTOLINK_RELATED_NOTES_SECTION_SETTING] || AUTOLINK_RELATED_NOTES_SECTION_SETTING_DEFAULT) {
+                const sectionMap = await this._getSortedSections(app);
+                autoLinkedText = await autoLinkMarkdownWithSectionLinks(autoLinkedText, sectionMap);
+                if(autoLinkedText !== textWithFormatting) {
+                    await app.context.replaceSelection(autoLinkedText);
+                }
             }
         } catch (e) {
             app.alert(e);
