@@ -2,8 +2,7 @@ import {escapeRegExp} from "lodash";
 import {parse} from "./parser";
 import {visitParents} from 'unist-util-visit-parents'
 
-export async function autoLinkMarkdownWithPages(markdownText, pages) {
-    // Extract text nodes from markdownText
+async function processTextNodes(markdownText, callback) {
     const ast = await parse(markdownText);
     const flattenedTextNodes = [];
     visitParents(ast, 'text', (node, ancestors) => {
@@ -12,15 +11,12 @@ export async function autoLinkMarkdownWithPages(markdownText, pages) {
 
         flattenedTextNodes.push(node);
     });
-    console.log('flattenedTextNodes', flattenedTextNodes);
 
-    // Sort flattenedTextNodes by start offset in descending order
     flattenedTextNodes.sort((a, b) => b.position.start.offset - a.position.start.offset);
 
-    // Process each text node
     let resultMarkdownText = markdownText;
     for (const node of flattenedTextNodes) {
-        const linkedText = autoLinkTextWithPages(node.value, pages);
+        const linkedText = callback(node.value);
         if (linkedText !== node.value) {
             const start = node.position.start.offset;
             const end = node.position.end.offset;
@@ -31,8 +27,11 @@ export async function autoLinkMarkdownWithPages(markdownText, pages) {
     return resultMarkdownText;
 }
 
+export async function autoLinkMarkdownWithPageLinks(markdownText, pages) {
+    return processTextNodes(markdownText, text => autoLinkTextWithPageLinks(text, pages));
+}
 
-function autoLinkTextWithPages(text, pages) {
+function autoLinkTextWithPageLinks(text, pages) {
     pages.forEach(page => {
         const pageNameEscaped = escapeRegExp(page.name);
         let regex = new RegExp(`(^|\\s|,)(${pageNameEscaped})((,|!|\\.)*?)($|\\s|\\n)`, 'gi');
@@ -41,37 +40,11 @@ function autoLinkTextWithPages(text, pages) {
     return text;
 }
 
-export async function autoLinkMarkdownWithSection(markdownText, sectionsMap) {
-    // Extract text nodes from markdownText
-    const ast = await parse(markdownText);
-    const flattenedTextNodes = [];
-    visitParents(ast, 'text', (node, ancestors) => {
-        const isInsideLink = ancestors.some(ancestor => ancestor.type === 'link');
-        if (isInsideLink) return;
-
-        flattenedTextNodes.push(node);
-    });
-
-    // Sort flattenedTextNodes by start offset in descending order
-    flattenedTextNodes.sort((a, b) => b.position.start.offset - a.position.start.offset);
-
-    // Process each text node
-    let resultMarkdownText = markdownText;
-    for (const node of flattenedTextNodes) {
-        const linkedText = autoLinkTextWithSection(node.value, sectionsMap);
-        if (linkedText !== node.value) {
-            const start = node.position.start.offset;
-            const end = node.position.end.offset;
-            resultMarkdownText = resultMarkdownText.slice(0, start) + linkedText + resultMarkdownText.slice(end);
-        }
-    }
-
-    return resultMarkdownText;
+export async function autoLinkMarkdownWithSectionLinks(markdownText, sectionsMap) {
+    return processTextNodes(markdownText, text => autoLinkTextWithSectionLinks(text, sectionsMap));
 }
 
-
-function autoLinkTextWithSection(text, sectionsMap) {
-    // Sort key of sectionsMap and iterate over it
+function autoLinkTextWithSectionLinks(text, sectionsMap) {
     const sortedSections = Object.keys(sectionsMap).sort((a, b) => b.length - a.length);
     sortedSections.forEach(section => {
         const sectionNameEscaped = escapeRegExp(section);
