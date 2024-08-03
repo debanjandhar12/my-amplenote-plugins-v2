@@ -24,15 +24,9 @@ const plugin = {
             });
             if (!confirm) return;
             const noteContent = await app.getNoteContent({uuid: noteUUID});
-            const autoLinkedText = await this._autoLink(app, noteContent, async (autoLinkedText) => {
+            await this._autoLink(app, noteContent, async (autoLinkedText) => {
                 await app.replaceNoteContent({uuid: noteUUID}, autoLinkedText);
             });
-            const newNoteContent = await app.getNoteContent({uuid: noteUUID});
-            if (newNoteContent.trim() !== autoLinkedText.trim()) {
-                await app.replaceNoteContent({uuid: noteUUID}, noteContent);  // attempt to revert back to original content
-                await app.alert('Autolink Failed: replaceNoteContent edge case detected.');
-            }
-            console.log(autoLinkedText, newNoteContent);
         } catch (e) {
             await app.alert(e);
         }
