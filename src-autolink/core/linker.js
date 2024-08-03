@@ -4,6 +4,7 @@ import {visitParents} from 'unist-util-visit-parents'
 
 async function processTextNodes(markdownText, callback) {
     const ast = await parse(markdownText);
+    console.log('ast', ast, markdownText);
     const flattenedTextNodes = [];
     visitParents(ast, 'text', (node, ancestors) => {
         const isInsideLink = ancestors.some(ancestor => ancestor.type === 'link');

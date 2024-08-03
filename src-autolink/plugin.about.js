@@ -1,10 +1,15 @@
-import {AUTOLINK_PLUGIN_VERSION, MIN_PAGE_LENGTH_SETTING} from "./constants.js";
+import {
+    AUTOLINK_PLUGIN_VERSION,
+    AUTOLINK_RELATED_NOTES_SECTION_SETTING,
+    MIN_PAGE_LENGTH_SETTING
+} from "./constants.js";
 
 export default {
     name: 'AutoLink',
     description: 'A plugin to creates links your existing notes automatically.',
     icon: 'insert_link',
-    settings: [MIN_PAGE_LENGTH_SETTING],
+    settings: [MIN_PAGE_LENGTH_SETTING,
+        AUTOLINK_RELATED_NOTES_SECTION_SETTING],
     version: AUTOLINK_PLUGIN_VERSION,
     instructions: `
 The plugin automatically creates links for words in selected text that match your existing notes. To use this feature, simply select the desired text and click on the AutoLink option in the floating toolbar:

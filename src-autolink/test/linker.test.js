@@ -95,3 +95,13 @@ describe('autoLinkMarkdownWithPageLinks', () => {
         expect(result).toBe('This is *[JavaScript](https://www.amplenote.com/notes/123)*.');
     });
 });
+
+describe('autoLinkMarkdownWithPageLinks regression', () => {
+    it('should should link text irrespective of casing', async () => {
+        const markdownText = 'Javascript Tips';
+        const pages = [{ name: 'JavaScript tips', uuid: '123' }];
+
+        const result = await autoLinkMarkdownWithPageLinks(markdownText, pages);
+        expect(result).toBe('[Javascript Tips](https://www.amplenote.com/notes/123)');
+    });
+});
