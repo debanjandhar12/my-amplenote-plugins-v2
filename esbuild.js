@@ -70,6 +70,7 @@ const postProcessAndWritePlugin = {
                 result = result.replace(/;\s*$/, ''); // remove ending semicolon if it exists
             }
             result = "/***\n * Source Code: " + repositoryLink + "\n * Author: " + author +
+                "\n * Character Count: " + result.length + ` (${(result.length/1000000).toPrecision(2)} M)` +
                 "\n * Target Folder: " + targetFolderName + "\n ***/\n" + result;
             return result;
         }
@@ -127,7 +128,8 @@ const customHTMLLoader = {
                     sourcemap: false,
                     metafile: true,
                     format: 'iife',
-                    minify: process.env.NODE_ENV === 'production'
+                    minify: process.env.NODE_ENV === 'production',
+                    legalComments: process.env.NODE_ENV === 'production' ? 'none' : 'inline',
                 });
                 const result = await ctx.rebuild();
                 let inlinedContent = result.outputFiles[0].text;
