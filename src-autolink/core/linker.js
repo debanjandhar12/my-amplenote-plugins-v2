@@ -2,13 +2,16 @@ import {escapeRegExp} from "lodash";
 import {parse} from "./parser";
 import {visitParents} from 'unist-util-visit-parents'
 
-async function processTextNodes(markdownText, callback) {
+async function processTextNodes(markdownText, callback, {avoidLinks = true,
+    avoidHeaders = false} = {}) {
     const ast = await parse(markdownText);
     console.log('ast', ast, markdownText);
     const flattenedTextNodes = [];
     visitParents(ast, 'text', (node, ancestors) => {
         const isInsideLink = ancestors.some(ancestor => ancestor.type === 'link');
-        if (isInsideLink) return;
+        if (avoidLinks &&isInsideLink) return;
+        const isInsideHeader = ancestors.some(ancestor => ancestor.type === 'heading');
+        if (avoidHeaders && isInsideHeader) return;
 
         flattenedTextNodes.push(node);
     });
@@ -42,7 +45,8 @@ function autoLinkTextWithPageLinks(text, pages) {
 }
 
 export async function autoLinkMarkdownWithSectionLinks(markdownText, sectionsMap) {
-    return processTextNodes(markdownText, text => autoLinkTextWithSectionLinks(text, sectionsMap));
+    return processTextNodes(markdownText, text => autoLinkTextWithSectionLinks(text, sectionsMap),
+        {avoidHeaders: true});
 }
 
 function autoLinkTextWithSectionLinks(text, sectionsMap) {

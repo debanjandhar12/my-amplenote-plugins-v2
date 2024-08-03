@@ -5,6 +5,7 @@ import {
     MIN_PAGE_LENGTH_SETTING_DEFAULT
 } from "./constants.js";
 import {getNoteLinksUUIDFromMarkdown} from "./core/getNoteLinksUUIDFromMarkdown.js";
+import {removeLinksFromMarkdown} from "./core/removeLinksFromMarkdown.js";
 
 const plugin = {
     replaceText: async function (app, text) {
@@ -24,9 +25,15 @@ const plugin = {
             });
             if (!confirm) return;
             const noteContent = await app.getNoteContent({uuid: noteUUID});
-            await this._autoLink(app, noteContent, async (autoLinkedText) => {
+            const autoLinkedText = await this._autoLink(app, noteContent, async (autoLinkedText) => {
                 await app.replaceNoteContent({uuid: noteUUID}, autoLinkedText);
             });
+            const newNoteContent = await app.getNoteContent({uuid: noteUUID});
+            if ((await removeLinksFromMarkdown(newNoteContent)).trim() !==
+                (await removeLinksFromMarkdown(autoLinkedText)).trim()) {   // Some links may be removed by replaceNoteContent but that's ok
+                await app.replaceNoteContent({uuid: noteUUID}, noteContent);  // attempt to revert back to original content
+                throw new Error('Autolink Failed: replaceNoteContent edge case detected.');
+            }
         } catch (e) {
             await app.alert(e);
         }
@@ -38,7 +45,8 @@ const plugin = {
             if (autoLinkedText !== text) {
                 await replaceTextFn(autoLinkedText);
             }
-            if (app.settings[AUTOLINK_RELATED_NOTES_SECTION_SETTING] || AUTOLINK_RELATED_NOTES_SECTION_SETTING_DEFAULT) {
+            if ((app.settings[AUTOLINK_RELATED_NOTES_SECTION_SETTING]
+                || AUTOLINK_RELATED_NOTES_SECTION_SETTING_DEFAULT) === 'true') {
                 const sectionMap = await this._getSortedSections(app);
                 autoLinkedText = await autoLinkMarkdownWithSectionLinks(autoLinkedText, sectionMap);
                 if (autoLinkedText !== text) {
@@ -49,7 +57,6 @@ const plugin = {
         } catch (e) {
             throw e;
         }
-        return null;
     },
     async _getSortedPages(app) {
         try {

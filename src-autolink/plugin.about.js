@@ -23,6 +23,6 @@ The plugin automatically creates links for words in selected text that match you
 ### Changelog
 15/07/2023 - First version
 05/04/2024 - Add support for retaining markdown formatting
-28/07/2024 - Greatly improve markdown support
+28/07/2024 - Introduce full page noteOption. Greatly improve markdown support. Also, added experimental support for section linking.
 `
 };
