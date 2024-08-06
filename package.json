@@ -36,10 +36,10 @@
     "ts-jest": "^29.1.0"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-autolink",
-    "test:watch": "jest --testPathPattern=src-autolink --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-autolink",
-    "build:dev": "node esbuild.js $(pwd)/src-autolink --watch --server"
+    "test": "jest --testPathPattern=src-mindmap",
+    "test:watch": "jest --testPathPattern=src-mindmap --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-mindmap",
+    "build:dev": "node esbuild.js $(pwd)/src-mindmap --watch --server"
   },
   "testEnvironment": "jsdom"
 }
