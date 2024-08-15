@@ -166,6 +166,7 @@ const plugin = {
                 throw new Error(`Failed to create dashboard note: ${dashboardNoteTitle}`);
             }
         }
+        dashboardNote = await app.notes.find(dashboardNote.uuid);
         app.settings[OMNIVORE_DASHBOARD_COLUMNS_SETTING] = app.settings[OMNIVORE_DASHBOARD_COLUMNS_SETTING] || OMNIVORE_DASHBOARD_COLUMNS_SETTING_DEFAULT;
         const newDashboardContent = await generateDashboardTable(omnivoreItemsState, app.settings, async (title) => {
             const note = await app.findNote({ name: title });
@@ -174,7 +175,10 @@ const plugin = {
             }
             return await app.getNoteURL({ uuid: note.uuid });
         });
-        await app.replaceNoteContent({ uuid: dashboardNote.uuid }, newDashboardContent);
+        const currentDashboardContent = await dashboardNote.content();
+        if (currentDashboardContent.trim() !== newDashboardContent.trim()) {   // This always false :(, need to fix
+            await app.replaceNoteContent({uuid: dashboardNote.uuid}, newDashboardContent);
+        }
     },
     _syncHighlightsToNotes: async function (omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems, app) {
         const suppressedErrorMessages = [];
@@ -247,7 +251,10 @@ const plugin = {
             const summaryContent = generateNoteSummarySectionMarkdown(omnivoreItem, app.settings);
             const highlightsContent = generateNoteHighlightSectionMarkdown(omnivoreItem, app.settings);
             const content = `# Summary\n${summaryContent}<br/>\n# Highlights\n${highlightsContent}`;
-            await app.replaceNoteContent({ uuid: highlightNote.uuid }, content);
+            const currentContent = await highlightNote.content();
+            if (currentContent.trim() !== content.trim()) {   // This always false :(, need to fix
+                await app.replaceNoteContent({ uuid: highlightNote.uuid }, content);
+            }
         }
 
         return suppressedErrorMessages;
