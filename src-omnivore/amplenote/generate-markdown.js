@@ -7,6 +7,7 @@ import {
 } from "../constants.js";
 import {sortOmnivoreItems, sortOmnivoreItemHighlights} from "./util.js";
 
+// Generate dashboard table for Dashboard note
 export async function generateDashboardTable(omnivoreItemsState, appSettings, getNoteUrlFromTitle) {
     let optionalColumns = (appSettings[OMNIVORE_DASHBOARD_COLUMNS_SETTING] || '').split(',').map(c => c.trim()) || [];
     optionalColumns = optionalColumns.filter(c => ['Author', 'Description', 'UpdatedAt', 'SavedAt', 'PageType', 'ReadingProgressPercent'].includes(c));
@@ -59,10 +60,11 @@ export function generateNoteHighlightSectionMarkdown(omnivoreItemsState, appSett
 
 // Generate summary section for the Highlight note
 export function generateNoteSummarySectionMarkdown(omnivoreItemsState, appSettings) {
-    return `**Author:** ${omnivoreItemsState.author}\n` +
-           `**Description:** ${omnivoreItemsState.description}\n` +
-           `**Page Type:** ${omnivoreItemsState.pageType}\n` +
-           `**Updated At:** ${new Date(omnivoreItemsState.updatedAt).toLocaleString()}\n` +
-           `**Saved At:** ${new Date(omnivoreItemsState.savedAt).toLocaleString()}\n` +
-           `**Reading Progress Percent:** ${omnivoreItemsState.readingProgressPercent} / 100\n`;
+    return `![\\|180](${omnivoreItemsState.image})\n` +
+           `- **Author:** ${omnivoreItemsState.author}\n` +
+           `- **Description:** ${omnivoreItemsState.description}\n` +
+           `- **Page Type:** ${omnivoreItemsState.pageType}\n` +
+           `- **Updated At:** ${new Date(omnivoreItemsState.updatedAt).toLocaleString()}\n` +
+           `- **Saved At:** ${new Date(omnivoreItemsState.savedAt).toLocaleString()}\n` +
+           `- **Reading Progress Percent:** ${omnivoreItemsState.readingProgressPercent} / 100\n`;
 }

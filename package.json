@@ -37,9 +37,9 @@
   },
   "scripts": {
     "test": "jest --testPathPattern=src-mindmap",
-    "test:watch": "jest --testPathPattern=src-mindmap --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-mindmap",
-    "build:dev": "node esbuild.js $(pwd)/src-mindmap --watch --server"
+    "test:watch": "jest --testPathPattern=src-omnivore --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-omnivore",
+    "build:dev": "node esbuild.js $(pwd)/src-omnivore --watch --server"
   },
   "testEnvironment": "jsdom"
 }

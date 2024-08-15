@@ -8,10 +8,13 @@ import {
 
 export default {
     name: 'Amplenote Omnivore',
+    icon: 'book',
     description: 'A plugin to import and sync web clippings, articles, and highlights from the web app omnivore into amplenote.',
     settings: [OMNIVORE_API_KEY_SETTING, OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING, OMNIVORE_DASHBOARD_ORDER_SETTING,
             OMNIVORE_DASHBOARD_COLUMNS_SETTING, BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING, NOTE_HIGHLIGHT_ORDER_SETTING],
     version: OMNIVORE_PLUGIN_VERSION,
+    instructions: `
+`,
     template: `
 ### Code
 <<Code>>

@@ -16,6 +16,7 @@ import {
     generateNoteSummarySectionMarkdown
 } from "./amplenote/generate-markdown.js";
 import {SAMPLE_OMNIVORE_STATE_DATA} from "./test/test-data.js";
+import _ from "lodash";
 
 const plugin = {
     appOption: {
@@ -73,11 +74,13 @@ const plugin = {
         let lastOmnivoreItemsState = [];
         try {
             lastOmnivoreItemsState = JSON.parse(app.settings["lastOmnivoreItemsState"])
-        } catch (e) {}
+        } catch (e) {
+            console.error("Failed to parse lastOmnivoreItemsState", e);
+        }
 
 
         // Fetch all omnivore items which are non-archived
-        let omnivoreItemsState = JSON.parse(JSON.stringify(lastOmnivoreItemsState));
+        let omnivoreItemsState = _.cloneDeep(lastOmnivoreItemsState);
         const omnivoreItemsStateDelta = [];
         for (let after = 0; ; after += OMNIVORE_SYNC_BATCH_SIZE) {
             const [items, hasNextPage] = await getOmnivoreItems(
@@ -243,7 +246,7 @@ const plugin = {
 
             const summaryContent = generateNoteSummarySectionMarkdown(omnivoreItem, app.settings);
             const highlightsContent = generateNoteHighlightSectionMarkdown(omnivoreItem, app.settings);
-            const content = `# Summary:\n${summaryContent}<br/>\n# Highlights\n${highlightsContent}`;
+            const content = `# Summary\n${summaryContent}<br/>\n# Highlights\n${highlightsContent}`;
             await app.replaceNoteContent({ uuid: highlightNote.uuid }, content);
         }
 

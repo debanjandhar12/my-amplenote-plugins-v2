@@ -1,50 +1,45 @@
+import _ from "lodash";
+
 export function sortOmnivoreItems(omnivoreItems, sortKeyOrder) {
     let [sortKey, sortOrder] = sortKeyOrder.trim().split("-");
 
-    const validKeys = ["updatedat", "savedat"];
-    if (validKeys.indexOf(sortKey.toLowerCase()) === -1) {
-        throw new Error(`Invalid sort key: ${sortKey}`);
-    }
-    else {
-        sortKey = validKeys[validKeys.indexOf(sortKey.toLowerCase())];
+    const validKeys = ["updatedAt", "savedAt"];
+    if (!validKeys.map(k => k.toLowerCase()).includes(sortKey.toLowerCase())) {
+        throw new Error(`Invalid omnivore items sort key: ${sortKey}`);
+    } else {
+        sortKey = validKeys[validKeys.map(k => k.toLowerCase()).indexOf(sortKey.toLowerCase())];
     }
 
-    if (["asc", "desc"].indexOf(sortOrder) === -1) {
+    if (!["asc", "desc"].includes(sortOrder)) {
         throw new Error(`Invalid sort order: ${sortOrder}`);
     }
 
-    return omnivoreItems.sort((a, b) => {
-        if (a[sortKey] < b[sortKey]) {
-            return sortOrder === "asc" ? -1 : 1;
-        }
-        else if (a[sortKey] > b[sortKey]) {
-            return sortOrder === "asc" ? 1 : -1;
-        }
-        return 0;
+    return _.cloneDeep(omnivoreItems).sort((a, b) => {
+        const aValue = a[sortKey] || "";
+        const bValue = b[sortKey] || "";
+        const comparison = aValue.toString().localeCompare(bValue.toString());
+        return sortOrder === "asc" ? comparison : -comparison;
     });
 }
 
 export function sortOmnivoreItemHighlights(omnivoreItemHighlights, sortKeyOrder) {
     let [sortKey, sortOrder] = sortKeyOrder.trim().split("-");
 
-    const validKeys = ["updatedat"];
-    if (validKeys.indexOf(sortKey.toLowerCase()) === -1) {
-        throw new Error(`Invalid sort key: ${sortKey}`);
-    }
-    else {
-        sortKey = validKeys[validKeys.indexOf(sortKey.toLowerCase())];
+    const validKeys = ["updatedAt"];
+    if (!validKeys.map(k => k.toLowerCase()).includes(sortKey.toLowerCase())) {
+        throw new Error(`Invalid highlights sort key: ${sortKey}`);
+    } else {
+        sortKey = validKeys[validKeys.map(k => k.toLowerCase()).indexOf(sortKey.toLowerCase())];
     }
 
-    if (["asc", "desc"].indexOf(sortOrder) === -1) {
+    if (!["asc", "desc"].includes(sortOrder)) {
         throw new Error(`Invalid sort order: ${sortOrder}`);
     }
-    return omnivoreItemHighlights.sort((a, b) => {
-        if (a[sortKey] < b[sortKey]) {
-            return sortOrder === "asc" ? -1 : 1;
-        }
-        else if (a[sortKey] > b[sortKey]) {
-            return sortOrder === "asc" ? 1 : -1;
-        }
-        return 0;
+
+    return _.cloneDeep(omnivoreItemHighlights).sort((a, b) => {
+        const aValue = a[sortKey] || "";
+        const bValue = b[sortKey] || "";
+        const comparison = aValue.toString().localeCompare(bValue.toString());
+        return sortOrder === "asc" ? comparison : -comparison;
     });
 }
