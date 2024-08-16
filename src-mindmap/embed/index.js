@@ -1,4 +1,4 @@
-import {initMarkMap} from "../markmap/main.js";
+import {initMarkMap} from "../markmap/renderer.js";
 import {
     INITIAL_EXPAND_LEVEL_SETTING,
     INITIAL_EXPAND_LEVEL_SETTING_DEFAULT, SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING,
@@ -38,6 +38,10 @@ console.log('Hello world');
                 return;
             case 'getNoteTitle':
                 return 'Mock Note Title';
+            case 'getAdditionalOptionSelection':
+                return 'Save as png image';
+            case 'saveFile':
+                return true;
         }
     }
 }
@@ -48,21 +52,17 @@ const body = document.body,
 window.addEventListener('resize', function() {
     const iframeHeight = Math.min(html.clientHeight, html.scrollHeight);
     body.style.height = (iframeHeight-24) + 'px';
+    // TODO: markmap.rescale ?
 });
 
 // On page load
 (async () => {
-    try {
-        const markdown = await window.callAmplenotePlugin('getNoteContent', noteUUID);
-        if (!window.appSettings) window.appSettings = {};
-        window.appSettings = {
-            [TITLE_AS_DEFAULT_NODE_SETTING]: window.appSettings[TITLE_AS_DEFAULT_NODE_SETTING] || TITLE_AS_DEFAULT_NODE_SETTING_DEFAULT,
-            [INITIAL_EXPAND_LEVEL_SETTING]: window.appSettings[INITIAL_EXPAND_LEVEL_SETTING] || INITIAL_EXPAND_LEVEL_SETTING_DEFAULT,
-            [SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING]: window.appSettings[SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING] || SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING_DEFAULT
-        };
-        await initMarkMap(markdown);
-        window.dispatchEvent(new Event('resize')); // Resize iframe height to fit content
-    } catch (error) {
-        document.body.innerHTML = `<div style="color: red; font-size: 20px; padding: 20px;">${error.message}</div>`;
-    }
+    if (!window.appSettings) window.appSettings = {};
+    window.appSettings = {
+        [TITLE_AS_DEFAULT_NODE_SETTING]: window.appSettings[TITLE_AS_DEFAULT_NODE_SETTING] || TITLE_AS_DEFAULT_NODE_SETTING_DEFAULT,
+        [INITIAL_EXPAND_LEVEL_SETTING]: window.appSettings[INITIAL_EXPAND_LEVEL_SETTING] || INITIAL_EXPAND_LEVEL_SETTING_DEFAULT,
+        [SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING]: window.appSettings[SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING] || SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING_DEFAULT
+    };
+    await initMarkMap();
+    window.dispatchEvent(new Event('resize')); // Resize iframe height to fit content
 })();

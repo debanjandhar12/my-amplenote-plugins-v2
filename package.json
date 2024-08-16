@@ -18,7 +18,8 @@
     "remark-parse": "11.0.0",
     "unified": "11.0.0",
     "unist-util-visit": "^5.0.0",
-    "unist-util-visit-parents": "6.0.1"
+    "unist-util-visit-parents": "6.0.1",
+    "d3-svg-to-png": "^0.3.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
@@ -37,9 +38,9 @@
   },
   "scripts": {
     "test": "jest --testPathPattern=src-mindmap",
-    "test:watch": "jest --testPathPattern=src-omnivore --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-omnivore",
-    "build:dev": "node esbuild.js $(pwd)/src-omnivore --watch --server"
+    "test:watch": "jest --testPathPattern=src-mindmap --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-mindmap",
+    "build:dev": "node esbuild.js $(pwd)/src-mindmap --watch --server"
   },
   "testEnvironment": "jsdom"
 }

@@ -26,6 +26,27 @@ const plugin = {
                 const [noteUUID] = args;
                 return (await app.notes.find(noteUUID)).name;
             }
+            case 'getAdditionalOptionSelection': {
+                const result = app.prompt("", {
+                    inputs: [
+                        { label: "Select an option", type: "select", options: [
+                                { label: "Expand all nodes recursively", value: "Expand all nodes recursively" },
+                                { label: "Collapse all nodes recursively", value: "Collapse all nodes recursively" },
+                                { label: "Save as png image", value: "Save as png image" }
+                            ], value: "Expand all nodes recursively"
+                        }
+                    ]
+                });
+                return result;
+            }
+            case 'saveFile': {
+                let {name, data} = args[0];
+                if (data.startsWith('data:')) { // if data is url, convert to blob
+                    const response = await fetch(data);
+                    data = await response.blob();
+                }
+                return app.saveFile(data, name);
+            }
             default:
                 console.log('Unknown command: ' + commandName);
         }

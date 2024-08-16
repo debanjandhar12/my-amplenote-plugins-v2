@@ -2,7 +2,7 @@ import { Transformer } from '@debanjandhar12/markmap-lib/no-plugins';
 import {pluginCheckbox, pluginHljs, pluginSourceLines} from "@debanjandhar12/markmap-lib/plugins";
 import {amplenoteBackslashBreakPlugin, amplenoteLinksPlugin} from "./parser-plugins.js";
 import {selectorRules} from "./parser-rules.js";
-import {SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING} from "../constants.js";
+import {SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING} from "../../constants.js";
 
 
 export function parseMarkdownAsMindMap(markdown) {
