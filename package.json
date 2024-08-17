@@ -19,7 +19,8 @@
     "unified": "11.0.0",
     "unist-util-visit": "^5.0.0",
     "unist-util-visit-parents": "6.0.1",
-    "d3-svg-to-png": "^0.3.1"
+    "d3-svg-to-png": "^0.3.1",
+    "chart.js": "^4.4.3"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
@@ -37,10 +38,10 @@
     "ts-jest": "^29.1.0"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-mindmap",
-    "test:watch": "jest --testPathPattern=src-mindmap --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-mindmap",
-    "build:dev": "node esbuild.js $(pwd)/src-mindmap --watch --server"
+    "test": "jest --testPathPattern=src-charts",
+    "test:watch": "jest --testPathPattern=src-charts --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-charts",
+    "build:dev": "node esbuild.js $(pwd)/src-charts --watch --server"
   },
   "testEnvironment": "jsdom"
 }
