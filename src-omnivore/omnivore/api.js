@@ -62,7 +62,7 @@ const fetchContentForItems = async (endpoint, apiKey, items) => {
             // timeout if download takes too long
             item.content = await Promise.race([
                 downloadFromUrl(c.downloadUrl),
-                new Promise((_, reject) => setTimeout(() => reject("Timeout"), 60_000)) // 60 seconds
+                new Promise((_, reject) => setTimeout(() => reject("Timeout"), 60000))
             ])
         })
     )

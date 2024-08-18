@@ -7,9 +7,9 @@ import {
     OMNIVORE_DASHBOARD_NOTE_TITLE_DEFAULT,
     OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING,
     OMNIVORE_PLUGIN_VERSION,
-    OMNIVORE_SYNC_BATCH_SIZE
+    OMNIVORE_SYNC_BATCH_SIZE, SYNC_ARTICLE_CONTENT_SETTING, SYNC_ARTICLE_CONTENT_SETTING_DEFAULT
 } from "./constants.js";
-import {getDeletedOmnivoreItems, getOmnivoreItems} from "./omnivore/api.js";
+import { getDeletedOmnivoreItems, getOmnivoreItems} from "./omnivore/api.js";
 import {
     generateDashboardTable,
     generateNoteHighlightSectionMarkdown,
@@ -89,7 +89,7 @@ const plugin = {
                 OMNIVORE_SYNC_BATCH_SIZE,
                 lastSyncTime,
                 "",
-                false,
+                (app.settings[SYNC_ARTICLE_CONTENT_SETTING] || SYNC_ARTICLE_CONTENT_SETTING_DEFAULT).includes("true"),
                 'highlightedMarkdown',
                 OMINOVRE_API_ENDPOINT
             );
@@ -143,7 +143,7 @@ const plugin = {
             const [items, hasNextPage] = await getOmnivoreItems(
                 app.settings[OMNIVORE_API_KEY_SETTING],
                 0,
-                OMNIVORE_SYNC_BATCH_SIZE,
+                1,
                 new Date().toISOString(),
                 "",
                 false,
@@ -208,52 +208,38 @@ const plugin = {
 
         // - Step 3: Create or update highlight notes -
         for (let omnivoreItem of omnivoreItemsStateFiltered) {
-            let highlightNote = await app.findNote({ name: omnivoreItem.title });
-            if (!highlightNote) {
-                highlightNote = await app.notes.create(omnivoreItem.title, []);
-                if (!highlightNote || !highlightNote.uuid) {
-                    suppressedErrorMessages.push(`Failed to create highlight note: ${omnivoreItem.title}`);
-                    console.log(`Failed to create highlight note: ${omnivoreItem.title}`);
+            try {
+                let highlightNote = await app.findNote({ name: omnivoreItem.title });
+                if (!highlightNote) {
+                    highlightNote = await app.notes.create(omnivoreItem.title, []);
+                    if (!highlightNote || !highlightNote.uuid) {
+                        suppressedErrorMessages.push(`Failed to create highlight note: ${omnivoreItem.title}`);
+                        console.log(`Failed to create highlight note: ${omnivoreItem.title}`);
+                    }
                 }
-            }
-            else {
                 // Required to get note interface instead of simple note object
                 highlightNote = await app.notes.find(highlightNote.uuid);
-            }
 
-            // Handle tags
-            app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING] = app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING] || BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT;
-            await highlightNote.removeTag(BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT);
-            await highlightNote.addTag(app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING]);
+                // Handle tags
+                app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING] = app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING] || BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT;
+                if (BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT !== app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING] &&
+                    (highlightNote.tags.includes(BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT) || !highlightNote.tags.includes(app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING]))) {
+                    await highlightNote.removeTag(BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT);
+                    await highlightNote.addTag(app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING]);
+                }
 
-            // // Create Sections if not exist
-            // const sections = await highlightNote.sections();
-            // const sectionNames = sections.flatMap(obj => {
-            //     if (obj.heading && obj.heading.text) {
-            //         return [obj.heading];
-            //     } else {
-            //         return []; // handle case where obj.heading does not exist
-            //     }
-            // });
-            //
-            // if (!sectionNames.find(s => s.text === "Summary") || !sectionNames.find(s => s.text === "Highlights")) {
-            //     await app.replaceNoteContent({ uuid: highlightNote.uuid }, "# Summary\n\n# Highlights\n\n");
-            // }
-            //
-            // // Generate content and replace
-            // const summarySection = { heading: { text: "Summary" }};
-            // const highlightsSection = { heading: { text: "Highlights" }};
-            // const summaryContent = generateNoteSummarySectionMarkdown(omnivoreItem, app.settings);
-            // const highlightsContent = generateNoteHighlightSectionMarkdown(omnivoreItem, app.settings);
-            // await app.replaceNoteContent({ uuid: highlightNote.uuid }, summaryContent, summarySection);
-            // await app.replaceNoteContent({ uuid: highlightNote.uuid }, highlightsContent, { highlightsSection });
-
-            const summaryContent = generateNoteSummarySectionMarkdown(omnivoreItem, app.settings);
-            const highlightsContent = generateNoteHighlightSectionMarkdown(omnivoreItem, app.settings);
-            const content = `# Summary\n${summaryContent}<br/>\n# Highlights\n${highlightsContent}`;
-            const currentContent = await highlightNote.content();
-            if (currentContent.trim() !== content.trim()) {   // This always false :(, need to fix
-                await app.replaceNoteContent({ uuid: highlightNote.uuid }, content);
+                const summaryContent = generateNoteSummarySectionMarkdown(omnivoreItem, app.settings);
+                const highlightsContent = generateNoteHighlightSectionMarkdown(omnivoreItem, app.settings);
+                const newNoteContent = `# Summary\n${summaryContent}<br/>\n# Highlights\n${highlightsContent}`
+                    + ((app.settings[SYNC_ARTICLE_CONTENT_SETTING] || SYNC_ARTICLE_CONTENT_SETTING_DEFAULT).includes("true") && omnivoreItem.content
+                    && omnivoreItem.content !== "" ? `\n\n# Content\n${omnivoreItem.content.length > 60000 ? omnivoreItem.content.substring(0, 60000) + "..." : omnivoreItem.content}` : "");
+                const currentNoteContent = await highlightNote.content();
+                if (currentNoteContent.trim() !== newNoteContent.trim()) {   // This always false :(, need to fix
+                    await app.replaceNoteContent({ uuid: highlightNote.uuid }, newNoteContent);
+                }
+            } catch (e) {
+                suppressedErrorMessages.push(`Failed to sync highlight note: ${omnivoreItem.title}. Error:` + typeof e === "string" ? e : e.message);
+                console.error(`Failed to sync highlight note: ${omnivoreItem.title}`, e);
             }
         }
 
