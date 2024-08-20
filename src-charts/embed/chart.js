@@ -26,9 +26,9 @@ async function init() {
     const noteContent = await window.callAmplenotePlugin('getNoteContent', noteUUID);
     const tableAtIndex = getMarkdownTableByIdx(noteContent, window.chartData.tableIndex);
     const table2DArray = parseMarkdownTable(tableAtIndex);
-    console.log(getChartDataFrom2DArray(table2DArray));
     const chartJSParamObj = {
         type: window.chartData.chartType,
+        responsive: true,
         data: getChartDataFrom2DArray(table2DArray)
     };
     const ctx = document.getElementById('chart').getContext('2d');
@@ -37,14 +37,5 @@ async function init() {
 
 (async () => {
     if (!window.appSettings) window.appSettings = {};
-    window.dispatchEvent(new Event('resize'));
     await init();
 })();
-
-// Resize iframe height to fit content handler
-const body = document.body,
-    html = document.documentElement;
-window.addEventListener('resize', function() {
-    const iframeHeight = Math.min(html.clientHeight, html.scrollHeight);
-    body.style.height = (iframeHeight-24) + 'px';
-});
