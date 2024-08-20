@@ -26,5 +26,9 @@ export function getMarkdownTableByIdx(markdownText, idx = 0) {
 
     const { start, end } = targetTable.position;
 
+    if (markdownText[end.offset - 2] === '\n' && markdownText[end.offset - 1] === '\\') {
+        return markdownText.substring(start.offset, end.offset - 2);
+    }
+
     return markdownText.substring(start.offset, end.offset);
 }

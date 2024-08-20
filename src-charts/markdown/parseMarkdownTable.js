@@ -25,5 +25,6 @@ export function parseMarkdownTable(markdownText) {
         return false; // Stop after processing the first table
     });
 
-    return result;
+    // Remove all empty rows
+    return result.filter(row => !row.every(cell => cell.trim() === ''));
 }

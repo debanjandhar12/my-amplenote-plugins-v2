@@ -1,6 +1,7 @@
 import _ from "lodash";
 
 export function getChartDataFrom2DArray(table2DArray, categoryDirection = 'row') {
+    // -- Transpose data if column-oriented --
     const isColumnOriented = categoryDirection.toLowerCase() === 'column';
     let data = isColumnOriented ? transposeArray(table2DArray) : table2DArray;
     const dataCopy = _.cloneDeep(data);
@@ -44,7 +45,7 @@ export function getChartDataFrom2DArray(table2DArray, categoryDirection = 'row')
     for (let i = 0; i < data.length; i++) {
         const row = data[i];
         if (seriesIndex === null && data.length === 1) {
-            datasets.push(...row);
+            datasets.push({ data: row });
         }
         else {
             seriesIndex = seriesIndex === null ? 0 : seriesIndex;
@@ -61,11 +62,11 @@ export function getChartDataFrom2DArray(table2DArray, categoryDirection = 'row')
     // Handle single-row data
     if (dataCopy.length === 1 && !isNaN(parseFloat(dataCopy[0][0])) && isFinite(dataCopy[0][0])) {
         labels = [dataCopy[0][dataCopy[0].length-1]];
-        datasets.push(...dataCopy[0].slice(0, -1));
+        datasets.push({ data: dataCopy[0].slice(0, -1)});
     }
     else if (dataCopy.length === 1 && !isNaN(parseFloat(dataCopy[0][dataCopy[0].length-1])) && isFinite(dataCopy[0].length-1)) {
         labels = [dataCopy[0][0]];
-        datasets.push(...dataCopy[0].slice(1));
+        datasets.push({ data: dataCopy[0].slice(1)});
     }
 
     return { labels, datasets };

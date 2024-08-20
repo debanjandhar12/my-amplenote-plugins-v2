@@ -67,7 +67,7 @@ describe('getChartDataFrom2DArray', () => {
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'row');
         expect(result.labels).toEqual(['Company A','Company B', 'Company C']);
-        expect(result.datasets).toEqual(['10', '20', '30']);
+        expect(result.datasets).toEqual([{data: ['10', '20', '30']}]);
     });
 
     test('should handle two-column data with categoryDirection column', () => {
@@ -77,7 +77,7 @@ describe('getChartDataFrom2DArray', () => {
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'column');
         expect(result.labels).toEqual(['Company A','Company B']);
-        expect(result.datasets).toEqual(['10', '20']);
+        expect(result.datasets).toEqual([{data: ['10', '20']}]);
     });
 
     test('should handle single-row data with categoryDirection column (first)', () => {
@@ -86,7 +86,7 @@ describe('getChartDataFrom2DArray', () => {
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'row');
         expect(result.labels).toEqual(['Company A']);
-        expect(result.datasets).toEqual(['10', '20', '30']);
+        expect(result.datasets).toEqual([{data: ['10', '20', '30']}]);
     });
 
     test('should handle single-row data with categoryDirection column (end)', () => {
@@ -95,7 +95,7 @@ describe('getChartDataFrom2DArray', () => {
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'row');
         expect(result.labels).toEqual(['Company A']);
-        expect(result.datasets).toEqual(['10', '20', '30']);
+        expect(result.datasets).toEqual([{data: ['10', '20', '30']}]);
     });
 
     test('should handle single-column data with categoryDirection row', () => {
@@ -106,6 +106,6 @@ describe('getChartDataFrom2DArray', () => {
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'column');
         expect(result.labels).toEqual(['Company A']);
-        expect(result.datasets).toEqual(['10', '20']);
+        expect(result.datasets).toEqual([{data: ['10', '20']}]);
     });
 });

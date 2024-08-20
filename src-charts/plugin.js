@@ -45,22 +45,22 @@ const plugin = {
                 if (!chartData.tableIndex || isNaN(chartData.tableIndex)) {
                     throw new Error('TableIndex is required and must be a number');
                 }
-                if (!chartData.horizontalAxisLabels || !['first column', 'first row'].includes(chartData.horizontalAxisLabels)) {
+                if (!chartData.horizontalAxisLabels || !['column', 'row'].includes(chartData.horizontalAxisLabels)) {
                     throw new Error('Horizontal (category) axis labels is required');
                 }
 
-                // Return object tag
-                return `<object data="plugin://${app.context.pluginUUID}?caller=object&chartdata=${encodeURIComponent(JSON.stringify(chartData))}" data-aspect-ratio="2" />`;
+                await app.context.replaceSelection(`<object data="plugin://${ app.context.pluginUUID }?${encodeURIComponent(JSON.stringify(chartData))}" data-aspect-ratio="2" />`);
+
+                return null;
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
             }
         }
     },
-    renderEmbed(app, ...args) {
+    renderEmbed(app, args, source = 'embed') {
         try {
-            args = this._processEmbedArgs(args);
-            const decodedChartData = JSON.parse(decodeURIComponent(args.chartData));
+            const decodedChartData = JSON.parse(decodeURIComponent(args));
             const htmlWithChartData = addWindowVariableToHtmlString(chartHTML, 'chartData', decodedChartData);
             return addWindowVariableToHtmlString(htmlWithChartData, 'appSettings', app.settings);
         } catch (e) {
@@ -75,27 +75,12 @@ const plugin = {
                 const [noteUUID] = args;
                 return app.getNoteContent({uuid: noteUUID});
             }
+            case 'alert': {
+                const [message] = args;
+                return app.alert(message);
+            }
             default:
                 console.log('Unknown command: ' + commandName);
-        }
-    },
-    // -- Utils --
-    _processEmbedArgs(args) {
-        if (args.length !== 1 || typeof args[0] !== 'string') {
-            return args;
-        }
-        try {
-            const params = new URLSearchParams(args[0]);
-            const caller = params.get('caller');
-            const chartData = params.get('chartdata');
-
-            if (caller === 'object') {
-                return {caller, chartData};
-            } else {
-                return args; // Handle peak viewer caller case
-            }
-        } catch (e) {
-            return args; // Handle peak viewer caller case
         }
     }
 }

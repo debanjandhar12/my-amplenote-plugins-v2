@@ -31,8 +31,8 @@ export const TABLE_CHART_CONFIG_DIALOG = ["Enter chart type to create:", {
             label: "Horizontal (category) axis labels",
             type: "select",
             options: [
-                { label: "First column", value: "first column"},
-                { label: "First row", value: "first row"}
+                { label: "Column", value: "column"},
+                { label: "Row", value: "row"}
             ],
             value: "first column"
         },
@@ -42,7 +42,8 @@ export const TABLE_CHART_CONFIG_DIALOG = ["Enter chart type to create:", {
             value: false
         }
     ]
-}];
+}]; // TODO: Add size options
 
 // Other constants
 export const CHARTS_PLUGIN_VERSION = "1.0.1";
+
