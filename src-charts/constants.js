@@ -34,12 +34,22 @@ export const TABLE_CHART_CONFIG_DIALOG = ["Enter chart type to create:", {
                 { label: "Column", value: "column"},
                 { label: "Row", value: "row"}
             ],
-            value: "first column"
+            value: "row"
         },
         {
             label: "Start from zero?",
             type: "checkbox",
             value: false
+        },
+        {
+            label: "Chart aspect ratio size",
+            type: "select",
+            options: [
+                { label: "1", value: "1"},
+                { label: "2", value: "2"},
+                { label: "3", value: "3"}
+            ],
+            value: "2"
         }
     ]
 }]; // TODO: Add size options

@@ -8,7 +8,10 @@ const plugin = {
         "Insert chart from table": async function (app) {
             try {
                 // Prompt for chart data
-                const promptResult = await app.prompt(...TABLE_CHART_CONFIG_DIALOG);
+                const dialog = TABLE_CHART_CONFIG_DIALOG;
+                if (app.context.noteUUID)
+                    dialog[1].inputs[1].value = app.context.noteUUID; // Set default note - doesn't work
+                const promptResult = await app.prompt(...dialog);
                 if (!promptResult) return;
                 const [
                     CHART_TYPE,
@@ -16,16 +19,19 @@ const plugin = {
                     CHART_TITLE,
                     TABLE_INDEX_IN_NOTE,
                     HORIZONTAL_AXIS_LABEL_DIRECTION,
-                    START_FROM_ZERO
+                    START_FROM_ZERO,
+                    CHART_ASPECT_RATIO_SIZE
                 ] = promptResult;
                 const chartData = {
                     DATA_SOURCE: 'note',
                     CHART_TYPE,
                     DATA_SOURCE_NOTE_UUID,
+                    DATA_SOURCE_HEADER_FILTER: '',  // For future use
                     CHART_TITLE,
                     TABLE_INDEX_IN_NOTE,
                     HORIZONTAL_AXIS_LABEL_DIRECTION,
-                    START_FROM_ZERO
+                    START_FROM_ZERO,
+                    CHART_ASPECT_RATIO_SIZE
                 };
 
                 // Validate input
@@ -46,8 +52,11 @@ const plugin = {
                 if (!chartData.HORIZONTAL_AXIS_LABEL_DIRECTION || !['column', 'row'].includes(chartData.HORIZONTAL_AXIS_LABEL_DIRECTION)) {
                     throw new Error('Horizontal (category) axis labels is required');
                 }
+                if (!chartData.CHART_ASPECT_RATIO_SIZE || isNaN(parseInt(chartData.CHART_ASPECT_RATIO_SIZE))) {
+                    throw new Error('Chart size is required');
+                }
 
-                await app.context.replaceSelection(`<object data="plugin://${ app.context.pluginUUID }?${encodeURIComponent(JSON.stringify(chartData))}" data-aspect-ratio="2" />`);
+                await app.context.replaceSelection(`<object data="plugin://${ app.context.pluginUUID }?${encodeURIComponent(JSON.stringify(chartData))}" data-aspect-ratio="${chartData.CHART_ASPECT_RATIO_SIZE}" />`);
 
                 return null;
             } catch (e) {
@@ -59,8 +68,7 @@ const plugin = {
     renderEmbed(app, args, source = 'embed') {
         try {
             const decodedChartData = JSON.parse(decodeURIComponent(args));
-            const htmlWithChartData = addWindowVariableToHtmlString(chartHTML, 'chartData', decodedChartData);
-            return addWindowVariableToHtmlString(htmlWithChartData, 'appSettings', app.settings);
+            return addWindowVariableToHtmlString(chartHTML, 'chartData', decodedChartData);
         } catch (e) {
             console.error(e);
             return 'Error parsing object tag';
@@ -69,8 +77,8 @@ const plugin = {
     async onEmbedCall(app, commandName, ...args) {
         console.log('onEmbedCall', commandName, args);
         switch (commandName) {
-            case 'getSetting':
-                return { type: 'success', result: app.setting };
+            case 'getSettings':
+                return { type: 'success', result: app.settings };
             case 'getAppProp':
                 const propName = args[0];
                 return { type: 'success', result: _.get(app, propName) };
