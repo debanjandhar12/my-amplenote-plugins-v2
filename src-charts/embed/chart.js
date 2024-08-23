@@ -4,47 +4,82 @@ import {getMarkdownTableByIdx} from "../markdown/getMarkdownTableByIdx.js";
 import {parseMarkdownTable} from "../markdown/parseMarkdownTable.js";
 import Chart from 'chart.js/auto';
 
-if(!window.chartData && process.env.NODE_ENV === 'development') {
+window.app = {};
+if (process.env.NODE_ENV === 'development') {
     window.chartData = {
-        chartType: 'bar',
-        dataSourceNote: 'mock-uuid',
-        header: "Title for chart",
-        tableIndex: 0,
-        horizontalAxisLabels: 'column',
-        startFromZero: true
+        DATA_SOURCE: 'note',
+        CHART_TYPE: 'bar',
+        DATA_SOURCE_NOTE_UUID: 'mock-uuid',
+        CHART_TITLE: "Title for chart",
+        TABLE_INDEX_IN_NOTE: 0,
+        HORIZONTAL_AXIS_LABEL_DIRECTION: 'row',
+        START_FROM_ZERO: true
     };
-    window.callAmplenotePlugin = async function(command, ...args) {
-        switch (command) {
-            case 'getNoteContent':
-                return `| | |
+    window.app.getNoteContent = async function() {
+        return `| | |
 |-|-|
 |Company A|Company B|
 |1|2|`;
-        }
-    }
+    };
+    window.app.alert = window.alert;
 }
+
+window.app = new Proxy(window.app, {
+    get: function(target, prop, receiver) {
+        if (prop in target) {
+            return target[prop];
+        }
+        return async function(...args) {
+            const returnObj = await window.callAmplenotePlugin(prop, ...args);
+            if (returnObj.type === 'success') {
+                return returnObj.result;
+            } else {
+                throw new Error(returnObj.result);
+            }
+        };
+    }
+});
 
 let chart;
 
 async function initChart() {
     const ctx = document.getElementById('chart').getContext('2d');
     try {
-        const noteUUID = window.chartData.dataSourceNote;
-        const noteContent = await window.callAmplenotePlugin('getNoteContent', noteUUID);
+        const noteContent = await app.getNoteContent({uuid: window.chartData.DATA_SOURCE_NOTE_UUID});
         console.log('noteContent', noteContent);
-        const tableAtIndex = getMarkdownTableByIdx(noteContent, parseInt(window.chartData.tableIndex));
+        const tableAtIndex = getMarkdownTableByIdx(noteContent, parseInt(window.chartData.TABLE_INDEX_IN_NOTE));
         if (!tableAtIndex) {
-            throw new Error(`Table not found at index ${window.chartData.tableIndex} in note ${noteUUID}`);
+            throw new Error(`Table not found at index ${window.chartData.TABLE_INDEX_IN_NOTE} in note ${
+                window.chartData.DATA_SOURCE_NOTE_UUID
+            }`);
         }
         console.log('tableAtIndex', tableAtIndex);
         const table2DArray = parseMarkdownTable(tableAtIndex);
         console.log('table2DArray', table2DArray);
-        const chartDataFrom2DArray = getChartDataFrom2DArray(table2DArray, window.chartData.horizontalAxisLabels);
+        const chartDataFrom2DArray = getChartDataFrom2DArray(table2DArray, window.chartData.HORIZONTAL_AXIS_LABEL_DIRECTION);
         console.log('chartDataFrom2DArray', chartDataFrom2DArray);
+
+        const chartJSParamObjOptions = {};
+        if (window.chartData.CHART_TITLE) {
+            chartJSParamObjOptions.plugins = {
+                title: {
+                    display: true,
+                    text: window.chartData.CHART_TITLE
+                }
+            };
+        }
+        if (window.chartData.START_FROM_ZERO) {
+            chartJSParamObjOptions.scales = {
+                y: {
+                    beginAtZero: true
+                }
+            };
+        }
         const chartJSParamObj = {
-            type: window.chartData.chartType,
+            type: window.chartData.CHART_TYPE,
             responsive: true,
             data: chartDataFrom2DArray,
+            options: chartJSParamObjOptions
         };
         chart = new Chart(ctx, chartJSParamObj);
     } catch (e) {
@@ -100,13 +135,14 @@ async function addToolbar() {
     const settingsToolbarItem = document.createElement('div');
     settingsToolbarItem.title = 'Settings';
     settingsToolbarItem.className = 'toolbar-item';
-    settingsToolbarItem.onclick = () => window.callAmplenotePlugin('alert', `
-    Chart Type: ${window.chartData.chartType}
-    Data Source: ${window.chartData.dataSourceNote}
-    Header: ${window.chartData.header}
-    Table Index: ${window.chartData.tableIndex}
-    Horizontal Axis Labels: ${window.chartData.horizontalAxisLabels}
-    Start From Zero: ${window.chartData.startFromZero}
+    settingsToolbarItem.onclick = () => app.alert( `
+    Data Source: ${window.chartData.DATA_SOURCE}
+    Chart Type: ${window.chartData.CHART_TYPE}
+    Data Source Note UUID: ${window.chartData.DATA_SOURCE_NOTE_UUID}
+    Chart Title: ${window.chartData.CHART_TITLE}
+    Table Index in Note: ${window.chartData.TABLE_INDEX_IN_NOTE}
+    Horizontal Axis Labels Direction: ${window.chartData.HORIZONTAL_AXIS_LABEL_DIRECTION}
+    Start from Zero: ${window.chartData.START_FROM_ZERO}
     `);
     settingsToolbarItem.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="-2 -4 28 28" width="20px" fill="currentColor"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>';
     container.append(settingsToolbarItem);

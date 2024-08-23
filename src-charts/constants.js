@@ -18,17 +18,17 @@ export const TABLE_CHART_CONFIG_DIALOG = ["Enter chart type to create:", {
           value: ""
         },
         {
-            label: "Header (optional)",
+            label: "Chart Title (optional)",
             type: "text",
             value: ""
         },
         {
-            label: "TableIndex",
+            label: "Table Index in Note",
             type: "text",
             value: "0"
         },
         {
-            label: "Horizontal (category) axis labels",
+            label: "Horizontal (category) axis labels direction",
             type: "select",
             options: [
                 { label: "Column", value: "column"},
