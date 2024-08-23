@@ -1,10 +1,11 @@
+import { Buffer } from 'buffer';
 
 const plugin = {
     replaceText: {
         "Convert to Dia": async function (app, text) {
             text = text.trim();
             let {type, text: parsedText} = await this._parseUserIntentFromText(app, text);
-            if(type == 'cancel') return;
+            if(type === 'cancel') return;
             await this._toDiagram(app, type, text, parsedText)
             return null;
         }
@@ -12,7 +13,7 @@ const plugin = {
     insertText: {
         "Create Diagram": async function (app) {
             let {type, text} = await this._parseUserIntentFromText(app, null);
-            if(type == 'cancel') return;
+            if(type === 'cancel') return;
             text = text.trim();
             await this._toDiagram(app, type, text, text)
             return null;
@@ -52,7 +53,7 @@ const plugin = {
             });
             if(!arr) return {type: 'cancel'};
             text = arr[0];
-            if(!text || text == '') return {type: 'cancel'};
+            if(!text || text === '') return {type: 'cancel'};
             type = arr[1];
         }
         else {
@@ -111,7 +112,8 @@ const plugin = {
             const pngDataURL = await this._svgToPng(svgDataURL);
             const noteHandle = {uuid: app.context.noteUUID};
             const fileURL = await app.attachNoteMedia(noteHandle, pngDataURL);
-            const appendedFileURL = fileURL + '?text=' + window.encodeURIComponent(window.btoa(text));
+            const appendedFileURL = fileURL + '?text=' +
+                window.encodeURIComponent(Buffer.from(text, "utf8").toString('base64'));
             // Note: The (<a> </a>) is a temporary hack to get image markdown to be supported by replaceSelection. Remove this later.
             app.context.replaceSelection(`![${text || ''}](${appendedFileURL})<a> </a>`);
             return null;
@@ -123,7 +125,7 @@ const plugin = {
         try {
             const url = new URL(image.src);
             if (url.searchParams.get("text") == null) throw new Error("No text information found in image. It is possible that the image was not created by this plugin.");
-            let text = window.atob(window.decodeURIComponent(url.searchParams.get("text")));
+            let text = Buffer.from(window.decodeURIComponent(url.searchParams.get("text")), 'base64').toString('utf8');
             console.log(text);
             app.context.replaceSelection(text);
         } catch (e) {
