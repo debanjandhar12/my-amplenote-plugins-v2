@@ -35,7 +35,7 @@ const plugin = {
                 };
 
                 // Validate input
-                if (!chartData.CHART_TYPE || !['bar', 'line', 'pie', 'doughnut'].includes(chartData.CHART_TYPE)) {
+                if (!chartData.CHART_TYPE || !['bar', 'line', 'area', 'pie', 'doughnut', 'polarArea'].includes(chartData.CHART_TYPE)) {
                     throw new Error('Chart type is required');
                 }
                 if (!chartData.DATA_SOURCE_NOTE_UUID) {
@@ -82,6 +82,18 @@ const plugin = {
             case 'getAppProp':
                 const propName = args[0];
                 return { type: 'success', result: _.get(app, propName) };
+            case 'saveFile':
+                try {
+                    let {name, data} = args[0];
+                    if (data.startsWith('data:')) { // if data is url, convert to blob
+                        const response = await fetch(data);
+                        data = await response.blob();
+                    }
+                    const saved = await app.saveFile(data, name);
+                    return { type: 'success', result: saved };
+                } catch (e) {
+                    return { type: 'error', result: e.message };
+                }
             default:
                 try {
                     const result = await (_.get(app, commandName))(...args);

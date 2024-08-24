@@ -7,8 +7,10 @@ export const TABLE_CHART_CONFIG_DIALOG = ["Enter chart type to create:", {
             options: [
                 { label: "Bar", value: "bar"},
                 { label: "Line", value: "line"},
+                { label: "Area", value: "area"},
                 { label: "Pie", value: "pie"},
-                { label: "Doughnut", value: "doughnut"}
+                { label: "Doughnut", value: "doughnut"},
+                { label: "Polar Area", value: "polarArea"},
             ],
             value: "bar"
         },
