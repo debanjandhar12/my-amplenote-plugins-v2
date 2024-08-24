@@ -54,7 +54,7 @@ export const TABLE_CHART_CONFIG_DIALOG = ["Enter chart type to create:", {
             value: "2"
         }
     ]
-}]; // TODO: Add size options
+}];
 
 // Other constants
 export const CHARTS_PLUGIN_VERSION = "1.0.1";
