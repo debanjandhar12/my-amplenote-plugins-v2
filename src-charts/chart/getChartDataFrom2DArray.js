@@ -1,6 +1,9 @@
 import _ from "lodash";
 
 export function getChartDataFrom2DArray(table2DArray, categoryDirection = 'row') {
+    // -- Parse data elements as number if possible --
+    table2DArray = parse2DArrayElementsAsNumberIfPossible(_.cloneDeep(table2DArray));
+
     // -- Transpose data if column-oriented --
     const isColumnOriented = categoryDirection.toLowerCase() === 'column';
     let data = isColumnOriented ? transposeArray(table2DArray) : table2DArray;
@@ -40,7 +43,7 @@ export function getChartDataFrom2DArray(table2DArray, categoryDirection = 'row')
     data = categoryPosition === 'first' ? data.slice(1) : data.slice(0, -1); // Remove category row from data
 
     const datasets = [];
-    let seriesIndex = seriesPosition === 'first' ? 0 : (seriesPosition === 'last' ? data[0].length - 1 : null);
+    let seriesIndex = seriesPosition === 'first' ? 0 : (seriesPosition === 'last' && data[0] ? data[0].length - 1 : null);
 
     for (let i = 0; i < data.length; i++) {
         const row = data[i];
@@ -82,6 +85,15 @@ function isRowMostlyNumeric(row) {
 }
 
 function isColumnMostlyNumeric(data, colIndex) {
-    const numericCount = data.slice(1).filter(row => !isNaN(parseFloat(row[colIndex])) && isFinite(row[colIndex])).length;
+    const numericCount = data.filter(row => !isNaN(parseFloat(row[colIndex])) && isFinite(row[colIndex])).length;
     return numericCount > data.length / 2;
+}
+
+export function parse2DArrayElementsAsNumberIfPossible(data) {
+    return data.map(row => row.map(cell => {
+        if (!isNaN(parseFloat(cell)) && isFinite(cell)) {
+            return parseFloat(cell);
+        }
+        return cell;
+    }));
 }

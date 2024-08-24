@@ -16,7 +16,10 @@ export function parseMarkdownTable(markdownText) {
             const rowData = [];
             row.children.forEach((cell) => {
                 // Get the text content of the cell
-                const cellText = cell.children[0]?.value || '';
+                let cellText = '';
+                visit(cell, 'text', (textNode) => {
+                    cellText += textNode.value;
+                });
                 rowData.push(cellText.trim());
             });
             result.push(rowData);

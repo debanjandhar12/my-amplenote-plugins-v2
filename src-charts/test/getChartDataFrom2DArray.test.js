@@ -4,9 +4,9 @@ describe('getChartDataFrom2DArray', () => {
     test('should handle column-oriented data with category in first row', () => {
         const table2DArray = [
             ['Category', 'Series 1', 'Series 2'],
-            ['Company A', 10, 20],
-            ['Company B', 15, 25],
-            ['Company C', 5, 15]
+            ['Company A', '10', '20'],
+            ['Company B', '15', '25'],
+            ['Company C', '5', '15']
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'column');
         expect(result).toEqual({
@@ -20,9 +20,9 @@ describe('getChartDataFrom2DArray', () => {
 
     test('should handle column-oriented data with category in last row', () => {
         const table2DArray = [
-            ['Company A', 10, 20],
-            ['Company B', 15, 25],
-            ['Company C', 5, 15],
+            ['Company A', "10", "20"],
+            ['Company B', "15", "25"],
+            ['Company C', "5", "15"],
             ['Category', 'Series 1', 'Series 2'],
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'column');
@@ -38,8 +38,8 @@ describe('getChartDataFrom2DArray', () => {
     test('should handle row-oriented data with category in first column', () => {
         const table2DArray = [
             ['Series', 'Company A', 'Company B'],
-            ['Series 1', 10, 20],
-            ['Series 2', 15, 25],
+            ['Series 1', '10', '20'],
+            ['Series 2', '15', '25'],
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'row');
         expect(result).toEqual({
@@ -50,6 +50,23 @@ describe('getChartDataFrom2DArray', () => {
             ]
         });
     });
+
+    test('should handle row-oriented data with category in last column', () => {
+        const table2DArray = [
+            ['Series 1', '10', '20'],
+            ['Series 2', '15', '25'],
+            ['Series', 'Company A', 'Company B'],
+        ];
+        const result = getChartDataFrom2DArray(table2DArray, 'row');
+        expect(result).toEqual({
+            labels: ['Company A', 'Company B'],
+            datasets: [
+                {label: 'Series 1', data: [10, 20]},
+                {label: 'Series 2', data: [15, 25]}
+            ]
+        });
+    });
+
 
     test('should handle single-row data with categoryDirection row', () => {
         const table2DArray = [
@@ -67,7 +84,7 @@ describe('getChartDataFrom2DArray', () => {
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'row');
         expect(result.labels).toEqual(['Company A','Company B', 'Company C']);
-        expect(result.datasets).toEqual([{data: ['10', '20', '30']}]);
+        expect(result.datasets).toEqual([{data: [10, 20, 30]}]);
     });
 
     test('should handle two-column data with categoryDirection column', () => {
@@ -77,7 +94,7 @@ describe('getChartDataFrom2DArray', () => {
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'column');
         expect(result.labels).toEqual(['Company A','Company B']);
-        expect(result.datasets).toEqual([{data: ['10', '20']}]);
+        expect(result.datasets).toEqual([{data: [10, 20]}]);
     });
 
     test('should handle single-row data with categoryDirection column (first)', () => {
@@ -86,7 +103,7 @@ describe('getChartDataFrom2DArray', () => {
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'row');
         expect(result.labels).toEqual(['Company A']);
-        expect(result.datasets).toEqual([{data: ['10', '20', '30']}]);
+        expect(result.datasets).toEqual([{data: [10, 20, 30]}]);
     });
 
     test('should handle single-row data with categoryDirection column (end)', () => {
@@ -95,7 +112,7 @@ describe('getChartDataFrom2DArray', () => {
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'row');
         expect(result.labels).toEqual(['Company A']);
-        expect(result.datasets).toEqual([{data: ['10', '20', '30']}]);
+        expect(result.datasets).toEqual([{data: [10, 20, 30]}]);
     });
 
     test('should handle single-column data with categoryDirection row', () => {
@@ -106,6 +123,6 @@ describe('getChartDataFrom2DArray', () => {
         ];
         const result = getChartDataFrom2DArray(table2DArray, 'column');
         expect(result.labels).toEqual(['Company A']);
-        expect(result.datasets).toEqual([{data: ['10', '20']}]);
+        expect(result.datasets).toEqual([{data: [10, 20]}]);
     });
 });
