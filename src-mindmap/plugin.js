@@ -1,5 +1,6 @@
 import embedHTML from './embed/index.html?inline';
 import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
+import _ from "lodash";
 
 const plugin = {
     noteOption: {
@@ -12,43 +13,38 @@ const plugin = {
     async onEmbedCall(app, commandName, ...args) {
         console.log('onEmbedCall', commandName, args);
         switch (commandName) {
-            case 'getNoteContent': {
-                const [noteUUID] = args;
-                return app.getNoteContent({uuid: noteUUID});
-            }
-            case 'navigate': {
+            case 'getSettings':
+                return { type: 'success', result: app.settings };
+            case 'getAppProp':
+                const propName = args[0];
+                return { type: 'success', result: _.get(app, propName) };
+            case 'navigate':
                 const [url] = args;
-                if (app.navigate(url)) return;
+                if (app.navigate(url)) return { type: 'success' };
                 window.open(url, '_blank');
-                break;
-            }
-            case 'getNoteTitle': {
+                return { type: 'success' };
+            case 'getNoteTitle':
                 const [noteUUID] = args;
-                return (await app.notes.find(noteUUID)).name;
-            }
-            case 'getAdditionalOptionSelection': {
-                const result = app.prompt("", {
-                    inputs: [
-                        { label: "Select an option", type: "select", options: [
-                                { label: "Expand all nodes recursively", value: "Expand all nodes recursively" },
-                                { label: "Collapse all nodes recursively", value: "Collapse all nodes recursively" },
-                                { label: "Save as png image", value: "Save as png image" }
-                            ], value: "Expand all nodes recursively"
-                        }
-                    ]
-                });
-                return result;
-            }
-            case 'saveFile': {
-                let {name, data} = args[0];
-                if (data.startsWith('data:')) { // if data is url, convert to blob
-                    const response = await fetch(data);
-                    data = await response.blob();
+                return { type: 'success', result: (await app.notes.find(noteUUID)).name };
+            case 'saveFile':
+                try {
+                    let {name, data} = args[0];
+                    if (data.startsWith('data:')) { // if data is url, convert to blob
+                        const response = await fetch(data);
+                        data = await response.blob();
+                    }
+                    const saved = await app.saveFile(data, name);
+                    return { type: 'success', result: saved };
+                } catch (e) {
+                    return { type: 'error', result: e.message };
                 }
-                return app.saveFile(data, name);
-            }
             default:
-                console.log('Unknown command: ' + commandName);
+                try {
+                    const result = await (_.get(app, commandName))(...args);
+                    return { type: 'success', result: result };
+                } catch (error) {
+                    return { type: 'error', result: error.message };
+                }
         }
     },
     renderEmbed(app, embedType, noteUUID) {

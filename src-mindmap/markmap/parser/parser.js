@@ -5,9 +5,9 @@ import {selectorRules} from "./parser-rules.js";
 import {SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING} from "../../constants.js";
 
 
-export function parseMarkdownAsMindMap(markdown) {
+export function parseMarkdownAsMindMap(markdown, selector) {
     const transformer = new Transformer([pluginCheckbox, pluginHljs, pluginSourceLines, amplenoteLinksPlugin, amplenoteBackslashBreakPlugin]);
-    const transformResult = transformer.transform(markdown, {selector: 'h1,h2,h3,h4,h5,h6,ul,ol,li,table,pre,p,blockquote,img',
+    const transformResult = transformer.transform(markdown, {selector,
         selectorRules,
         lossless: appSettings[SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING] === 'false'
     });

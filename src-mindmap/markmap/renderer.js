@@ -3,7 +3,7 @@ import {parseMarkdownAsMindMap} from "./parser/parser.js";
 import {createToolbar} from "./toolbar/toolbar-main.js";
 import {
     INITIAL_EXPAND_LEVEL_SETTING,
-    INITIAL_EXPAND_LEVEL_SETTING_DEFAULT,
+    INITIAL_EXPAND_LEVEL_SETTING_DEFAULT, NODES_LIST,
     TITLE_AS_DEFAULT_NODE_SETTING
 } from "../constants.js";
 import {addTitleToRootNode, removeEmptyChildrenFromRoot} from "./parser/parser-result-processor.js";
@@ -43,12 +43,13 @@ export async function reloadMarkMap(markmap) {
 }
 
 async function fetchMarkdownOfWindowNoteAndParse() {
-    const markdown = await window.callAmplenotePlugin('getNoteContent', window.noteUUID);
-    let { root,  assets } = parseMarkdownAsMindMap(markdown);
+    const markdown = await window.app.getNoteContent({uuid: window.noteUUID});
+    const selectorSetting = (await window.app.getSettings()).FILTERED_NODE_LIST || NODES_LIST;
+    let { root,  assets } = parseMarkdownAsMindMap(markdown, selectorSetting);
     if (window.appSettings[TITLE_AS_DEFAULT_NODE_SETTING] === 'true' ||
         root.content === '') {
         root = addTitleToRootNode(root,
-            await window.callAmplenotePlugin('getNoteTitle', window.noteUUID));
+            await window.app.getNoteTitle(window.noteUUID));
     }
     root = removeEmptyChildrenFromRoot(root);
     return { root, assets };
