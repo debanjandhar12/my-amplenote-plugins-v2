@@ -30,5 +30,6 @@ To use this plugin, select "Preview mindmap" from the note menu.
 20/07/2024 - First version
 06/08/2024 - Bug fixes
 17-08-2024 - Added additional options + download as png feature
+24-08-2024 - Added header anchor links + additional options
 `.trim()
 };

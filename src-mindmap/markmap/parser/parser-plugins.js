@@ -13,7 +13,7 @@ export const amplenoteLinksPlugin = definePlugin({
                 const hrefIndex = token.attrIndex('href');
                 if (hrefIndex >= 0) {
                     const href = token.attrs[hrefIndex][1];
-                    token.attrPush(['onclick', `window.callAmplenotePlugin('navigate', '${href}'); return false;`]);
+                    token.attrPush(['onclick', `window.app.navigate('${href}'); return false;`]);
                     token.attrs[hrefIndex][1] = 'javascript:void(0);';
                 }
                 return defaultRender(tokens, idx, options, env, self);
@@ -41,4 +41,29 @@ export const amplenoteBackslashBreakPlugin = definePlugin({
         });
         return {};
     }
+});
+
+export const headerAnchorPlugin = definePlugin({
+    name: "headerAnchorPlugin",
+    transform(transformHooks) {
+        transformHooks.parser.tap((md) => {
+            const originalRender = md.renderer.render.bind(md.renderer);
+            md.renderer.render = function (tokens, options, env) {
+                const html = originalRender(tokens, options, env);
+                window.navigateToHeader = async (headerContent) => {
+                    const sections = await app.getNoteSections({ uuid: window.noteUUID });
+                    const headerContentText = headerContent.replace(/<[^>]*>/g, '');
+                    const sectionAnchor = sections.find(section => section.heading.text === headerContentText);
+                    if (!sectionAnchor) return;
+                    const link = `https://www.amplenote.com/notes/${window.noteUUID}#${sectionAnchor.heading.anchor}`;
+                    await window.app.navigate(`${link}`);
+                };
+                return html.replace(/<h([1-6])([^>]*)>(.*?)<\/h\1>/g, (match, level, attrs, content) => {
+                    const anchor = `<a href="javascript:void(0);" onclick="navigateToHeader('${content}');" class="anchor">#</a>`;
+                    return `<h${level} ${attrs}>${anchor}${content}</h${level}>`;
+                });
+            };
+        });
+        return {};
+    },
 });

@@ -10,4 +10,4 @@ export const INITIAL_EXPAND_LEVEL_SETTING = `Initial expand level (default: ${IN
 export const SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING = `Show only siblings at current level (default: ${SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING_DEFAULT})`;
 
 // Other constants
-export const MINDMAP_PLUGIN_VERSION = "0.0.2";
+export const MINDMAP_PLUGIN_VERSION = "0.0.3";

@@ -1,5 +1,10 @@
 import _ from "lodash";
 
+export function addTitleToRootNodeWithLink(root, title) {
+    let href = `https://www.amplenote.com/notes/${window.noteUUID}`;
+    return addTitleToRootNode(root, `<a href="javascript:void(0);" onclick="window.app.navigate('${href}')" class="anchor">🗈</a>${title}`);
+}
+
 export function addTitleToRootNode(root, title) {
     let node = _.cloneDeep(root);
     if (node.content === "") node.content = title;

@@ -6,7 +6,10 @@ import {
     INITIAL_EXPAND_LEVEL_SETTING_DEFAULT, NODES_LIST,
     TITLE_AS_DEFAULT_NODE_SETTING
 } from "../constants.js";
-import {addTitleToRootNode, removeEmptyChildrenFromRoot} from "./parser/parser-result-processor.js";
+import {
+    addTitleToRootNodeWithLink,
+    removeEmptyChildrenFromRoot
+} from "./parser/parser-result-processor.js";
 
 export async function initMarkMap() {
     const options = {
@@ -48,8 +51,8 @@ async function fetchMarkdownOfWindowNoteAndParse() {
     let { root,  assets } = parseMarkdownAsMindMap(markdown, selectorSetting);
     if (window.appSettings[TITLE_AS_DEFAULT_NODE_SETTING] === 'true' ||
         root.content === '') {
-        root = addTitleToRootNode(root,
-            await window.app.getNoteTitle(window.noteUUID));
+        root = addTitleToRootNodeWithLink(root,
+            await window.app.getNoteTitle(window.noteUUID), window.noteUUID);
     }
     root = removeEmptyChildrenFromRoot(root);
     return { root, assets };
@@ -69,6 +72,13 @@ function addAditionalStyleForMarkMap() {
     body {
         background-color: #192025;
         color: rgb(249, 251, 252);
+    }
+    .markmap-foreign .anchor {
+        text-decoration: none;
+        color: #c9d1d9;
+        margin-right: 4px;
+        opacity: 0.5;
+        user-select: none;
     }
     `;
     document.head.append(style);
