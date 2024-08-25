@@ -116,6 +116,8 @@ function getChartJSParamObject(chartDataFrom2DArray) {
     const chartJSParamObj = {
         type: window.chartData.CHART_TYPE !== 'area' ? window.chartData.CHART_TYPE : 'line', // area is implemented as line with fill
         responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: window.chartData.CHART_ASPECT_RATIO_SIZE,
         data: chartDataFrom2DArray,
         options: chartJSParamObjOptions,
         plugins: [customCanvasBackgroundColorPlugin]
@@ -129,9 +131,20 @@ async function addToolbar() {
     body {
         background-color: #192025;
         color: rgb(249, 251, 252);
+        height: 100vh;
+        margin: 0;
+    }
+    .chart-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
     .toolbar-brand {
-    display: none;
+        display: none;
     }
     .toolbar-item:hover {
         cursor: pointer;
