@@ -3,6 +3,7 @@ import {getChartDataFrom2DArray} from "../chart/getChartDataFrom2DArray.js";
 import {getMarkdownTableByIdx} from "../markdown/getMarkdownTableByIdx.js";
 import {parseMarkdownTable} from "../markdown/parseMarkdownTable.js";
 import Chart from 'chart.js/auto';
+import Formula from 'fparser';
 
 window.app = {};
 if (process.env.NODE_ENV === 'development') {
@@ -47,7 +48,7 @@ let chart;
 
 async function initChart() {
     const ctx = document.getElementById('chart').getContext('2d');
-    try {
+    const getNoteDataSourceLabelsDataSetsObj = async () => {
         const noteContent = await app.getNoteContent({uuid: window.chartData.DATA_SOURCE_NOTE_UUID});
         console.log('noteContent', noteContent);
         const tableAtIndex = getMarkdownTableByIdx(noteContent, parseInt(window.chartData.TABLE_INDEX_IN_NOTE));
@@ -61,7 +62,28 @@ async function initChart() {
         console.log('table2DArray', table2DArray);
         const chartDataFrom2DArray = getChartDataFrom2DArray(table2DArray, window.chartData.HORIZONTAL_AXIS_LABEL_DIRECTION);
         console.log('chartDataFrom2DArray', chartDataFrom2DArray);
-        chart = new Chart(ctx, getChartJSParamObject(chartDataFrom2DArray));
+        return chartDataFrom2DArray;
+    }
+    const getFormulaDataSourceLabelsDataSetsObj = async () => {
+        const labels = [];
+        const datasets = [{
+            label: 'f(x)',
+            data: []
+        }];
+        const formula = new Formula(window.chartData.DATA_SOURCE_FORMULA_F);
+
+        for (let x = parseFloat(window.chartData.MIN_X); x <= parseFloat(window.chartData.MAX_X); x += parseFloat(window.chartData.STEP_X)) {
+            labels.push(x.toString());
+            const y = await formula.evaluate({ x });
+            datasets[0].data.push(y);
+        }
+        console.log('formula', labels, datasets);
+        return { labels, datasets };
+    }
+    try {
+        const chartDataSetArray = window.chartData.DATA_SOURCE === 'note' ? await
+            getNoteDataSourceLabelsDataSetsObj() : await getFormulaDataSourceLabelsDataSetsObj();
+        chart = new Chart(ctx, getChartJSParamObject(chartDataSetArray));
     } catch (e) {
         const oldFillStyle = ctx.fillStyle;
         const oldFont = ctx.font;
@@ -79,7 +101,7 @@ async function reloadChart() {
     await initChart();
 }
 
-function getChartJSParamObject(chartDataFrom2DArray) {
+function getChartJSParamObject(chartDataSetArray) {
     const chartJSParamObjOptions = {};
     if (window.chartData.CHART_TITLE) {
         chartJSParamObjOptions.plugins = {
@@ -97,7 +119,7 @@ function getChartJSParamObject(chartDataFrom2DArray) {
         };
     }
     if (window.chartData.CHART_TYPE === 'area') {
-        chartDataFrom2DArray.datasets.forEach(dataset => {
+        chartDataSetArray.datasets.forEach(dataset => {
             dataset.fill = true;
         });
     }
@@ -118,7 +140,7 @@ function getChartJSParamObject(chartDataFrom2DArray) {
         responsive: true,
         maintainAspectRatio: true,
         aspectRatio: window.chartData.CHART_ASPECT_RATIO_SIZE,
-        data: chartDataFrom2DArray,
+        data: chartDataSetArray,
         options: chartJSParamObjOptions,
         plugins: [customCanvasBackgroundColorPlugin]
     };
@@ -167,7 +189,9 @@ async function addToolbar() {
     reloadToolbarItem.className = 'toolbar-item';
     reloadToolbarItem.onclick = () => reloadChart();
     reloadToolbarItem.innerHTML = '<svg width="20" height="20" viewBox="0 0 768 1204"><path fill="currentColor" d="M655.461 473.469c11.875 81.719-13.062 167.781-76.812 230.594-94.188 92.938-239.5 104.375-346.375 34.562l74.875-73L31.96 627.25 70.367 896l84.031-80.5c150.907 111.25 364.938 100.75 502.063-34.562 79.5-78.438 115.75-182.562 111.25-285.312L655.461 473.469zM189.46 320.062c94.156-92.938 239.438-104.438 346.313-34.562l-75 72.969 275.188 38.406L697.586 128l-83.938 80.688C462.711 97.34400000000005 248.742 107.96900000000005 111.585 243.25 32.085 321.656-4.133 425.781 0.335 528.5l112.25 22.125C100.71 468.875 125.71 382.906 189.46 320.062z"/></svg>';
-    container.append(reloadToolbarItem);
+    if (window.chartData.DATA_SOURCE !== 'formula') {
+        container.append(reloadToolbarItem);
+    }
 
     const optionsToolbarItem = document.createElement('div');
     optionsToolbarItem.title = 'Options';
