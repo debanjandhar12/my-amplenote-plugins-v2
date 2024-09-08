@@ -49,8 +49,9 @@ export function generateNoteHighlightSectionMarkdown(omnivoreItemsState, appSett
         || NOTE_HIGHLIGHT_ORDER_SETTING_DEFAULT);
     const properHighlights = highlightsSorted.map(highlight => {
        if (!highlight.quote) return null;
-       return `**Highlight [↗️](${OMNIVORE_APP_URL}/me/${omnivoreItemsState.slug}#${highlight.id}):**\n`+
-              `> ${highlight.quote.split('\n').join(' ')}\n`;
+        return `**Highlight [↗️](${OMNIVORE_APP_URL}/me/${omnivoreItemsState.slug}#${highlight.id}):**\n` +
+            `> ${getHighlightUnicodeIcon(highlight.color)} ${highlight.quote.split('\n').join(' ')}\n` +
+            (highlight.annotation != null && highlight.annotation !== '' ? `> > 📝 ${highlight.annotation.split('\n').join(' ')}\n` : '');
     }).filter(h => h);
     if (properHighlights.length === 0) {
         return `(No highlights - [create one](${OMNIVORE_APP_URL}/me/${omnivoreItemsState.slug}))`;
@@ -67,4 +68,20 @@ export function generateNoteSummarySectionMarkdown(omnivoreItemsState, appSettin
            `- **Updated At:** ${new Date(omnivoreItemsState.updatedAt).toLocaleString()}\n` +
            `- **Saved At:** ${new Date(omnivoreItemsState.savedAt).toLocaleString()}\n` +
            `- **Reading Progress Percent:** ${omnivoreItemsState.readingProgressPercent} / 100\n`;
+}
+
+export function getHighlightUnicodeIcon(color) {
+    color = color.toLowerCase() || 'yellow';
+    switch (color) {
+        case "yellow":
+            return "🟡";
+        case "red":
+            return "🔴";
+        case "blue":
+            return "🔵";
+        case "green":
+            return "🟢";
+        default:
+            return "⚫️";
+    }
 }
