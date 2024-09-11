@@ -71,7 +71,7 @@ export function generateNoteSummarySectionMarkdown(omnivoreItemsState, appSettin
 }
 
 export function getHighlightUnicodeIcon(color) {
-    color = color.toLowerCase() || 'yellow';
+    color = (color || 'yellow').toLowerCase();
     switch (color) {
         case "yellow":
             return "🟡";
