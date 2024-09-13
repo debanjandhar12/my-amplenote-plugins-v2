@@ -1,18 +1,19 @@
-import {autoLinkMarkdownWithPageLinks, autoLinkMarkdownWithSectionLinks} from "./core/linker.js";
 import {
     AUTOLINK_RELATED_NOTES_SECTION_SETTING, AUTOLINK_RELATED_NOTES_SECTION_SETTING_DEFAULT,
     MIN_PAGE_LENGTH_SETTING,
     MIN_PAGE_LENGTH_SETTING_DEFAULT
 } from "./constants.js";
 import {getNoteLinksUUIDFromMarkdown} from "./core/getNoteLinksUUIDFromMarkdown.js";
+import { addPageLinksToMarkdown, addSectionLinksToMarkdown, processReplacementMap } from "./core/linker.js";
 import {removeLinksFromMarkdown} from "./core/removeLinksFromMarkdown.js";
 
 const plugin = {
     replaceText: async function (app, text) {
         try {
             const textWithFormatting = app.context.selectionContent;
-            await this._autoLink(app, textWithFormatting, async (autoLinkedText) => {
-                await app.context.replaceSelection(autoLinkedText);
+            await this._autoLink(app, textWithFormatting, async ({preReplacementMarkdown, replacementMap, originalMap}) => {
+                const autoLinkedMarkdown = processReplacementMap(preReplacementMarkdown, replacementMap);
+                await app.context.replaceSelection(autoLinkedMarkdown);
             });
         } catch (e) {
             await app.alert(e);
@@ -20,45 +21,71 @@ const plugin = {
     },
     noteOption: async function(app, noteUUID) {
         try {
-            const confirm = await app.prompt("Are you sure you want to autolink this note?\n\nThis is an experimental feature.", {
-                inputs: []
-            });
-            if (!confirm) return;
             const noteContent = await app.getNoteContent({uuid: noteUUID});
-            const autoLinkedText = await this._autoLink(app, noteContent, async (autoLinkedText) => {
+            await this._autoLink(app, noteContent, async ({preReplacementMarkdown, replacementMap, originalMap}) => {
+                if (replacementMap.size === 0) {
+                    return;
+                }
+                let confirmedReplacements = await app.prompt("Select replacements to apply:", {
+                    inputs: Array.from(replacementMap).map(([key, value]) => ({
+                        label: `${originalMap.get(key)} ➛ ${value}`,
+                        type: "checkbox",
+                        value: true
+                    }))
+                });
+                if(!confirmedReplacements) return;
+                if(typeof confirmedReplacements === 'boolean')
+                    confirmedReplacements = [confirmedReplacements];
+
+                // Create a new Map with only the confirmed replacements
+                const finalReplacementMap = new Map();
+                Array.from(replacementMap).forEach(([key, value], index) => {
+                    if (confirmedReplacements[index]) {
+                        finalReplacementMap.set(key, value);
+                    }
+                    else {
+                        finalReplacementMap.set(key, originalMap.get(key));
+                    }
+                });
+
+                // Apply the confirmed replacements
+                const autoLinkedText = processReplacementMap(preReplacementMarkdown, finalReplacementMap);
                 await app.replaceNoteContent({uuid: noteUUID}, autoLinkedText);
-            });
-            const newNoteContent = await app.getNoteContent({uuid: noteUUID});
-            if ((await removeLinksFromMarkdown(newNoteContent)).trim() !==
+
+                const newNoteContent = await app.getNoteContent({uuid: noteUUID});
+                if ((await removeLinksFromMarkdown(newNoteContent)).trim() !==
                 (await removeLinksFromMarkdown(autoLinkedText)).trim()) {   // Some links may be removed by replaceNoteContent but that's ok
-                await app.replaceNoteContent({uuid: noteUUID}, noteContent);  // attempt to revert back to original content
-                throw new Error('Autolink Failed: replaceNoteContent edge case detected.');
-            }
+                    console.log('Autolinked note content is different from original note content');
+                }
+            });
         } catch (e) {
             await app.alert(e);
         }
     },
     async _autoLink(app, text, replaceTextFn) {
         try {
-            const pages = await this._getSortedPages(app);
-            let autoLinkedText = await autoLinkMarkdownWithPageLinks(text, pages);
-            if (autoLinkedText !== text) {
-                await replaceTextFn(autoLinkedText);
+            const pages = await this._getPages(app);
+            let {preReplacementMarkdown, replacementMap, originalMap} = await addPageLinksToMarkdown(text, pages);
+            const isAutoLinkSectionsEnabled = (app.settings[AUTOLINK_RELATED_NOTES_SECTION_SETTING]
+            || AUTOLINK_RELATED_NOTES_SECTION_SETTING_DEFAULT) === "true";
+            if (preReplacementMarkdown !== text && !isAutoLinkSectionsEnabled) {
+                await replaceTextFn({preReplacementMarkdown, replacementMap, originalMap});
             }
-            if ((app.settings[AUTOLINK_RELATED_NOTES_SECTION_SETTING]
-                || AUTOLINK_RELATED_NOTES_SECTION_SETTING_DEFAULT) === 'true') {
-                const sectionMap = await this._getSortedSections(app);
-                autoLinkedText = await autoLinkMarkdownWithSectionLinks(autoLinkedText, sectionMap);
-                if (autoLinkedText !== text) {
-                    await replaceTextFn(autoLinkedText);
+            else if (isAutoLinkSectionsEnabled) {
+                const sectionMap = await this._getSections(app);
+                let {preReplacementMarkdown: preReplacementMarkdown2, replacementMap: replacementMap2, originalMap: originalMap2} = await addSectionLinksToMarkdown(preReplacementMarkdown, sectionMap);
+                if (preReplacementMarkdown2 !== text) {
+                    let preReplacementMarkdownCombined = preReplacementMarkdown2;
+                    let replacementMapCombined = new Map([...replacementMap, ...replacementMap2]);
+                    let originalMapCombined = new Map([...originalMap, ...originalMap2]);
+                    await replaceTextFn({preReplacementMarkdown: preReplacementMarkdownCombined, replacementMap: replacementMapCombined, originalMap: originalMapCombined});
                 }
             }
-            return autoLinkedText;  // also return the text in case the caller wants to do something with it
         } catch (e) {
             throw e;
         }
     },
-    async _getSortedPages(app) {
+    async _getPages(app) {
         try {
             const allPages = await app.filterNotes({});
             const nonEmptyPages = allPages.filter(page => page.name != null && typeof page.name === 'string' && page.name.trim() !== '');
@@ -67,21 +94,12 @@ const plugin = {
 
             const filteredPages = nonEmptyPages.filter(page => page.name.length >= app.settings[MIN_PAGE_LENGTH_SETTING]);
 
-            const sortedPages = filteredPages.sort((a, b) => {
-                if (a.name > b.name) {
-                    return -1;
-                }
-                if (a.name < b.name) {
-                    return 1;
-                }
-                return 0;
-            });
-            return sortedPages;
+            return filteredPages;
         } catch (e) {
             throw 'Failed _getSortedPages - ' + e;
         }
     },
-    async _getSortedSections(app) {
+    async _getSections(app) {
         try {
             // Get backlinks
             const currentNoteBacklinks = await app.getNoteBacklinks({uuid: app.context.noteUUID}); // [{"name": "Top 10 Amplenote Tips","tags": ["reference"],"uuid": "6e02d278-4c16-11ef-858e-26e37c279344","created": "2024-07-27T18:17:48+05:30","updated": "2024-07-27T19:25:22+05:30"},{"name": "July 27th, 2024","tags": ["daily-jots"],"uuid": "6e501c0e-4c16-11ef-858e-26e37c279344","created": "2024-07-27T18:17:47+05:30","updated": "2024-07-27T18:17:47+05:30"},{"name": null,"tags": [],"uuid": "2adf8258-4c1f-11ef-858e-26e37c279344","created": "2024-07-27T19:20:21+05:30","updated": "2024-08-02T20:58:08+05:30"}]
@@ -124,6 +142,7 @@ const plugin = {
                     });
                 }
             }
+            console.log(sectionMap);
             return sectionMap;
         } catch (e) {
             throw 'Failed getSortedSections - ' + e;
