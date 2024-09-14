@@ -6,6 +6,7 @@ import {
     TITLE_AS_DEFAULT_NODE_SETTING,
     TITLE_AS_DEFAULT_NODE_SETTING_DEFAULT
 } from "../constants.js";
+import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 
 window.app = {};
 if(process.env.NODE_ENV === 'development') {
@@ -81,6 +82,8 @@ window.addEventListener('resize', function() {
         [INITIAL_EXPAND_LEVEL_SETTING]: window.appSettings[INITIAL_EXPAND_LEVEL_SETTING] || INITIAL_EXPAND_LEVEL_SETTING_DEFAULT,
         [SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING]: window.appSettings[SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING] || SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING_DEFAULT
     };
+    showEmbedLoader();
     await initMarkMap();
+    hideEmbedLoader();
     window.dispatchEvent(new Event('resize')); // Resize iframe height to fit content
 })();

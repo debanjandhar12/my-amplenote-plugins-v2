@@ -1,4 +1,4 @@
-import _ from "lodash";
+import {cloneDeep} from "lodash-es";
 
 export function sortOmnivoreItems(omnivoreItems, sortKeyOrder) {
     let [sortKey, sortOrder] = sortKeyOrder.trim().split("-");
@@ -14,7 +14,7 @@ export function sortOmnivoreItems(omnivoreItems, sortKeyOrder) {
         throw new Error(`Invalid sort order: ${sortOrder}`);
     }
 
-    return _.cloneDeep(omnivoreItems).sort((a, b) => {
+    return cloneDeep(omnivoreItems).sort((a, b) => {
         const aValue = a[sortKey] || "";
         const bValue = b[sortKey] || "";
         const comparison = aValue.toString().localeCompare(bValue.toString());
@@ -36,7 +36,7 @@ export function sortOmnivoreItemHighlights(omnivoreItemHighlights, sortKeyOrder)
         throw new Error(`Invalid sort order: ${sortOrder}`);
     }
 
-    return _.cloneDeep(omnivoreItemHighlights).sort((a, b) => {
+    return cloneDeep(omnivoreItemHighlights).sort((a, b) => {
         const aValue = a[sortKey] || "";
         const bValue = b[sortKey] || "";
         const comparison = aValue.toString().localeCompare(bValue.toString());

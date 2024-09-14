@@ -1,4 +1,4 @@
-import _ from "lodash";
+import {cloneDeep} from "lodash-es";
 
 export function addTitleToRootNodeWithLink(root, title) {
     let href = `https://www.amplenote.com/notes/${window.noteUUID}`;
@@ -6,7 +6,7 @@ export function addTitleToRootNodeWithLink(root, title) {
 }
 
 export function addTitleToRootNode(root, title) {
-    let node = _.cloneDeep(root);
+    let node = cloneDeep(root);
     if (node.content === "") node.content = title;
     else node = { content: title, children: [node], type: 'heading', depth: 0 }
     return node;

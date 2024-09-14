@@ -16,7 +16,7 @@ import {
     generateNoteSummarySectionMarkdown
 } from "./amplenote/generate-markdown.js";
 import {SAMPLE_OMNIVORE_STATE_DATA} from "./test/test-data.js";
-import _ from "lodash";
+import {cloneDeep} from "lodash-es";
 
 const plugin = {
     appOption: {
@@ -80,7 +80,7 @@ const plugin = {
 
 
         // Fetch all omnivore items which are non-archived
-        let omnivoreItemsState = _.cloneDeep(lastOmnivoreItemsState);
+        let omnivoreItemsState = cloneDeep(lastOmnivoreItemsState);
         const omnivoreItemsStateDelta = [];
         for (let after = 0; ; after += OMNIVORE_SYNC_BATCH_SIZE) {
             const [items, hasNextPage] = await getOmnivoreItems(

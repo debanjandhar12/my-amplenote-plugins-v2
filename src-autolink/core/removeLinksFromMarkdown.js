@@ -1,6 +1,6 @@
 import {parse} from "./parser.js";
 import {visit} from "unist-util-visit";
-import _ from "lodash";
+import { get } from "lodash-es";
 
 export async function removeLinksFromMarkdown(markdownText) {
     const ast = await parse(markdownText);
@@ -15,7 +15,7 @@ export async function removeLinksFromMarkdown(markdownText) {
         const start = node.position.start.offset;
         const end = node.position.end.offset;
         resultMarkdownText = resultMarkdownText.slice(0, start)
-            + _.get(node, 'children[0].value', '') + resultMarkdownText.slice(end);
+            + get(node, 'children[0].value', '') + resultMarkdownText.slice(end);
     }
 
     return resultMarkdownText;

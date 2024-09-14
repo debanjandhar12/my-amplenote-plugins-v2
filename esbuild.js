@@ -4,7 +4,7 @@ import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import {readFile} from 'fs/promises';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import {nodeModulesPolyfillPlugin} from "esbuild-plugins-node-modules-polyfill";
 
 // -- Custom Plugins for ESBuild --
@@ -57,19 +57,8 @@ const postProcessAndWritePlugin = {
             }));
             // Remove any lines attempting to import module using the esbuild __require
             result = result.replace(/^\s+var import_.+= (?:__toESM\()?__require\(".+"\).*;/gm, "");
-            if (process.env.NODE_ENV === 'production') {
-                const minified = await esbuild.transform(result, {
-                    minify: true,
-                    format: 'cjs',
-                    legalComments: 'none'
-                });
-                if (result.errors && result.errors.length > 0) {
-                    throw new Error(result.errors[0].text);
-                }
-                result = minified.code;
-                result = result.replace(/;\s*$/, ''); // remove ending semicolon if it exists
-            }
             result = "/***\n * Source Code: " + repositoryLink + "\n * Author: " + author +
+                "\n * Build: " + process.env.NODE_ENV +
                 "\n * Character Count: " + result.length + ` (${(result.length/1000000).toPrecision(2)} M)` +
                 "\n * Target Folder: " + targetFolderName + "\n ***/\n" + result;
             return result;
@@ -104,6 +93,7 @@ const postProcessAndWritePlugin = {
         }
     },
 }
+
 const customHTMLLoader = {
     name: 'html-loader',
     setup(build) {
@@ -128,8 +118,7 @@ const customHTMLLoader = {
                     sourcemap: false,
                     metafile: true,
                     format: 'iife',
-                    minify: process.env.NODE_ENV === 'production',
-                    legalComments: process.env.NODE_ENV === 'production' ? 'none' : 'inline',
+                    legalComments: 'none'
                 });
                 const result = await ctx.rebuild();
                 let inlinedContent = result.outputFiles[0].text;
@@ -152,10 +141,10 @@ const customHTMLLoader = {
             return [html, watchFiles, errors];
         }
 
-        build.onResolve({ filter: /.*\?inline$/ }, args => {
+        build.onResolve({ filter: /inline:.*\.html$/ }, args => {
             try {
                 return {
-                    path: path.resolve(args.resolveDir, args.path.substring(0, args.path.length - 7)),
+                    path: path.resolve(args.resolveDir, args.path.substring(7)),
                     namespace: 'inline-html'
                 };
             } catch (error) {
@@ -206,6 +195,12 @@ export const esbuildOptions = {
     platform: 'browser',
     outdir: 'dist',
     target: 'es2019',
+    treeShaking: process.env.NODE_ENV === 'production',
+    minifySyntax: process.env.NODE_ENV === 'production',
+    legalComments: 'none',
+    define: {
+        'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+    },
     plugins: [customHTMLLoader, nodeModulesPolyfillPlugin({globals: { process: true }})]
 }
 

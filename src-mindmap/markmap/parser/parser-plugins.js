@@ -1,4 +1,5 @@
 import {definePlugin} from "@debanjandhar12/markmap-lib/plugins";
+import {escape} from "lodash-es";
 
 export const amplenoteLinksPlugin = definePlugin({
     name: "amplenoteLinksPlugin",
@@ -53,13 +54,13 @@ export const headerAnchorPlugin = definePlugin({
                 window.navigateToHeader = async (headerContent) => {
                     const sections = await app.getNoteSections({ uuid: window.noteUUID });
                     const headerContentText = headerContent.replace(/<[^>]*>/g, '');
-                    const sectionAnchor = sections.find(section => section.heading.text === headerContentText);
+                    const sectionAnchor = sections.find(section => section.heading && section.heading.text === headerContentText);
                     if (!sectionAnchor) return;
                     const link = `https://www.amplenote.com/notes/${window.noteUUID}#${sectionAnchor.heading.anchor}`;
                     await window.app.navigate(`${link}`);
                 };
                 return html.replace(/<h([1-6])([^>]*)>(.*?)<\/h\1>/g, (match, level, attrs, content) => {
-                    const anchor = `<a href="javascript:void(0);" onclick="navigateToHeader('${content}');" class="anchor">#</a>`;
+                    const anchor = `<a href="javascript:void(0);" onclick="navigateToHeader('${escape(content)}');" class="anchor">#</a>`;
                     return `<h${level} ${attrs}>${anchor}${content}</h${level}>`;
                 });
             };
