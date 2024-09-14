@@ -1,9 +1,10 @@
-import { SAMPLE_MARKDOWN_DATA2 } from "../test/test-data.js";
+import { SAMPLE_MARKDOWN_DATA2 } from "../test/markdown/test-data.js";
 import {getChartDataFrom2DArray} from "../chart/getChartDataFrom2DArray.js";
 import {getMarkdownTableByIdx} from "../markdown/getMarkdownTableByIdx.js";
 import {parseMarkdownTable} from "../markdown/parseMarkdownTable.js";
-import Chart from 'chart.js/auto';
 import Formula from 'fparser';
+import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
+import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 
 window.app = {};
 if (process.env.NODE_ENV === 'development') {
@@ -83,6 +84,7 @@ async function initChart() {
     try {
         const chartDataSetArray = window.chartData.DATA_SOURCE === 'note' ? await
             getNoteDataSourceLabelsDataSetsObj() : await getFormulaDataSourceLabelsDataSetsObj();
+        const Chart = (await dynamicImportESM("chart.js/auto")).default;
         chart = new Chart(ctx, getChartJSParamObject(chartDataSetArray));
     } catch (e) {
         const oldFillStyle = ctx.fillStyle;
@@ -228,6 +230,8 @@ async function handleOptionsToolbarItem() {
 
 (async () => {
     if (!window.appSettings) window.appSettings = {};
+    showEmbedLoader();
     await initChart();
+    hideEmbedLoader();
     await addToolbar();
 })();

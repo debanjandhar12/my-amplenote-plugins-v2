@@ -1,14 +1,14 @@
-import chartHTML from './embed/chart.html?inline';
+import chartHTML from 'inline:./embed/chart.html';
 import {FORMULA_CHART_CONFIG_DIALOG, TABLE_CHART_CONFIG_DIALOG} from "./constants.js";
 import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
-import _ from "lodash";
+import {cloneDeep, get} from "lodash-es";
 import Formula from 'fparser';
 
 const plugin = {
     insertText: {
         "Create from table": async function (app) {
             try {
-                const dialog = _.cloneDeep(TABLE_CHART_CONFIG_DIALOG);
+                const dialog = cloneDeep(TABLE_CHART_CONFIG_DIALOG);
                 if (app.context.noteUUID)
                     dialog[1].inputs[1].value = app.context.noteUUID; // Set default note - doesn't work
                 const promptResult = await app.prompt(...dialog);
@@ -50,7 +50,7 @@ const plugin = {
         "Create from formula": async function (app) {
             try {
                 console.log(Formula);
-                const dialog = _.cloneDeep(FORMULA_CHART_CONFIG_DIALOG);
+                const dialog = cloneDeep(FORMULA_CHART_CONFIG_DIALOG);
                 const promptResult = await app.prompt(...dialog);
                 if (!promptResult) return;
                 let [
@@ -102,7 +102,7 @@ const plugin = {
                 return { type: 'success', result: app.settings };
             case 'getAppProp':
                 const propName = args[0];
-                return { type: 'success', result: _.get(app, propName) };
+                return { type: 'success', result: get(app, propName) };
             case 'saveFile':
                 try {
                     let {name, data} = args[0];
@@ -120,7 +120,7 @@ const plugin = {
                     const chartDataOld = args[0];
                     let chartDataNew = {};
                     if (chartDataOld.DATA_SOURCE === 'note') {
-                        const dialog = _.cloneDeep(TABLE_CHART_CONFIG_DIALOG);
+                        const dialog = cloneDeep(TABLE_CHART_CONFIG_DIALOG);
                         dialog[1].inputs[0].value = chartDataOld.CHART_TYPE;
                         dialog[1].inputs[1].value = chartDataOld.DATA_SOURCE_NOTE_UUID;
                         dialog[1].inputs[1].type = 'text';
@@ -155,7 +155,7 @@ const plugin = {
                             CHART_ASPECT_RATIO_SIZE
                         };
                     } else if (chartDataOld.DATA_SOURCE === 'formula') {
-                        const dialog = _.cloneDeep(FORMULA_CHART_CONFIG_DIALOG);
+                        const dialog = cloneDeep(FORMULA_CHART_CONFIG_DIALOG);
                         dialog[1].inputs[0].value = chartDataOld.CHART_TYPE;
                         dialog[1].inputs[1].value = chartDataOld.CHART_TITLE;
                         dialog[1].inputs[2].value = chartDataOld.DATA_SOURCE_FORMULA_F;
@@ -202,7 +202,7 @@ const plugin = {
                 }
             default:
                 try {
-                    const result = await (_.get(app, commandName))(...args);
+                    const result = await (get(app, commandName))(...args);
                     return { type: 'success', result: result };
                 } catch (error) {
                     return { type: 'error', result: error.message };

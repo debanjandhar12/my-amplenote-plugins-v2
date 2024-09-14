@@ -16,7 +16,7 @@ export const SYNC_ARTICLE_CONTENT_SETTING = `Sync article content (true or false
 export const OMNIVORE_API_KEY_SETTING = "Omnivore API Key";
 
 // Other constants
-export const OMNIVORE_PLUGIN_VERSION = "1.2.1";
+export const OMNIVORE_PLUGIN_VERSION = "1.2.2";
 export const OMNIVORE_SYNC_BATCH_SIZE = 15;
 export const OMINOVRE_API_ENDPOINT = "https://api-prod.omnivore.app/api/graphql";
 export const OMNIVORE_APP_URL = "https://omnivore.app";

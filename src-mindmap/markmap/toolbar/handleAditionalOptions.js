@@ -1,4 +1,4 @@
-import d3SvgToPng from "d3-svg-to-png";
+import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 
 export async function handleAdditionalOptions(markmap) {
     const selection = await window.app.prompt("", {
@@ -53,6 +53,7 @@ function collapseAllNodes(markmap) {
 }
 
 async function downloadScreenshot(markmap) {
+    const d3SvgToPng = (await dynamicImportESM("d3-svg-to-png")).default;
     const svg = markmap.svg.node();
     await markmap.fit();
     const png = await d3SvgToPng(svg, "markmap.png", {

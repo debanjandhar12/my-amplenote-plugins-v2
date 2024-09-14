@@ -1,4 +1,3 @@
-import { Markmap, loadCSS, loadJS } from '@debanjandhar12/markmap-view';
 import {parseMarkdownAsMindMap} from "./parser/parser.js";
 import {createToolbar} from "./toolbar/toolbar-main.js";
 import {
@@ -10,6 +9,7 @@ import {
     addTitleToRootNodeWithLink,
     removeEmptyChildrenFromRoot
 } from "./parser/parser-result-processor.js";
+import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 
 export async function initMarkMap() {
     const options = {
@@ -22,10 +22,11 @@ export async function initMarkMap() {
     try {
         const svgEl = document.querySelector('#markmap-svg');
         const { root, assets } = await fetchMarkdownOfWindowNoteAndParse();
+        const { Markmap, loadCSS, loadJS } = await dynamicImportESM('@debanjandhar12/markmap-view');
         const markmap = Markmap.create(svgEl, options, root);
         if(assets.styles) loadCSS(assets.styles);
         if(assets.scripts) loadJS(assets.scripts);
-        createToolbar(markmap, svgEl);
+        await createToolbar(markmap, svgEl);
         addAditionalStyleForMarkMap();
     } catch (error) {
         console.error(error);
@@ -48,7 +49,7 @@ export async function reloadMarkMap(markmap) {
 async function fetchMarkdownOfWindowNoteAndParse() {
     const markdown = await window.app.getNoteContent({uuid: window.noteUUID});
     const selectorSetting = (await window.app.getSettings()).FILTERED_NODE_LIST || NODES_LIST;
-    let { root,  assets } = parseMarkdownAsMindMap(markdown, selectorSetting);
+    let { root,  assets } = await parseMarkdownAsMindMap(markdown, selectorSetting);
     if (window.appSettings[TITLE_AS_DEFAULT_NODE_SETTING] === 'true' ||
         root.content === '') {
         root = addTitleToRootNodeWithLink(root,

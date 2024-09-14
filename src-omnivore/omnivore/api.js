@@ -1,6 +1,6 @@
 // Source: https://github.com/omnivore-app/logseq-omnivore/blob/develop/src/api.ts
 
-import { Omnivore } from "@omnivore-app/api"
+import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 
 const baseUrl = endpoint => endpoint.replace(/\/api\/graphql$/, "")
 
@@ -78,6 +78,8 @@ export const getOmnivoreItems = async (
     format = "html",
     endpoint
 ) => {
+    const { Omnivore } = await dynamicImportESM("@omnivore-app/api");
+
     const omnivore = new Omnivore({
         apiKey,
         baseUrl: baseUrl(endpoint),
@@ -112,6 +114,8 @@ export const getDeletedOmnivoreItems = async (
     updatedAt = "",
     endpoint
 ) => {
+    const { Omnivore } = await dynamicImportESM("@omnivore-app/api");
+
     const omnivore = new Omnivore({
         apiKey,
         baseUrl: baseUrl(endpoint),

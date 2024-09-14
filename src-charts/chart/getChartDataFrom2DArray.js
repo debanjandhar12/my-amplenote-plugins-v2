@@ -1,13 +1,13 @@
-import _ from "lodash";
+import {cloneDeep} from "lodash-es";
 
 export function getChartDataFrom2DArray(table2DArray, categoryDirection = 'row') {
     // -- Parse data elements as number if possible --
-    table2DArray = parse2DArrayElementsAsNumberIfPossible(_.cloneDeep(table2DArray));
+    table2DArray = parse2DArrayElementsAsNumberIfPossible(cloneDeep(table2DArray));
 
     // -- Transpose data if column-oriented --
     const isColumnOriented = categoryDirection.toLowerCase() === 'column';
     let data = isColumnOriented ? transposeArray(table2DArray) : table2DArray;
-    const dataCopy = _.cloneDeep(data);
+    const dataCopy = cloneDeep(data);
 
     // -- Detect category position --
     const firstRowNumeric = isRowMostlyNumeric(data[0]);

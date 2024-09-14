@@ -1,4 +1,4 @@
-import {cloneDeep, escapeRegExp} from "lodash";
+import {cloneDeep, escapeRegExp} from "lodash-es";
 import {parse} from "./parser";
 import {visitParents} from 'unist-util-visit-parents'
 import {nanoid} from "nanoid";

@@ -1,9 +1,9 @@
-import { Toolbar } from '@debanjandhar12/markmap-toolbar';
 import {reloadMarkMap} from "../renderer.js";
 import {handleAdditionalOptions} from "./handleAditionalOptions.js";
 import {handleFilter} from "./handleFilter.js";
+import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 
-export function createToolbar(markmap) {
+export async function createToolbar(markmap) {
     // Create a style element
     const style = document.createElement('style');
     style.textContent = `
@@ -27,6 +27,7 @@ export function createToolbar(markmap) {
     document.head.append(style);
 
     // Create toolbar
+    const { Toolbar } = await dynamicImportESM('@debanjandhar12/markmap-toolbar');
     const { el } = Toolbar.create(markmap);
     el.style.position = 'absolute';
     el.style.top = '0.5rem';

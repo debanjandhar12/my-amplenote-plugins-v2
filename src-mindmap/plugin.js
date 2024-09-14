@@ -1,6 +1,6 @@
-import embedHTML from './embed/index.html?inline';
+import embedHTML from 'inline:./embed/index.html';
 import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
-import _ from "lodash";
+import {get} from "lodash-es";
 
 const plugin = {
     noteOption: {
@@ -17,7 +17,7 @@ const plugin = {
                 return { type: 'success', result: app.settings };
             case 'getAppProp':
                 const propName = args[0];
-                return { type: 'success', result: _.get(app, propName) };
+                return { type: 'success', result: get(app, propName) };
             case 'navigate':
                 const [url] = args;
                 if (app.navigate(url)) return { type: 'success' };
@@ -40,7 +40,7 @@ const plugin = {
                 }
             default:
                 try {
-                    const result = await (_.get(app, commandName))(...args);
+                    const result = await (get(app, commandName))(...args);
                     return { type: 'success', result: result };
                 } catch (error) {
                     return { type: 'error', result: error.message };

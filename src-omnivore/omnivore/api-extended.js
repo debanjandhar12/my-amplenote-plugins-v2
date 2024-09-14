@@ -1,8 +1,10 @@
-import { Omnivore } from "@omnivore-app/api"
+import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 
 const baseUrl = endpoint => endpoint.replace(/\/api\/graphql$/, "")
 
 export const saveOmnivoreItem = async (apiKey, itemUrl, endpoint) => {
+    const { Omnivore } = await dynamicImportESM("@omnivore-app/api");
+
     const omnivore = new Omnivore({
         apiKey,
         baseUrl: baseUrl(endpoint),
@@ -13,11 +15,14 @@ export const saveOmnivoreItem = async (apiKey, itemUrl, endpoint) => {
 }
 
 export const deleteOmnivoreItem = async (apiKey, itemId, endpoint) => {
+    const { Omnivore } = await dynamicImportESM("@omnivore-app/api");
+
     const omnivore = new Omnivore({
         apiKey,
         baseUrl: baseUrl(endpoint),
         timeoutMs: 10000
     })
+
     await omnivore.items.delete({ id: itemId });
 }
 

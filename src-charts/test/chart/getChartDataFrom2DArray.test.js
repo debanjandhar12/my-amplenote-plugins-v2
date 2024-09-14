@@ -1,4 +1,4 @@
-import {getChartDataFrom2DArray} from "../chart/getChartDataFrom2DArray.js";
+import {getChartDataFrom2DArray} from "../../chart/getChartDataFrom2DArray.js";
 
 describe('getChartDataFrom2DArray', () => {
     test('should handle column-oriented data with category in first row', () => {
