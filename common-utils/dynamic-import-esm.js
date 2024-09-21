@@ -1,7 +1,7 @@
 import {memoize} from "lodash-es";
 import pkgJSON from "../package.json";
 
-const dynamicImportESM = memoize(async (pkg) => {
+const dynamicImportESM = memoize(async (pkg, pkgVersion = null) => {
     if (process.env.NODE_ENV === 'test') {
         try {
             const module = require(pkg);
@@ -16,7 +16,7 @@ const dynamicImportESM = memoize(async (pkg) => {
 
     for (const cdn of cdnList) {
         try {
-            let pkgVersion = pkgJSON.dependencies[pkg] || pkgJSON.devDependencies[pkg] || 'latest';
+            pkgVersion = pkgVersion || pkgJSON.dependencies[pkg] || pkgJSON.devDependencies[pkg] || 'latest';
             pkgVersion = pkgVersion.startsWith('^') || pkgVersion.startsWith('~')  ? pkgVersion.substring(1) : pkgVersion;
             const url = `${cdn}${pkg}${pkgVersion !== 'latest' ? `@${pkgVersion}` : ''}`;
             const module = await import(url, { assert: { type: "json" } });

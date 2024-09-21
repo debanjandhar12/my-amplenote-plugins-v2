@@ -1,5 +1,5 @@
 import dotenv from "dotenv"
-import {esbuildOptions} from "./esbuild.js";
+import {esbuildOptions} from "./build/esbuild-options.js";
 
 dotenv.config();
 
@@ -12,7 +12,7 @@ export default {
       "esbuild-jest2",
       esbuildOptions // Esbuild Plugins does not work currently cuz Jest doesn't support async transformers
     ],
-    "^.+\\.html$": "jest-transform-stub"
+    "^.+\\.html$": "./build/jest-transformers/htmlTransformer.js"
   },
   "transformIgnorePatterns": [
   ],
