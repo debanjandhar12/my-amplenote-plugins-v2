@@ -1,6 +1,5 @@
 import dotenv from "dotenv"
 import {esbuildOptions} from "./build/esbuild-options.js";
-
 dotenv.config();
 
 export default {
@@ -16,8 +15,9 @@ export default {
   },
   "transformIgnorePatterns": [
   ],
-  testEnvironment: 'jsdom',
+  testEnvironment: 'jest-environment-jsdom',
   testEnvironmentOptions: {
       url: 'https://plugins.amplenote.com/'
-  }
+  },
+  setupFiles: ['<rootDir>/jest.setup.js'],
 };

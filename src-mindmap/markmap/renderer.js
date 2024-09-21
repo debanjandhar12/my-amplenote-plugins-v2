@@ -28,6 +28,7 @@ export async function initMarkMap() {
         if(assets.scripts) loadJS(assets.scripts);
         await createToolbar(markmap, svgEl);
         addAditionalStyleForMarkMap();
+        markmap.setData(root);  // Needed to setData again to fix a bug with styling
     } catch (error) {
         console.error(error);
         document.body.innerHTML = `<div style="color: red; font-size: 20px; padding: 20px;">${error.message}</div>`;

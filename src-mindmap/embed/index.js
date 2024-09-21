@@ -9,7 +9,7 @@ import {
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 
 window.app = {};
-if(process.env.NODE_ENV === 'development') {
+if(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     window.noteUUID = 'mock-uuid';
     window.app.getSettings = async function() {
         return {  };
