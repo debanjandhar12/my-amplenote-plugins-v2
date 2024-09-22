@@ -63,7 +63,7 @@ async function downloadScreenshot(markmap) {
         background: '#192025',
         quality: 1
     });
-    const noteName = await window.callAmplenotePlugin('getNoteTitle', window.noteUUID) || 'mindmap';
+    const noteName = await window.noteTitle || 'mindmap';
 
     await window.callAmplenotePlugin('saveFile', {
         name: `${noteName}.png`,

@@ -49,12 +49,12 @@ export async function reloadMarkMap(markmap) {
 
 async function fetchMarkdownOfWindowNoteAndParse() {
     const markdown = await window.app.getNoteContent({uuid: window.noteUUID});
-    const selectorSetting = (await window.app.getSettings()).FILTERED_NODE_LIST || NODES_LIST;
+    const selectorSetting = (await window.app.settings).FILTERED_NODE_LIST || NODES_LIST;
     let { root,  assets } = await parseMarkdownAsMindMap(markdown, selectorSetting);
-    if (window.appSettings[TITLE_AS_DEFAULT_NODE_SETTING] === 'true' ||
+    if ((await window.app.settings)[TITLE_AS_DEFAULT_NODE_SETTING] === 'true' ||
         root.content === '') {
         root = addTitleToRootNodeWithLink(root,
-            await window.app.getNoteTitle(window.noteUUID), window.noteUUID);
+            await window.noteTitle(window.noteUUID), window.noteUUID);
     }
     root = removeEmptyChildrenFromRoot(root);
     return { root, assets };

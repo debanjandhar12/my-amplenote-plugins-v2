@@ -13,4 +13,7 @@ export default {
             map: null
         };
     },
+    getCacheKey() {
+        return String(Math.random()); // Ask jest to never cache results from this transformer
+    }
 };

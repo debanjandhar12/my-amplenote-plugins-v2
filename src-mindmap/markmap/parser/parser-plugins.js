@@ -52,7 +52,7 @@ export const headerAnchorPlugin = definePlugin({
             md.renderer.render = function (tokens, options, env) {
                 const html = originalRender(tokens, options, env);
                 window.navigateToHeader = async (headerContent) => {
-                    const sections = await app.getNoteSections({ uuid: window.noteUUID });
+                    const sections = await window.app.getNoteSections({ uuid: window.noteUUID });
                     const headerContentText = headerContent.replace(/<[^>]*>/g, '');
                     const sectionAnchor = sections.find(section => section.heading && section.heading.text === headerContentText);
                     if (!sectionAnchor) return;

@@ -38,11 +38,12 @@
     "jest-environment-jsdom": "^29.5.0",
     "jsdom": "^24.1.0",
     "make-synchronous": "^1.0.0",
-    "playwright": "^1.47.2"
+    "playwright": "^1.47.2",
+    "core-js": "^3.38.1"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-mindmap --no-cache",
-    "test:watch": "jest --testPathPattern=src-mindmap --no-cache --watch",
+    "test": "jest --testPathPattern=src-mindmap",
+    "test:watch": "jest --testPathPattern=src-mindmap --watch",
     "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-mindmap",
     "build:dev": "node esbuild.js $(pwd)/src-mindmap --watch --server"
   },

@@ -10,7 +10,7 @@ export async function parseMarkdownAsMindMap(markdown, selector) {
     const transformer = new Transformer([pluginCheckbox, pluginHljs, pluginSourceLines, amplenoteLinksPlugin, amplenoteBackslashBreakPlugin, headerAnchorPlugin]);
     const transformResult = transformer.transform(markdown, {selector,
         selectorRules,
-        lossless: appSettings[SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING] === 'false'
+        lossless: window.appSettings[SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING] === 'false'
     });
     return {
         ...transformResult,

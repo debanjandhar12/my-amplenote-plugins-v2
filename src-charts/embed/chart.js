@@ -50,7 +50,7 @@ let chart;
 async function initChart() {
     const ctx = document.getElementById('chart').getContext('2d');
     const getNoteDataSourceLabelsDataSetsObj = async () => {
-        const noteContent = await app.getNoteContent({uuid: window.chartData.DATA_SOURCE_NOTE_UUID});
+        const noteContent = await window.app.getNoteContent({uuid: window.chartData.DATA_SOURCE_NOTE_UUID});
         console.log('noteContent', noteContent);
         const tableAtIndex = getMarkdownTableByIdx(noteContent, parseInt(window.chartData.TABLE_INDEX_IN_NOTE));
         if (!tableAtIndex) {
