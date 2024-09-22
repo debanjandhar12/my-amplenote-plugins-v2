@@ -1,82 +1,59 @@
 // @ts-ignore
-export function createOnEmbedCallHandler(extensions = {}) {
+export const commonEmbedCallHandlerCommands = {
+    "navigate": async (app, url) => {
+        if (app.navigate(url)) return true;
+        if (window.open(url, '_blank')) return true;
+        return false;
+    },
+    "prompt": async (app, ...args) => {
+        return await app.prompt(...args);
+    },
+    "getSettings": async (app) => {
+        return app.settings;
+    },
+    "setSetting": async (app, key, value) => {
+        return app.setSetting(key, value);
+    },
+    "getNoteTitleByUUID": async (app, noteUUID) =>  {
+        return (await app.notes.find(noteUUID)).name;
+    },
+    "getNoteContentByUUID": async (app, noteUUID) => {
+        return await app.getNoteContent({uuid: noteUUID});
+    },
+    "getNoteSections": async (app, ...args) => {
+        return await app.getNoteSections(...args);
+    },
+    "saveFile": async (app, ...args) => {
+        try {
+            let {name, data} = args[0];
+            if (data.startsWith('data:')) {
+                const response = await fetch(data);
+                data = await response.blob();
+            }
+            return await app.saveFile(data, name);
+        } catch (e) {
+            throw e.message;
+        }
+    }
+}
+
+export function createOnEmbedCallHandler(commands = {}) {
     return async function onEmbedCallHandler(app, commandName, ...args) {
         console.log('onEmbedCall', commandName, args);
-
-        app.navigate = async (url) => {
-            if (app.navigate(url)) return true;
-            if (window.open(url, '_blank')) return true;
-            return false;
-        };
-
-        switch (commandName) {
-            case 'getApp':
-                return app;
-            case 'saveFile':
-                try {
-                    let {name, data} = args[0];
-                    if (data.startsWith('data:')) {
-                        const response = await fetch(data);
-                        data = await response.blob();
-                    }
-                    return await app.saveFile(data, name);
-                } catch (e) {
-                    throw e.message;
-                }
-            default:
-                if (commandName in extensions) {
-                    return extensions[commandName](app, ...args);
-                }
-                throw new Error(`Unknown command: ${commandName}`);
+        if (commandName in commands) {
+            return await commands[commandName](app, ...args);
         }
+        throw new Error(`Unknown command: ${commandName}`);
     };
 }
 
-export function getDummyApp() {
-    return createDummyObject(deserializeWithFunctions(extractedSerializedApp));
-}
-
-export function getOnEmbedCallingAppProxy() {
-    return createDummyObject(deserializeWithFunctions(extractedSerializedApp), '',
-        // @ts-ignore
-        (fullKey) => async () => {
-            // @ts-ignore
-            const app = await window.callAmplenotePlugin('getApp');
-            return app[fullKey];
-        },
-        (fullKey) => async () => {
-            // @ts-ignore
-            const app = await window.callAmplenotePlugin('getApp');
-            return app[fullKey];
+export function createMockCallAmplenotePlugin(callAmplenotePluginCommandMock) {
+    return async(commandName, ...args) => {
+        if (commandName in callAmplenotePluginCommandMock) {
+            return await callAmplenotePluginCommandMock[commandName](...args);
         }
-    );
-}
-
-// -- Utils --
-function createDummyObject(originalObject, parentKey = '',
-valueHandler = (fullKey) => {
-    return () => {throw new Error(`Dummy value '${fullKey}' accessed`);}
-},
-funcHandler = (fullKey) => {
-    return () => {throw new Error(`Dummy function '${fullKey}' accessed`);}
-}) {
-    const dummy = {};
-
-    for (const [key, value] of Object.entries(originalObject)) {
-        const fullKey = parentKey ? `${parentKey}.${key}` : key;
-
-        if (typeof value === 'function') {
-            dummy[key] = funcHandler(fullKey)
-        } else if (typeof value === 'object' && value !== null) {
-            dummy[key] = createDummyObject(value, fullKey);  // Recursively handle nested objects
-        } else {
-            dummy[key] = new Proxy({}, {
-                get: valueHandler(fullKey)
-            });
-        }
+        throw new Error(`Unknown command: ${commandName}`);
     }
-
-    return dummy;
 }
 
 // @ts-ignore

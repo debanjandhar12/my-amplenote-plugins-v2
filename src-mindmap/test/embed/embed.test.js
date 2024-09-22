@@ -1,19 +1,19 @@
 import html from "inline:../../embed/index.html";
 import {chromium} from "playwright";
 import {addScriptToHtmlString, addWindowVariableToHtmlString} from "../../../common-utils/embed-helpers.js";
-import {mockApp} from "../embed.testdata.js";
-import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
+import {createMockCallAmplenotePlugin, serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
+import {callAmplenotePluginCommandMock} from "./embed.testdata.js";
 
 describe('mindmap embed', () => {
     it('should initialize and render markmap', async () => {
         const browser = await chromium.launch({ headless: true });
         const context = await browser.newContext();
         const page = await context.newPage();
-        const htmlWithMockApp = addScriptToHtmlString(html, "window.mockApp = " + JSON.stringify(serializeWithFunctions({
-            ...mockApp,
-            getNoteContent: () => {
-                return `# Hello World`
-            }
+        const htmlWithMockApp = addScriptToHtmlString(html, "window.callAmplenotePluginMock = " + JSON.stringify(serializeWithFunctions({
+            ...callAmplenotePluginCommandMock,
+            "getNoteContentByUUID": async (noteUUID) => {
+                return "# Hello World"
+            },
         })));
         await page.setContent(htmlWithMockApp);
         await page.waitForSelector('.markmap-svg');
@@ -29,7 +29,9 @@ describe('mindmap embed', () => {
         const browser = await chromium.launch({ headless: true });
         const context = await browser.newContext();
         const page = await context.newPage();
-        const htmlWithMockApp = addScriptToHtmlString(html, "window.mockApp = " + JSON.stringify(serializeWithFunctions(mockApp)));
+        const htmlWithMockApp = addScriptToHtmlString(html, "window.callAmplenotePluginMock = " + JSON.stringify(serializeWithFunctions(
+            callAmplenotePluginCommandMock
+        )));
         await page.setContent(htmlWithMockApp);
         await page.waitForSelector('.mm-toolbar-item');
         const toolbarItems = await page.$$('.mm-toolbar-item');

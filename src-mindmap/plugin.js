@@ -1,6 +1,6 @@
 import embedHTML from 'inline:./embed/index.html';
 import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
-import {createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
+import {commonEmbedCallHandlerCommands, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 
 const plugin = {
     noteOption: {
@@ -10,7 +10,7 @@ const plugin = {
             await app.openSidebarEmbed(1, 'sidebar', noteUUID);
         },
     },
-    onEmbedCall: createOnEmbedCallHandler(),
+    onEmbedCall: createOnEmbedCallHandler(commonEmbedCallHandlerCommands),
     renderEmbed(app, embedType, noteUUID) {
         return addWindowVariableToHtmlString(embedHTML, 'noteUUID', noteUUID);
     }

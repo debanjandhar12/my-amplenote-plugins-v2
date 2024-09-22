@@ -1,7 +1,7 @@
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 
 export async function handleAdditionalOptions(markmap) {
-    const selection = await window.app.prompt("", {
+    const selection = await appConnector.prompt("", {
         inputs: [
             { label: "Select an option", type: "select", options: [
                     { label: "Expand all nodes recursively", value: "Expand all nodes recursively" },
@@ -65,7 +65,7 @@ async function downloadScreenshot(markmap) {
     });
     const noteName = await window.noteTitle || 'mindmap';
 
-    await window.callAmplenotePlugin('saveFile', {
+    await appConnector.saveFile({
         name: `${noteName}.png`,
         data: png
     });
