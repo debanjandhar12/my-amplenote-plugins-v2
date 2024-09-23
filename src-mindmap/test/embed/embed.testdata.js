@@ -1,6 +1,6 @@
-export const callAmplenotePluginCommandMock = {
+export const EMBED_COMMANDS_MOCK = {
     "navigate": async (url) => {
-        name: 'Test note'
+        window.location.href = url;
     },
     "getSettings": async () => {
         return {};
@@ -26,3 +26,5 @@ export const callAmplenotePluginCommandMock = {
         });
     }
 }
+
+export const EMBED_NOTE_UUID_MOCK = 'mock-uuid';

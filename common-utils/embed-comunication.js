@@ -1,5 +1,5 @@
 // @ts-ignore
-export const commonEmbedCallHandlerCommands = {
+export const COMMON_EMBED_COMMANDS = {
     "navigate": async (app, url) => {
         if (app.navigate(url)) return true;
         if (window.open(url, '_blank')) return true;
@@ -37,20 +37,26 @@ export const commonEmbedCallHandlerCommands = {
     }
 }
 
-export function createOnEmbedCallHandler(commands = {}) {
+export function createOnEmbedCallHandler(embedCommands = {}) {
     return async function onEmbedCallHandler(app, commandName, ...args) {
         console.log('onEmbedCall', commandName, args);
-        if (commandName in commands) {
-            return await commands[commandName](app, ...args);
+        try {
+            if (commandName in embedCommands) {
+                return await embedCommands[commandName](app, ...args);
+            }
+        } catch (e) {
+            app.alert("Error:", e.message || e);
+            console.error(e);
+            throw e;
         }
         throw new Error(`Unknown command: ${commandName}`);
-    };
+    }
 }
 
-export function createMockCallAmplenotePlugin(callAmplenotePluginCommandMock) {
+export function createCallAmplenotePluginMock(embedCommandsMock) {
     return async(commandName, ...args) => {
-        if (commandName in callAmplenotePluginCommandMock) {
-            return await callAmplenotePluginCommandMock[commandName](...args);
+        if (commandName in embedCommandsMock) {
+            return await embedCommandsMock[commandName](...args);
         }
         throw new Error(`Unknown command: ${commandName}`);
     }

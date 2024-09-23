@@ -1,5 +1,5 @@
 import {getMarkdownTableByIdx} from "../../markdown/getMarkdownTableByIdx.js";
-import {SAMPLE_MARKDOWN_DATA} from "./test-data.js";
+import {SAMPLE_MARKDOWN_DATA} from "./markdown.testdata.js";
 import {parseMarkdownTable} from "../../markdown/parseMarkdownTable.js";
 
 describe('getMarkdownTableByIdx', () => {

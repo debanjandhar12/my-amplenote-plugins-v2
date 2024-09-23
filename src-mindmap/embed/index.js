@@ -7,16 +7,19 @@ import {
     TITLE_AS_DEFAULT_NODE_SETTING_DEFAULT
 } from "../constants.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
-import {callAmplenotePluginCommandMock} from "../test/embed/embed.testdata.js";
-import {createMockCallAmplenotePlugin, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
+import {EMBED_COMMANDS_MOCK, EMBED_NOTE_UUID_MOCK} from "../test/embed/embed.testdata.js";
+import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 
 
 if(process.env.NODE_ENV === 'development') {
-    window.noteUUID = window.noteUUID || 'mock-uuid';
-    window.callAmplenotePlugin = window.callAmplenotePlugin || createMockCallAmplenotePlugin(callAmplenotePluginCommandMock);
+    window.noteUUID = window.noteUUID || EMBED_NOTE_UUID_MOCK;
+    window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
 }
-else if (window.callAmplenotePluginMock) {
-    window.callAmplenotePlugin = createMockCallAmplenotePlugin(deserializeWithFunctions(window.callAmplenotePluginMock));
+else {
+    if (window.INJECTED_NOTE_UUID_MOCK)
+        window.noteUUID = deserializeWithFunctions(window.INJECTED_NOTE_UUID_MOCK);
+    if (window.INJECTED_EMBED_COMMANDS_MOCK)
+        window.callAmplenotePlugin = createCallAmplenotePluginMock(deserializeWithFunctions(window.INJECTED_EMBED_COMMANDS_MOCK));
 }
 window.appConnector = new Proxy({}, {
     get: function(target, prop, receiver) {
