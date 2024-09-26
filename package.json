@@ -22,7 +22,8 @@
     "d3-svg-to-png": "^0.3.1",
     "chart.js": "^4.4.3",
     "fparser": "^3.1.0",
-    "nanoid": "^5.0.7"
+    "nanoid": "^5.0.7",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
