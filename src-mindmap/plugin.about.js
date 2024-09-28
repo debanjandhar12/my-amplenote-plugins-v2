@@ -17,7 +17,13 @@ To use this plugin, select "Preview mindmap" from the note menu.
 
 **Features:**
 - Preview your notes as a Mind Map
-- Mind Map preview updates on clicking reload toolbar button.
+- Instant reload mindmap by clicking reload toolbar button.
+- Support for filtering nodes.
+- Download mindmap as image.
+
+**Common FAQ:**
+Q) [Mindmap shows too much details. How do I reduce detailing?][^1] 
+Q) [How to set initial expand level detailing?][^2] 
 `.trim().replaceAll('\n', '<br />'),
     template: `
     
@@ -30,5 +36,10 @@ To use this plugin, select "Preview mindmap" from the note menu.
 06/08/2024 - Bug fixes
 17-08-2024 - Added additional options + download as png feature
 24-08-2024 - Added header anchor links + additional options
+
+[^1]: [Mindmap shows too much details. How do I reduce detailing?]()
+    Changing the "Show only siblings at current level" setting to true should show important parts of the note only.
+[^2]: [How to set initial expand level detailing?]()
+    The initial expand level can be set by setting the "Initial expand level" setting to the desired level.
 `.trim()
 };

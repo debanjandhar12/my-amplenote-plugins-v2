@@ -115,7 +115,7 @@ const plugin = {
             const appendedFileURL = fileURL + '?text=' +
                 window.encodeURIComponent(Buffer.from(text, "utf8").toString('base64'));
             // Note: The (<a> </a>) is a temporary hack to get image markdown to be supported by replaceSelection. Remove this later.
-            app.context.replaceSelection(`![${text || ''}](${appendedFileURL})<a> </a>`);
+            app.context.replaceSelection(`<a> </a>![${text || ''}](${appendedFileURL})<a> </a>`);
             return null;
         } catch (e) {
             app.alert('Failed _toDiagram - ' + e);
