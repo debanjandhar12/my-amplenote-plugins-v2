@@ -3,6 +3,7 @@ import {parseMarkdownTable} from "../markdown/parseMarkdownTable.js";
 import {getChartDataFrom2DArray} from "../chart/getChartDataFrom2DArray.js";
 import Formula from "fparser";
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
+import {ADDITIONAL_MATH_CONSTANTS} from "../constants.js";
 
 let chart;
 
@@ -34,7 +35,7 @@ export async function initChart() {
 
         for (let x = parseFloat(window.chartData.MIN_X); x <= parseFloat(window.chartData.MAX_X); x += parseFloat(window.chartData.STEP_X)) {
             labels.push(x.toString());
-            const y = await formula.evaluate({ x });
+            const y = await formula.evaluate({ x, ...ADDITIONAL_MATH_CONSTANTS });
             datasets[0].data.push(y);
         }
         console.log('formula', labels, datasets);
