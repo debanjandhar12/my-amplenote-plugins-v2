@@ -12,7 +12,7 @@ export function showEmbedLoader() {
       z-index: 9998;
       animation: fadeIn 0.3s ease-in-out;
     `;
-  
+
     // Create loader
     const loader = document.createElement('div');
     loader.id = 'embed-loader';
@@ -28,7 +28,7 @@ export function showEmbedLoader() {
       animation: spin 1s linear infinite;
       z-index: 9999;
     `;
-  
+
     const keyframes = document.createElement('style');
     keyframes.textContent = `
       @keyframes spin {
@@ -40,19 +40,29 @@ export function showEmbedLoader() {
         to { opacity: 1; }
       }
     `;
-  
+
     document.head.appendChild(keyframes);
     document.body.appendChild(overlay);
     document.body.appendChild(loader);
-  }
-  
-  export function hideEmbedLoader() {
+
+    // Show loader after 320ms
+    overlay.style.display = 'none';
+    loader.style.display = 'none';
+    setTimeout(() => {
+        if(document.getElementById('embed-loader'))
+            loader.style.display = 'block';
+        if(document.getElementById('embed-loader-overlay'))
+            overlay.style.display = 'block';
+    }, 240);
+}
+
+export function hideEmbedLoader() {
     const loader = document.getElementById('embed-loader');
     const overlay = document.getElementById('embed-loader-overlay');
     if (loader) {
-      loader.remove();
+        loader.remove();
     }
     if (overlay) {
-      overlay.remove();
+        overlay.remove();
     }
-  }
+}

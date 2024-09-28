@@ -28,9 +28,10 @@ export async function initMarkMap() {
         if(assets.scripts) loadJS(assets.scripts);
         await createToolbar(markmap, svgEl);
         addAditionalStyleForMarkMap();
+        markmap.setData(root);  // Needed to setData again to fix a bug with styling
     } catch (error) {
         console.error(error);
-        document.body.innerHTML = `<div style="color: red; font-size: 20px; padding: 20px;">${error.message}</div>`;
+        document.body.innerHTML = `<div style="color: red; font-size: 20px; padding: 20px;">Error: ${error.message}</div>`;
         throw error;
     }
 }
@@ -47,13 +48,13 @@ export async function reloadMarkMap(markmap) {
 }
 
 async function fetchMarkdownOfWindowNoteAndParse() {
-    const markdown = await window.app.getNoteContent({uuid: window.noteUUID});
-    const selectorSetting = (await window.app.getSettings()).FILTERED_NODE_LIST || NODES_LIST;
+    const markdown = await appConnector.getNoteContentByUUID(window.noteUUID);
+    const selectorSetting = (await appConnector.getSettings()).FILTERED_NODE_LIST || NODES_LIST;
     let { root,  assets } = await parseMarkdownAsMindMap(markdown, selectorSetting);
     if (window.appSettings[TITLE_AS_DEFAULT_NODE_SETTING] === 'true' ||
         root.content === '') {
         root = addTitleToRootNodeWithLink(root,
-            await window.app.getNoteTitle(window.noteUUID), window.noteUUID);
+            await appConnector.getNoteTitleByUUID(window.noteUUID), window.noteUUID);
     }
     root = removeEmptyChildrenFromRoot(root);
     return { root, assets };

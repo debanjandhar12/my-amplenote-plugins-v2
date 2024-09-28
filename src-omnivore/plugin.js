@@ -21,13 +21,13 @@ import {cloneDeep} from "lodash-es";
 const plugin = {
     appOption: {
         "Sync all": async function (app) {
-            await this._syncAll(app);
+            await plugin._syncAll(app);
         },
     },
     noteOption: {
         "Sync all": {
             run: async function(app, noteUUID) {
-                await this._syncAll(app);
+                await plugin._syncAll(app);
             },
             check: async function(app, noteUUID) {
                 const noteObject = await app.findNote({uuid: noteUUID});
@@ -44,15 +44,15 @@ const plugin = {
             return;
         }
         try {
-            if (await this._checkOmnivoreApiKey(app)) {
+            if (await plugin._checkOmnivoreApiKey(app)) {
                 const {
                     omnivoreItemsState,
                     omnivoreItemsStateDelta,
                     omnivoreDeletedItems
-                } = await this._syncStateWithOmnivore(app);
+                } = await plugin._syncStateWithOmnivore(app);
                 console.log(omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems);
-                const suppressedErrorMessages = await this._syncHighlightsToNotes(omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems, app);
-                await this._syncCatalogToDashboard(omnivoreItemsState, app);
+                const suppressedErrorMessages = await plugin._syncHighlightsToNotes(omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems, app);
+                await plugin._syncCatalogToDashboard(omnivoreItemsState, app);
                 app.alert("Syncing complete. "
                     + `${suppressedErrorMessages.length > 0 ? "Some errors were encountered: " + suppressedErrorMessages.join("\n") : ""}`);
             }

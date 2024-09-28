@@ -4,24 +4,24 @@ const plugin = {
     replaceText: {
         "Convert to Dia": async function (app, text) {
             text = text.trim();
-            let {type, text: parsedText} = await this._parseUserIntentFromText(app, text);
+            let {type, text: parsedText} = await plugin._parseUserIntentFromText(app, text);
             if(type === 'cancel') return;
-            await this._toDiagram(app, type, text, parsedText)
+            await plugin._toDiagram(app, type, text, parsedText)
             return null;
         }
     },
     insertText: {
         "Create Diagram": async function (app) {
-            let {type, text} = await this._parseUserIntentFromText(app, null);
+            let {type, text} = await plugin._parseUserIntentFromText(app, null);
             if(type === 'cancel') return;
             text = text.trim();
-            await this._toDiagram(app, type, text, text)
+            await plugin._toDiagram(app, type, text, text)
             return null;
         }
     },
     imageOption: {
         "Convert to Text": async function (app, image) {
-            await this._toText(app, image);
+            await plugin._toText(app, image);
             return null;
         }
     },
@@ -108,8 +108,8 @@ const plugin = {
                 throw new Error(error);
             }
             const blob = await response.blob();
-            const svgDataURL = await this._dataURLFromBlob(blob);
-            const pngDataURL = await this._svgToPng(svgDataURL);
+            const svgDataURL = await plugin._dataURLFromBlob(blob);
+            const pngDataURL = await plugin._svgToPng(svgDataURL);
             const noteHandle = {uuid: app.context.noteUUID};
             const fileURL = await app.attachNoteMedia(noteHandle, pngDataURL);
             const appendedFileURL = fileURL + '?text=' +

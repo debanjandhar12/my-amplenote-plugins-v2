@@ -52,12 +52,12 @@ export const headerAnchorPlugin = definePlugin({
             md.renderer.render = function (tokens, options, env) {
                 const html = originalRender(tokens, options, env);
                 window.navigateToHeader = async (headerContent) => {
-                    const sections = await app.getNoteSections({ uuid: window.noteUUID });
+                    const sections = await appConnector.getNoteSections({ uuid: window.noteUUID });
                     const headerContentText = headerContent.replace(/<[^>]*>/g, '');
                     const sectionAnchor = sections.find(section => section.heading && section.heading.text === headerContentText);
                     if (!sectionAnchor) return;
                     const link = `https://www.amplenote.com/notes/${window.noteUUID}#${sectionAnchor.heading.anchor}`;
-                    await window.app.navigate(`${link}`);
+                    await appConnector.navigate(`${link}`);
                 };
                 return html.replace(/<h([1-6])([^>]*)>(.*?)<\/h\1>/g, (match, level, attrs, content) => {
                     const anchor = `<a href="javascript:void(0);" onclick="navigateToHeader('${escape(content)}');" class="anchor">#</a>`;

@@ -11,7 +11,7 @@ const plugin = {
     replaceText: async function (app, text) {
         try {
             const textWithFormatting = app.context.selectionContent;
-            await this._autoLink(app, textWithFormatting, async ({preReplacementMarkdown, replacementMap, originalMap}) => {
+            await plugin._autoLink(app, textWithFormatting, async ({preReplacementMarkdown, replacementMap, originalMap}) => {
                 const autoLinkedMarkdown = processReplacementMap(preReplacementMarkdown, replacementMap);
                 await app.context.replaceSelection(autoLinkedMarkdown);
             });
@@ -22,7 +22,7 @@ const plugin = {
     noteOption: async function(app, noteUUID) {
         try {
             const noteContent = await app.getNoteContent({uuid: noteUUID});
-            await this._autoLink(app, noteContent, async ({preReplacementMarkdown, replacementMap, originalMap}) => {
+            await plugin._autoLink(app, noteContent, async ({preReplacementMarkdown, replacementMap, originalMap}) => {
                 if (replacementMap.size === 0) {
                     return;
                 }
@@ -64,7 +64,7 @@ const plugin = {
     },
     async _autoLink(app, text, replaceTextFn) {
         try {
-            const pages = await this._getPages(app);
+            const pages = await plugin._getPages(app);
             let {preReplacementMarkdown, replacementMap, originalMap} = await addPageLinksToMarkdown(text, pages);
             const isAutoLinkSectionsEnabled = (app.settings[AUTOLINK_RELATED_NOTES_SECTION_SETTING]
             || AUTOLINK_RELATED_NOTES_SECTION_SETTING_DEFAULT) === "true";
@@ -72,7 +72,7 @@ const plugin = {
                 await replaceTextFn({preReplacementMarkdown, replacementMap, originalMap});
             }
             else if (isAutoLinkSectionsEnabled) {
-                const sectionMap = await this._getSections(app);
+                const sectionMap = await plugin._getSections(app);
                 let {preReplacementMarkdown: preReplacementMarkdown2, replacementMap: replacementMap2, originalMap: originalMap2} = await addSectionLinksToMarkdown(preReplacementMarkdown, sectionMap);
                 if (preReplacementMarkdown2 !== text) {
                     let preReplacementMarkdownCombined = preReplacementMarkdown2;
