@@ -14,8 +14,9 @@ export default {
     "^.+\\.html$": "./build/jest-transformers/htmlTransformer.js"
   },
   "transformIgnorePatterns": [
+     "node_modules/@omnivore-app/api"
   ],
-  testEnvironment: 'jest-environment-jsdom',
+  testEnvironment: 'jsdom',
   testEnvironmentOptions: {
       url: 'https://plugins.amplenote.com/'
   },

@@ -11,6 +11,10 @@ import {sortOmnivoreItemHighlights, sortOmnivoreItems} from "../amplenote/util.j
 describe("_syncStateWithOmnivore", () => {
     it('when adding / deleting articles, correct ' +
         'omnivoreItemsState, omnivoreItemsStateDelta and omnivoreDeletedItems needs to be returned', async function() {
+        if(process.env.OMNIVORE_KEY === undefined || process.env.OMNIVORE_KEY === '') {
+            console.warn('Skipping test as OMNIVORE_KEY is not set');
+            return;
+        }
         const plugin = mockPlugin(pluginObject);
         global.app = mockApp(mockNote("Basic Note", "Name", "1", ""));
         await global.app.setSetting(OMNIVORE_API_KEY_SETTING, process.env.OMNIVORE_KEY);
@@ -43,6 +47,10 @@ describe("_syncStateWithOmnivore", () => {
     }, 40000);
     it('should have correct omnivoreItemsState and omnivoreItemsStateDelta ' +
         'when adding highlights to articles', async function() {
+        if(process.env.OMNIVORE_KEY === undefined || process.env.OMNIVORE_KEY === '') {
+            console.warn('Skipping test as OMNIVORE_KEY is not set');
+            return;
+        }
         const plugin = mockPlugin(pluginObject);
         global.app = mockApp(mockNote("Basic Note", "Name", "1", ""));
         await global.app.setSetting(OMNIVORE_API_KEY_SETTING, process.env.OMNIVORE_KEY);

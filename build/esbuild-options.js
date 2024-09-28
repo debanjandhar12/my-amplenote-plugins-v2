@@ -12,7 +12,7 @@ export const esbuildOptions = {
     legalComments: 'none',
     define: {
         'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-        'process.env.BUILD_TIME': JSON.stringify(new Date().toISOString())
+        'process.env.BUILD_START_TIME': JSON.stringify(new Date().toISOString())
     },
     plugins: [nodeModulesPolyfillPlugin({globals: { process: true }})]
 }

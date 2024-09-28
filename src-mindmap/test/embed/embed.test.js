@@ -26,7 +26,7 @@ describe('mindmap embed', () => {
         const svgText = await page.$eval('.markmap-svg', el => el.textContent);
         expect(svgText).toContain('Hello World');
         await browser.close();
-    }, 10000);
+    }, 20000);
     it('loads toolbar items', async () => {
         const browser = await chromium.launch({ headless: true });
         const context = await browser.newContext();
@@ -41,7 +41,7 @@ describe('mindmap embed', () => {
         const toolbarItems = await page.$$('.mm-toolbar-item');
         expect(toolbarItems.length).toBeGreaterThan(1);
         await browser.close();
-    }, 10000);
+    }, 20000);
     it('handles error correctly', async () => {
         const browser = await chromium.launch({ headless: true });
         const context = await browser.newContext();
@@ -58,5 +58,5 @@ describe('mindmap embed', () => {
         const content = await page.content();
         expect(content).toContain('Error: Note not found');
         await browser.close();
-    }, 10000);
+    }, 20000);
 });

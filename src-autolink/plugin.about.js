@@ -1,5 +1,4 @@
 import {
-    AUTOLINK_PLUGIN_VERSION,
     AUTOLINK_RELATED_NOTES_SECTION_SETTING,
     MIN_PAGE_LENGTH_SETTING
 } from "./constants.js";
@@ -10,7 +9,7 @@ export default {
     icon: 'insert_link',
     settings: [MIN_PAGE_LENGTH_SETTING,
         AUTOLINK_RELATED_NOTES_SECTION_SETTING],
-    version: AUTOLINK_PLUGIN_VERSION,
+    version: '2.2.0',
     instructions: `
 The plugin automatically creates links for words in selected text that match your existing notes. To use this feature, simply select the desired text and click on the AutoLink option in the floating toolbar:
 ![](https://images.amplenote.com/f17183ac-0b8f-11ee-a2ea-8683315df6a0/c45e1a8d-163e-4a21-b608-aa95a3e96be9.gif)

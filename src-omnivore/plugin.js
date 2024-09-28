@@ -6,7 +6,6 @@ import {
     OMNIVORE_DASHBOARD_COLUMNS_SETTING, OMNIVORE_DASHBOARD_COLUMNS_SETTING_DEFAULT,
     OMNIVORE_DASHBOARD_NOTE_TITLE_DEFAULT,
     OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING,
-    OMNIVORE_PLUGIN_VERSION,
     OMNIVORE_SYNC_BATCH_SIZE, SYNC_ARTICLE_CONTENT_SETTING, SYNC_ARTICLE_CONTENT_SETTING_DEFAULT
 } from "./constants.js";
 import { getDeletedOmnivoreItems, getOmnivoreItems} from "./omnivore/api.js";
@@ -15,7 +14,6 @@ import {
     generateNoteHighlightSectionMarkdown,
     generateNoteSummarySectionMarkdown
 } from "./amplenote/generate-markdown.js";
-import {SAMPLE_OMNIVORE_STATE_DATA} from "./test/test-data.js";
 import {cloneDeep} from "lodash-es";
 
 const plugin = {
@@ -66,7 +64,7 @@ const plugin = {
     },
     _syncStateWithOmnivore: async function (app) {
         const lastSyncPluginVersion = app.settings["lastSyncPluginVersion"];
-        if (lastSyncPluginVersion !== OMNIVORE_PLUGIN_VERSION) {
+        if (lastSyncPluginVersion !== process.env.BUILD_START_TIME) {
             await app.setSetting("lastSyncTime", "");
             await app.setSetting("lastOmnivoreItemsState", JSON.stringify([]));
         }
@@ -132,7 +130,7 @@ const plugin = {
             return omnivoreDeletedItems.find((deletedItem) => deletedItem.id === item.id) === undefined;
         });
 
-        await app.setSetting("lastSyncPluginVersion", OMNIVORE_PLUGIN_VERSION);
+        await app.setSetting("lastSyncPluginVersion", process.env.BUILD_START_TIME);
         await app.setSetting("lastSyncTime", new Date().toISOString());
         await app.setSetting("lastOmnivoreItemsState", JSON.stringify(omnivoreItemsState));
 

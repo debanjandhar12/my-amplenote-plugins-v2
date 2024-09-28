@@ -1,11 +1,8 @@
-import {CHARTS_PLUGIN_VERSION} from "./constants.js";
-
-
 export default {
     name: 'Ample Charts',
     description: 'Plugin to create interactive Charts / Graphs',
     settings: [],
-    version: CHARTS_PLUGIN_VERSION,
+    version: '1.1.0',
     icon: 'bar_chart',
     instructions: `
 Plugin to create interactive Charts / Graphs. This supports creating Bar, Line, Pie, and Doughnut chart types.

@@ -1,6 +1,5 @@
 import {
     INITIAL_EXPAND_LEVEL_SETTING,
-    MINDMAP_PLUGIN_VERSION,
     SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING,
     TITLE_AS_DEFAULT_NODE_SETTING
 } from "./constants.js";
@@ -9,7 +8,7 @@ export default {
     name: 'Amplenote Mindmap',
     description: 'Visualize your markdown notes in a mindmap',
     settings: [TITLE_AS_DEFAULT_NODE_SETTING, INITIAL_EXPAND_LEVEL_SETTING, SHOW_ONLY_SIBLINGS_AT_CURRENT_LEVEL_SETTING],
-    version: MINDMAP_PLUGIN_VERSION,
+    version: '1.0.0',
     icon: 'account_tree',
     instructions: `
 Visualize your markdown notes in a mindmap.

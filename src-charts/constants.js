@@ -156,6 +156,4 @@ export const formulaChartSchema = baseChartSchema.extend({
     })
 });
 
-// Other constants
-export const CHARTS_PLUGIN_VERSION = "1.0.1";
 

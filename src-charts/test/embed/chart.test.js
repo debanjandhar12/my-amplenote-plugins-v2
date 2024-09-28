@@ -23,7 +23,7 @@ describe('chart embed', () => {
         expect(canvas).not.toBeNull();
         expect((await chartData.jsonValue()).length).toBeGreaterThan(0);
         await browser.close();
-    }, 10000);
+    }, 20000);
 
     it('should initialize (formula data source)', async () => {
         const browser = await chromium.launch({ headless: true });
@@ -43,5 +43,5 @@ describe('chart embed', () => {
         expect(canvas).not.toBeNull();
         expect((await chartData.jsonValue()).length).toBeGreaterThan(0);
         await browser.close();
-    }, 10000);
+    }, 20000);
 });

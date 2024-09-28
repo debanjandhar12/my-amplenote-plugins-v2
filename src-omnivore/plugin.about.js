@@ -3,7 +3,7 @@ import {
     OMNIVORE_DASHBOARD_COLUMNS_SETTING,
     OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING,
     OMNIVORE_DASHBOARD_ORDER_SETTING,
-    OMNIVORE_PLUGIN_VERSION, SYNC_ARTICLE_CONTENT_SETTING
+    SYNC_ARTICLE_CONTENT_SETTING
 } from "./constants.js";
 
 export default {
@@ -12,7 +12,7 @@ export default {
     description: 'A plugin to import and sync web clippings, articles, and highlights from the web app omnivore into amplenote.',
     settings: [OMNIVORE_API_KEY_SETTING, OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING, OMNIVORE_DASHBOARD_ORDER_SETTING,
             OMNIVORE_DASHBOARD_COLUMNS_SETTING, BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING, NOTE_HIGHLIGHT_ORDER_SETTING, SYNC_ARTICLE_CONTENT_SETTING],
-    version: OMNIVORE_PLUGIN_VERSION,
+    version: '1.3.0',
     instructions: `
 This plugin allows you to sync your omnivore web clippings, articles, and highlights into amplenote. To get started:
 1. Install the plugin.
