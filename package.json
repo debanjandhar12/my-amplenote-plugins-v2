@@ -43,10 +43,10 @@
     "core-js": "^3.38.1"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-charts",
-    "test:watch": "jest --testPathPattern=src-charts --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-charts",
-    "build:dev": "node esbuild.js $(pwd)/src-charts --watch --server"
+    "test": "jest --testPathPattern=src-mindmap",
+    "test:watch": "jest --testPathPattern=src-mindmap --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-mindmap",
+    "build:dev": "node esbuild.js $(pwd)/src-mindmap --watch --server"
   },
   "testEnvironment": "jsdom"
 }
