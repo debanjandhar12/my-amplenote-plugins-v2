@@ -40,12 +40,14 @@
     "jsdom": "^24.1.0",
     "make-synchronous": "^1.0.0",
     "playwright": "^1.47.2",
-    "core-js": "^3.38.1"
+    "core-js": "^3.38.1",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/jest-dom": "^6.5.0"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-charts",
-    "test:watch": "jest --testPathPattern=src-charts --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-charts",
-    "build:dev": "node esbuild.js $(pwd)/src-charts --watch --server"
+    "test": "jest --testPathPattern=src-emoji",
+    "test:watch": "jest --testPathPattern=src-emoji --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-emoji",
+    "build:dev": "node esbuild.js $(pwd)/src-emoji --watch --server"
   }
 }
