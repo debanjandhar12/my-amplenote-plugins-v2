@@ -126,9 +126,9 @@ export const noteChartSchema = baseChartSchema.extend({
     DATA_SOURCE_NOTE_UUID: z.string(),
     TABLE_INDEX_IN_NOTE: z.string().refine(val => {
         const parsed = parseInt(val, 10);
-        return !isNaN(parsed) && Number.isInteger(parsed) && parsed >= 1 && parsed <= 100;
+        return !isNaN(parsed) && Number.isInteger(parsed) && parsed >= 0 && parsed <= 100;
     }, {
-        message: 'Table Index must be an integer between 1 and 100 (inclusive)',
+        message: 'Table Index must be an integer between 0 and 100 (inclusive)',
     }),
     HORIZONTAL_AXIS_LABEL_DIRECTION: z.enum(['column', 'row']),
     START_FROM_ZERO: z.boolean()
