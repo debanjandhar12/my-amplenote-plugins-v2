@@ -51,9 +51,9 @@
     "esbuild-plugin-external-global": "^1.0.1"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-bigmoji",
-    "test:watch": "jest --testPathPattern=src-bigmoji --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-bigmoji",
-    "build:dev": "node esbuild.js $(pwd)/src-bigmoji --watch --server"
+    "test": "jest --testPathPattern=src-emoji",
+    "test:watch": "jest --testPathPattern=src-emoji --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-emoji",
+    "build:dev": "node esbuild.js $(pwd)/src-emoji --watch --server"
   }
 }
