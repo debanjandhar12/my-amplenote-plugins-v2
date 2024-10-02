@@ -11,7 +11,7 @@
     "date-fns": "^3.6.0",
     "lodash-es": "^4.17.21",
     "luxon": "^3.4.4",
-    "markdown-escape": "^2.0.0",
+    "@yiuayiu/telegram-markdown-escape": "^0.0.2-1",
     "@omnivore-app/api": "^1.0.4",
     "markdown-it": "^14.1.0",
     "remark-gfm": "4.0.0",
@@ -43,9 +43,9 @@
     "core-js": "^3.38.1"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-charts",
-    "test:watch": "jest --testPathPattern=src-charts --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-charts",
-    "build:dev": "node esbuild.js $(pwd)/src-charts --watch --server"
+    "test": "jest --testPathPattern=src-omnivore",
+    "test:watch": "jest --testPathPattern=src-omnivore --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-omnivore",
+    "build:dev": "node esbuild.js $(pwd)/src-omnivore --watch --server"
   }
 }

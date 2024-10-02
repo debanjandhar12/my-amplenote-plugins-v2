@@ -5,7 +5,7 @@ import {
     OMNIVORE_API_KEY_SETTING,
     OMNIVORE_DASHBOARD_COLUMNS_SETTING, OMNIVORE_DASHBOARD_COLUMNS_SETTING_DEFAULT,
     OMNIVORE_DASHBOARD_NOTE_TITLE_DEFAULT,
-    OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING,
+    OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING, OMNIVORE_DASHBOARD_ORDER_SETTING, OMNIVORE_DASHBOARD_ORDER_SETTING_DEFAULT,
     OMNIVORE_SYNC_BATCH_SIZE, SYNC_ARTICLE_CONTENT_SETTING, SYNC_ARTICLE_CONTENT_SETTING_DEFAULT
 } from "./constants.js";
 import { getDeletedOmnivoreItems, getOmnivoreItems} from "./omnivore/api.js";
@@ -130,9 +130,11 @@ const plugin = {
             return omnivoreDeletedItems.find((deletedItem) => deletedItem.id === item.id) === undefined;
         });
 
+        try {
+        await app.setSetting("lastOmnivoreItemsState", JSON.stringify(omnivoreItemsState));
         await app.setSetting("lastSyncPluginVersion", process.env.BUILD_START_TIME);
         await app.setSetting("lastSyncTime", new Date().toISOString());
-        await app.setSetting("lastOmnivoreItemsState", JSON.stringify(omnivoreItemsState));
+        } catch (e) { console.error(e); }   // TODO: fix this.. it's not working in latest amplenote version
 
         return {omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems};
     },
@@ -175,7 +177,10 @@ const plugin = {
         });
         const currentDashboardContent = await dashboardNote.content();
         if (currentDashboardContent.trim() !== newDashboardContent.trim()) {   // This always false :(, need to fix
-            await app.replaceNoteContent({uuid: dashboardNote.uuid}, newDashboardContent);
+            await app.replaceNoteContent({uuid: dashboardNote.uuid}, "");
+            await Promise.all(newDashboardContent.split(/(?=^####\sPage\s\d+)/gm).map(async (chunk) => {
+                await app.insertNoteContent({uuid: dashboardNote.uuid}, chunk, {atEnd: true});
+            }));
         }
     },
     _syncHighlightsToNotes: async function (omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems, app) {

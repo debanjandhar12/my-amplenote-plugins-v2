@@ -14,7 +14,7 @@ export const amplenoteLinksPlugin = definePlugin({
                 const hrefIndex = token.attrIndex('href');
                 if (hrefIndex >= 0) {
                     const href = token.attrs[hrefIndex][1];
-                    token.attrPush(['onclick', `window.app.navigate('${href}'); return false;`]);
+                    token.attrPush(['onclick', `window.appConnector.navigate('${href}'); return false;`]);
                     token.attrs[hrefIndex][1] = 'javascript:void(0);';
                 }
                 return defaultRender(tokens, idx, options, env, self);

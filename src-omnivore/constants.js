@@ -17,5 +17,6 @@ export const OMNIVORE_API_KEY_SETTING = "Omnivore API Key";
 
 // Other constants
 export const OMNIVORE_SYNC_BATCH_SIZE = 15;
+export const OMNIVORE_DASHBOARD_TABLE_CHUNK_SIZE = 50;
 export const OMINOVRE_API_ENDPOINT = "https://api-prod.omnivore.app/api/graphql";
 export const OMNIVORE_APP_URL = "https://omnivore.app";
