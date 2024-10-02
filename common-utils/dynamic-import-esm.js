@@ -71,8 +71,18 @@ function buildCDNUrl(cdn, pkg, version) {
     const versionString = version !== 'latest' ? `@${version}` : '';
     const folderString = folders && folders.length > 0 ? `/${folders.join('/')}` : '';
     const url = `${cdn}${basePkg}${versionString}${folderString}`;
-    if (['https://esm.sh/'].includes(cdn)) {
-        return url + '?bundle-deps';
+    if (cdn !== 'https://esm.sh/' && basePkg.includes('react')) {
+        throw new Error(`React based packages is not supported in ${cdn}`);
+    }
+    if (cdn === 'https://esm.sh/') {
+        if (process.env.NODE_ENV === 'development') {
+            return url + (basePkg.includes('react') ? `?dev&deps=react@${pkgJSON.dependencies.react},react-dom@${pkgJSON.dependencies['react-dom']}` : '?dev&bundle-deps');
+        }
+        if (!basePkg.includes('react')) {
+            return url + '?bundle-deps';
+        } else {
+            return url + `?deps=react@${pkgJSON.dependencies.react},react-dom@${pkgJSON.dependencies['react-dom']}`;
+        }
     }
     return url;
 }
