@@ -3,12 +3,12 @@ import pkgJSON from "../package.json";
 const dynamicImportESM = async (pkg, pkgVersion = null) => {
     if (process.env.NODE_ENV === 'test') {
         try {
-            return require(getBasePackage(pkg));
+            return require(pkg);
         } catch (e) {
             console.warn(`Failed to require ${pkg} from local: ${e.message}`);
         }
         try {
-            return await import(getBasePackage(pkg));
+            return await import(pkg);
         } catch (e) {
             console.warn(`Failed to import ${pkg} from local: ${e.message}`);
         }
