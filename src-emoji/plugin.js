@@ -1,34 +1,35 @@
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
+import emojiHTML from "inline:./embed/emoji.html";
 
 const plugin = {
     insertText: {
         "Insert emoji": async function (app) {
-            try {
-                const emojiConfig = {
-                    uuid: Math.random().toString(36).substring(7),
-                    emojiCode: 'grinning-face',
-                    url: null,
-                    size: '16px'
-                }
-                await app.context.replaceSelection(`![|16px](https://openmoji.org/data/color/png/1F600.png?emojiConfig=${encodeURIComponent(JSON.stringify(emojiConfig))})`);
-            } catch (e) {
-                console.error(e);
-                await app.alert(e);
-            }
+            await app.context.replaceSelection(`![|16px](test.png)`);
+            await app.openSidebarEmbed(1, {});
         }
     },
     renderEmbed(app, args, source = 'embed') {
+        if(!args) return;
         try {
-            const decodedChartData = JSON.parse(decodeURIComponent(args));
-            return addWindowVariableToHtmlString(chartHTML, 'chartData', decodedChartData);
+            const decodedChartData = {};
+            return addWindowVariableToHtmlString(emojiHTML, 'emojiData', decodedChartData);
         } catch (e) {
             console.error(e);
             return 'Error parsing object tag';
         }
     },
     onEmbedCall : createOnEmbedCallHandler({
-        ...COMMON_EMBED_COMMANDS
+        ...COMMON_EMBED_COMMANDS,
+        "insertEmoji": async function (app, emojiCode) {
+            console.log(app);
+            try {
+                await app.openSidebarEmbed(1);
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        }
     })
 }
 
