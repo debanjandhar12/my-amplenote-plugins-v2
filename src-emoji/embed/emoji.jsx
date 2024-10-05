@@ -3,6 +3,8 @@ import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../com
 import {EMOJI_DATA_MOCK} from "../test/embed/emoji.testdata.js";
 import {EMBED_COMMANDS_MOCK} from "../test/embed/emoji.testdata.js";
 import {EmojiPickerPage} from "./pages/EmojiPickerPage.jsx";
+import {useCustomStyles} from "./hooks/useCustomStyles.jsx";
+import {EmojiSizePage} from "./pages/EmojiSizePage.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.emojiData = window.emojiData || EMOJI_DATA_MOCK;
@@ -27,15 +29,10 @@ window.appConnector = new Proxy({}, {
 });
 window.appSettings = window.appSettings || {};
 
-export const App = () => {
-    const [data, setData] = React.useState(null);
-
-    return <EmojiPickerPage />;
-};
-
 (async () => {
     window.React = await dynamicImportESM("react");
     window.ReactDOM = await dynamicImportESM("react-dom/client");
+    window.Picker = (await dynamicImportESM("@emoji-mart/react")).default;
     if (!React || !ReactDOM) {
         throw new Error("Failed to load React or ReactDOM");
     }
@@ -43,3 +40,24 @@ export const App = () => {
         ReactDOM.createRoot(document.querySelector('.app-container')).render(React.createElement(App));
 })();
 
+window.addEventListener('blur', () => {
+    // todo: close embed
+});
+
+export const App = () => {
+    const [emoji, setEmoji] = React.useState(null);
+    useCustomStyles();
+    const handleEmojiSelect = (emoji) => {
+        setEmoji(emoji.unified);
+    };
+    const handleAddCustomEmoji = (emoji) => {
+        console.log(emoji);
+    };
+    const handleSubmit = (size) => {
+        window.appConnector.insertEmoji(emoji);
+    };
+    return(!emoji ?
+        <EmojiPickerPage onSelectEmoji={handleEmojiSelect} onAddCustomEmoji={handleAddCustomEmoji} />  :
+        <EmojiSizePage selectedEmoji={emoji} submitButtonName={'Submit'} onSubmit={handleSubmit} />
+    )
+};
