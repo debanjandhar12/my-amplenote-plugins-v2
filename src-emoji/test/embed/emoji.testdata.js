@@ -1,8 +1,9 @@
 export const EMOJI_DATA_MOCK = {
-    uuid: 'mock-uuid',
+    emojiUUID: 'mock-uuid',
     emojiCode: 'grinning-face',
+    type: 'default',
     url: null,
-    size: '32px'
+    size: '32'
 }
 
 export const EMBED_COMMANDS_MOCK = {
