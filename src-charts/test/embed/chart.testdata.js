@@ -6,7 +6,10 @@ export const EMBED_COMMANDS_MOCK = {
         return value;
     },
     "getNoteContentByUUID": async (noteUUID) => {
-        return "| | | |\n|-|-|-|\n| |Company A|Company B|\n|Jan|1|2|\n|Feb|2|2|"
+        return "| | | |\n|-|-|-|\n| |Company A|Company B|\n|Jan|1|2|\n|Feb|2|2|\n\n| | | |\n|-|-|-|\n|x|1|2|\n|y|2|2|"
+    },
+    "getNoteTitleByUUID": async (noteUUID) =>  {
+        return "Test Note"
     },
     "prompt": async (message, options) => {
         return new Promise((resolve) => {
@@ -18,10 +21,20 @@ export const EMBED_COMMANDS_MOCK = {
                 resolve(userInput);
             }
         });
+    },
+    "getAllNotes": async () => {
+        return [{
+            uuid: this.DATA_SOURCE_NOTE_UUID,
+            name: await appConnector.getNoteTitleByUUID(this.DATA_SOURCE_NOTE_UUID)
+        }, {
+            uuid: 'mock-uuid',
+            name: 'Mock Note'
+        }];
     }
 }
 
 export const CHART_DATA_MOCK = {
+    RANDOM_UUID: 'mock-uuid',
     DATA_SOURCE: 'note',
     CHART_TYPE: 'bar',
     DATA_SOURCE_NOTE_UUID: 'mock-uuid',
@@ -34,6 +47,7 @@ export const CHART_DATA_MOCK = {
 }
 
 export const CHART_FORMULA_DATA_MOCK = {
+    RANDOM_UUID: 'mock-uuid',
     DATA_SOURCE: 'formula',
     CHART_TYPE: 'line',
     CHART_TITLE: "Title for chart",
@@ -41,5 +55,6 @@ export const CHART_FORMULA_DATA_MOCK = {
     MAX_X: 10,
     STEP_X: 1,
     DATA_SOURCE_FORMULA_F: 'x',
-    CHART_ASPECT_RATIO_SIZE: '2'
+    CHART_ASPECT_RATIO_SIZE: '2',
+    START_FROM_ZERO: false
 }
