@@ -25,12 +25,13 @@ export class FormulaChartData extends BaseChartData {
         };
     }
 
+    static supportedChartTypes = ['line', 'area'];
     validate() {
         super.validate();
         if (this.DATA_SOURCE !== 'formula') {
             throw new Error('DATA_SOURCE is invalid');
         }
-        if (!['line', 'area'].includes(this.CHART_TYPE)) {
+        if (!FormulaChartData.supportedChartTypes.includes(this.CHART_TYPE)) {
             throw new Error('CHART_TYPE must be one of the valid formula chart types');
         }
         try {
@@ -53,7 +54,8 @@ export class FormulaChartData extends BaseChartData {
         }
     }
 
-    async getChartDataSet() {
+    /** --Chart related functionality-- */
+    async _getChartDataSet() {
         const labels = [];
         const datasets = [{
             label: 'f(x)',
@@ -66,10 +68,24 @@ export class FormulaChartData extends BaseChartData {
             const y = await formula.evaluate({ x, ...ADDITIONAL_MATH_CONSTANTS });
             datasets[0].data.push(y);
         }
-        console.log('formula', labels, datasets);
         return { labels, datasets };
     }
 
+    async getChartJSParamObject() {
+        const chartJSParamObj = await super.getChartJSParamObject();
+        chartJSParamObj.type = this.CHART_TYPE;
+        chartJSParamObj.data = await this._getChartDataSet();
+        if (this.START_FROM_ZERO) {
+            chartJSParamObj.options.scales = {
+                y: {
+                    beginAtZero: true
+                }
+            };
+        }
+        return chartJSParamObj;
+    }
+
+    /** -- Settings related functionality -- */
     async mountSettings() {
         await super.mountSettings();
 

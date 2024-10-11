@@ -1,15 +1,13 @@
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
-import {getChartJSParamObject} from "./util/getChartJSParamObj.js";
 
 let chart;
 
 export async function initChart() {
     const ctx = document.getElementById('chart').getContext('2d');
     try {
-        const chartDataSet = await window.ChartData.getChartDataSet();
         const Chart = (await dynamicImportESM("chart.js/auto")).default;
         window.Chart = Chart;
-        chart = new Chart(ctx, getChartJSParamObject(chartDataSet));
+        chart = new Chart(ctx, await window.ChartData.getChartJSParamObject());
     } catch (e) {
         const oldFillStyle = ctx.fillStyle;
         const oldFont = ctx.font;

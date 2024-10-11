@@ -33,8 +33,37 @@ export class BaseChartData {
         }
     }
 
-    async getChartDataSet() {
-        throw "getChartDataSet not implemented in base chart data class";
+    /** --Chart related functionality-- */
+    async getChartJSParamObject() {
+        const chartJSParamObj = {options: {}};
+        chartJSParamObj.responsive = true;
+        chartJSParamObj.maintainAspectRatio = true;
+        chartJSParamObj.aspectRatio = this.CHART_ASPECT_RATIO_SIZE;
+
+        if (this.CHART_TITLE && this.CHART_TITLE.trim() !== '') {
+            chartJSParamObj.options.plugins = {
+                title: {
+                    display: true,
+                    text: window.ChartData.CHART_TITLE
+                }
+            };
+        }
+
+        // Add plugin to set background color of canvas (fixes save as png image feature)
+        const customCanvasBackgroundColorPlugin = {
+            id: 'customCanvasBackgroundColor',
+            beforeDraw: (chart, args, options) => {
+                const {ctx} = chart;
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-over';
+                ctx.fillStyle = '#192025';
+                ctx.fillRect(0, 0, chart.width, chart.height);
+                ctx.restore();
+            }
+        };
+        chartJSParamObj.plugins = [customCanvasBackgroundColorPlugin];
+
+        return chartJSParamObj;
     }
 
     /** -- Settings related functionality -- */
@@ -137,22 +166,22 @@ export class BaseChartData {
         saveButton.textContent = 'Save Settings';
         saveButton.onclick = () => this._saveSettings(window.ChartData);
         Object.assign(saveButton.style, {
-            backgroundColor: '#4CAF50',
+            backgroundColor: '#3e92cc',
             color: 'white',
             padding: '10px 20px',
             marginRight: '2%',
             marginBottom: '2%',
             border: 'none',
-            borderRadius: '4px',
+            borderRadius: '5px',
             cursor: 'pointer',
             fontSize: '16px',
             transition: 'background-color 0.3s ease'
         });
         saveButton.addEventListener('mouseover', () => {
-            saveButton.style.backgroundColor = '#45a049';
+            saveButton.style.backgroundColor = '#2e7bb0';
         });
         saveButton.addEventListener('mouseout', () => {
-            saveButton.style.backgroundColor = '#4CAF50';
+            saveButton.style.backgroundColor = '#3e92cc';
         });
         buttonContainer.appendChild(saveButton);
 

@@ -24,11 +24,11 @@ export const EMBED_COMMANDS_MOCK = {
     },
     "getAllNotes": async () => {
         return [{
-            uuid: this.DATA_SOURCE_NOTE_UUID,
-            name: await appConnector.getNoteTitleByUUID(this.DATA_SOURCE_NOTE_UUID)
-        }, {
             uuid: 'mock-uuid',
             name: 'Mock Note'
+        }, {
+            uuid: 'mock-uuid2',
+            name: 'Mock Note 2'
         }];
     }
 }
@@ -41,6 +41,7 @@ export const CHART_DATA_MOCK = {
     DATA_SOURCE_HEADER_FILTER: '',
     CHART_TITLE: "Title for chart",
     TABLE_INDEX_IN_NOTE: 0,
+    TABLE_TYPE: 'contingency',
     HORIZONTAL_AXIS_LABEL_DIRECTION: 'row',
     START_FROM_ZERO: true,
     CHART_ASPECT_RATIO_SIZE: '2'

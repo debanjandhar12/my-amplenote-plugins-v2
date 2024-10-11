@@ -1,6 +1,6 @@
 import {cloneDeep} from "lodash-es";
 
-export function getChartDataFrom2DArray(table2DArray, categoryDirection = 'row') {
+export function getChartDataFromContingencyTable(table2DArray, categoryDirection = 'row') {
     // -- Parse data elements as number if possible --
     table2DArray = parse2DArrayElementsAsNumberIfPossible(cloneDeep(table2DArray));
 
@@ -75,7 +75,7 @@ export function getChartDataFrom2DArray(table2DArray, categoryDirection = 'row')
     return { labels, datasets };
 }
 
-function transposeArray(array) {
+export function transposeArray(array) {
     return array[0].map((_, colIndex) => array.map(row => row[colIndex]));
 }
 

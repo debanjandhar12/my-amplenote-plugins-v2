@@ -13,7 +13,7 @@ const plugin = {
                             { label: "Small", value: 3 },
                             { label: "Medium", value: 2 },
                             { label: "Large", value: 1 }
-                        ], value: "medium" }
+                        ], value: 2 }
                     ]
                 });
                 const ChartData = ChartDataFactory.parseChartDataFromDataSource({
@@ -23,6 +23,7 @@ const plugin = {
                     DATA_SOURCE_NOTE_UUID: app.context.noteUUID,
                     CHART_TITLE: '',
                     TABLE_INDEX_IN_NOTE: 0,
+                    TABLE_TYPE: 'contingency',
                     HORIZONTAL_AXIS_LABEL_DIRECTION: 'column',
                     START_FROM_ZERO: false,
                     CHART_ASPECT_RATIO_SIZE: chartSize

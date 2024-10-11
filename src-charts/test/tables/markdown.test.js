@@ -1,6 +1,6 @@
-import {getMarkdownTableByIdx} from "../../markdown/getMarkdownTableByIdx.js";
+import {getMarkdownTableByIdx} from "../../tables/getMarkdownTableByIdx.js";
 import {SAMPLE_MARKDOWN_DATA} from "./markdown.testdata.js";
-import {parseMarkdownTable} from "../../markdown/parseMarkdownTable.js";
+import {parseMarkdownTable} from "../../tables/parseMarkdownTable.js";
 
 describe('getMarkdownTableByIdx', () => {
     test('returns the first table when idx is 0', () => {

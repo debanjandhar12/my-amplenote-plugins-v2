@@ -1,6 +1,6 @@
-import {getChartDataFrom2DArray} from "../../../chart/util/getChartDataFrom2DArray.js";
+import {getChartDataFromContingencyTable} from "../../tables/getChartDataFromContingencyTable.js";
 
-describe('getChartDataFrom2DArray', () => {
+describe('getChartDataFromContingencyTable', () => {
     test('should handle column-oriented data with category in first row', () => {
         const table2DArray = [
             ['Category', 'Series 1', 'Series 2'],
@@ -8,7 +8,7 @@ describe('getChartDataFrom2DArray', () => {
             ['Company B', '15', '25'],
             ['Company C', '5', '15']
         ];
-        const result = getChartDataFrom2DArray(table2DArray, 'column');
+        const result = getChartDataFromContingencyTable(table2DArray, 'column');
         expect(result).toEqual({
             labels: ['Company A', 'Company B', 'Company C'],
             datasets: [
@@ -25,7 +25,7 @@ describe('getChartDataFrom2DArray', () => {
             ['Company C', "5", "15"],
             ['Category', 'Series 1', 'Series 2'],
         ];
-        const result = getChartDataFrom2DArray(table2DArray, 'column');
+        const result = getChartDataFromContingencyTable(table2DArray, 'column');
         expect(result).toEqual({
             labels: ['Company A', 'Company B', 'Company C'],
             datasets: [
@@ -41,7 +41,7 @@ describe('getChartDataFrom2DArray', () => {
             ['Series 1', '10', '20'],
             ['Series 2', '15', '25'],
         ];
-        const result = getChartDataFrom2DArray(table2DArray, 'row');
+        const result = getChartDataFromContingencyTable(table2DArray, 'row');
         expect(result).toEqual({
             labels: ['Company A', 'Company B'],
             datasets: [
@@ -57,7 +57,7 @@ describe('getChartDataFrom2DArray', () => {
             ['Series 2', '15', '25'],
             ['Series', 'Company A', 'Company B'],
         ];
-        const result = getChartDataFrom2DArray(table2DArray, 'row');
+        const result = getChartDataFromContingencyTable(table2DArray, 'row');
         expect(result).toEqual({
             labels: ['Company A', 'Company B'],
             datasets: [
@@ -72,7 +72,7 @@ describe('getChartDataFrom2DArray', () => {
         const table2DArray = [
             ['Company A', 'Company B', 'Company C']
         ];
-        const result = getChartDataFrom2DArray(table2DArray, 'row');
+        const result = getChartDataFromContingencyTable(table2DArray, 'row');
         expect(result.labels).toEqual(['Company A','Company B', 'Company C']);
         expect(result.datasets).toEqual([]);
     });
@@ -82,7 +82,7 @@ describe('getChartDataFrom2DArray', () => {
             ['Company A', 'Company B', 'Company C'],
             ['10', '20', '30']
         ];
-        const result = getChartDataFrom2DArray(table2DArray, 'row');
+        const result = getChartDataFromContingencyTable(table2DArray, 'row');
         expect(result.labels).toEqual(['Company A','Company B', 'Company C']);
         expect(result.datasets).toEqual([{data: [10, 20, 30]}]);
     });
@@ -92,7 +92,7 @@ describe('getChartDataFrom2DArray', () => {
             ['Company A', '10'],
             ['Company B', '20']
         ];
-        const result = getChartDataFrom2DArray(table2DArray, 'column');
+        const result = getChartDataFromContingencyTable(table2DArray, 'column');
         expect(result.labels).toEqual(['Company A','Company B']);
         expect(result.datasets).toEqual([{data: [10, 20]}]);
     });
@@ -101,7 +101,7 @@ describe('getChartDataFrom2DArray', () => {
         const table2DArray = [
             ['Company A', '10', '20', '30']
         ];
-        const result = getChartDataFrom2DArray(table2DArray, 'row');
+        const result = getChartDataFromContingencyTable(table2DArray, 'row');
         expect(result.labels).toEqual(['Company A']);
         expect(result.datasets).toEqual([{data: [10, 20, 30]}]);
     });
@@ -110,7 +110,7 @@ describe('getChartDataFrom2DArray', () => {
         const table2DArray = [
             ['10', '20', '30', 'Company A']
         ];
-        const result = getChartDataFrom2DArray(table2DArray, 'row');
+        const result = getChartDataFromContingencyTable(table2DArray, 'row');
         expect(result.labels).toEqual(['Company A']);
         expect(result.datasets).toEqual([{data: [10, 20, 30]}]);
     });
@@ -121,7 +121,7 @@ describe('getChartDataFrom2DArray', () => {
             ['10'],
             ['20']
         ];
-        const result = getChartDataFrom2DArray(table2DArray, 'column');
+        const result = getChartDataFromContingencyTable(table2DArray, 'column');
         expect(result.labels).toEqual(['Company A']);
         expect(result.datasets).toEqual([{data: [10, 20]}]);
     });
