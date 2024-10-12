@@ -34,17 +34,17 @@ export const EmojiSizePage = ({selectedEmoji, onSubmit}) => {
         {isImageLoaded &&  <div className="emoji-size-page-container">
             <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <input type="radio" name="size" value="32" id="size-32px" defaultChecked onChange={handleSizeChange}/>
+                    <input type="radio" name="size" value="32" id="size-32px" onChange={handleSizeChange} checked={selectedSize === '32'}/>
                     <label htmlFor="size-32px" >
                         <img src={getURLFromEmojiObj(selectedEmoji)} style={{ padding: '10px', marginRight: '10px' }} alt={selectedEmoji} width="32" height="32"/>
                     </label>
-                    <input type="radio" name="size" value="64" id="size-64px" onChange={handleSizeChange}/>
+                    <input type="radio" name="size" value="64" id="size-64px" onChange={handleSizeChange} checked={selectedSize === '64'}/>
                     <label htmlFor="size-64px">
                         <img src={getURLFromEmojiObj(selectedEmoji)} style={{ marginLeft: '10px' }} alt={selectedEmoji} width="64" height="64"/>
                     </label>
                 </div>
                 <div style={{ marginTop: '10px' }}>
-                    <input type="radio" name="size" value="128" id="size-128px" onChange={handleSizeChange}/>
+                    <input type="radio" name="size" value="128" id="size-128px" onChange={handleSizeChange} checked={selectedSize === '128'}/>
                     <label htmlFor="size-128px">
                         <img src={getURLFromEmojiObj(selectedEmoji)} alt={selectedEmoji} width="128" height="128"/>
                     </label>
