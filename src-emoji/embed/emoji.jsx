@@ -59,16 +59,51 @@ export const App = () => {
     const [emojiObj, setEmojiObj] = React.useState(null);
     useCustomStyles();
     const handleEmojiSelect = (emoji) => {
+        console.log(emoji);
         setEmojiObj({
             emojiUUID: Math.random().toString(36).substring(7),
-            type: 'default',
+            type: emoji.unified ? 'default' : 'custom',
             emojiCode: emoji.unified,
-            url: null,
-            size: '32'
+            url: emoji.src, // will be null if emoji is default
+            size: '32',
+            skin: emoji.skin // this can be null
         });
     };
-    const handleAddCustomEmoji = (emoji) => {
-        console.log(emoji);
+    const handleAddCustomEmoji = async () => {
+        return new Promise((resolve, reject) => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.png, .jpeg';
+            input.style.display = 'none';
+            document.body.appendChild(input);
+            input.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = async function(e) {
+                        try {
+                            const imageBase64 = e.target.result;
+                            const emojiId = await appConnector.prompt("Enter emoji name:", {
+                                inputs: [
+                                    { label: "Emoji name", type: "text", value: file.name.replace(/\.[^/.]+$/, "") }
+                                ]
+                            });
+                            if (!emojiId || emojiId.trim() === "") {
+                                app.alert("Emoji name cannot be empty");
+                            }
+                            await appConnector.addCustomEmoji(emojiId, imageBase64);
+                            resolve();
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    resolve();
+                }
+            });
+            input.click();
+        });
     };
     const handleSubmit = (size) => {
         window.appConnector.setEmbedResult({
