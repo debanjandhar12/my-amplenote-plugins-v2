@@ -20,9 +20,19 @@ const plugin = {
         }
     },
     imageOption: {
-        "Convert to Text": async function (app, image) {
-            await plugin._toText(app, image);
-            return null;
+        "Convert to Text": {
+            check: (app, image) => {
+                try {
+                    const url = new URL(image.src);
+                    if (url.searchParams.get("text") != null)
+                        return true;
+                } catch (e) { }
+                return false;
+            },
+            run: async (app, image) => {
+                await plugin._toText(app, image);
+                return null;
+            }
         }
     },
     async _parseUserIntentFromText(app, text) {
@@ -114,8 +124,8 @@ const plugin = {
             const fileURL = await app.attachNoteMedia(noteHandle, pngDataURL);
             const appendedFileURL = fileURL + '?text=' +
                 window.encodeURIComponent(Buffer.from(text, "utf8").toString('base64'));
-            // Note: The (<a> </a>) is a temporary hack to get image markdown to be supported by replaceSelection. Remove this later.
-            app.context.replaceSelection(`<a> </a>![${text || ''}](${appendedFileURL})<a> </a>`);
+            // Note: The html comment (<!-- dummy comment -->) is a temporary hack to get image markdown to be supported by replaceSelection. Remove this later.
+            app.context.replaceSelection(`<a> </a>![${text || ''}](${appendedFileURL}) <!-- dummy comment -->`);
             return null;
         } catch (e) {
             app.alert('Failed _toDiagram - ' + e);
