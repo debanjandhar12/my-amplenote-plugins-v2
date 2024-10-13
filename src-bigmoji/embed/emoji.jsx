@@ -85,7 +85,7 @@ export const App = () => {
                             const imageBase64 = e.target.result;
                             const emojiId = await appConnector.prompt("Enter emoji name:", {
                                 inputs: [
-                                    { label: "Emoji name", type: "text", value: file.name.replace(/\.[^/.]+$/, "") }
+                                    { label: "Emoji name", type: "text", value: file.name.replace(/\.[^/.]+$/, "").replaceAll(' ', '_') }
                                 ]
                             });
                             if (!emojiId || emojiId.trim() === "") {
