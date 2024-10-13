@@ -36,7 +36,7 @@ export const EmojiPickerPage = ({onSelectEmoji, onAddCustomEmoji}) => {
                 searchContainer.parentElement.appendChild(button);
             }
         }
-    }, [data]);
+    }, [data, pickerRef]);
 
     return (
         window.Picker &&
