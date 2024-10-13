@@ -53,7 +53,7 @@ const plugin = {
     },
     _getImageMarkdown: function (emojiObj) {
         const url = getURLFromEmojiObj(emojiObj);
-        return `![|${emojiObj.size}](${url}?${encodeURIComponent(JSON.stringify(emojiObj))}) ${emojiObj}`;
+        return `![|${emojiObj.size}](${url}?${encodeURIComponent(JSON.stringify(emojiObj))}) <!-- dummy comment -->`;
     },
     _findOrCreateCustomEmojisNote: async function (app) {
         // Find note with note name "Custom Bigmojis", create it if it doesn't exist
