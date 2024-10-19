@@ -1,4 +1,5 @@
 import {
+    AMPLENOTE_INSERT_CONTENT_LIMIT,
     BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING,
     BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT,
     OMINOVRE_API_ENDPOINT,
@@ -52,7 +53,7 @@ const plugin = {
                 const suppressedErrorMessages = await plugin._syncHighlightsToNotes(omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems, app);
                 await plugin._syncCatalogToDashboard(omnivoreItemsState, app);
                 app.alert("Syncing complete. "
-                    + `${suppressedErrorMessages.length > 0 ? "Some errors were encountered: " + suppressedErrorMessages.join("\n") : ""}`);
+                    + `${suppressedErrorMessages.length > 0 ? "Some errors were encountered: " + suppressedErrorMessages.join("\n").substring(0, 9000) : ""}`);
             }
             else {
                 app.alert("Failed to connect to omnivore. It is likely Omnivore API Key provided in settings is invalid.");

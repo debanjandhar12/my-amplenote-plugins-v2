@@ -1,4 +1,6 @@
 import {reloadChart} from "./renderer.js";
+import {getMarkdownTableByIdx} from "../tables/getMarkdownTableByIdx.js";
+import {parseMarkdownTable} from "../tables/parseMarkdownTable.js";
 
 export async function addToolbar() {
     const style = document.createElement('style');
@@ -65,19 +67,51 @@ export async function addToolbar() {
 }
 
 async function handleOptionsToolbarItem() {
+    const options = [
+        { label: "Save as png image", value: "Save as png image" }
+    ];
+    if (window.ChartData.DATA_SOURCE === 'note') {
+        options.push(
+            { label: "Download as CSV", value: "Download as CSV" },
+            { label: "Download as Markdown", value: "Download as Markdown" }
+        );
+    }
     const selection = await appConnector.prompt("", {
         inputs: [
-            { label: "Select an option", type: "select", options: [
-                    { label: "Save as png image", value: "Save as png image" }
-                ], value: "Save as png image"
+            {
+                label: "Select an option",
+                type: "select",
+                options: options,
+                value: "Save as png image"
             }
         ]
     });
+
     switch (selection) {
         case 'Save as png image':
             const canvas = document.getElementById('chart');
             const dataURL = canvas.toDataURL('image/png');
             await appConnector.saveFile({data: dataURL, name: 'chart.png'});
             break;
+        case 'Download as CSV': {
+            const noteContent = await appConnector.getNoteContentByUUID(window.ChartData.DATA_SOURCE_NOTE_UUID);
+            const tableMarkdown = getMarkdownTableByIdx(noteContent, parseInt(window.ChartData.TABLE_INDEX_IN_NOTE));
+            const table2DArray = parseMarkdownTable(tableMarkdown);
+
+            let csvContent = "";
+            table2DArray.forEach(row => {
+                csvContent += row.join(",") + "\n";
+            });
+            csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+            await appConnector.saveFile({data: csvContent, name: 'chart_data.csv'});
+            break;
+        }
+        case 'Download as Markdown': {
+            const noteContent = await appConnector.getNoteContentByUUID(window.ChartData.DATA_SOURCE_NOTE_UUID);
+            const tableMarkdown = getMarkdownTableByIdx(noteContent, parseInt(window.ChartData.TABLE_INDEX_IN_NOTE));
+            const markdownData = "data:text/markdown;charset=utf-8," + encodeURIComponent(tableMarkdown);
+            await appConnector.saveFile({data: markdownData, name: 'chart_data.md'});
+            break;
+        }
     }
 }
