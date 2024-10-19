@@ -114,7 +114,7 @@ describe('generateDashboardTable - Optional Columns', () => {
         for (const optionalColumns of optionalColumnsConfigurations) {
             const appSettings = {};
             appSettings[OMNIVORE_DASHBOARD_COLUMNS_SETTING] = optionalColumns.join(',');
-            const markdown = await generateDashboardTable(omnivoreItemsState, appSettings, () => 'http://example.com');
+            const markdown = (await generateDashboardTable(omnivoreItemsState, appSettings, () => 'http://example.com')).join('\n');
             const columnCount = countColumnsInMarkdownTable(markdown);
             const expectedColumnCount = fixedColumnsCount + optionalColumns.length;
             expect(columnCount).toBe(expectedColumnCount);

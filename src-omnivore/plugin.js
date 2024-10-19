@@ -59,19 +59,21 @@ const plugin = {
             }
         } catch (e) {
             console.error(e);
-            app.alert("Error encountered: " + e.message);
+            app.alert("Error encountered: " + typeof e === "string" ? e : e.message);
         }
     },
     _syncStateWithOmnivore: async function (app) {
-        const lastSyncPluginVersion = app.settings["lastSyncPluginVersion"];
-        if (lastSyncPluginVersion !== process.env.BUILD_START_TIME) {
-            await app.setSetting("lastSyncTime", "");
-            await app.setSetting("lastOmnivoreItemsState", JSON.stringify([]));
+        const lastSyncPluginVersion = localStorage.getItem("lastSyncPluginVersion");
+        const lastSyncPluginSettings = localStorage.getItem("lastSyncPluginSettings");
+        if (lastSyncPluginVersion !== process.env.BUILD_START_TIME
+            || lastSyncPluginSettings !== JSON.stringify(app.settings)) {
+            await localStorage.setItem("lastSyncTime", "");
+            await localStorage.setItem("lastOmnivoreItemsState", JSON.stringify([]));
         }
-        const lastSyncTime = app.settings["lastSyncTime"];
+        const lastSyncTime = localStorage.getItem("lastSyncTime");
         let lastOmnivoreItemsState = [];
         try {
-            lastOmnivoreItemsState = JSON.parse(app.settings["lastOmnivoreItemsState"])
+            lastOmnivoreItemsState = JSON.parse(localStorage.getItem("lastOmnivoreItemsState"));
         } catch (e) {
             console.error("Failed to parse lastOmnivoreItemsState", e);
         }
@@ -102,8 +104,8 @@ const plugin = {
             }
             if (!hasNextPage)
                 break;
-            if (after % (5 * OMNIVORE_SYNC_BATCH_SIZE) === 0) // wait for 1 secs every 5 queries to avoid rate limiting
-                await new Promise(resolve => setTimeout(resolve, 1000));
+            // wait for 1.2 sec after every query to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 1200));
         }
 
         // Fetch all items to delete
@@ -122,8 +124,8 @@ const plugin = {
                 }
                 if (!hasNextPage)
                     break;
-                if (after % (5 * OMNIVORE_SYNC_BATCH_SIZE) === 0) // wait for 1 secs every 5 queries to avoid rate limiting
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                // wait for 1.2 sec after every query to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 1200));
             }
         }
         omnivoreItemsState = omnivoreItemsState.filter((item) => {
@@ -131,9 +133,10 @@ const plugin = {
         });
 
         try {
-        await app.setSetting("lastOmnivoreItemsState", JSON.stringify(omnivoreItemsState));
-        await app.setSetting("lastSyncPluginVersion", process.env.BUILD_START_TIME);
-        await app.setSetting("lastSyncTime", new Date().toISOString());
+        await localStorage.setItem("lastOmnivoreItemsState", JSON.stringify(omnivoreItemsState));
+        await localStorage.setItem("lastSyncPluginVersion", process.env.BUILD_START_TIME);
+        await localStorage.setItem("lastSyncTime", new Date().toISOString());
+        await localStorage.setItem("lastSyncPluginSettings", JSON.stringify(app.settings));
         } catch (e) { console.error(e); }   // TODO: fix this.. it's not working in latest amplenote version
 
         return {omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems};
@@ -152,7 +155,7 @@ const plugin = {
             );
         }
         catch (e) {
-            if (e.message.includes("Unexpected server error"))
+            if (e.message && e.message.includes("Unexpected server error"))
                 return false;
         }
         return true;
@@ -176,11 +179,11 @@ const plugin = {
             return await app.getNoteURL({ uuid: note.uuid });
         });
         const currentDashboardContent = await dashboardNote.content();
-        if (currentDashboardContent.trim() !== newDashboardContent.trim()) {   // This always false :(, need to fix
+        if (currentDashboardContent.trim() !== newDashboardContent.join('\n').trim()) {   // This always false :(, need to fix
             await app.replaceNoteContent({uuid: dashboardNote.uuid}, "");
-            await Promise.all(newDashboardContent.split(/(?=^####\sPage\s\d+)/gm).map(async (chunk) => {
+            for (const chunk of newDashboardContent) {
                 await app.insertNoteContent({uuid: dashboardNote.uuid}, chunk, {atEnd: true});
-            }));
+            }
         }
     },
     _syncHighlightsToNotes: async function (omnivoreItemsState, omnivoreItemsStateDelta, omnivoreDeletedItems, app) {
@@ -224,11 +227,11 @@ const plugin = {
                 highlightNote = await app.notes.find(highlightNote.uuid);
 
                 // Handle tags
-                app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING] = app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING] || BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT;
-                if (BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT !== app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING] &&
-                    (highlightNote.tags.includes(BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT) || !highlightNote.tags.includes(app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING]))) {
-                    await highlightNote.removeTag(BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT);
-                    await highlightNote.addTag(app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING]);
+                const highlightNoteTag = app.settings[BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING] || BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT;
+                if (!highlightNote.tags.includes(highlightNoteTag)) {
+                    if (highlightNoteTag !== BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT)
+                        await highlightNote.removeTag(BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT);
+                    await highlightNote.addTag(highlightNoteTag);
                 }
 
                 const summaryContent = generateNoteSummarySectionMarkdown(omnivoreItem, app.settings);

@@ -1,4 +1,5 @@
 import {
+    AMPLENOTE_INSERT_CONTENT_LIMIT,
     NOTE_HIGHLIGHT_ORDER_SETTING, NOTE_HIGHLIGHT_ORDER_SETTING_DEFAULT,
     OMNIVORE_APP_URL,
     OMNIVORE_DASHBOARD_COLUMNS_SETTING,
@@ -42,15 +43,29 @@ export async function generateDashboardTable(omnivoreItemsState, appSettings, ge
         return row;
     }));
 
-    // Chunk the rows array into sections of OMNIVORE_DASHBOARD_TABLE_CHUNK_SIZE
-    const chunks = chunk(rows, OMNIVORE_DASHBOARD_TABLE_CHUNK_SIZE);
+    let result = ['# Omnivore Dashboard\n'];
+    let currentChunk = '';
+    let currentChunkLength = 0;
+    let pageIndex = 1;
 
-    // Generate the markdown with separate sections for each chunk
-    let result = '# Omnivore Dashboard\n';
-    chunks.forEach((chunk, index) => {
-        result += `### Page ${index + 1}\n`;
-        result += [headers, separator, ...chunk].join('\n') + '\n';
+    rows.forEach(row => {
+        const rowLength = [headers, separator, row].join('\n').length;
+        if (currentChunkLength + rowLength > AMPLENOTE_INSERT_CONTENT_LIMIT) {
+            result.push(`### Page ${pageIndex}\n` + [headers, separator, currentChunk].join('\n') + '\n');
+            currentChunk = '';
+            currentChunkLength = 0;
+            pageIndex += 1;
+        }
+        if (row.length < AMPLENOTE_INSERT_CONTENT_LIMIT) {
+            currentChunk += row + '\n';
+            currentChunkLength += rowLength;
+        }
+        else {} // Ignore rows that are too long
     });
+
+    if (currentChunk) {
+        result.push(`### Page ${pageIndex}\n` + [headers, separator, currentChunk].join('\n') + '\n');
+    }
 
     return result;
 }
