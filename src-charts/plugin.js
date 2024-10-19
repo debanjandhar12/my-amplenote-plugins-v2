@@ -23,8 +23,9 @@ const plugin = {
                     DATA_SOURCE_NOTE_UUID: app.context.noteUUID,
                     CHART_TITLE: '',
                     TABLE_INDEX_IN_NOTE: 0,
-                    TABLE_TYPE: 'contingency',
-                    HORIZONTAL_AXIS_LABEL_DIRECTION: 'column',
+                    SERIES_ORIENTATION: 'horizontal',
+                    CATEGORY_VARIABLE_INDEX: 0,
+                    SERIES_VARIABLE_INDEXES: null,
                     START_FROM_ZERO: false,
                     CHART_ASPECT_RATIO_SIZE: chartSize
                 });

@@ -42,7 +42,9 @@ export const CHART_DATA_MOCK = {
     CHART_TITLE: "Title for chart",
     TABLE_INDEX_IN_NOTE: 0,
     TABLE_TYPE: 'contingency',
-    HORIZONTAL_AXIS_LABEL_DIRECTION: 'row',
+    SERIES_ORIENTATION: 'horizontal',
+    CATEGORY_VARIABLE_INDEX: 0,
+    SERIES_VARIABLE_INDEXES: null,
     START_FROM_ZERO: true,
     CHART_ASPECT_RATIO_SIZE: '2'
 }
