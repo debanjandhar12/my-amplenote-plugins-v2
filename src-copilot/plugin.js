@@ -17,6 +17,7 @@ const plugin = {
         "Sync notes to pinecone": async function (app) {
             try {
                 await syncNotes(app);
+                await app.alert("Sync completed");
             } catch (e) {
                 console.error(e);
                 await app.alert(e);

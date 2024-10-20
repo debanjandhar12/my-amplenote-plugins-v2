@@ -49,12 +49,13 @@
     "core-js": "^3.38.1",
     "@testing-library/react": "^16.0.1",
     "@testing-library/jest-dom": "^6.5.0",
-    "esbuild-plugin-external-global": "^1.0.1"
+    "esbuild-plugin-external-global": "^1.0.1",
+    "nanoid": "^5.0.7"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-emoji",
-    "test:watch": "jest --testPathPattern=src-emoji --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-emoji",
-    "build:dev": "node esbuild.js $(pwd)/src-emoji --watch --server"
+    "test": "jest --testPathPattern=src-copilot",
+    "test:watch": "jest --testPathPattern=src-copilot --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-copilot",
+    "build:dev": "node esbuild.js $(pwd)/src-copilot --watch --server"
   }
 }
