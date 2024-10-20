@@ -1,4 +1,4 @@
-import {PINECONE_API_KEY_SETTING} from "../constants.js";
+import {INDEX_VERSION, PINECONE_API_KEY_SETTING, PINECONE_INDEX_NAME} from "../constants.js";
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 import {Splitter} from "./Splitter.js";
 import {chunk, isArray} from "lodash-es";
@@ -19,7 +19,7 @@ export const syncNotes = async (app) => {
             return fetch(url, options);
         }
     });
-    const indexName = 'amplenote';
+    const indexName = PINECONE_INDEX_NAME;
     await createIndexIfNotExists(pineconeClient, indexName);
     const index = pineconeClient.Index(indexName);
     const noteTagNameSpace = index.namespace('note-tags');
@@ -51,6 +51,18 @@ export const syncNotes = async (app) => {
         }
     }
 
+    // -- Delete older version entries --
+    if (notesInPinecone.length > 0) {
+        const olderEntriesVersion = await (noteTagNameSpace.fetch([notesInPinecone[0]]).then(response => {
+            return response.records[notesInPinecone[0]].metadata.pluginVersion;
+        }));
+        if (olderEntriesVersion < INDEX_VERSION) {
+            await deleteNamespaceEntries(noteTagNameSpace, notesInPinecone);
+            await deleteNamespaceEntries(noteContentNameSpace, notesInPinecone);
+            notesInPinecone.length = 0; // Delete all notesInPinecone
+        }
+    }
+
     // -- Split and create embeddings for notes which are updated or created --
     // Filter notes to retain only those updated or created after lastSyncTime
     const filteredNotes = lastSyncTime != null ? allNotes.filter(note => {
@@ -67,11 +79,13 @@ export const syncNotes = async (app) => {
     console.log('filteredNotes', filteredNotes);
     // 2. Split notes into smaller chunks and add to records
     const records = [];
-    const splitter = new Splitter();
     for (const note of filteredNotes) {
+        console.log('note', note);
+        const splitter = new Splitter();
         const splitResultForNote = await splitter.split(app, note);
         records.push(...splitResultForNote);
     }
+
     // -- Add / update data to pinecone --
     for (const recordChunk of chunk(records, 32)) {
         // 1. Generate embeddings
@@ -91,8 +105,14 @@ export const syncNotes = async (app) => {
         }
 
         // 3. Add / update records
-        await noteTagNameSpace.upsert(recordChunk.filter(record => record.metadata.namespace === 'note-tags'));
-        await noteContentNameSpace.upsert(recordChunk.filter(record => record.metadata.namespace === 'note-content'));
+        const recordsForNoteTag = recordChunk.filter(record => record.metadata.namespace === 'note-tags');
+        if (recordsForNoteTag.length > 0) {
+            await noteTagNameSpace.upsert(recordsForNoteTag);
+        }
+        const recordsForNoteContent = recordChunk.filter(record => record.metadata.namespace === 'note-content');
+        if (recordsForNoteContent.length > 0) {
+            await noteContentNameSpace.upsert(recordsForNoteContent);
+        }
     }
 
     app.setSetting("lastSyncTime", new Date().toISOString());
