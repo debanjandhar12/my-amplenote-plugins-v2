@@ -22,20 +22,24 @@ export const EmojiPickerPage = ({onSelectEmoji, onAddCustomEmoji}) => {
     }, []);
 
     window.React.useEffect(() => {
-        if (pickerRef.current) {
-            const searchContainer = document.getElementsByTagName('em-emoji-picker')[0].shadowRoot.querySelector('.search');
-            if (searchContainer) {
-                const button = document.createElement('button');
-                button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M240 120v120H120c-8.8 0-16 7.2-16 16s7.2 16 16 16h120v120c0 8.8 7.2 16 16 16s16-7.2 16-16V272h120c8.8 0 16-7.2 16-16s-7.2-16-16-16H272V120c0-8.8-7.2-16-16-16s-16 7.2-16 16z"></path></svg>';
-                button.style.marginLeft = '8px';
-                button.title = 'Add custom emoji';
-                button.onclick = async () => {
-                    await onAddCustomEmoji();
-                    await fetchCustomEmojis();
+        const addCustomEmojiInsertButton = async () => {
+            if (pickerRef.current) {
+                const searchContainer = document.getElementsByTagName('em-emoji-picker')[0].shadowRoot.querySelector('.search');
+                if (searchContainer && !document.getElementById('custom-emoji-insert')) {
+                    const button = document.createElement('button');
+                    button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M240 120v120H120c-8.8 0-16 7.2-16 16s7.2 16 16 16h120v120c0 8.8 7.2 16 16 16s16-7.2 16-16V272h120c8.8 0 16-7.2 16-16s-7.2-16-16-16H272V120c0-8.8-7.2-16-16-16s-16 7.2-16 16z"></path></svg>';
+                    button.style.marginLeft = '8px';
+                    button.title = 'Add custom emoji';
+                    button.id = 'custom-emoji-insert';
+                    button.onclick = async () => {
+                        await onAddCustomEmoji();
+                        await fetchCustomEmojis();
+                    }
+                    searchContainer.parentElement.appendChild(button);
                 }
-                searchContainer.parentElement.appendChild(button);
             }
         }
+        setTimeout(addCustomEmojiInsertButton, 0);
     }, [data, pickerRef]);
 
     return (

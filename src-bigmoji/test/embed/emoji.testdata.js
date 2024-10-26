@@ -15,5 +15,5 @@ export const EMBED_COMMANDS_MOCK = {
                 skins: [{ src: 'https://emojicdn.elk.sh/%F0%9F%93%8A?style=twitter' }],
         }];
     },
-    "refreshTimeout": async () => {},
+    "refreshTimeout": async () => true,
 }

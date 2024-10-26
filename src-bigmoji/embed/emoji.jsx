@@ -32,8 +32,10 @@ window.appSettings = window.appSettings || {};
 
 // send signal to so that onclose event can be detected
 setInterval(() => {
-    if (document.querySelector('.app-container'))
-        window.appConnector.refreshTimeout();
+    if (document.querySelector('.app-container')) {
+        if(!window.appConnector.refreshTimeout())
+            showCloseWindowPage();
+    }
 }, 100);
 
 // Resize iframe height to fit content handler
@@ -54,6 +56,12 @@ window.addEventListener('resize', function() {
     if(document.querySelector('.app-container'))
         ReactDOM.createRoot(document.querySelector('.app-container')).render(React.createElement(App));
 })();
+
+const showCloseWindowPage = () => {
+    document.body.style.backgroundColor = '#192025';
+    document.body.innerHTML = '<span style="color: aliceblue">Please close this window.</span>';
+    ReactDOM.unmountComponentAtNode(document.querySelector('.app-container'));
+}
 
 export const App = () => {
     const [emojiObj, setEmojiObj] = React.useState(null);
@@ -110,8 +118,7 @@ export const App = () => {
             ...emojiObj,
             size
         });
-        document.body.style.backgroundColor = '#192025';
-        document.body.innerHTML = '<span style="color: aliceblue">Please close this window.</span>';
+        showCloseWindowPage();
     };
     return(!emojiObj ?
         <EmojiPickerPage onSelectEmoji={handleEmojiSelect} onAddCustomEmoji={handleAddCustomEmoji} />  :

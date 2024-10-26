@@ -71,7 +71,10 @@ const plugin = {
     onEmbedCall : createOnEmbedCallHandler({
         ...COMMON_EMBED_COMMANDS,
         "refreshTimeout": async function (app) {
-            plugin.waitTimeout = 500;
+            const isActive = plugin.waitTimeout > 0;
+            if (!isActive) return false;
+            plugin.waitTimeout = 400;
+            return true;
         },
         "setEmbedResult": async function (app, emojiCode) {
             try {
