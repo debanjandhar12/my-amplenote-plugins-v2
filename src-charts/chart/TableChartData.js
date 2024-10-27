@@ -4,6 +4,7 @@ import {parseMarkdownTable} from "../tables/parseMarkdownTable.js";
 import {reloadChart} from "../embed/renderer.js";
 import {getMarkdownTableCount} from "../tables/getMarkdownTableCount.jsx";
 import {getChartDataFromTable, getSeriesVariablesFromTable} from "../tables/getChartDataFromTable.js";
+import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 
 export class TableChartData extends BaseChartData {
     constructor({RANDOM_UUID, DATA_SOURCE, CHART_TITLE, CHART_ASPECT_RATIO_SIZE, CHART_TYPE, DATA_SOURCE_NOTE_UUID,
@@ -117,7 +118,7 @@ export class TableChartData extends BaseChartData {
         await super.mountSettings();
         window.handleSettingChange = async () => {
             // Update chart data
-            this.DATA_SOURCE_NOTE_UUID = document.getElementById('chart-settings-datasource-note-uuid').value;
+            this.DATA_SOURCE_NOTE_UUID = slim.getSelected()[0];
             this.TABLE_INDEX_IN_NOTE = parseInt(document.getElementById('chart-settings-datasource-table-index').value);
             this.CHART_TYPE = document.getElementById('chart-settings-chart-type').value;
             this.CHART_TITLE = document.getElementById('chart-settings-chart-title').value;
@@ -175,10 +176,10 @@ export class TableChartData extends BaseChartData {
                 </div>
                 <div class="setting-item">
                     <label for="chart-settings-datasource-note-uuid">Note</label>
-                    <select id="chart-settings-datasource-note-uuid" name="chart-settings-datasource-note-uuid" onchange="handleSettingChange()"  style="max-width: 180px;" >
+                    <select id="chart-settings-datasource-note-uuid" name="chart-settings-datasource-note-uuid" style="width: 180px;">
                         ${
                             allNotes.map(note => `<option value="${note.uuid}">${note.name}</option>`).join('')
-                         }
+                        }
                     </select>
                 </div>
                 <div class="setting-item">
@@ -230,7 +231,20 @@ export class TableChartData extends BaseChartData {
         </div>
         `;
         settingContainerElement.innerHTML = html;
-        document.getElementById('chart-settings-datasource-note-uuid').value = this.DATA_SOURCE_NOTE_UUID;
+        const SlimSelect = (await dynamicImportESM('slim-select')).default;
+        const slim = new SlimSelect({
+            select: '#chart-settings-datasource-note-uuid',
+            placeholder: 'Search for a note',
+            searchPlaceholder: 'Search...',
+            searchText: 'No results',
+            searchHighlight: true,
+            events: {
+                afterChange: (newVal) => {
+                        handleSettingChange();
+                }
+            }
+        });
+        slim.setSelected(this.DATA_SOURCE_NOTE_UUID, false);
         document.getElementById('chart-settings-chart-title').value = this.CHART_TITLE;
         document.getElementById('chart-settings-start-from-zero').checked = this.START_FROM_ZERO;
         document.getElementById('chart-settings-datasource-table-index').value = this.TABLE_INDEX_IN_NOTE;
