@@ -164,6 +164,43 @@ export class TableChartData extends BaseChartData {
             align-items: center;
             font-size: 0.8em;
         }
+        .ss-main {
+            min-height: 12px !important;
+            padding: 1px;
+        }
+        select {
+          background-color: var(--ss-bg-color);
+          border: 1px solid var(--ss-border-color);
+          border-radius: var(--ss-border-radius);
+          color: var(--ss-font-color);
+          cursor: pointer;
+          min-height: 12px !important;
+          box-sizing: border-box;
+          width: 100%;
+        }
+        select:focus {
+          outline: none;
+          box-shadow: 0 0 5px var(--ss-focus-color);
+        }
+        option {
+          color: var(--ss-font-color);
+          background-color: var(--ss-bg-color);
+        }
+        input[type="text"] {
+          background-color: var(--ss-bg-color);
+          border: 1px solid var(--ss-border-color);
+          border-radius: var(--ss-border-radius);
+          color: var(--ss-font-color);
+          box-sizing: border-box;
+          min-height: 12px !important;
+          padding: 2px 4px;
+          width: 100%;
+          outline: none;
+          transition: box-shadow var(--ss-animation-timing);
+        }
+        input[type="text"]:focus {
+          box-shadow: 0 0 5px var(--ss-focus-color);
+        }
         </style>
         <div class="setting-main-container">
             <!-- column 1: for source data and chart type -->
