@@ -8,6 +8,9 @@ export const COMMON_EMBED_COMMANDS = {
     "prompt": async (app, ...args) => {
         return await app.prompt(...args);
     },
+    "alert": async (app, ...args) => {
+        return await app.alert(...args);
+    },
     "getSettings": async (app) => {
         return app.settings;
     },
