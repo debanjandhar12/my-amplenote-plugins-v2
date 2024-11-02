@@ -26,6 +26,18 @@ export const COMMON_EMBED_COMMANDS = {
     "getNoteSections": async (app, ...args) => {
         return await app.getNoteSections(...args);
     },
+    "insertTask": async (app, ...args) => {
+        return await app.insertTask(...args);
+    },
+    "getTaskDomains": async (app) => {
+        return await app.getTaskDomains();
+    },
+    "getTaskDomainTasks": async (app, ...args) => {
+        return await app.getTaskDomainTasks(...args);
+    },
+    "getTask": async (app, ...args) => {
+        return await app.getTask(...args);
+    },
     "saveFile": async (app, ...args) => {
         try {
             let {name, data} = args[0];
