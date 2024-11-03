@@ -1,14 +1,14 @@
 import {
     AMPLENOTE_INSERT_CONTENT_LIMIT,
-    NOTE_HIGHLIGHT_ORDER_SETTING, NOTE_HIGHLIGHT_ORDER_SETTING_DEFAULT,
-    OMNIVORE_APP_URL,
+    NOTE_HIGHLIGHT_ORDER_SETTING,
+    NOTE_HIGHLIGHT_ORDER_SETTING_DEFAULT,
     OMNIVORE_DASHBOARD_COLUMNS_SETTING,
     OMNIVORE_DASHBOARD_ORDER_SETTING,
-    OMNIVORE_DASHBOARD_ORDER_SETTING_DEFAULT, OMNIVORE_DASHBOARD_TABLE_CHUNK_SIZE
+    OMNIVORE_DASHBOARD_ORDER_SETTING_DEFAULT,
 } from "../constants.js";
 import {sortOmnivoreItems, sortOmnivoreItemHighlights} from "./util.js";
 import {telegramMarkdownEscape} from "@yiuayiu/telegram-markdown-escape";
-import {chunk} from "lodash-es";
+import {getOmnivoreAppUrl} from "../omnivore/getOmnivoreUrl.js";
 
 // Generate dashboard table for Dashboard note
 export async function generateDashboardTable(omnivoreItemsState, appSettings, getNoteUrlFromTitle) {
@@ -38,7 +38,9 @@ export async function generateDashboardTable(omnivoreItemsState, appSettings, ge
             + `${optionalColumns.includes('SavedAt') ? `|${new Date(note.savedAt).toLocaleString()}` : ''}`
             + `${optionalColumns.includes('PageType') ? `|${note.pageType}` : ''}`
             + `${optionalColumns.includes('ReadingProgressPercent') ? `|${note.readingProgressPercent}%` : ''}`
-            + `|[Omnivore Link](${OMNIVORE_APP_URL}/me/${note.slug})`
+            + `|[Omnivore Link](${
+                getOmnivoreAppUrl(appSettings)
+            }/me/${note.slug})`
             + '|';
         return row;
     }));
@@ -77,12 +79,12 @@ export function generateNoteHighlightSectionMarkdown(omnivoreItemsState, appSett
         || NOTE_HIGHLIGHT_ORDER_SETTING_DEFAULT);
     const properHighlights = highlightsSorted.map(highlight => {
        if (!highlight.quote) return null;
-        return `**Highlight [↗️](${OMNIVORE_APP_URL}/me/${omnivoreItemsState.slug}#${highlight.id}):**\n` +
+        return `**Highlight [↗️](${getOmnivoreAppUrl(appSettings)}/me/${omnivoreItemsState.slug}#${highlight.id}):**\n` +
             `> ${getHighlightUnicodeIcon(highlight.color)} ${(highlight.quote.split('\n').join(' ')).replace(/>/g, "\\>").replace(/\|/g, "\\|").replace(/^(#{1,6}) /g, "\\$1 ")}\n` +
             (highlight.annotation != null && highlight.annotation !== '' ? `> > 📝 ${(highlight.annotation.split('\n').join(' ').replace(/>/g, "\\>").replace(/\|/g, "\\|")).replace(/^(#{1,6}) /g, "\\$1 ")}\n` : '');
     }).filter(h => h);
     if (properHighlights.length === 0) {
-        return `(No highlights - [create one](${OMNIVORE_APP_URL}/me/${omnivoreItemsState.slug}))`;
+        return `(No highlights - [create one](${getOmnivoreAppUrl(appSettings)}/me/${omnivoreItemsState.slug}))`;
     }
     return properHighlights.join('\n');
 }

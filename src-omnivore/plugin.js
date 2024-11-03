@@ -1,12 +1,10 @@
 import {
-    AMPLENOTE_INSERT_CONTENT_LIMIT,
     BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING,
     BASE_TAG_FOR_HIGHLIGHT_NOTE_SETTING_DEFAULT,
-    OMINOVRE_API_ENDPOINT,
     OMNIVORE_API_KEY_SETTING,
     OMNIVORE_DASHBOARD_COLUMNS_SETTING, OMNIVORE_DASHBOARD_COLUMNS_SETTING_DEFAULT,
     OMNIVORE_DASHBOARD_NOTE_TITLE_DEFAULT,
-    OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING, OMNIVORE_DASHBOARD_ORDER_SETTING, OMNIVORE_DASHBOARD_ORDER_SETTING_DEFAULT,
+    OMNIVORE_DASHBOARD_NOTE_TITLE_SETTING,
     OMNIVORE_SYNC_BATCH_SIZE, SYNC_ARTICLE_CONTENT_SETTING, SYNC_ARTICLE_CONTENT_SETTING_DEFAULT
 } from "./constants.js";
 import { getDeletedOmnivoreItems, getOmnivoreItems} from "./omnivore/api.js";
@@ -16,6 +14,7 @@ import {
     generateNoteSummarySectionMarkdown
 } from "./amplenote/generate-markdown.js";
 import {cloneDeep} from "lodash-es";
+import {getOmnivoreApiUrl} from "./omnivore/getOmnivoreUrl.js";
 
 const plugin = {
     appOption: {
@@ -92,7 +91,7 @@ const plugin = {
                 "",
                 (app.settings[SYNC_ARTICLE_CONTENT_SETTING] || SYNC_ARTICLE_CONTENT_SETTING_DEFAULT).includes("true"),
                 'highlightedMarkdown',
-                OMINOVRE_API_ENDPOINT
+                getOmnivoreApiUrl(app.settings)
             );
             for (const item of items) {
                 const note = omnivoreItemsState.find(n => n.id === item.id);
@@ -118,7 +117,7 @@ const plugin = {
                     after,
                     OMNIVORE_SYNC_BATCH_SIZE,
                     lastSyncTime,
-                    OMINOVRE_API_ENDPOINT
+                    getOmnivoreApiUrl(app.settings)
                 );
                 for (const item of deletedItems) {
                     omnivoreDeletedItems.push(item);
@@ -152,7 +151,7 @@ const plugin = {
                 "",
                 false,
                 'highlightedMarkdown',
-                OMINOVRE_API_ENDPOINT
+                getOmnivoreApiUrl(app.settings)
             );
         }
         catch (e) {
