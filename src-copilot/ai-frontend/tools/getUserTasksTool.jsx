@@ -3,7 +3,7 @@ import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult
 import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 
 export const getUserTasksTool = () => {
-    return makeAssistantToolUI({
+    return AssistantUI.makeAssistantToolUI({
         toolName: "getUserTasksTool",
         description: "Run SQL query to fetch information about existing tasks. You can use it to get tasks between date range, tasks inside specific note, collect aggregate information on tasks etc.",
         parameters: {

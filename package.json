@@ -53,9 +53,9 @@
     "nanoid": "^5.0.7"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-omnivore",
-    "test:watch": "jest --testPathPattern=src-omnivore --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-omnivore",
-    "build:dev": "node esbuild.js $(pwd)/src-omnivore --watch --server"
+    "test": "jest --testPathPattern=src-copilot",
+    "test:watch": "jest --testPathPattern=src-copilot --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-copilot",
+    "build:dev": "node esbuild.js $(pwd)/src-copilot --watch --server"
   }
 }

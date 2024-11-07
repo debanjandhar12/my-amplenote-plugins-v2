@@ -14,21 +14,37 @@ export async function getLLMModel(appSettings) {
         const {createGroq} = await dynamicImportESM("@ai-sdk/groq");
         return createGroq({
             apiKey: apiKey,
-            basePath: apiUrl
+            basePath: apiUrl // Default: https://api.groq.com/openai/v1
         }).languageModel(model);
     }
     else if (apiUrl.includes('localhost')) {
         const {createOllama} = await dynamicImportESM("ollama-ai-provider");
         return createOllama({
-            apiKey: apiKey,
+            apiKey: apiKey, // Default: http://localhost:11434/api
             basePath: apiUrl
-        })
-    } else if (apiUrl.includes('openai') || apiUrl.includes('fireworks')
-        || apiUrl.includes('x.ai')) {
+        }).languageModel(model);
+    }
+    // Google Generative AI does not support tools properly
+    // else if (apiUrl.includes('googleapis')) {
+    //     const {createGoogleGenerativeAI} = await dynamicImportESM("@ai-sdk/google");
+    //     return createGoogleGenerativeAI({
+    //         apiKey: apiKey,
+    //         basePath: apiUrl // Default: https://generativelanguage.googleapis.com/v1beta
+    //     }).languageModel(model);
+    // }
+    else if (apiUrl.includes('anthropic')) {
+        const {createAnthropic} = await dynamicImportESM("@ai-sdk/anthropic");
+        return createAnthropic({
+            apiKey: apiKey,
+            basePath: apiUrl,
+            headers: { 'anthropic-dangerous-direct-browser-access': 'true' }
+        }).languageModel(model);
+    }
+    else if (apiUrl.includes('openai') || apiUrl.includes('fireworks')) {
         const {createOpenAI} = await dynamicImportESM("@ai-sdk/openai");
         return createOpenAI({
             apiKey: apiKey,
-            basePath: apiUrl
+            basePath: apiUrl    // Default: https://api.openai.com/v1
         }).languageModel(model);
     }
     else throw new Error('It is likely that incorrect LLM Settings are provided. Please check plugin settings.');

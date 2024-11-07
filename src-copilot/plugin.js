@@ -4,10 +4,10 @@ import {syncNotes} from "./pinecone/syncNotes.js";
 import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
 
 const plugin = {
+    currentNoteUUID: null,
     insertText: {
         "Continue": async function (app) {
             try {
-
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -23,12 +23,44 @@ const plugin = {
                 console.error(e);
                 await app.alert(e);
             }
+        },
+        "Chat with Copilot": async function (app) {
+            try {
+                plugin.currentNoteUUID = app.context.noteUUID;
+                await app.openSidebarEmbed(1, {trigger: 'appOption', openChat: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        }
+    },
+    replaceText: {
+        "Chat with Copilot": async function (app, selectionContent) {
+            try {
+                plugin.currentNoteUUID = app.context.noteUUID;
+                await app.openSidebarEmbed(1, {trigger: 'replaceSelection', selectionContent: app?.context?.selectionContent || selectionContent, openChat: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
         }
     },
     noteOption: {
         "Chat with Copilot": async function (app, noteUUID) {
             try {
-                await app.openSidebarEmbed(1, {noteUUID, openChat: true});
+                plugin.currentNoteUUID = noteUUID;
+                await app.openSidebarEmbed(1, {trigger: 'noteOption', noteUUID, openChat: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        }
+    },
+    imageOption: {
+        "Chat with Copilot": async function (app, image) {
+            try {
+                plugin.currentNoteUUID = app.context.noteUUID;
+                await app.openSidebarEmbed(1, {trigger: 'imageOption', image, openChat: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -38,14 +70,19 @@ const plugin = {
     renderEmbed: async function (app, args, source = 'embed') {
         try {
             if (args.openChat) {
-                const noteInfo = await app.findNote({uuid: args.noteUUID});
+                let userData = {};
+                if (args.trigger === 'noteOption') {
+                    const noteInfo = await app.findNote({uuid: args.noteUUID});
+                    userData = {...userData, invokerNoteUUID: args.noteUUID, invokerNoteTitle: noteInfo.name};
+                } else if (args.trigger === 'imageOption') {
+                    userData = {...userData, invokerImageSrc: args.image.src};
+                } else if (args.trigger === 'replaceSelection') {
+                    userData = {...userData, invokerSelectionContent: args.selectionContent};
+                }
                 const dailyJotNote = await app.notes.dailyJot(Math.floor(Date.now() / 1000));
                 const dailyJotNoteUUID = (await dailyJotNote.url()).split('/').pop();
-                return addWindowVariableToHtmlString(chatHTML, 'userData', {
-                    currentNoteUUID: args.noteUUID,
-                    currentNoteTitle: noteInfo.name,
-                    dailyJotNoteUUID: dailyJotNoteUUID
-                });
+                userData = {...userData, dailyJotNoteUUID: dailyJotNoteUUID};
+                return addWindowVariableToHtmlString(chatHTML, 'userData', userData);
             }
         } catch (e) {
             console.error(e);
@@ -53,7 +90,18 @@ const plugin = {
         }
     },
     onEmbedCall : createOnEmbedCallHandler({
-        ...COMMON_EMBED_COMMANDS
+        ...COMMON_EMBED_COMMANDS,
+        "getUserCurrentNoteData": async (app) => {
+            try {
+                const currentNote = await app.findNote({uuid: app.context.noteUUID || plugin.currentNoteUUID});
+                return {
+                    currentNoteUUID: currentNote.uuid,
+                    currentNoteTitle: currentNote.name
+                }
+            } catch (e) {
+                throw 'Failed getUserCurrentNoteData - ' + e;
+            }
+        }
     })
 }
 
