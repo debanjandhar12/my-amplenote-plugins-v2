@@ -7,6 +7,7 @@ import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK} from "../test/embed/chat.test
 import {getUserTasksTool} from "../ai-frontend/tools/getUserTasksTool.jsx";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import {ChatInterface} from "../ai-frontend/ChatInterface.jsx";
+import {webSearchTool} from "../ai-frontend/tools/webSearchTool.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -55,7 +56,7 @@ window.dispatchEvent(new Event('resize'));
         window.Tribute = (await dynamicImportESM("tributejs")).default;
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
-        window.ALL_TOOLS = [insertTasksToNoteTool(), getUserTasksTool()];
+        window.ALL_TOOLS = [insertTasksToNoteTool(), getUserTasksTool(), webSearchTool()];
         window.TOOL_CATEGORY_NAMES = ['all-tools', 'tasks', 'notes', 'web-search'];
         hideEmbedLoader();
         if (!React || !ReactDOM) {

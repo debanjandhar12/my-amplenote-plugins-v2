@@ -1,10 +1,10 @@
 import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
-import {createMultiInsertItemTool} from "../tool-helpers/createMultiInsertItemTool.jsx";
+import {createGenericMultiInsertTool} from "../tool-helpers/createGenericMultiInsertTool.jsx";
 
 export const insertTasksToNoteTool = () => {
-    return createMultiInsertItemTool({
+    return createGenericMultiInsertTool({
         toolName: "insertTasksToNoteTool",
         description: "Create tasks and insert to user's note. ",
         parameters: {
@@ -38,12 +38,18 @@ export const insertTasksToNoteTool = () => {
         },
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
+        itemName: 'tasks',
         parameterPathForInsertItemArray: 'tasks',
         insertItemFunction: async ({ args, item }) => {
-            await appConnector.insertTask({uuid: args.noteUUID}, {
+            const taskUUID = await appConnector.insertTask({uuid: args.noteUUID}, {
                 content: item.taskContent,
                 startAt: (Date.parse(item.taskStartAt) / 1000) // convert to timestamp
             });
+            if (!taskUUID) throw new Error('Failed to insert task');
+            return {
+                ...item,
+                taskUUID
+            }
         }
     });
 }

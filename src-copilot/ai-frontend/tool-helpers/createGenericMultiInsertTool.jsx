@@ -3,9 +3,12 @@ import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult
 import {capitalize} from "lodash-es";
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
 
-export const createMultiInsertItemTool = ({
+/**
+ * Creates a tool that allows user to insert multiple items into a note.
+ */
+export const createGenericMultiInsertTool = ({
 toolName, description, parameters,
-triggerCondition, parameterPathForInsertItemArray,
+triggerCondition, itemName, parameterPathForInsertItemArray,
 onInitFunction = () => {}, insertItemFunction
 }) => {
     return AssistantUI.makeAssistantToolUI({
@@ -14,16 +17,25 @@ onInitFunction = () => {}, insertItemFunction
         parameters: parameters,
         triggerCondition: triggerCondition,
         render: ({args, result, addResult, status}) => {
-            const noteTitle = "TODO";
+            const [noteInfoMapArr, setNoteInfoMapArr] = React.useState({});
             const [formError, setFormError] = React.useState(null);
             const [formState, setFormState] = React.useState('loading'); // loading -> waitingForUserInput -> submitting -> completed / canceled
-            const itemName = parameterPathForInsertItemArray.split('.').slice(-1)[0];
             const [insertItemArray, setInsertItemArray] = React.useState([]);
+            const [insertItemResultArray, setInsertItemResultArray] = React.useState([]);
             const [failedInsertItemArray, setFailedInsertItemArray] = React.useState([]);
             const threadRuntime = AssistantUI.useThreadRuntime();
             const isThisToolMessageLast = AssistantUI.useMessage((m) => m.isLast);
+
+            // == On init (get note title, setup item array state, invoke onInitFunction) ==
             React.useEffect(() => {
                 (async () => {
+                    if (args['noteUUID']) {
+                        setNoteInfoMapArr( [{
+                            uuid: args['noteUUID'],
+                            selected: true,
+                            title: await appConnector.getNoteTitleByUUID(args['noteUUID'])
+                        }]);
+                    }
                     try {
                         setInsertItemArray(
                             args[parameterPathForInsertItemArray].map(item => ({
@@ -31,7 +43,7 @@ onInitFunction = () => {}, insertItemFunction
                                 checked: true
                             }))
                         );
-                        onInitFunction({
+                        await onInitFunction({
                             args,
                             threadRuntime,
                             insertItemArray,
@@ -39,11 +51,13 @@ onInitFunction = () => {}, insertItemFunction
                         });
                         setFormState('waitingForUserInput');
                     } catch (e) {
-                        await setFormError(e);
                         console.log(e);
+                        setFormError(e);
                     }
                 })();
             }, []);
+
+            // == Handle result on formState changes ==
             React.useEffect(() => {
                 if (formError) {
                     const formErrorMessage = formError.message || JSON.stringify(formError) || formError.toString();
@@ -75,7 +89,8 @@ onInitFunction = () => {}, insertItemFunction
                     let lastError = null;
                     for (const item of insertItemArray.filter(item => item.checked)) {
                         try {
-                            await insertItemFunction({args, item: item.item});
+                            const result = await insertItemFunction({args, item: item.item}) || item.item;
+                            setInsertItemResultArray([...insertItemResultArray, result]);
                         } catch (e) {
                             setFailedInsertItemArray([...failedInsertItemArray, item]);
                             lastError = e;
@@ -90,9 +105,11 @@ onInitFunction = () => {}, insertItemFunction
                 return <ToolCardMessage
                     text={`Inserting ${itemName}...`}/>
             } else if (formState === 'completed') {
+                const successCount = insertItemResultArray.length;
+                const failedCount = failedInsertItemArray.length;
                 return <ToolCardMessageWithResult
-                    text={`Selected ${insertItemArray.filter(item => item.checked).length} ${itemName} were inserted successfully.`}
-                    result={JSON.stringify(insertItemArray.filter(item => item.checked).map(item => item.item))}/>
+                    text={`${successCount} ${itemName} inserted successfully${failedCount > 0 ? `, ${failedCount} failed` : ''}.`}
+                    result={JSON.stringify(insertItemResultArray)}/>
             }
 
             const allItemKeys = insertItemArray.reduce((keys, current) => {
@@ -105,7 +122,7 @@ onInitFunction = () => {}, insertItemFunction
             }, []);
             return (
                 <ToolCardContainer>
-                    <RadixUI.Text>Select {itemName} to insert into note ({noteTitle}):</RadixUI.Text>
+                    <RadixUI.Text>Select {itemName} to insert into note ({noteInfoMapArr[0].title}):</RadixUI.Text>
                     <RadixUI.Table.Root>
                         <RadixUI.Table.Header>
                             <RadixUI.Table.Row>
