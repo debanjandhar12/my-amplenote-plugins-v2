@@ -93,7 +93,8 @@ const plugin = {
         ...COMMON_EMBED_COMMANDS,
         "getUserCurrentNoteData": async (app) => {
             try {
-                const currentNote = await app.findNote({uuid: app.context.noteUUID || plugin.currentNoteUUID});
+                const currentNoteUUID = app.context.noteUUID || plugin.currentNoteUUID;
+                const currentNote = await app.findNote({uuid: currentNoteUUID});
                 return {
                     currentNoteUUID: currentNote.uuid,
                     currentNoteTitle: currentNote.name

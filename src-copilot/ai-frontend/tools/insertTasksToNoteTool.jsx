@@ -36,7 +36,8 @@ export const insertTasksToNoteTool = () => {
             },
             required: ["tasks", "noteUUID"]
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks"),
+        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
+        || JSON.stringify(allUserMessages).includes("@all-tools"),
         parameterPathForInsertItemArray: 'tasks',
         insertItemFunction: async ({ args, item }) => {
             await appConnector.insertTask({uuid: args.noteUUID}, {
