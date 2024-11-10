@@ -4,7 +4,7 @@ export const EMOJI_DATA_MOCK = {
     type: 'default',
     url: null,
     native: '😜',
-    size: '32',
+    size: '64',
     skin: 1
 }
 

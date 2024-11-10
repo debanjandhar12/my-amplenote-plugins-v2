@@ -52,16 +52,18 @@ export const COMMON_EMBED_COMMANDS = {
     }
 }
 
-export function createOnEmbedCallHandler(embedCommands = {}) {
+export function createOnEmbedCallHandler(embedCommands = {}, logBlacklistedCommands = []) {
     return async function onEmbedCallHandler(app, commandName, ...args) {
-        console.log('onEmbedCall', commandName, args);
         try {
             if (commandName in embedCommands) {
-                return await embedCommands[commandName](app, ...args);
+                const result = await embedCommands[commandName](app, ...args);
+                if (!logBlacklistedCommands.includes(commandName))
+                    console.log('onEmbedCall:', commandName, args, result);
+                return result;
             }
         } catch (e) {
             app.alert("Error:", e.message || e);
-            console.error(e);
+            console.error('onEmbedCall:', commandName, args, e);
             throw e;
         }
         throw new Error(`Unknown command: ${commandName}`);

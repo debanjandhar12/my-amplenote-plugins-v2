@@ -21,7 +21,7 @@ export const EmojiPickerPage = ({onSelectEmoji, onAddCustomEmoji, initialSearch}
         if (pickerRef.current) {    // need to trigger search again after custom emojis are loaded
             const searchElement = document.getElementsByTagName('em-emoji-picker')[0].shadowRoot.querySelector('.search > input[type=search]');
             if (searchElement) {
-                await new Promise(resolve => setTimeout(resolve, 160));
+                await new Promise(resolve => setTimeout(resolve, 320));
                 searchElement.dispatchEvent(new Event('input'));
             }
         }

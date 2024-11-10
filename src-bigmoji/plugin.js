@@ -13,8 +13,10 @@ const plugin = {
         "Insert emoji": async function (app) {
             await app.openSidebarEmbed(1, null);
             await plugin._waitForEmbedResult(app);
-            if (plugin.embedResult)
-                await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
+            if (plugin.embedResult) {
+                const opResult = await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
+                if (!opResult) await app.alert('Failed to insert emoji. Possibly due to user moving selection or note.');
+            }
         }
     },
     imageOption: {
@@ -31,8 +33,10 @@ const plugin = {
                 const emojiObj = JSON.parse(decodeURIComponent(image.src.split('?')[1]));
                 await app.openSidebarEmbed(1, emojiObj);
                 await plugin._waitForEmbedResult(app);
-                if (plugin.embedResult)
-                    await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
+                if (plugin.embedResult) {
+                    const opResult = await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
+                    if (!opResult) await app.alert('Failed to replace selection with emoji. Possibly due to user moving selection or note.');
+                }
             }
         }
     },
@@ -63,8 +67,10 @@ const plugin = {
                 };
                 await app.openSidebarEmbed(1, emojiObj);
                 await plugin._waitForEmbedResult(app);
-                if (plugin.embedResult)
-                    await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
+                if (plugin.embedResult) {
+                    const opResult = await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
+                    if (!opResult) await app.alert('Failed to replace selection with emoji. Possibly due to user moving selection or note.');
+                }
             }
         }
     },
@@ -174,7 +180,7 @@ const plugin = {
                 await app.alert(e);
             }
         },
-    })
+    }, ['refreshTimeout'])
 }
 
 export default plugin;
