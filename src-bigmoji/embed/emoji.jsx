@@ -31,9 +31,9 @@ window.appConnector = new Proxy({}, {
 window.appSettings = window.appSettings || {};
 
 // send signal to so that onclose event can be detected
-setInterval(() => {
+setInterval(async () => {
     if (document.querySelector('.app-container')) {
-        if(!window.appConnector.refreshTimeout())
+        if(!(await window.appConnector.refreshTimeout()))
             showCloseWindowPage();
     }
 }, 100);
@@ -99,7 +99,7 @@ export const App = () => {
                             if (!emojiId || emojiId.trim() === "") {
                                 app.alert("Emoji name cannot be empty");
                             }
-                            await appConnector.addCustomEmoji(emojiId, imageBase64);
+                            await appConnector.addCustomEmoji(emojiId.replaceAll(/\s+/g, '_'), imageBase64);
                             resolve();
                         } catch (error) {
                             reject(error);

@@ -53,9 +53,9 @@
     "nanoid": "^5.0.7"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-copilot",
-    "test:watch": "jest --testPathPattern=src-copilot --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-copilot",
-    "build:dev": "node esbuild.js $(pwd)/src-copilot --watch --server"
+    "test": "jest --testPathPattern=src-bigmoji",
+    "test:watch": "jest --testPathPattern=src-bigmoji --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-bigmoji",
+    "build:dev": "node esbuild.js $(pwd)/src-bigmoji --watch --server"
   }
 }

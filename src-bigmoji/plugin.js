@@ -12,7 +12,8 @@ const plugin = {
         "Insert emoji": async function (app) {
             await app.openSidebarEmbed(1, null);
             await plugin._waitForEmbedResult(app);
-            await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
+            if (plugin.embedResult)
+                await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
         }
     },
     imageOption: {
@@ -28,7 +29,8 @@ const plugin = {
                 const emojiObj = JSON.parse(decodeURIComponent(image.src.split('?')[1]));
                 await app.openSidebarEmbed(1, emojiObj);
                 await plugin._waitForEmbedResult(app);
-                await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
+                if (plugin.embedResult)
+                    await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
             }
         }
     },
@@ -40,7 +42,6 @@ const plugin = {
             plugin.waitTimeout -= 100;
             await new Promise(resolve => setTimeout(resolve, 100));
         }
-        if (plugin.embedResult === null) return '';
     },
     renderEmbed(app, args, source = 'sidebar') {
         try {
@@ -92,20 +93,22 @@ const plugin = {
             const customEmojis2dArray = parseMarkdownTable(customEmojis);
 
             // Transform the 2D table array into an array of emoji objects
+            // Note: By default, errors inside map don't stop the whole function from executing.
             return customEmojis2dArray.map(row => {
                 if (row.length !== 2) {
-                    throw new Error(`Invalid custom emoji row: ${row}`);
+                    console.error(`Possible invalid custom emoji row: ${row}. Will try to proceed.`);
                 }
                 const emojiId = row[0];
                 const emojiImg = row[1];
                 const emojiUrlMatch = emojiImg.match(/!\[.*?\]\((.*?)\)/);
                 const emojiUrl = emojiUrlMatch ? emojiUrlMatch[1] : null;
-                console.log(row, emojiUrlMatch);
-                if (!emojiId || !emojiUrl) {
+                if (!emojiId || !emojiUrl || emojiUrl.trim() === '' || emojiUrl.trim() === '') {
+                    console.error(`Emoji Id or Emoji URL is missing in row: ${row}.`);
                     return null;
                 }
                 if (!emojiUrl.match(/^https?:\/\//)) {
-                    throw new Error(`Invalid emoji URL: ${emojiUrl}`);
+                    console.error(`Invalid emoji URL in row: ${row}.`);
+                    return null;
                 }
                 return {
                     id: emojiId,
@@ -116,12 +119,20 @@ const plugin = {
         },
         "addCustomEmoji": async function (app, emojiId, emojiImgBase64) {
             try {
+                // Fetch custom emojis
                 const customEmojisNote = await plugin._findOrCreateCustomEmojisNote(app);
                 const customEmojis = await app.getNoteContent({uuid: customEmojisNote.uuid});
                 const customEmojis2dArray = parseMarkdownTable(customEmojis);
+                // Add new emoji to table
                 const emojiUrl = await app.attachNoteMedia(customEmojisNote.uuid, emojiImgBase64);
                 const newEmojis2dArray = [...customEmojis2dArray, [emojiId, `![](${emojiUrl})`]];
+                // Add header if it doesn't exist
+                if (newEmojis2dArray[0][0].trim() !== 'Emoji ID' && newEmojis2dArray[0][1].trim() !== 'Image') {
+                    newEmojis2dArray.unshift(['Emoji ID', 'Emoji']);
+                }
+                // Convert 2D array to markdown
                 const newCustomEmojis = getMarkdownFrom2dArray(newEmojis2dArray);
+                // Replace the custom emojis note with the new markdown
                 await app.replaceNoteContent({uuid: customEmojisNote.uuid}, newCustomEmojis);
             } catch (e) {
                 console.error(e);
