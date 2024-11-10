@@ -5,10 +5,14 @@ export const EmojiSizePage = ({selectedEmoji, onSubmit}) => {
     const [selectedSize, setSelectedSize] = React.useState("32");
     const [submitButtonName, setSubmitButtonName] = React.useState('Submit');
 
-    React.useEffect(() => { // TODO: Fix this
+    // Set default size based on old emojiObj
+    React.useEffect(() => {
         const oldEmojiObj = window.emojiData;
         if (oldEmojiObj) {
-            setSelectedSize(oldEmojiObj.size);
+            if (oldEmojiObj.size === '15' && !selectedEmoji.native) {   // Case where new emoji is not native and hence size 15 not available
+                setSelectedSize('32');
+            }
+            else setSelectedSize(oldEmojiObj.size);
             setSubmitButtonName('Update');
         }
     }, []);
@@ -34,6 +38,15 @@ export const EmojiSizePage = ({selectedEmoji, onSubmit}) => {
         {isImageLoaded &&  <div className="emoji-size-page-container">
             <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    {
+                        selectedEmoji.native ?
+                        <>
+                        <input type="radio" name="size" value="15" id="size-15px" onChange={handleSizeChange} checked={selectedSize === '15'}/>
+                        <label htmlFor="size-15px" >
+                        <span style={{ padding: '10px', marginRight: '10px' }}>{selectedEmoji.native}</span>
+                        </label>
+                        </> : null
+                    }
                     <input type="radio" name="size" value="32" id="size-32px" onChange={handleSizeChange} checked={selectedSize === '32'}/>
                     <label htmlFor="size-32px" >
                         <img src={getURLFromEmojiObj(selectedEmoji)} style={{ padding: '10px', marginRight: '10px' }} alt={selectedEmoji} width="32" height="32"/>

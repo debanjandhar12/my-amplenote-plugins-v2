@@ -66,13 +66,19 @@ const showCloseWindowPage = () => {
 export const App = () => {
     const [emojiObj, setEmojiObj] = React.useState(null);
     useCustomStyles();
+    const getInitialSearch = () => {
+        if (emojiObj?.native) return emojiObj.native;
+        if (window.emojiData?.native) return window.emojiData.native;
+        return emojiObj?.emojiCode || window.emojiData?.emojiCode;  // for custom emojis, use emojiCode (emojiID)
+    }
     const handleEmojiSelect = (emoji) => {
         console.log(emoji);
         setEmojiObj({
             emojiUUID: Math.random().toString(36).substring(7),
             type: emoji.unified ? 'default' : 'custom',
-            emojiCode: emoji.unified,
+            emojiCode: emoji.unified || emoji.id,
             url: emoji.src, // will be null if emoji is default
+            native: emoji.native, // can be null
             size: '32',
             skin: emoji.skin // this can be null
         });
@@ -121,7 +127,9 @@ export const App = () => {
         showCloseWindowPage();
     };
     return(!emojiObj ?
-        <EmojiPickerPage onSelectEmoji={handleEmojiSelect} onAddCustomEmoji={handleAddCustomEmoji} />  :
+        <EmojiPickerPage
+            initialSearch={getInitialSearch()}
+            onSelectEmoji={handleEmojiSelect} onAddCustomEmoji={handleAddCustomEmoji} />  :
         <EmojiSizePage selectedEmoji={emojiObj} onSubmit={handleSubmit} />
     )
 };

@@ -65,14 +65,16 @@ export const useCustomStyles = () => {
             cursor: pointer;
         }
         
-        .emoji-size-page-container label img {
+        .emoji-size-page-container label img,
+        .emoji-size-page-container label span {
             border: 1px solid transparent;
             border-radius: 10%;
             padding: 5px;
             transition: all 0.2s ease;
         }
         
-        .emoji-size-page-container input[type="radio"]:checked + label img {
+        .emoji-size-page-container input[type="radio"]:checked + label img,
+        .emoji-size-page-container input[type="radio"]:checked + label span {
             border-radius: 50%; 
             background-color: rgba(255, 255, 255, .2);
         }

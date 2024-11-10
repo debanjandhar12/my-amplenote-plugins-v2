@@ -4,6 +4,7 @@ import emojiHTML from "inline:./embed/emoji.html";
 import {getURLFromEmojiObj} from "./embed/utils/getURLFromEmojiCode.jsx";
 import {parseMarkdownTable} from "./markdown/parseMarkdownTable.js";
 import {getMarkdownFrom2dArray} from "./markdown/getMarkdownFrom2dArray.js";
+import dynamicImportESM from "../common-utils/dynamic-import-esm.js";
 
 const plugin = {
     embedResult: false,
@@ -21,12 +22,45 @@ const plugin = {
             check: (app, image) => {
                 try {
                     const emojiObj = JSON.parse(decodeURIComponent(image.src.split('?')[1]));
+                    if (!emojiObj) return false;    // dont check emojiObj.emojiCode as it can be null due to a bug in earlier versions
                     return true;
                 } catch (e) { }
                 return false;
             },
             run: async (app, image) => {
                 const emojiObj = JSON.parse(decodeURIComponent(image.src.split('?')[1]));
+                await app.openSidebarEmbed(1, emojiObj);
+                await plugin._waitForEmbedResult(app);
+                if (plugin.embedResult)
+                    await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
+            }
+        }
+    },
+    replaceText: {
+        "Modify emoji": {
+            check: async (app, text) => {
+                try {
+                    if (!plugin.getEmojiDataFromNative) {
+                        const emojiMartData = (await dynamicImportESM("@emoji-mart/data")).default;
+                        const {init, getEmojiDataFromNative} = await dynamicImportESM("emoji-mart");
+                        await init({data: emojiMartData});
+                        plugin.getEmojiDataFromNative = getEmojiDataFromNative;
+                    }
+                    const emojiData = await plugin.getEmojiDataFromNative(text.trim());
+                    if (!emojiData) return false;
+                    if (!emojiData.unified) return false;
+                    return true;
+                } catch (e) { }
+                return false;
+            },
+            run: async (app, text) => {
+                const emojiObj = {
+                    emojiUUID: Math.random().toString(36).substring(7),
+                    type: 'default',
+                    native: (await plugin.getEmojiDataFromNative(text.trim())).native,
+                    emojiCode: (await plugin.getEmojiDataFromNative(text.trim())).unified,
+                    size: '15'  // 15 means native size
+                };
                 await app.openSidebarEmbed(1, emojiObj);
                 await plugin._waitForEmbedResult(app);
                 if (plugin.embedResult)
@@ -53,6 +87,8 @@ const plugin = {
         }
     },
     _getImageMarkdown: function (emojiObj) {
+        if (emojiObj.size === '15')
+            return emojiObj.native;
         const url = getURLFromEmojiObj(emojiObj);
         return `![|${emojiObj.size}](${url}?${encodeURIComponent(JSON.stringify(emojiObj))}) <!-- dummy comment -->`;
     },
@@ -93,7 +129,6 @@ const plugin = {
             const customEmojis2dArray = parseMarkdownTable(customEmojis);
 
             // Transform the 2D table array into an array of emoji objects
-            // Note: By default, errors inside map don't stop the whole function from executing.
             return customEmojis2dArray.map(row => {
                 if (row.length !== 2) {
                     console.error(`Possible invalid custom emoji row: ${row}. Will try to proceed.`);
