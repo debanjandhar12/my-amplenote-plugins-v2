@@ -49,6 +49,7 @@ export const EmojiSizePage = ({selectedEmoji, onSubmit, setCurrentPage, setSelec
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h1>Select emoji size</h1>
             <a href="#"
+               className={'emoji-size-page-back-button'}
                onClick={(e) => { e.preventDefault(); setCurrentPage('emoji-picker'); }}
                style={{ textDecoration: 'none', color: '#4a90e2', fontSize: '16px', fontWeight: '500', marginRight: '10px' }}>
                 ← Back
@@ -82,7 +83,8 @@ export const EmojiSizePage = ({selectedEmoji, onSubmit, setCurrentPage, setSelec
                     </label>
                 </div>
             </div>
-            <button onClick={handleSubmit}>{submitButtonName}</button>
+            <button className={'emoji-size-page-submit-button'}
+                onClick={handleSubmit}>{submitButtonName}</button>
         </div>}
     </div>
 };

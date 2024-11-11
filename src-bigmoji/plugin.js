@@ -13,23 +13,10 @@ const plugin = {
         "Insert emoji": async function (app) {
             const isSidebarOpenSuccess = await app.openSidebarEmbed(1, null, 'sidebar');
             if (!isSidebarOpenSuccess) {
-                await app.context.replaceSelection(`<object data="plugin://${app.context.pluginUUID}" data-aspect-ratio="2" />`);
+                await app.context.replaceSelection(`<object data="plugin://${app.context.pluginUUID}" data-aspect-ratio="1" />`);
             }
             await plugin._waitForEmbedResult(app);
-            if (plugin.embedResult && isSidebarOpenSuccess) {
-                const opResult = await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
-                if (!opResult) await app.alert('Failed to insert emoji. Possibly due to user moving selection or note.');
-            } else if (plugin.embedResult && !isSidebarOpenSuccess) {
-                const currentNote = await app.findNote({uuid: app.context.noteUUID});
-                const currentNoteContent = await app.getNoteContent({uuid: currentNote.uuid});
-                const objectTagRegex = new RegExp(`<object data="plugin://${app.context.pluginUUID}.*?" />`, 'g');
-                const objectTagMatch = currentNoteContent.match(objectTagRegex);
-                if (objectTagMatch) {
-                    const newNoteContent = currentNoteContent.replace(objectTagRegex, plugin._getImageMarkdown(plugin.embedResult));
-                    await app.replaceNoteContent({uuid: currentNote.uuid}, newNoteContent);
-                }
-                else throw new Error('Failed to replace selection with emoji. Possibly due to invalid note content.');
-            }
+            await plugin._handlePluginEmbedResult(app, isSidebarOpenSuccess);
         }
     },
     imageOption: {
@@ -46,23 +33,10 @@ const plugin = {
                 const emojiObj = JSON.parse(decodeURIComponent(image.src.split('?')[1]));
                 const isSidebarOpenSuccess = await app.openSidebarEmbed(1, emojiObj, 'sidebar');
                 if (!isSidebarOpenSuccess) {
-                    await app.context.replaceSelection(`<object data="plugin://${app.context.pluginUUID}?${encodeURIComponent(JSON.stringify(emojiObj))}" data-aspect-ratio="2" />`);
+                    await app.context.replaceSelection(`<object data="plugin://${app.context.pluginUUID}?${encodeURIComponent(JSON.stringify(emojiObj))}" data-aspect-ratio="1" />`);
                 }
                 await plugin._waitForEmbedResult(app);
-                if (plugin.embedResult && isSidebarOpenSuccess) {
-                    const opResult = await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
-                    if (!opResult) await app.alert('Failed to replace selection with emoji. Possibly due to user moving selection or note.');
-                } else if (plugin.embedResult && !isSidebarOpenSuccess) {
-                    const currentNote = await app.findNote({uuid: app.context.noteUUID});
-                    const currentNoteContent = await app.getNoteContent({uuid: currentNote.uuid});
-                    const objectTagRegex = new RegExp(`<object data="plugin://${app.context.pluginUUID}.*?" />`, 'g');
-                    const objectTagMatch = currentNoteContent.match(objectTagRegex);
-                    if (objectTagMatch) {
-                        const newNoteContent = currentNoteContent.replace(objectTagRegex, plugin._getImageMarkdown(plugin.embedResult));
-                        await app.replaceNoteContent({uuid: currentNote.uuid}, newNoteContent);
-                    }
-                    else throw new Error('Failed to replace selection with emoji. Possibly due to invalid note content.');
-                }
+                await plugin._handlePluginEmbedResult(app, isSidebarOpenSuccess);
             }
         }
     },
@@ -93,23 +67,27 @@ const plugin = {
                 };
                 const isSidebarOpenSuccess = await app.openSidebarEmbed(1, emojiObj, 'sidebar');
                 if (!isSidebarOpenSuccess) {
-                    await app.context.replaceSelection(`<object data="plugin://${app.context.pluginUUID}?${encodeURIComponent(JSON.stringify(emojiObj))}" data-aspect-ratio="2" />`);
+                    await app.context.replaceSelection(`<object data="plugin://${app.context.pluginUUID}?${encodeURIComponent(JSON.stringify(emojiObj))}" data-aspect-ratio="1" />`);
                 }
                 await plugin._waitForEmbedResult(app);
-                if (plugin.embedResult && isSidebarOpenSuccess) {
-                    const opResult = await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
-                    if (!opResult) await app.alert('Failed to replace selection with emoji. Possibly due to user moving selection or note.');
-                } else if (plugin.embedResult && !isSidebarOpenSuccess) {
-                    const currentNote = await app.findNote({uuid: app.context.noteUUID});
-                    const currentNoteContent = await app.getNoteContent({uuid: currentNote.uuid});
-                    const objectTagRegex = new RegExp(`<object data="plugin://${app.context.pluginUUID}.*?" />`, 'g');
-                    const objectTagMatch = currentNoteContent.match(objectTagRegex);
-                    if (objectTagMatch) {
-                        const newNoteContent = currentNoteContent.replace(objectTagRegex, plugin._getImageMarkdown(plugin.embedResult));
-                        await app.replaceNoteContent({uuid: currentNote.uuid}, newNoteContent);
-                    } else throw new Error('Failed to replace selection with emoji. Possibly due to invalid note content.');
-                }
+                await plugin._handlePluginEmbedResult(app, isSidebarOpenSuccess);
             }
+        }
+    },
+    _handlePluginEmbedResult: async function (app, isSidebarOpenSuccess) {
+        if (plugin.embedResult && isSidebarOpenSuccess) {
+            const opResult = await app.context.replaceSelection(plugin._getImageMarkdown(plugin.embedResult));
+            if (!opResult) await app.alert('Failed to insert emoji. Possibly due to user moving selection or note.');
+        } else if (plugin.embedResult && !isSidebarOpenSuccess) {
+            const currentNote = await app.findNote({uuid: app.context.noteUUID});
+            const currentNoteContent = await app.getNoteContent({uuid: currentNote.uuid});
+            const objectTagRegex = new RegExp(`<object data="plugin://${app.context.pluginUUID}.*?" />`, 'g');
+            const objectTagMatch = currentNoteContent.match(objectTagRegex);
+            if (objectTagMatch) {
+                const newNoteContent = currentNoteContent.replace(objectTagRegex, plugin._getImageMarkdown(plugin.embedResult));
+                await app.replaceNoteContent({uuid: currentNote.uuid}, newNoteContent);
+            }
+            else throw new Error('Failed to replace selection with emoji. Possibly due to invalid note content.');
         }
     },
     _waitForEmbedResult: async function (app) {
