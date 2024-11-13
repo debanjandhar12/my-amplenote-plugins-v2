@@ -8,6 +8,7 @@ import {getUserTasksTool} from "../ai-frontend/tools/getUserTasksTool.jsx";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import {ChatInterface} from "../ai-frontend/ChatInterface.jsx";
 import {webSearchTool} from "../ai-frontend/tools/webSearchTool.jsx";
+import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -48,11 +49,13 @@ window.dispatchEvent(new Event('resize'));
 (async () => {
     try {
         showEmbedLoader();
+        injectAmplenoteColors();
         window.React = await dynamicImportESM("react");
         window.ReactDOM = await dynamicImportESM("react-dom/client");
         window.ReactDOMTestUtils = await dynamicImportESM("react-dom/test-utils");
         window.RadixUI = await dynamicImportESM("@radix-ui/themes");
         window.AssistantUI = await dynamicImportESM("@assistant-ui/react");
+        window.RadixIcons = await dynamicImportESM("@radix-ui/react-icons");
         window.Tribute = (await dynamicImportESM("tributejs")).default;
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
@@ -84,7 +87,7 @@ export const App = () => {
     });
 
     return (
-        <RadixUI.Theme appearance="dark">
+        <RadixUI.Theme appearance="dark" accentColor="blue">
             <AssistantUI.AssistantRuntimeProvider runtime={runtime}>
                 <ChatInterface />
             </AssistantUI.AssistantRuntimeProvider>

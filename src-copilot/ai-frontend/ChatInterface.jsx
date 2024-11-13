@@ -1,13 +1,15 @@
 import {convertUIToolsToDummyServerTools} from "../ai-backend/utils/convertUIToolsToDummyServerTools.js";
 import {useChatSuggestions} from "./hooks/useChatSuggestions.js";
 import {CustomComposer} from "./CustomComposer.jsx";
+import {CUSTOM_LLM_INSTRUCTION_SETTING} from "../constants.js";
+import {ChatInterfaceHeader} from "./ChatInterfaceHeader.jsx";
 
 export const ChatInterface = () => {
     // Fetch runtime and other assistant-ui contexts
     const runtime = AssistantUI.useAssistantRuntime();
     const thread = AssistantUI.useThread();
     const suggestions = useChatSuggestions(thread, 4);
-    const composer = AssistantUI.useThreadComposer();
+    const composer = AssistantUI.useComposerRuntime();
 
     // Based on user data, initialize assistant-ui chat
     React.useEffect(() => {
@@ -20,9 +22,6 @@ export const ChatInterface = () => {
                 });
         }
     }, []);
-
-    // Create new chat button
-    const onClickNewChat = React.useCallback(() => runtime.switchToNewThread(), [runtime]);
 
     // Handle tools and system prompt dynamically
     window.appConnector.getUserCurrentNoteData().then(async (userData) => {
@@ -64,6 +63,12 @@ export const ChatInterface = () => {
                             window.userData.invokerSelectionContent ? `Currently selected content: ${window.userData.invokerSelectionContent}` : ''
                         ].filter(Boolean).join('\n').trim()}
                     Current date and time: ${new Date().toISOString()}
+                    
+                    ${
+                        window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING] && window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING].trim() !== '' ?
+                        "Additional Instruction from user:-\n"+window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING].trim().replaceAll(/\s+/gm, ' ').trim() :
+                        null
+                    }
                     `.trim().replaceAll(/^[ \t]+/gm, '').trim() : null,
                     }
                 }
@@ -76,15 +81,7 @@ export const ChatInterface = () => {
 
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>
-            <RadixUI.Box style={{
-                display: 'flex', justifyContent: 'flex-end', paddingRight: '4px',
-                position: 'sticky', top: 0, zIndex: '1000', backgroundColor: 'var(--color-background)'
-            }}>
-                <RadixUI.Button variant="soft" size="1" style={{marginRight: '4px', margin: '2px'}}
-                                onClick={onClickNewChat}>
-                    New Chat
-                </RadixUI.Button>
-            </RadixUI.Box>
+            <ChatInterfaceHeader />
             <AssistantUI.Thread
                 welcome={{
                     suggestions: suggestions,

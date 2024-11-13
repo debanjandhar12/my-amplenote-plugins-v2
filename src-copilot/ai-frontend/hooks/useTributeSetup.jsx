@@ -1,31 +1,28 @@
 export const useTributeSetup = (textareaRef, toolCategoryNames) => {
-    const composer = AssistantUI.useThreadComposer();
+    const composer = AssistantUI.useComposerRuntime();
     React.useEffect(() => {
         if (!textareaRef.current) return;
         const style = document.createElement('style');
         style.textContent = `
             .tribute-container > ul {
-                background-color: var(--accent-a3, #1e1e1e);
-                border-radius: var(--radius-4);
-                box-shadow: var(--shadow-4);
-                color: var(--accent-11, #ffffff);
+                background-color: #434A54; 
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                color: #FFFFFF; 
                 margin: 10px;
                 padding: 0;
                 list-style: none;
             }
             .tribute-item {
-                padding: var(--space-2) var(--space-4);
-                margin: var(--space-1) 0;
-                cursor: pointer;
                 padding: 8px;
-                border-bottom: 1px solid var(--color-muted, #333333);
+                cursor: pointer;
+                border-bottom: 1px solid #333333;
             }
             .tribute-item:hover {
-                background-color: var(--color-background-hover, #2c2c2c);
+                background-color: #2d4759;
             }
             .tribute-item-selected {
-                background-color: var(--color-background-selected, #3a3a3a);
-                color: var(--color-text-selected, #ffffff);
+                background-color: #2d4759;
+                color: #FFFFFF;
             }
         `;
         document.body.append(style);
