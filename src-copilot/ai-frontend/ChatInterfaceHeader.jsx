@@ -1,4 +1,4 @@
-import {CUSTOM_PROMPT_SETTING} from "../constants.js";
+import {USER_PROMPT_LIST_SETTING} from "../constants.js";
 
 export const ChatInterfaceHeader = () => {
     // Fetch runtime and other assistant-ui contexts
@@ -13,10 +13,12 @@ export const ChatInterfaceHeader = () => {
             position: 'sticky', top: 0, zIndex: '1000', backgroundColor: 'var(--color-background)'
         }}>
             <UserPromptLibraryPopover />
-            <RadixUI.Button variant="ghost" size="1" style={{marginRight: '4px', margin: '2px'}}
-                            onClick={onClickNewChat}>
-                <RadixIcons.PlusIcon />
-            </RadixUI.Button>
+            <RadixUI.Tooltip content="New chat">
+                <RadixUI.Button variant="ghost" size="1" style={{marginRight: '4px', margin: '2px'}}
+                                onClick={onClickNewChat}>
+                    <RadixIcons.PlusIcon />
+                </RadixUI.Button>
+            </RadixUI.Tooltip>
         </RadixUI.Box>
     )
 }
@@ -28,7 +30,7 @@ const UserPromptLibraryPopover = () => {
     React.useEffect(() => {
         (async () => {
             try {
-                setUserPromptList(JSON.parse((await window.appConnector.getSettings())[CUSTOM_PROMPT_SETTING]));
+                setUserPromptList(JSON.parse((await window.appConnector.getSettings())[USER_PROMPT_LIST_SETTING]).sort((a, b) => b.usageCount - a.usageCount));
             } catch (e) {
                 console.error(e);
             }
@@ -37,8 +39,14 @@ const UserPromptLibraryPopover = () => {
 
     const handleInsertPrompt = React.useCallback((prompt) => {
         composer.setText(prompt.message);
-        composer.focus(); // TODO: Fix this
-    }, [composer]);
+        // composer.focus(); // TODO: Fix this
+        const newPromptList = userPromptList.map(prompt2 => {
+            if(prompt2.uuid === prompt.uuid) return { ...prompt, usageCount: prompt.usageCount + 1 };
+            return prompt2;
+        });
+        setUserPromptList(newPromptList);
+        window.appConnector.setSetting(USER_PROMPT_LIST_SETTING, JSON.stringify(newPromptList));
+    }, [composer, userPromptList]);
 
     const handleAddPrompt = React.useCallback(async () => {
         const promptText = await window.appConnector.prompt("Enter prompt:", {
@@ -52,7 +60,7 @@ const UserPromptLibraryPopover = () => {
             message: promptText.trim(),
             usageCount: 0
         };
-        await window.appConnector.setSetting(CUSTOM_PROMPT_SETTING, JSON.stringify([...userPromptList, promptObject]));
+        await window.appConnector.setSetting(USER_PROMPT_LIST_SETTING, JSON.stringify([...userPromptList, promptObject]));
         setUserPromptList([...userPromptList, promptObject]);
     }, [userPromptList]);
 
@@ -66,7 +74,7 @@ const UserPromptLibraryPopover = () => {
             }]
         });
         if (!deleteConfirmation) return;
-        await window.appConnector.setSetting(CUSTOM_PROMPT_SETTING, JSON.stringify(userPromptList.filter(p => p.uuid !== prompt.uuid)));
+        await window.appConnector.setSetting(USER_PROMPT_LIST_SETTING, JSON.stringify(userPromptList.filter(p => p.uuid !== prompt.uuid)));
         setUserPromptList(userPromptList.filter(p => p.uuid !== prompt.uuid));
     }, [userPromptList]);
 
@@ -74,7 +82,9 @@ const UserPromptLibraryPopover = () => {
         <RadixUI.Popover.Root>
             <RadixUI.Popover.Trigger asChild>
                 <RadixUI.Button variant="ghost" size="1" style={{margin: '2px'}}>
-                    <RadixIcons.Pencil2Icon />
+                    <RadixUI.Tooltip content="User prompts">
+                        <RadixIcons.Pencil2Icon />
+                    </RadixUI.Tooltip>
                 </RadixUI.Button>
             </RadixUI.Popover.Trigger>
             <RadixUI.Popover.Content width="360px">
@@ -87,14 +97,14 @@ const UserPromptLibraryPopover = () => {
                                         <RadixUI.Text style={{ fontSize: '11px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
                                             {prompt.message}
                                         </RadixUI.Text>
-                                        <RadixUI.Button
+                                        <RadixUI.IconButton
                                             variant="ghost"
                                             color="red"
                                             size="1"
                                             style={{ alignSelf: 'center' }}
                                             onClick={(e) => handleDeletePrompt(e, prompt)}>
                                             <RadixIcons.TrashIcon />
-                                        </RadixUI.Button>
+                                        </RadixUI.IconButton>
                                     </RadixUI.Flex>
                                 </a>
                             </RadixUI.Card>

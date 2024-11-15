@@ -1,5 +1,5 @@
 import {
-    CUSTOM_PROMPT_SETTING,
+    USER_PROMPT_LIST_SETTING,
     CUSTOM_LLM_INSTRUCTION_SETTING,
     LLM_API_KEY_SETTING,
     LLM_API_URL_SETTING,
@@ -11,7 +11,7 @@ export default {
     name: 'Ample Copilot',
     description: 'AI plugin with chat interface',
     settings: [PINECONE_API_KEY_SETTING, LLM_API_KEY_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING,
-        CUSTOM_LLM_INSTRUCTION_SETTING, CUSTOM_PROMPT_SETTING],
+        CUSTOM_LLM_INSTRUCTION_SETTING, USER_PROMPT_LIST_SETTING],
     version: '1.0.0',
     icon: 'bar_chart',
     instructions: `
