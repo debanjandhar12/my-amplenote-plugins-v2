@@ -40,8 +40,8 @@ export const insertTasksToNoteTool = () => {
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         itemName: 'tasks',
         parameterPathForInsertItemArray: 'tasks',
-        insertItemFunction: async ({ args, item }) => {
-            const taskUUID = await appConnector.insertTask({uuid: args.noteUUID}, {
+        insertItemFunction: async ({ selectedNoteUUID, item }) => {
+            const taskUUID = await appConnector.insertTask({uuid: selectedNoteUUID}, {
                 content: item.taskContent,
                 startAt: (Date.parse(item.taskStartAt) / 1000) // convert to timestamp
             });

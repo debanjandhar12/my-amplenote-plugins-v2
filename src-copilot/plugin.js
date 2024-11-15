@@ -81,7 +81,7 @@ const plugin = {
                 }
                 const dailyJotNote = await app.notes.dailyJot(Math.floor(Date.now() / 1000));
                 const dailyJotNoteUUID = (await dailyJotNote.url()).split('/').pop();
-                userData = {...userData, dailyJotNoteUUID: dailyJotNoteUUID};
+                userData = {...userData, dailyJotNoteUUID: dailyJotNoteUUID, dailyJotNoteTitle: dailyJotNote.name};
                 return addWindowVariableToHtmlString(chatHTML, 'userData', userData);
             }
         } catch (e) {

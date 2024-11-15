@@ -1,6 +1,6 @@
 import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
-import {capitalize} from "lodash-es";
+import {capitalize, truncate} from "lodash-es";
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
 
 /**
@@ -17,7 +17,7 @@ onInitFunction = () => {}, insertItemFunction
         parameters: parameters,
         triggerCondition: triggerCondition,
         render: ({args, result, addResult, status}) => {
-            const [noteInfoMapArr, setNoteInfoMapArr] = React.useState({});
+            const [noteInfoMapArr, setNoteInfoMapArr] = React.useState([]);
             const [formError, setFormError] = React.useState(null);
             const [formState, setFormState] = React.useState('loading'); // loading -> waitingForUserInput -> submitting -> completed / canceled
             const [insertItemArray, setInsertItemArray] = React.useState([]);
@@ -30,11 +30,28 @@ onInitFunction = () => {}, insertItemFunction
             React.useEffect(() => {
                 (async () => {
                     if (args['noteUUID']) {
-                        setNoteInfoMapArr( [{
+                        const noteInfoMapArr = [{
                             uuid: args['noteUUID'],
                             selected: true,
                             title: await appConnector.getNoteTitleByUUID(args['noteUUID'])
-                        }]);
+                        }];
+                        if (userData.currentNoteUUID && userData.currentNoteUUID.trim() !== '' &&
+                            noteInfoMapArr.filter(note => note.uuid === userData.currentNoteUUID).length === 0) {
+                            noteInfoMapArr.push({
+                                uuid: userData.currentNoteUUID,
+                                selected: true,
+                                title: userData.currentNoteTitle
+                            });
+                        }
+                        if (userData.dailyJotNoteUUID && userData.dailyJotNoteUUID.trim() !== '' &&
+                            noteInfoMapArr.filter(note => note.uuid === userData.dailyJotNoteUUID).length === 0) {
+                            noteInfoMapArr.push({
+                                uuid: userData.dailyJotNoteUUID,
+                                selected: true,
+                                title: userData.dailyJotNoteTitle
+                            });
+                        }
+                        setNoteInfoMapArr(noteInfoMapArr);
                     }
                     try {
                         setInsertItemArray(
@@ -71,7 +88,7 @@ onInitFunction = () => {}, insertItemFunction
                     }
                 }
                 else if (formState === 'completed') {
-                    addResult(`Function call completed successfully. User has interactively selected ${itemName} to insert into note and those were inserted successfully.`
+                    addResult(`Function call completed successfully. User has interactively selected ${itemName} to insert into note ${noteInfoMapArr.filter(note => note.selected)[0].title} (uuid: ${noteInfoMapArr.filter(note => note.selected)[0].uuid}) and those were inserted successfully.`
                         + `${capitalize(itemName)} added in this interaction: ${JSON.stringify(insertItemArray.filter(item => item.checked))}`);
                 }
             }, [formState]);
@@ -89,7 +106,8 @@ onInitFunction = () => {}, insertItemFunction
                     let lastError = null;
                     for (const item of insertItemArray.filter(item => item.checked)) {
                         try {
-                            const result = await insertItemFunction({args, item: item.item}) || item.item;
+                            const result = await insertItemFunction({args, item: item.item, selectedNoteUUID: noteInfoMapArr.filter(note => note.selected)[0].uuid})
+                                || item.item;
                             setInsertItemResultArray([...insertItemResultArray, result]);
                         } catch (e) {
                             setFailedInsertItemArray([...failedInsertItemArray, item]);
@@ -122,7 +140,7 @@ onInitFunction = () => {}, insertItemFunction
             }, []);
             return (
                 <ToolCardContainer>
-                    <RadixUI.Text>Select {itemName} to insert into note ({noteInfoMapArr[0].title}):</RadixUI.Text>
+                    <RadixUI.Text>Select {itemName} to insert into note:</RadixUI.Text>
                     <RadixUI.Table.Root>
                         <RadixUI.Table.Header>
                             <RadixUI.Table.Row>
@@ -147,25 +165,54 @@ onInitFunction = () => {}, insertItemFunction
                                         />
                                     </RadixUI.Table.RowHeaderCell>
                                     {allItemKeys.map(key =>
-                                        <RadixUI.Table.Cell key={key}>{insertItemArray[index].item[key]}</RadixUI.Table.Cell>
+                                        <RadixUI.Table.Cell
+                                            key={key}>{insertItemArray[index].item[key]}</RadixUI.Table.Cell>
                                     )}
                                 </RadixUI.Table.Row>
                             ))}
                         </RadixUI.Table.Body>
                     </RadixUI.Table.Root>
-                    <div style={{marginTop: '10px', display: 'flex', justifyContent: 'flex-end'}}>
-                        <RadixUI.Button color="red"
-                                        disabled={status === 'requires-action' || !isThisToolMessageLast}
-                                        onClick={()=>{setFormState('canceled')}}
-                                        style={{marginRight: '10px'}}>
-                            Cancel
-                        </RadixUI.Button>
-                        <RadixUI.Button
-                            disabled={status === 'requires-action' || !isThisToolMessageLast}
-                            onClick={()=>{setFormState('submitting')}}>
-                            Insert Selected {itemName}
-                        </RadixUI.Button>
-                    </div>
+                    <RadixUI.Flex gap="10px" justify="between" style={{marginTop: '10px'}}>
+                        <RadixUI.Select.Root value={noteInfoMapArr.filter(note => note.selected)[0].uuid} onValueChange={(value) => {
+                            setNoteInfoMapArr(noteInfoMapArr.map(note => {
+                                if (note.uuid === value) {
+                                    return {...note, selected: true};
+                                }
+                                return {...note, selected: false};
+                            }));
+                        }}>
+                            <RadixUI.Select.Trigger>
+                                <RadixIcons.FileTextIcon style={{ display: 'inline-block', marginRight: '5px', marginTop: '-4px' }} />{truncate(noteInfoMapArr.filter(note => note.selected)[0].title, { length: 12 })}
+                            </RadixUI.Select.Trigger>
+                            <RadixUI.Select.Content position="popper">
+                            {noteInfoMapArr.map((note) => (
+                                    <RadixUI.Select.Item key={note.uuid} value={note.uuid}>
+                                        <>
+                                            <span>{note.title}</span>
+                                            <span style={{fontSize: '8px', display: 'block', lineHeight: '1'}}>{note.uuid}</span>
+                                        </>
+                                    </RadixUI.Select.Item>
+                                ))}
+                            </RadixUI.Select.Content>
+                        </RadixUI.Select.Root>
+                        <RadixUI.Flex justify="end">
+                            <RadixUI.Button color="red"
+                                            disabled={status === 'requires-action' || !isThisToolMessageLast}
+                                            onClick={() => {
+                                                setFormState('canceled')
+                                            }}
+                                            style={{marginRight: '10px'}}>
+                                Cancel
+                            </RadixUI.Button>
+                            <RadixUI.Button
+                                disabled={status === 'requires-action' || !isThisToolMessageLast}
+                                onClick={() => {
+                                    setFormState('submitting')
+                                }}>
+                                Insert Selected {itemName}
+                            </RadixUI.Button>
+                        </RadixUI.Flex>
+                    </RadixUI.Flex>
                 </ToolCardContainer>
             );
         }
