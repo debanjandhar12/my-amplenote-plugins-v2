@@ -1,5 +1,6 @@
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
+import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
 
 export const FetchUserTasks =() => {
     return createGenericReadTool({
@@ -26,8 +27,7 @@ export const FetchUserTasks =() => {
         },
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
-        itemName: 'tasks',
-        onInitFunction: async ({args}) => {
+        onInit: async ({args, formData, setFormData, setFormState}) => {
             const alasql = (await dynamicImportESM("alasql")).default;
             window.alasql = alasql;
             alasql(`CREATE TABLE IF NOT EXISTS USER_TASKS (
@@ -69,7 +69,16 @@ export const FetchUserTasks =() => {
                 }
             }
             alasql.tables.USER_TASKS.data = allTasks;
-            return alasql(args.sqlQuery);
+            setFormData({...formData, sqlOutput: alasql(args.sqlQuery)});
+            setFormState('completed');
+        },
+        onCompleted: ({addResult, formData}) => {
+            const {sqlOutput} = formData;
+            addResult(`Fetched ${sqlOutput.length} tasks. Details: ${JSON.stringify(sqlOutput)}`);
+        },
+        renderCompleted: ({formData}) => {
+            return <ToolCardMessageWithResult result={JSON.stringify(formData.sqlOutput)}
+                                              text={`${formData.sqlOutput.length} tasks fetched successfully.`}/>
         }
     });
 }

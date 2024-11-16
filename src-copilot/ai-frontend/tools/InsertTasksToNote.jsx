@@ -1,10 +1,12 @@
-import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
-import {createGenericMultiInsertTool} from "../tool-helpers/createGenericMultiInsertTool.jsx";
+import {createGenericCUDTool} from "../tool-helpers/createGenericCUDTool.jsx";
+import {ItemSelectionTable} from "../components/ItemSelectionTable.jsx";
+import {useNoteSelector} from "../hooks/useNoteSelector.jsx";
+import {ToolFooter} from "../components/ToolFooter.jsx";
 
 export const InsertTasksToNote = () => {
-    return createGenericMultiInsertTool({
+    return createGenericCUDTool({
         toolName: "InsertTasksToNote",
         description: "Create tasks and insert to user's note. ",
         parameters: {
@@ -46,32 +48,124 @@ export const InsertTasksToNote = () => {
         },
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
-        itemName: 'tasks',
-        parameterPathForInsertItemArray: 'tasks',
-        insertItemFunction: async ({ selectedNoteUUID, item }) => {
-            const taskUUID = await appConnector.insertTask({uuid: selectedNoteUUID}, {
-                content: item.taskContent
-            });
-            if (!taskUUID) throw new Error('Failed to insert task');
-            if (item.taskStartAt) {
-                await appConnector.updateTask(taskUUID, {
-                    startAt: (Date.parse(item.taskStartAt) / 1000) // convert to timestamp
-                });
+        onInit: ({setFormState, formData, setFormData, args}) => {
+            setFormData({...formData, tasksContainerList: args.tasks.map((task) => ({
+                item: task,
+                checked: true,
+            }))});
+            setFormState('waitingForUserInput');
+        },
+        renderWaitingForUserInput: ({args, formData, setFormData, status, setFormState}) => {
+            const setTasksContainerList = (tasksContainerList) => {
+                setFormData({...formData, tasksContainerList});
+            };
+            const [noteSelectionArr, setNoteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID] = useNoteSelector({args, setFormData, formData});
+            return (
+                <ToolCardContainer>
+                    <RadixUI.Text>Select tasks to insert into note:</RadixUI.Text>
+                    <ItemSelectionTable
+                        itemContainerList={formData.tasksContainerList}
+                        setItemContainerList={setTasksContainerList}
+                        status={status}
+                    />
+                    <ToolFooter
+                        submitButtonText="Insert Tasks"
+                        cancelButtonText="Cancel"
+                        status={status}
+                        setFormState={setFormState}
+                        shouldDisplayNoteSelector={true}
+                        noteSelectionArr={noteSelectionArr}
+                        currentNoteSelectionUUID={currentNoteSelectionUUID}
+                        setCurrentNoteSelectionUUID={setCurrentNoteSelectionUUID}
+                    />
+                </ToolCardContainer>
+            )
+        },
+        onSubmitted: ({formData, setFormData, setFormState, addResult, result}) => {
+            const submitItems = async () => {
+                let lastError = null;
+                const selectedItemContainerList = formData.tasksContainerList.filter((item) => item.checked);
+                const selectedNoteUUID = formData.currentNoteSelectionUUID;
+                const successfulInsertedItems = [];
+                const failedItems = [];
+                for (const selectedItemContainer of selectedItemContainerList) {
+                    try {
+                        const result =
+                            (await insertTasksToNote({
+                                selectedNoteUUID: selectedNoteUUID,
+                                item: selectedItemContainer.item
+                            })) || selectedItemContainer.item;
+                        successfulInsertedItems.push(result);
+                    } catch (e) {
+                        failedItems.push(selectedItemContainer.item);
+                        lastError = e;
+                        console.error(e);
+                    }
+                }
+
+                if (failedItems.length === selectedItemContainerList.length)
+                    throw "Failed to insert all items. Sample error: " + lastError.message || JSON.stringify(lastError) || lastError.toString();
+
+                setFormData({...formData, successfulInsertedItems, failedItems, lastError});
+                setFormState("completed");
             }
-            if (item.taskendAt) {
-                await appConnector.updateTask(taskUUID, {
-                    endAt: (Date.parse(item.taskendAt) / 1000) // convert to timestamp
-                });
+            submitItems();
+        },
+        onCompleted: ({formData, addResult}) => {
+            const {successfulInsertedItems, failedItems} = formData;
+            const lastError = formData.lastError;
+            const selectedNoteUUID = formData.currentNoteSelectionUUID;
+            const selectedNoteTitle = appConnector.getNoteTitleByUUID(selectedNoteUUID);
+            let resultText = `${successfulInsertedItems.length} tasks inserted successfully into note ${selectedNoteTitle} (uuid: ${selectedNoteUUID}).
+                Details: ${JSON.stringify(successfulInsertedItems)}`;
+            if (failedItems.length > 0) {
+                resultText += `\n${failedItems.length} tasks failed to insert into note.
+                    Details: ${JSON.stringify(failedItems)}\n
+                    Error sample: ${lastError.message || JSON.stringify(lastError) || lastError.toString()}`;
             }
-            if (item.taskScore) {
-                await appConnector.updateTask(taskUUID, {
-                    score: item.taskScore
-                });
-            }
-            return {
-                ...item,
-                taskUUID
-            }
+            addResult(resultText);
+        },
+        renderCompleted: ({formData}) => {
+            const [noteTitle, setNoteTitle] = React.useState(null);
+            React.useEffect(() => {
+                const fetchNoteTitle = async () => {
+                            const title = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
+                            setNoteTitle(title);
+                };
+                fetchNoteTitle();
+            }, [formData.currentNoteSelectionUUID]);
+            return (
+                <ToolCardMessageWithResult result={JSON.stringify(formData.successfulInsertedItems)}
+                                           text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${noteTitle}.` +
+                                               (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to insert.` : "")}
+                />
+            )
         }
     });
+}
+
+const insertTasksToNote = async ({ selectedNoteUUID, item }) => {
+    const taskUUID = await appConnector.insertTask({uuid: selectedNoteUUID}, {
+        content: item.taskContent
+    });
+    if (!taskUUID) throw new Error('Failed to insert task');
+    if (item.taskStartAt) {
+        await appConnector.updateTask(taskUUID, {
+            startAt: (Date.parse(item.taskStartAt) / 1000) // convert to timestamp
+        });
+    }
+    if (item.taskendAt) {
+        await appConnector.updateTask(taskUUID, {
+            endAt: (Date.parse(item.taskendAt) / 1000) // convert to timestamp
+        });
+    }
+    if (item.taskScore) {
+        await appConnector.updateTask(taskUUID, {
+            score: item.taskScore
+        });
+    }
+    return {
+        ...item,
+        taskUUID
+    }
 }

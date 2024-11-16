@@ -1,14 +1,25 @@
 import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
-import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
-import { capitalize } from "lodash-es";
+import {useToolFormState} from "../hooks/useToolFormState.jsx";
 
 export const createGenericReadTool = ({
-    toolName,
-    description,
-    parameters,
-    triggerCondition,
-    itemName,
-    onInitFunction = () => {}
+                                          toolName,
+                                          description,
+                                          parameters,
+                                          triggerCondition,
+                                          onInit = ({setFormState}) => {},
+                                          onCompleted = () => {},
+                                          onError = ({formError, addResult, args}) => {
+                                              const errorMessage = formError.message || JSON.stringify(formError) || formError.toString();
+                                              addResult(`Error: ${errorMessage}. Tool invocation failed. Input: ${JSON.stringify(args)}`);
+                                          },
+                                          renderInit = () => {
+                                              return <ToolCardMessage text="Processing..."/>
+                                          },
+                                          renderCompleted = () => {},
+                                          renderError = ({formError}) => {
+                                              const errorMessage = formError.message || JSON.stringify(formError) || formError.toString();
+                                              return <ToolCardMessage text={"Error: " + errorMessage} color="red"/>
+                                          },
 }) => {
     return AssistantUI.makeAssistantToolUI({
         toolName,
@@ -16,63 +27,28 @@ export const createGenericReadTool = ({
         parameters,
         triggerCondition,
         render: ({args, result, addResult, status}) => {
-            const [formState, setFormState] = React.useState("loading");
-            const [formError, setFormError] = React.useState(null);
-            const [initResult, setInitResult] = React.useState(null);
             const threadRuntime = AssistantUI.useThreadRuntime();
-
-            // == On init ==
-            React.useEffect(() => {
-                const initialize = async () => {
-                    try {
-                        const response = await onInitFunction({args, threadRuntime});
-                        setInitResult(response);
-                        setFormState("completed");
-                    }
-                    catch (e) {
-                        console.error(e);
-                        setFormError(e);
-                    }
-                };
-                initialize();
-            }, []);
-
-            // == Handle result on formState changes ==
-            React.useEffect(() => {
-                if (formError) {
-                    const formErrorMessage = formError.message || JSON.stringify(formError) || formError.toString();
-                    addResult(`Error encountered during tool execution: ${formErrorMessage}\nInput: ${JSON.stringify(args)}`);
+            const [formData, setFormData] = React.useState({});
+            const [formError, setFormError] = React.useState(null);
+            const cancelFurtherLLMReply = () => {threadRuntime.cancelRun();};
+            const allParameters = {args, status, result, addResult, formError, setFormError,
+                formData, setFormData, cancelFurtherLLMReply};
+            const [formState, setFormState, formRender] = useToolFormState({
+                init: {
+                    eventHandler: onInit,
+                    renderer: renderInit
+                },
+                completed: {
+                    eventHandler: onCompleted,
+                    renderer: renderCompleted
+                },
+                error: {
+                    eventHandler: onError,
+                    renderer: renderError
                 }
-                else if (formState === "completed") {
-                    if (!result) {
-                        addResult(
-                            `Function call completed successfully. ` +
-                            (typeof initResult === "object" && Array.isArray(initResult) ? `Found ${initResult.length} ${itemName}.\n` : '\n') +
-                            `Input: ${JSON.stringify(args)}\n` +
-                            `Output: ${JSON.stringify(initResult)}`
-                        );
-                    }
-                }
-            }, [formState]);
+            }, 'init', allParameters);
 
-            // ===== Render UI =====
-            if (formError) {
-                const errorMessage = formError.message || JSON.stringify(formError) || formError.toString();
-                return <ToolCardMessage text={"Error: " + errorMessage} color="red"/>
-            }
-            else if (formState === "loading") {
-                return <ToolCardMessage text={`Looking for ${itemName}...`}/>
-            }
-            else if (formState === "completed") {
-                return (
-                    <ToolCardMessageWithResult
-                        text={`${capitalize(itemName)} search completed. Found ${initResult.length} items.`}
-                        result={result || JSON.stringify(initResult)}
-                    />
-                );
-            }
-
-            return null;
+            return formRender ? React.createElement(formRender, {...allParameters, formState, setFormState}) : null;
         }
     });
 };

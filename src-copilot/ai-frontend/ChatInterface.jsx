@@ -1,5 +1,5 @@
 import {convertUIToolsToDummyServerTools} from "../ai-backend/utils/convertUIToolsToDummyServerTools.js";
-import {useChatSuggestions} from "./hooks/useChatSuggestions.js";
+import {useChatSuggestions} from "./hooks/useChatSuggestions.jsx";
 import {CustomComposer} from "./CustomComposer.jsx";
 import {CUSTOM_LLM_INSTRUCTION_SETTING} from "../constants.js";
 import {ChatInterfaceHeader} from "./ChatInterfaceHeader.jsx";
