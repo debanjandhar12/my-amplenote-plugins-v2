@@ -1,14 +1,15 @@
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 import {getLLMModel} from "../ai-backend/getLLMModel.js";
 import {convertUIToolsToDummyServerTools} from "../ai-backend/utils/convertUIToolsToDummyServerTools.js";
-import {insertTasksToNoteTool} from "../ai-frontend/tools/insertTasksToNoteTool.jsx";
+import {InsertTasksToNote} from "../ai-frontend/tools/InsertTasksToNote.jsx";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK} from "../test/embed/chat.testdata.js";
-import {getUserTasksTool} from "../ai-frontend/tools/getUserTasksTool.jsx";
+import {FetchUserTasks} from "../ai-frontend/tools/FetchUserTasks.jsx";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import {ChatInterface} from "../ai-frontend/ChatInterface.jsx";
-import {webSearchTool} from "../ai-frontend/tools/webSearchTool.jsx";
+import {WebSearch} from "../ai-frontend/tools/WebSearch.jsx";
 import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.jsx";
+import {InsertNewNotes} from "../ai-frontend/tools/InsertNewNotes.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -59,7 +60,7 @@ window.dispatchEvent(new Event('resize'));
         window.Tribute = (await dynamicImportESM("tributejs")).default;
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
-        window.ALL_TOOLS = [insertTasksToNoteTool(), getUserTasksTool(), webSearchTool()];
+        window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(), InsertNewNotes()];
         window.TOOL_CATEGORY_NAMES = ['all-tools', 'tasks', 'notes', 'web-search'];
         hideEmbedLoader();
         if (!React || !ReactDOM) {

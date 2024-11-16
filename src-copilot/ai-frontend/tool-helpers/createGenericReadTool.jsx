@@ -47,7 +47,7 @@ export const createGenericReadTool = ({
                     if (!result) {
                         addResult(
                             `Function call completed successfully. ` +
-                            `Found ${initResult.length} ${itemName}.\n` +
+                            (typeof initResult === "object" && Array.isArray(initResult) ? `Found ${initResult.length} ${itemName}.\n` : '\n') +
                             `Input: ${JSON.stringify(args)}\n` +
                             `Output: ${JSON.stringify(initResult)}`
                         );

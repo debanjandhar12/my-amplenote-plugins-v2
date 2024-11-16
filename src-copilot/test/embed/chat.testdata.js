@@ -1,4 +1,4 @@
-import {CUSTOM_PROMPT_SETTING, LLM_API_KEY_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING} from "../../constants.js";
+import {USER_PROMPT_LIST_SETTING, LLM_API_KEY_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING} from "../../constants.js";
 
 export const EMBED_USER_DATA_MOCK = {
     currentNoteUUID: 'mock-uuid',
@@ -12,6 +12,9 @@ export const EMBED_COMMANDS_MOCK = {
         return "Mock Note"
     },
     "insertTask": async (app, ...args) => {
+        return true;
+    },
+    "updateTask": async (app, ...args) => {
         return true;
     },
     "getUserCurrentNoteData": async () => {

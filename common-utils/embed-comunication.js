@@ -29,6 +29,15 @@ export const COMMON_EMBED_COMMANDS = {
     "insertTask": async (app, ...args) => {
         return await app.insertTask(...args);
     },
+    "updateTask": async (app, ...args) => {
+        return await app.updateTask(...args);
+    },
+    "createNote": async (app, ...args) => {
+        return await app.createNote(...args);
+    },
+    "insertNoteContent": async (app, ...args) => {
+        return await app.insertNoteContent(...args);
+    },
     "getTaskDomains": async (app) => {
         return await app.getTaskDomains();
     },

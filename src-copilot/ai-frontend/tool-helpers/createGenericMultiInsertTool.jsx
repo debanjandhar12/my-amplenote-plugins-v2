@@ -28,6 +28,7 @@ export const createGenericMultiInsertTool = ({
             const [insertItemArray, setInsertItemArray] = React.useState([]);
             const [insertItemResultArray, setInsertItemResultArray] = React.useState([]);
             const [failedInsertItemArray, setFailedInsertItemArray] = React.useState([]);
+            const noteSelectorEnabled = args["noteUUID"] != null;
             const threadRuntime = AssistantUI.useThreadRuntime();
             const isThisToolMessageLast = AssistantUI.useMessage((m) => m.isLast);
 
@@ -36,7 +37,7 @@ export const createGenericMultiInsertTool = ({
                 const initialize = async () => {
                     try {
                         const noteInfo = [];
-                        if (args["noteUUID"]) {
+                        if (noteSelectorEnabled) {
                             const noteTitle = await appConnector.getNoteTitleByUUID(args["noteUUID"]);
                             noteInfo.push({
                                 uuid: args["noteUUID"],
@@ -111,7 +112,7 @@ export const createGenericMultiInsertTool = ({
                                     (await insertItemFunction({
                                         args,
                                         item: item.item,
-                                        selectedNoteUUID: selectedNote.uuid,
+                                        selectedNoteUUID: selectedNote?.uuid,
                                     })) || item.item;
                                 successResults.push(result);
                             } catch (e) {
@@ -132,12 +133,14 @@ export const createGenericMultiInsertTool = ({
                     };
                     submitItems();
                 } else if (formState === "completed") {
+                    const selectedNote = noteInfoMapArr.find((note) => note.selected);
                     addResult(
-                        `Function call completed successfully. User has interactively selected ${itemName} to insert into note ${
-                            noteInfoMapArr.find((note) => note.selected).title
+                        `Function call completed successfully. User has interactively selected ${itemName} to insert ${noteSelectorEnabled ??
+                            `into note ${
+                                selectedNote.title
                         } (uuid: ${
-                            noteInfoMapArr.find((note) => note.selected).uuid
-                        }) and those were inserted successfully. ` +
+                                selectedNote.uuid
+                        })`} and those were inserted successfully. ` +
                         `${capitalize(itemName)} added in this interaction: ${JSON.stringify(
                             insertItemArray.filter((item) => item.checked)
                         )}`
@@ -171,7 +174,7 @@ export const createGenericMultiInsertTool = ({
 
             const allItemKeys = insertItemArray.reduce((keys, current) => {
                 Object.keys(current.item).forEach((key) => {
-                    if (!keys.includes(key)) {
+                    if (!keys.includes(key) && current.item[key]) {
                         keys.push(key);
                     }
                 });
@@ -219,37 +222,39 @@ export const createGenericMultiInsertTool = ({
                         </RadixUI.Table.Body>
                     </RadixUI.Table.Root>
                     <RadixUI.Flex gap="10px" justify="between" style={{ marginTop: "10px" }}>
-                        <RadixUI.Select.Root
-                            style={{ display: args["noteUUID"] ? "none" : "block" }}
-                            disabled={status === "requires-action" || !isThisToolMessageLast}
-                            value={selectedNote.uuid}
-                            onValueChange={(value) => {
-                                setNoteInfoMapArr(noteInfoMapArr.map((note) => ({
-                                    ...note,
-                                    selected: note.uuid === value,
-                                })));
-                            }}>
-                            <RadixUI.Select.Trigger>
-                                <RadixIcons.FileTextIcon
-                                    style={{
-                                        display: "inline-block",
-                                        marginRight: "5px",
-                                        marginTop: "-4px",
-                                    }}
-                                />
-                                {truncate(selectedNote.title, { length: 12 })}
-                            </RadixUI.Select.Trigger>
-                            <RadixUI.Select.Content position="popper">
-                                {noteInfoMapArr.map((note) => (
-                                    <RadixUI.Select.Item key={note.uuid} value={note.uuid}>
-                                        <span>{note.title}</span>
-                                        <span style={{ fontSize: "8px", display: "block", lineHeight: "1" }}>
+                        {noteSelectorEnabled ? (
+                            <RadixUI.Select.Root
+                                style={{ display: args["noteUUID"] ? "none" : "block" }}
+                                disabled={status === "requires-action" || !isThisToolMessageLast}
+                                value={selectedNote.uuid}
+                                onValueChange={(value) => {
+                                    setNoteInfoMapArr(noteInfoMapArr.map((note) => ({
+                                        ...note,
+                                        selected: note.uuid === value,
+                                    })));
+                                }}>
+                                <RadixUI.Select.Trigger>
+                                    <RadixIcons.FileTextIcon
+                                        style={{
+                                            display: "inline-block",
+                                            marginRight: "5px",
+                                            marginTop: "-4px",
+                                        }}
+                                    />
+                                    {truncate(selectedNote.title, { length: 12 })}
+                                </RadixUI.Select.Trigger>
+                                <RadixUI.Select.Content position="popper">
+                                    {noteInfoMapArr.map((note) => (
+                                        <RadixUI.Select.Item key={note.uuid} value={note.uuid}>
+                                            <span>{note.title}</span>
+                                            <span style={{ fontSize: "8px", display: "block", lineHeight: "1" }}>
                                             {note.uuid}
                                         </span>
-                                    </RadixUI.Select.Item>
-                                ))}
-                            </RadixUI.Select.Content>
-                        </RadixUI.Select.Root>
+                                        </RadixUI.Select.Item>
+                                    ))}
+                                </RadixUI.Select.Content>
+                            </RadixUI.Select.Root>
+                            ) : <span />}
                         <RadixUI.Flex justify="end">
                             <RadixUI.Button
                                 color="red"

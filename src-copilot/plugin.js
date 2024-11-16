@@ -14,7 +14,7 @@ const plugin = {
                 const randomUUID = Math.random().toString(36).substring(7);
                 await app.context.replaceSelection(`${randomUUID}`);    // Trick to figure out caret position
                 const noteContent =
-                    `----\nnote-title: ${(await app.notes.find(app.context.noteUUID)).name}\n----\n` +
+                    `----\nnote-title: ${(await app.notes.find(app.context.noteUUID)).name}\n----\n\n` +
                     await app.getNoteContent({uuid: app.context.noteUUID});
                 const nearbyContent = noteContent.substring(noteContent.indexOf(randomUUID) - 800, noteContent.indexOf(randomUUID) + 800);
                 // Ask llm to fill
