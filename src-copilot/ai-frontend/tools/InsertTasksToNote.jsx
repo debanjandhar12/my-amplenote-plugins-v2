@@ -4,6 +4,7 @@ import {createGenericCUDTool} from "../tool-helpers/createGenericCUDTool.jsx";
 import {ItemSelectionTable} from "../components/ItemSelectionTable.jsx";
 import {useNoteSelector} from "../hooks/useNoteSelector.jsx";
 import {ToolFooter} from "../components/ToolFooter.jsx";
+import {errorToString} from "../utils/errorToString.js";
 
 export const InsertTasksToNote = () => {
     return createGenericCUDTool({
@@ -81,35 +82,34 @@ export const InsertTasksToNote = () => {
                 </ToolCardContainer>
             )
         },
-        onSubmitted: ({formData, setFormData, setFormState, addResult, result}) => {
-            const submitItems = async () => {
-                let lastError = null;
-                const selectedItemContainerList = formData.tasksContainerList.filter((item) => item.checked);
-                const selectedNoteUUID = formData.currentNoteSelectionUUID;
-                const successfulInsertedItems = [];
-                const failedItems = [];
-                for (const selectedItemContainer of selectedItemContainerList) {
-                    try {
-                        const result =
-                            (await insertTasksToNote({
-                                selectedNoteUUID: selectedNoteUUID,
-                                item: selectedItemContainer.item
-                            })) || selectedItemContainer.item;
-                        successfulInsertedItems.push(result);
-                    } catch (e) {
-                        failedItems.push(selectedItemContainer.item);
-                        lastError = e;
-                        console.error(e);
-                    }
+        onSubmitted: async ({formData, setFormData, setFormState, addResult, result}) => {
+            let lastError = null;
+            const selectedItemContainerList = formData.tasksContainerList.filter((item) => item.checked);
+            const selectedNoteUUID = formData.currentNoteSelectionUUID;
+            const successfulInsertedItems = [];
+            const failedItems = [];
+            for (const selectedItemContainer of selectedItemContainerList) {
+                try {
+                    const result =
+                        (await insertTasksToNote({
+                            selectedNoteUUID: selectedNoteUUID,
+                            item: selectedItemContainer.item
+                        })) || selectedItemContainer.item;
+                    successfulInsertedItems.push(result);
+                } catch (e) {
+                    failedItems.push(selectedItemContainer.item);
+                    lastError = e;
+                    console.error(e);
                 }
-
-                if (failedItems.length === selectedItemContainerList.length)
-                    throw "Failed to insert all items. Sample error: " + lastError.message || JSON.stringify(lastError) || lastError.toString();
-
-                setFormData({...formData, successfulInsertedItems, failedItems, lastError});
-                setFormState("completed");
             }
-            submitItems();
+
+            if (failedItems.length === selectedItemContainerList.length) {
+                const lastErrorMessage = lastError.message || lastError;
+                throw "Failed to insert all of the selected tasks. Sample error: " + errorToString(lastErrorMessage);
+            }
+
+            setFormData({...formData, successfulInsertedItems, failedItems, lastError});
+            setFormState("completed");
         },
         onCompleted: ({formData, addResult}) => {
             const {successfulInsertedItems, failedItems} = formData;
@@ -121,7 +121,7 @@ export const InsertTasksToNote = () => {
             if (failedItems.length > 0) {
                 resultText += `\n${failedItems.length} tasks failed to insert into note.
                     Details: ${JSON.stringify(failedItems)}\n
-                    Error sample: ${lastError.message || JSON.stringify(lastError) || lastError.toString()}`;
+                    Error sample: ${errorToString(lastError)}`;
             }
             addResult(resultText);
         },

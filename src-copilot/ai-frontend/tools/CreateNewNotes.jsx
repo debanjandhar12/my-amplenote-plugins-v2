@@ -3,6 +3,7 @@ import {ToolFooter} from "../components/ToolFooter.jsx";
 import {ItemSelectionTable} from "../components/ItemSelectionTable.jsx";
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
 import {createGenericCUDTool} from "../tool-helpers/createGenericCUDTool.jsx";
+import {errorToString} from "../utils/errorToString.js";
 
 export const CreateNewNotes = () => {
     return createGenericCUDTool({
@@ -69,33 +70,31 @@ export const CreateNewNotes = () => {
                 </ToolCardContainer>
             )
         },
-        onSubmitted: ({formData, setFormData, setFormError, setFormState, addResult, result}) => {
-            const submitItems = async () => {
-                let lastError = null;
-                const selectedItemContainerList = formData.notesContainerList.filter((item) => item.checked);
-                const successfulCreatedItems = [];
-                const failedItems = [];
-                for (const selectedItemContainer of selectedItemContainerList) {
-                    try {
-                        const result =
-                            (await createNote({
-                                item: selectedItemContainer.item
-                            })) || selectedItemContainer.item;
-                        successfulCreatedItems.push(result);
-                    } catch (e) {
-                        failedItems.push(selectedItemContainer.item);
-                        lastError = e;
-                        console.error(e);
-                    }
+        onSubmitted: async ({formData, setFormData, setFormError, setFormState, addResult, result}) => {
+            let lastError = null;
+            const selectedItemContainerList = formData.notesContainerList.filter((item) => item.checked);
+            const successfulCreatedItems = [];
+            const failedItems = [];
+            for (const selectedItemContainer of selectedItemContainerList) {
+                try {
+                    const result =
+                        (await createNote({
+                            item: selectedItemContainer.item
+                        })) || selectedItemContainer.item;
+                    successfulCreatedItems.push(result);
+                } catch (e) {
+                    failedItems.push(selectedItemContainer.item);
+                    lastError = e;
+                    console.error(e);
                 }
-
-                if (failedItems.length === selectedItemContainerList.length)
-                    throw "Failed to create all items. Sample error: " + lastError.message || JSON.stringify(lastError) || lastError.toString();
-
-                setFormData({...formData, successfulCreatedItems, failedItems, lastError});
-                setFormState("completed");
             }
-            submitItems();
+
+            if (failedItems.length === selectedItemContainerList.length) {
+                throw "Failed to create all items. Sample error: " + errorToString(lastError);
+            }
+
+            setFormData({...formData, successfulCreatedItems, failedItems, lastError});
+            setFormState("completed");
         },
         onCompleted: ({formData, addResult}) => {
             const {successfulCreatedItems, failedItems} = formData;
@@ -105,7 +104,7 @@ export const CreateNewNotes = () => {
             if (failedItems.length > 0) {
                 resultText += `\n${failedItems.length} notes failed to create.
                     Details: ${JSON.stringify(failedItems)}\n
-                    Error sample: ${lastError.message || JSON.stringify(lastError) || lastError.toString()}`;
+                    Error sample: ${errorToString(lastError)}`;
             }
             addResult(resultText);
         },

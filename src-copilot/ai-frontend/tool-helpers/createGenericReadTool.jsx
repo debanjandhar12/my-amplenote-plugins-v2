@@ -1,5 +1,6 @@
 import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 import {useToolFormState} from "../hooks/useToolFormState.jsx";
+import {errorToString} from "../utils/errorToString.js";
 
 export const createGenericReadTool = ({
                                           toolName,
@@ -9,16 +10,14 @@ export const createGenericReadTool = ({
                                           onInit = ({setFormState}) => {},
                                           onCompleted = () => {},
                                           onError = ({formError, addResult, args}) => {
-                                              const errorMessage = formError.message || JSON.stringify(formError) || formError.toString();
-                                              addResult(`Error: ${errorMessage}. Tool invocation failed. Input: ${JSON.stringify(args)}`);
+                                              addResult(`Error: ${errorToString(formError)}. Tool invocation failed. Input: ${JSON.stringify(args)}`);
                                           },
                                           renderInit = () => {
                                               return <ToolCardMessage text="Processing..."/>
                                           },
                                           renderCompleted = () => {},
                                           renderError = ({formError}) => {
-                                              const errorMessage = formError.message || JSON.stringify(formError) || formError.toString();
-                                              return <ToolCardMessage text={"Error: " + errorMessage} color="red"/>
+                                              return <ToolCardMessage text={"Error: " + errorToString(formError)} color="red"/>
                                           },
 }) => {
     return AssistantUI.makeAssistantToolUI({

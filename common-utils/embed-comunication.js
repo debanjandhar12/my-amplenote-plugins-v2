@@ -41,6 +41,9 @@ export const COMMON_EMBED_COMMANDS = {
     "createNote": async (app, ...args) => {
         return await app.createNote(...args);
     },
+    "deleteNote": async (app, ...args) => {
+        return await app.deleteNote(...args);
+    },
     "insertNoteContent": async (app, ...args) => {
         return await app.insertNoteContent(...args);
     },

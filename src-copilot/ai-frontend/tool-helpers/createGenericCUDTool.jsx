@@ -1,5 +1,6 @@
 import { ToolCardMessage } from "../components/ToolCardMessage.jsx";
 import {useToolFormState} from "../hooks/useToolFormState.jsx";
+import {errorToString} from "../utils/errorToString.js";
 
 /**
  * A generic function to create tools that allow user to perform create, update, or delete (cud) operations.
@@ -18,8 +19,7 @@ export const createGenericCUDTool = ({
                                                      cancelFurtherLLMReply();
                                                  },
                                                  onError = ({formError, addResult}) => {
-                                                     const errorMessage = formError.message || JSON.stringify(formError) || formError.toString();
-                                                     addResult(`Error: ${errorMessage}. Tool invocation failed.`);
+                                                     addResult(`Error: ${errorToString(formError)}. Tool invocation failed.`);
                                                  },
                                                  renderWaitingForUserInput = () => {},
                                                  renderSubmitting = () => {
@@ -30,8 +30,7 @@ export const createGenericCUDTool = ({
                                                  },
                                                  renderCompleted = () => {},
                                                  renderError = ({formError}) => {
-                                                     const errorMessage = formError.message || JSON.stringify(formError) || formError.toString();
-                                                     return <ToolCardMessage text={"Error: " + errorMessage} color="red" />
+                                                     return <ToolCardMessage text={"Error: " + errorToString(formError)} color="red" />
                                                  },
 }) => {
     return AssistantUI.makeAssistantToolUI({

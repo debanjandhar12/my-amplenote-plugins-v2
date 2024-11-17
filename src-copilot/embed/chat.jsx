@@ -12,6 +12,8 @@ import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.
 import {CreateNewNotes} from "../ai-frontend/tools/CreateNewNotes.jsx";
 import {FetchNoteInfoByNoteUUID} from "../ai-frontend/tools/FetchNoteInfoByNoteUUID.jsx";
 import {VectorSearchNotes} from "../ai-frontend/tools/VectorSearchNotes.jsx";
+import {DeleteUserTasks} from "../ai-frontend/tools/DeleteUserTasks.jsx";
+import {DeleteUserNotes} from "../ai-frontend/tools/DeleteUserNotes.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -63,7 +65,8 @@ window.dispatchEvent(new Event('resize'));
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
         window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(),
-            CreateNewNotes(), FetchNoteInfoByNoteUUID(), VectorSearchNotes()];
+            CreateNewNotes(), FetchNoteInfoByNoteUUID(), VectorSearchNotes(),
+            DeleteUserTasks(), DeleteUserNotes()];
         window.TOOL_CATEGORY_NAMES = ['all-tools', 'tasks', 'notes', 'web-search'];
         hideEmbedLoader();
         if (!React || !ReactDOM) {
@@ -82,7 +85,7 @@ export const App = () => {
     // Setup runtime
     const runtime = AssistantUI.useDangerousInBrowserRuntime({
         model: window.LLM_MODEL,
-        maxSteps: 8,
+        maxSteps: 6,
         adapters: {
             attachments: new AssistantUI.CompositeAttachmentAdapter([
                 new AssistantUI.SimpleImageAttachmentAdapter()
