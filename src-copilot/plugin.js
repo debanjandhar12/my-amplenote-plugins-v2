@@ -1,9 +1,9 @@
 import chatHTML from 'inline:./embed/chat.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
-import {syncNotes} from "./pinecone/syncNotes.js";
 import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
 import {generateText} from "./ai-backend/generateText.js";
 import {getLLMModel} from "./ai-backend/getLLMModel.js";
+import {Pinecone} from "./pinecone/Pinecone.js";
 
 const plugin = {
     currentNoteUUID: null,
@@ -60,7 +60,8 @@ const plugin = {
     appOption: {
         "Sync notes to pinecone": async function (app) {
             try {
-                await syncNotes(app);
+                const pinecone = new Pinecone();
+                await pinecone.syncNotes(app);
                 await app.alert("Sync completed");
             } catch (e) {
                 console.error(e);
@@ -165,7 +166,7 @@ const plugin = {
                 throw 'Failed getUserCurrentNoteData - ' + e;
             }
         }
-    })
+    }, ['getUserCurrentNoteData'])
 }
 
 export default plugin;

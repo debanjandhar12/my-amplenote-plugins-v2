@@ -23,6 +23,12 @@ export const COMMON_EMBED_COMMANDS = {
     "getNoteContentByUUID": async (app, noteUUID) => {
         return await app.getNoteContent({uuid: noteUUID});
     },
+    "getNoteBacklinksByUUID": async (app, noteUUID) => {
+        return await (await app.notes.find(noteUUID)).backlinks();
+    },
+    "getNoteTagsByUUID": async (app, noteUUID) => {
+        return (await app.notes.find(noteUUID)).tags;
+    },
     "getNoteSections": async (app, ...args) => {
         return await app.getNoteSections(...args);
     },

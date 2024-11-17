@@ -10,6 +10,8 @@ import {ChatInterface} from "../ai-frontend/ChatInterface.jsx";
 import {WebSearch} from "../ai-frontend/tools/WebSearch.jsx";
 import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.jsx";
 import {CreateNewNotes} from "../ai-frontend/tools/CreateNewNotes.jsx";
+import {FetchNoteInfoByNoteUUID} from "../ai-frontend/tools/FetchNoteInfoByNoteUUID.jsx";
+import {VectorSearchNotes} from "../ai-frontend/tools/VectorSearchNotes.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -60,7 +62,8 @@ window.dispatchEvent(new Event('resize'));
         window.Tribute = (await dynamicImportESM("tributejs")).default;
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
-        window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(), CreateNewNotes()];
+        window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(),
+            CreateNewNotes(), FetchNoteInfoByNoteUUID(), VectorSearchNotes()];
         window.TOOL_CATEGORY_NAMES = ['all-tools', 'tasks', 'notes', 'web-search'];
         hideEmbedLoader();
         if (!React || !ReactDOM) {
