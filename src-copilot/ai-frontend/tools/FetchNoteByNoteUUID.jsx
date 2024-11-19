@@ -1,22 +1,22 @@
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
 
-export const FetchNoteInfoByNoteUUID = () => {
+export const FetchNoteByNoteUUID = () => {
     return createGenericReadTool({
-        toolName: "FetchNoteInfoByNoteUUID",
-        description: "Fetch note title, content, backlinks, and tags.",
+        toolName: "FetchNoteByNoteUUID",
+        description: "Call this to get the title, content, backlinks, and tags of a note.",
         parameters: {
             type: "object",
             properties: {
                 noteUUID: {
                     type: "string",
-                    description: "The UUID of the note to fetch info for.",
+                    description: "UUID of note",
                     minLength: 1,
                 }
             },
             required: ["noteUUID"]
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@note-info")
+        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({args, formData, setFormData, setFormState}) => {
             const noteUUID = args.noteUUID;

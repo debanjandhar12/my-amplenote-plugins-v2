@@ -44,6 +44,18 @@ export const COMMON_EMBED_COMMANDS = {
     "deleteNote": async (app, ...args) => {
         return await app.deleteNote(...args);
     },
+    "replaceNoteContent": async (app, ...args) => {
+        return await app.replaceNoteContent(...args);
+    },
+    "setNoteName": async (app, ...args) => {
+        return await app.setNoteName(...args);
+    },
+    "addNoteTag": async (app, ...args) => {
+        return await app.addNoteTag(...args);
+    },
+    "removeNoteTag": async (app, ...args) => {
+        return await app.removeNoteTag(...args);
+    },
     "insertNoteContent": async (app, ...args) => {
         return await app.insertNoteContent(...args);
     },

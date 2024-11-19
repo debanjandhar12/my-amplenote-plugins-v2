@@ -10,10 +10,11 @@ import {ChatInterface} from "../ai-frontend/ChatInterface.jsx";
 import {WebSearch} from "../ai-frontend/tools/WebSearch.jsx";
 import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.jsx";
 import {CreateNewNotes} from "../ai-frontend/tools/CreateNewNotes.jsx";
-import {FetchNoteInfoByNoteUUID} from "../ai-frontend/tools/FetchNoteInfoByNoteUUID.jsx";
+import {FetchNoteByNoteUUID} from "../ai-frontend/tools/FetchNoteByNoteUUID.jsx";
 import {VectorSearchNotes} from "../ai-frontend/tools/VectorSearchNotes.jsx";
 import {DeleteUserTasks} from "../ai-frontend/tools/DeleteUserTasks.jsx";
 import {DeleteUserNotes} from "../ai-frontend/tools/DeleteUserNotes.jsx";
+import {UpdateUserNotes} from "../ai-frontend/tools/UpdateUserNotes.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -62,10 +63,13 @@ window.dispatchEvent(new Event('resize'));
         window.AssistantUI = await dynamicImportESM("@assistant-ui/react");
         window.RadixIcons = await dynamicImportESM("@radix-ui/react-icons");
         window.Tribute = (await dynamicImportESM("tributejs")).default;
+        window.StringDiff = (await dynamicImportESM("react-string-diff")).StringDiff;
+        console.log(window.StringDiff);
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
         window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(),
-            CreateNewNotes(), FetchNoteInfoByNoteUUID(), VectorSearchNotes(),
+            CreateNewNotes(), FetchNoteByNoteUUID(), VectorSearchNotes(),
+            UpdateUserNotes(),
             DeleteUserTasks(), DeleteUserNotes()];
         window.TOOL_CATEGORY_NAMES = ['all-tools', 'tasks', 'notes', 'web-search'];
         hideEmbedLoader();

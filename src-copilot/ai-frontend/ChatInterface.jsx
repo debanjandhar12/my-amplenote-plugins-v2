@@ -1,15 +1,17 @@
 import {convertUIToolsToDummyServerTools} from "../ai-backend/utils/convertUIToolsToDummyServerTools.js";
 import {useChatSuggestions} from "./hooks/useChatSuggestions.jsx";
 import {CustomComposer} from "./CustomComposer.jsx";
-import {CUSTOM_LLM_INSTRUCTION_SETTING} from "../constants.js";
+import {CUSTOM_LLM_AVATAR_SETTING, CUSTOM_LLM_INSTRUCTION_SETTING} from "../constants.js";
 import {ChatInterfaceHeader} from "./ChatInterfaceHeader.jsx";
+import {useAssistantAvatar} from "./hooks/useAssistantAvatar.jsx";
 
 export const ChatInterface = () => {
     // Fetch runtime and other assistant-ui contexts
     const runtime = AssistantUI.useAssistantRuntime();
     const thread = AssistantUI.useThread();
-    const suggestions = useChatSuggestions(thread, 4);
     const composer = AssistantUI.useComposerRuntime();
+    const assistantAvatar = useAssistantAvatar();
+    const suggestions = useChatSuggestions(thread, 4);
 
     // Based on user data, initialize assistant-ui chat
     React.useEffect(() => {
@@ -87,6 +89,7 @@ export const ChatInterface = () => {
                 welcome={{
                     suggestions: suggestions,
                 }}
+                assistantAvatar={assistantAvatar}
                 tools={window.ALL_TOOLS}
                 components={{
                     Composer: CustomComposer
