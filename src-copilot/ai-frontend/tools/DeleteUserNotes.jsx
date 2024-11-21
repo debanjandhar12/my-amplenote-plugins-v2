@@ -53,9 +53,11 @@ export const DeleteUserNotes = () => {
             const setNotesContainerList = (notesContainerList) => {
                 setFormData({...formData, notesContainerList});
             };
+
+            const { Text } = RadixUI;
             return (
                 <ToolCardContainer>
-                    <RadixUI.Text>Select notes to delete:</RadixUI.Text>
+                    <Text>Select notes to delete:</Text>
                     <ItemSelectionTable
                         itemContainerList={formData.notesContainerList}
                         setItemContainerList={setNotesContainerList}

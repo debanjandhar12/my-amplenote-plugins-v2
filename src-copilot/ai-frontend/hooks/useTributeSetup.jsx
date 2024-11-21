@@ -1,5 +1,6 @@
 export const useTributeSetup = (textareaRef, toolCategoryNames) => {
-    const composer = AssistantUI.useComposerRuntime();
+    const threadRuntime = AssistantUI.useThreadRuntime();
+
     React.useEffect(() => {
         if (!textareaRef.current) return;
         const style = document.createElement('style');
@@ -42,9 +43,8 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
         });
         tribute.attach(textareaRef.current);
         const tributeOnReplace = (event) => {
-            ReactDOMTestUtils.Simulate.change(textareaRef.current); // Doesn't work atm but keeping it for future
             const currentValue = textareaRef.current.value;
-            composer.setText(currentValue);
+            threadRuntime.composer.setText(currentValue);
         }
         textareaRef.current
             .addEventListener("tribute-replaced", tributeOnReplace);

@@ -1,5 +1,12 @@
 import pkgJSON from "../package.json";
 
+/**
+ * Dynamically imports an ESM module from a CDN or local environment.
+ * @template T
+ * @param {string} pkg - The package name to import.
+ * @param {string|null} [pkgVersion=null] - The version of the package to import.
+ * @returns {Promise<T>} - A Promise that resolves to the imported module.
+ */
 const dynamicImportESM = async (pkg, pkgVersion = null) => {
     if (process.env.NODE_ENV === 'test') {
         try {

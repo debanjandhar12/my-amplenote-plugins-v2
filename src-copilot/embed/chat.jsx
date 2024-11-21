@@ -1,6 +1,5 @@
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 import {getLLMModel} from "../ai-backend/getLLMModel.js";
-import {convertUIToolsToDummyServerTools} from "../ai-backend/utils/convertUIToolsToDummyServerTools.js";
 import {InsertTasksToNote} from "../ai-frontend/tools/InsertTasksToNote.jsx";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK} from "../test/embed/chat.testdata.js";
@@ -45,11 +44,17 @@ const body = document.body,
 window.addEventListener('resize', function() {
     const iframeHeight = Math.min(html.clientHeight, html.scrollHeight);
     Object.assign(body.style, {
-        height: `${iframeHeight - 24}px`,
         margin: '0',
     });
+    const appInnerContainer = document.querySelector('.app-container > div > div');
+    if (appInnerContainer) {
+        Object.assign(appInnerContainer.style, {
+            height: `${iframeHeight - 24}px`,
+            overflow: 'hidden',
+        });
+    }
 });
-window.dispatchEvent(new Event('resize'));
+setInterval(() => window.dispatchEvent(new Event('resize')), 100);
 
 // Init app
 (async () => {
@@ -58,13 +63,11 @@ window.dispatchEvent(new Event('resize'));
         injectAmplenoteColors();
         window.React = await dynamicImportESM("react");
         window.ReactDOM = await dynamicImportESM("react-dom/client");
-        window.ReactDOMTestUtils = await dynamicImportESM("react-dom/test-utils");
         window.RadixUI = await dynamicImportESM("@radix-ui/themes");
         window.AssistantUI = await dynamicImportESM("@assistant-ui/react");
         window.RadixIcons = await dynamicImportESM("@radix-ui/react-icons");
         window.Tribute = (await dynamicImportESM("tributejs")).default;
         window.StringDiff = (await dynamicImportESM("react-string-diff")).StringDiff;
-        console.log(window.StringDiff);
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
         window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(),
@@ -73,11 +76,11 @@ window.dispatchEvent(new Event('resize'));
             DeleteUserTasks(), DeleteUserNotes()];
         window.TOOL_CATEGORY_NAMES = ['all-tools', 'tasks', 'notes', 'web-search'];
         hideEmbedLoader();
-        if (!React || !ReactDOM) {
+        if (!React || !window.ReactDOM) {
             throw new Error("Failed to load React or ReactDOM");
         }
         if(document.querySelector('.app-container'))
-            ReactDOM.createRoot(document.querySelector('.app-container')).render(React.createElement(App));
+            window.ReactDOM.createRoot(document.querySelector('.app-container')).render(React.createElement(App));
     } catch (e) {
         window.document.body.innerHTML = '<div style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
         console.error(e);
@@ -89,7 +92,7 @@ export const App = () => {
     // Setup runtime
     const runtime = AssistantUI.useDangerousInBrowserRuntime({
         model: window.LLM_MODEL,
-        maxSteps: 6,
+        maxSteps: 4,
         adapters: {
             attachments: new AssistantUI.CompositeAttachmentAdapter([
                 new AssistantUI.SimpleImageAttachmentAdapter()
@@ -97,11 +100,13 @@ export const App = () => {
         }
     });
 
+    const {Theme} = window.RadixUI;
+    const {AssistantRuntimeProvider} = window.AssistantUI;
     return (
-        <RadixUI.Theme appearance="dark" accentColor="blue">
-            <AssistantUI.AssistantRuntimeProvider runtime={runtime}>
+        <Theme appearance="dark" accentColor="blue">
+            <AssistantRuntimeProvider runtime={runtime}>
                 <ChatInterface />
-            </AssistantUI.AssistantRuntimeProvider>
-        </RadixUI.Theme>
+            </AssistantRuntimeProvider>
+        </Theme>
     )
 }

@@ -11,10 +11,10 @@ export const EMBED_COMMANDS_MOCK = {
     "getNoteTitleByUUID": async (noteUUID) => {
         return "Mock Note"
     },
-    "insertTask": async (app, ...args) => {
+    "insertTask": async (...args) => {
         return true;
     },
-    "updateTask": async (app, ...args) => {
+    "updateTask": async (...args) => {
         return true;
     },
     "getUserCurrentNoteData": async () => {
@@ -22,6 +22,9 @@ export const EMBED_COMMANDS_MOCK = {
             currentNoteUUID: 'mock-uuid',
             currentNoteTitle: 'Mock Note'
         }
+    },
+    "alert": async (...args) => {
+        alert(args.join(' '));
     },
     "getSettings": async () => {
         return {

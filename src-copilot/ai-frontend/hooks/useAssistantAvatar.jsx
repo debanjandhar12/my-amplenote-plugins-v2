@@ -12,6 +12,8 @@ export const useAssistantAvatar = () => {
                     setAssistantAvatar({fallback: "A"});
                     console.error(`Invalid image URL: ${assistantAvatarSrc}`);
                 }
+            } else {
+                setAssistantAvatar({fallback: "A"});
             }
         }
         fetchAssistantAvatar();

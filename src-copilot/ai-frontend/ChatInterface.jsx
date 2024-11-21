@@ -9,7 +9,7 @@ export const ChatInterface = () => {
     // Fetch runtime and other assistant-ui contexts
     const runtime = AssistantUI.useAssistantRuntime();
     const thread = AssistantUI.useThread();
-    const composer = AssistantUI.useComposerRuntime();
+    const threadRuntime = AssistantUI.useThreadRuntime();
     const assistantAvatar = useAssistantAvatar();
     const suggestions = useChatSuggestions(thread, 4);
 
@@ -18,9 +18,9 @@ export const ChatInterface = () => {
         if (window.userData.invokerImageSrc) {
             fetch(window.userData.invokerImageSrc)
                 .then(response => response.blob())
-                .then(blob => {
+                .then(async blob => {
                     const file = new File([blob], "image.jpg", { type: "image/jpeg" });
-                    composer.addAttachment(file);
+                    await threadRuntime.composer.addAttachment(file);
                 });
         }
     }, []);
@@ -82,10 +82,11 @@ export const ChatInterface = () => {
         };
     }, [runtime]);
 
+    const { Thread } = window.AssistantUI;
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>
             <ChatInterfaceHeader />
-            <AssistantUI.Thread
+            <Thread
                 welcome={{
                     suggestions: suggestions,
                 }}

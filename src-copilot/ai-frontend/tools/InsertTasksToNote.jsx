@@ -61,9 +61,11 @@ export const InsertTasksToNote = () => {
                 setFormData({...formData, tasksContainerList});
             };
             const [noteSelectionArr, setNoteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID] = useNoteSelector({args, setFormData, formData});
+
+           const { Text } = RadixUI;
             return (
                 <ToolCardContainer>
-                    <RadixUI.Text>Select tasks to insert into note:</RadixUI.Text>
+                    <Text>Select tasks to insert into note:</Text>
                     <ItemSelectionTable
                         itemContainerList={formData.tasksContainerList}
                         setItemContainerList={setTasksContainerList}

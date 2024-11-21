@@ -1,7 +1,8 @@
 export const ToolCardContainer = ({children}) => {
+    const { Card } = RadixUI;
     return <div style={{height: 'fit-content', marginBottom: '2px'}}>
-        <RadixUI.Card>
+        <Card>
             {children}
-        </RadixUI.Card>
+        </Card>
     </div>
 }

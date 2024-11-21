@@ -1,7 +1,9 @@
 import {ToolCardContainer} from "./ToolCardContainer.jsx";
 
 export const ToolCardMessage = ({text, color = false}) => {
+    const { Text } = RadixUI;
+
     return <ToolCardContainer>
-        <RadixUI.Text color={color}>{text}</RadixUI.Text>
+        <Text color={color}>{text}</Text>
     </ToolCardContainer>
 }

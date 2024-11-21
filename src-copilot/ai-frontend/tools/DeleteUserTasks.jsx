@@ -48,9 +48,11 @@ export const DeleteUserTasks = () => {
             const setTasksContainerList = (tasksContainerList) => {
                 setFormData({...formData, tasksContainerList});
             };
+
+            const { Text } = RadixUI;
             return (
                 <ToolCardContainer>
-                    <RadixUI.Text>Select tasks to delete:</RadixUI.Text>
+                    <Text>Select tasks to delete:</Text>
                     <ItemSelectionTable
                         itemContainerList={formData.tasksContainerList}
                         setItemContainerList={setTasksContainerList}

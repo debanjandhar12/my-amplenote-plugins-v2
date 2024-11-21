@@ -5,8 +5,9 @@ export const ToolFooter = ({submitButtonText = "Submit", cancelButtonText = "Can
                                shouldDisplayNoteSelector = false, noteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID}) => {
     const isThisToolMessageLast = AssistantUI.useMessage((m) => m.isLast);
 
+    const { Flex, Button } = RadixUI;
     return (
-        <RadixUI.Flex gap="10px" justify="between" style={{ marginTop: "10px" }}>
+        <Flex gap="10px" justify="between" style={{ marginTop: "10px" }}>
             {
                 shouldDisplayNoteSelector ?
                     <NoteSelector
@@ -16,38 +17,41 @@ export const ToolFooter = ({submitButtonText = "Submit", cancelButtonText = "Can
                         status={status}
                     /> : <span />
             }
-            <RadixUI.Flex justify="end">
-                <RadixUI.Button
+            <Flex justify="end">
+                <Button
                     color="red"
                     disabled={status === "requires-action" || !isThisToolMessageLast}
                     onClick={() => {
                         setFormState("canceled");
                     }} style={{ marginRight: "10px" }}>
                     {cancelButtonText}
-                </RadixUI.Button>
-                <RadixUI.Button
+                </Button>
+                <Button
                     disabled={status === "requires-action" || !isThisToolMessageLast}
                     onClick={() => {
                         setFormState("submitted");
                     }}>
                     {submitButtonText}
-                </RadixUI.Button>
-            </RadixUI.Flex>
-        </RadixUI.Flex>
+                </Button>
+            </Flex>
+        </Flex>
     )
 }
 
 export const NoteSelector = ({ noteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID, status}) => {
     const isThisToolMessageLast = AssistantUI.useMessage((m) => m.isLast);
+
+    const { Select, IconButton } = RadixUI;
+    const { FileTextIcon } = RadixIcons;
     return (
-        <RadixUI.Select.Root
+        <Select.Root
             disabled={status === "requires-action" || !isThisToolMessageLast}
             value={currentNoteSelectionUUID}
             onValueChange={(value) => {
                 setCurrentNoteSelectionUUID(value);
             }}>
-            <RadixUI.Select.Trigger>
-                <RadixIcons.FileTextIcon
+            <Select.Trigger>
+                <FileTextIcon
                     style={{
                         display: "inline-block",
                         marginRight: "5px",
@@ -55,17 +59,17 @@ export const NoteSelector = ({ noteSelectionArr, currentNoteSelectionUUID, setCu
                     }}
                 />
                 {truncate(noteSelectionArr.find((note) => note.uuid === currentNoteSelectionUUID)?.title, { length: 12 })}
-            </RadixUI.Select.Trigger>
-            <RadixUI.Select.Content position="popper">
+            </Select.Trigger>
+            <Select.Content position="popper">
                 {noteSelectionArr.map((note) => (
-                    <RadixUI.Select.Item key={note.uuid} value={note.uuid}>
+                    <Select.Item key={note.uuid} value={note.uuid}>
                         <span>{note.title}</span>
                         <span style={{ fontSize: "8px", display: "block", lineHeight: "1" }}>
                                             {note.uuid}
                                         </span>
-                    </RadixUI.Select.Item>
+                    </Select.Item>
                 ))}
-            </RadixUI.Select.Content>
-        </RadixUI.Select.Root>
+            </Select.Content>
+        </Select.Root>
     )
 }

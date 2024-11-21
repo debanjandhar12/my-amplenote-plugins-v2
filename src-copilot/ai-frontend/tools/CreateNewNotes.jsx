@@ -53,9 +53,11 @@ export const CreateNewNotes = () => {
             const setNotesContainerList = (notesContainerList) => {
                 setFormData({...formData, notesContainerList});
             };
+
+            const { Text } = RadixUI;
             return (
                 <ToolCardContainer>
-                    <RadixUI.Text>Select notes to insert into:</RadixUI.Text>
+                    <Text>Select notes to insert into:</Text>
                     <ItemSelectionTable
                         itemContainerList={formData.notesContainerList}
                         setItemContainerList={setNotesContainerList}

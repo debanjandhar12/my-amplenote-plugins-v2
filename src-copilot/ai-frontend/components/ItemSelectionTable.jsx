@@ -37,6 +37,7 @@ export const ItemSelectionTable = ({
 
     const renderCell = (itemContainer, index, key) => {
         if (isDiffView) {
+            const StringDiff = window.StringDiff;
             return (
                 <StringDiff
                     method={'diffSentences'}
@@ -57,38 +58,40 @@ export const ItemSelectionTable = ({
         return formatValue(itemContainer.item[key]);
     };
 
+    const { Table, Checkbox } = RadixUI;
+    const { CheckCircledIcon } = RadixIcons;
     return (
-        <RadixUI.Table.Root>
-            <RadixUI.Table.Header>
-                <RadixUI.Table.Row>
-                    <RadixUI.Table.ColumnHeaderCell style={{ verticalAlign: 'middle' }}>
-                        <RadixIcons.CheckCircledIcon />
-                    </RadixUI.Table.ColumnHeaderCell>
+        <Table.Root>
+            <Table.Header>
+                <Table.Row>
+                    <Table.ColumnHeaderCell style={{ verticalAlign: 'middle' }}>
+                        <CheckCircledIcon />
+                    </Table.ColumnHeaderCell>
                     {allItemKeys.map((key) => (
-                        <RadixUI.Table.ColumnHeaderCell key={key}>
+                        <Table.ColumnHeaderCell key={key}>
                             {key}
-                        </RadixUI.Table.ColumnHeaderCell>
+                        </Table.ColumnHeaderCell>
                     ))}
-                </RadixUI.Table.Row>
-            </RadixUI.Table.Header>
-            <RadixUI.Table.Body>
+                </Table.Row>
+            </Table.Header>
+            <Table.Body>
                 {itemsToIterate.map((itemContainer, index) => (
-                    <RadixUI.Table.Row key={index}>
-                        <RadixUI.Table.RowHeaderCell>
-                            <RadixUI.Checkbox
+                    <Table.Row key={index}>
+                        <Table.RowHeaderCell>
+                            <Checkbox
                                 checked={itemContainer.checked}
                                 disabled={status === "requires-action" || !isThisToolMessageLast}
                                 onCheckedChange={(checked) => handleCheckedChange(checked, index)}
                             />
-                        </RadixUI.Table.RowHeaderCell>
+                        </Table.RowHeaderCell>
                         {allItemKeys.map((key) => (
-                            <RadixUI.Table.Cell key={key}>
+                            <Table.Cell key={key}>
                                 {renderCell(itemContainer, index, key)}
-                            </RadixUI.Table.Cell>
+                            </Table.Cell>
                         ))}
-                    </RadixUI.Table.Row>
+                    </Table.Row>
                 ))}
-            </RadixUI.Table.Body>
-        </RadixUI.Table.Root>
+            </Table.Body>
+        </Table.Root>
     );
 };

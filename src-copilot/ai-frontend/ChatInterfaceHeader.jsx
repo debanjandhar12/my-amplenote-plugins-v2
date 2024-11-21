@@ -7,19 +7,21 @@ export const ChatInterfaceHeader = () => {
     // New chat button functionality
     const onClickNewChat = React.useCallback(() => runtime.switchToNewThread(), [runtime]);
 
+    const {Box, Tooltip, Button, Popover} = window.RadixUI;
+    const {PlusIcon} = window.RadixIcons;
     return (
-        <RadixUI.Box style={{
+        <Box style={{
             display: 'flex', justifyContent: 'flex-end', paddingRight: '4px',
             position: 'sticky', top: 0, zIndex: '1000', backgroundColor: 'var(--color-background)'
         }}>
             <UserPromptLibraryPopover />
-            <RadixUI.Tooltip content="New chat">
-                <RadixUI.Button variant="ghost" size="1" style={{marginRight: '4px', margin: '2px'}}
+            <Tooltip content="New chat">
+                <Button variant="ghost" size="1" style={{marginRight: '4px', margin: '2px'}}
                                 onClick={onClickNewChat}>
-                    <RadixIcons.PlusIcon />
-                </RadixUI.Button>
-            </RadixUI.Tooltip>
-        </RadixUI.Box>
+                    <PlusIcon />
+                </Button>
+            </Tooltip>
+        </Box>
     )
 }
 
@@ -78,54 +80,56 @@ const UserPromptLibraryPopover = () => {
         setUserPromptList(userPromptList.filter(p => p.uuid !== prompt.uuid));
     }, [userPromptList]);
 
+    const {Popover, Button, Tooltip, ScrollArea, Text, Box, Card, Flex, IconButton} = window.RadixUI;
+    const {Pencil2Icon, TrashIcon} = window.RadixIcons;
     return (
-        <RadixUI.Popover.Root>
-            <RadixUI.Popover.Trigger asChild>
-                <RadixUI.Button variant="ghost" size="1" style={{margin: '2px'}}>
-                    <RadixUI.Tooltip content="User prompts">
-                        <RadixIcons.Pencil2Icon />
-                    </RadixUI.Tooltip>
-                </RadixUI.Button>
-            </RadixUI.Popover.Trigger>
-            <RadixUI.Popover.Content width="360px">
-                <RadixUI.ScrollArea style={{ maxHeight: '320px' }}>
-                    <RadixUI.Box style={{ padding: '8px' }}>
+        <Popover.Root>
+            <Popover.Trigger asChild>
+                <Button variant="ghost" size="1" style={{margin: '2px'}}>
+                    <Tooltip content="User prompts">
+                        <Pencil2Icon />
+                    </Tooltip>
+                </Button>
+            </Popover.Trigger>
+            <Popover.Content width="360px">
+                <ScrollArea style={{ maxHeight: '320px' }}>
+                    <Box style={{ padding: '8px' }}>
                         {userPromptList.map((prompt) => (
-                            <RadixUI.Card asChild key={prompt.uuid} style={{ padding: '8px', margin: '6px' }}>
+                            <Card asChild key={prompt.uuid} style={{ padding: '8px', margin: '6px' }}>
                                 <a href="#" onClick={() => handleInsertPrompt(prompt)}>
-                                    <RadixUI.Flex justify="between" align="start" style={{ padding: '2px', minHeight: '33px' }}>
-                                        <RadixUI.Text style={{ fontSize: '11px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                                    <Flex justify="between" align="start" style={{ padding: '2px', minHeight: '33px' }}>
+                                        <Text style={{ fontSize: '11px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
                                             {prompt.message}
-                                        </RadixUI.Text>
-                                        <RadixUI.IconButton
+                                        </Text>
+                                        <IconButton
                                             variant="ghost"
                                             color="red"
                                             size="1"
                                             style={{ alignSelf: 'center' }}
                                             onClick={(e) => handleDeletePrompt(e, prompt)}>
-                                            <RadixIcons.TrashIcon />
-                                        </RadixUI.IconButton>
-                                    </RadixUI.Flex>
+                                            <TrashIcon />
+                                        </IconButton>
+                                    </Flex>
                                 </a>
-                            </RadixUI.Card>
+                            </Card>
                         ))}
                         {userPromptList.length === 0 && (
-                            <RadixUI.Text style={{textAlign: 'center', color: 'var(--color-text-muted)'}}>
+                            <Text style={{textAlign: 'center', color: 'var(--color-text-muted)'}}>
                                 No saved prompts yet
-                            </RadixUI.Text>
+                            </Text>
                         )}
-                    </RadixUI.Box>
-                </RadixUI.ScrollArea>
-                <RadixUI.Box style={{marginTop: '16px'}}>
-                    <RadixUI.Button
+                    </Box>
+                </ScrollArea>
+                <Box style={{marginTop: '16px'}}>
+                    <Button
                         onClick={handleAddPrompt}
                         variant="soft"
                         size="1"
                         style={{ width: '100%' }}>
                         Add New Prompt
-                    </RadixUI.Button>
-                </RadixUI.Box>
-            </RadixUI.Popover.Content>
-        </RadixUI.Popover.Root>
+                    </Button>
+                </Box>
+            </Popover.Content>
+        </Popover.Root>
     )
 }
