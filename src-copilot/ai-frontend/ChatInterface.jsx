@@ -83,6 +83,7 @@ export const ChatInterface = () => {
     }, [runtime]);
 
     const { Thread } = window.AssistantUI;
+
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>
             <ChatInterfaceHeader />

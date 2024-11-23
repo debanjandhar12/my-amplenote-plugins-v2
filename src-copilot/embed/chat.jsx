@@ -14,6 +14,9 @@ import {VectorSearchNotes} from "../ai-frontend/tools/VectorSearchNotes.jsx";
 import {DeleteUserTasks} from "../ai-frontend/tools/DeleteUserTasks.jsx";
 import {DeleteUserNotes} from "../ai-frontend/tools/DeleteUserNotes.jsx";
 import {UpdateUserNotes} from "../ai-frontend/tools/UpdateUserNotes.jsx";
+import {errorToString} from "../ai-frontend/utils/errorToString.js";
+import {LLM_MAX_TOKENS_DEFAULT, LLM_MAX_TOKENS_SETTING} from "../constants.js";
+import {useDangerousInBrowserRuntimeMod} from "../ai-frontend/utils/useDangerousInBrowserRuntimeMod.js";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -65,6 +68,9 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.ReactDOM = await dynamicImportESM("react-dom/client");
         window.RadixUI = await dynamicImportESM("@radix-ui/themes");
         window.AssistantUI = await dynamicImportESM("@assistant-ui/react");
+        window.AssistantUIUtils = {};
+        window.AssistantUIUtils.DangerousInBrowserAdapter = (await dynamicImportESM("@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.js")).DangerousInBrowserAdapter;
+        window.AssistantUIUtils.splitLocalRuntimeOptions = (await dynamicImportESM("@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.js")).splitLocalRuntimeOptions;
         window.RadixIcons = await dynamicImportESM("@radix-ui/react-icons");
         window.Tribute = (await dynamicImportESM("tributejs")).default;
         window.StringDiff = (await dynamicImportESM("react-string-diff")).StringDiff;
@@ -90,16 +96,22 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
 
 export const App = () => {
     // Setup runtime
-    const runtime = AssistantUI.useDangerousInBrowserRuntime({
+    const runtime = useDangerousInBrowserRuntimeMod({
         model: window.LLM_MODEL,
         maxSteps: 4,
+        maxTokens: appSettings[LLM_MAX_TOKENS_SETTING] || LLM_MAX_TOKENS_DEFAULT,
         adapters: {
             attachments: new AssistantUI.CompositeAttachmentAdapter([
                 new AssistantUI.SimpleImageAttachmentAdapter()
             ]),
+        },
+        onFinish: async (threadRuntime) => {
+            console.log('onFinish', threadRuntime);
+        },
+        onError: async (threadRuntime, error) => {
+            appConnector.alert(`Error: ${errorToString(error)}`);
         }
     });
-
     const {Theme} = window.RadixUI;
     const {AssistantRuntimeProvider} = window.AssistantUI;
     return (

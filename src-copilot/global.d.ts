@@ -5,6 +5,10 @@ import ReactDOM = require("react-dom/client");
 import React = require("react");
 import * as RadixUI from "@radix-ui/themes";
 import * as RadixIcons from "@radix-ui/react-icons";
+import {splitLocalRuntimeOptions} from "@assistant-ui/react/dist/runtimes/local/LocalRuntimeOptions";
+import {
+    DangerousInBrowserAdapter
+} from "@assistant-ui/react/dist/runtimes/dangerous-in-browser/DangerousInBrowserAdapter";
 
 declare global {
     interface Window {
@@ -15,6 +19,10 @@ declare global {
         RadixIcons: typeof RadixIcons;
         Tribute: typeof Tribute;
         StringDiff: typeof StringDiff;
+        AssistantUIUtils: {
+            DangerousInBrowserAdapter: typeof DangerousInBrowserAdapter;
+            splitLocalRuntimeOptions: typeof splitLocalRuntimeOptions;
+        }
         appSettings: Record<string, any>;
     }
 }
