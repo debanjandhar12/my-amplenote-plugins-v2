@@ -69,7 +69,7 @@ export const FetchUserTasks =() => {
                 }
             }
             alasql.tables.USER_TASKS.data = allTasks;
-            setFormData({...formData, sqlOutput: alasql(args.sqlQuery)});
+            setFormData({...formData, sqlOutput: await alasql(args.sqlQuery)});
             setFormState('completed');
         },
         onCompleted: ({addResult, formData}) => {

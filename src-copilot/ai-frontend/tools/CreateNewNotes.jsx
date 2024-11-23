@@ -57,14 +57,14 @@ export const CreateNewNotes = () => {
             const { Text } = RadixUI;
             return (
                 <ToolCardContainer>
-                    <Text>Select notes to insert into:</Text>
+                    <Text>Select notes to create:</Text>
                     <ItemSelectionTable
                         itemContainerList={formData.notesContainerList}
                         setItemContainerList={setNotesContainerList}
                         status={status}
                     />
                     <ToolFooter
-                        submitButtonText="Insert Notes"
+                        submitButtonText="Create Notes"
                         cancelButtonText="Cancel"
                         status={status}
                         setFormState={setFormState}
@@ -123,7 +123,7 @@ export const CreateNewNotes = () => {
 
 const createNote = async ({ item }) => {
     const noteUUID = await appConnector.createNote(item.noteName, item.noteTags || []);
-    if (!noteUUID) throw new Error('Failed to insert note');
+    if (!noteUUID) throw new Error('Failed to create note');
     if (item.noteContent) {
         await appConnector.insertNoteContent({uuid: noteUUID}, item.noteContent);
     }

@@ -42,7 +42,8 @@ export const InsertTasksToNote = () => {
                 },
                 noteUUID: {
                     type: "string",
-                    description: "The UUID of the note to insert the task into."
+                    description: "The UUID of the note to insert the task into.",
+                    minLength: 10
                 }
             },
             required: ["tasks", "noteUUID"]

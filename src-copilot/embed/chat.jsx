@@ -9,8 +9,8 @@ import {ChatInterface} from "../ai-frontend/ChatInterface.jsx";
 import {WebSearch} from "../ai-frontend/tools/WebSearch.jsx";
 import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.jsx";
 import {CreateNewNotes} from "../ai-frontend/tools/CreateNewNotes.jsx";
-import {FetchNoteByNoteUUID} from "../ai-frontend/tools/FetchNoteByNoteUUID.jsx";
-import {VectorSearchNotes} from "../ai-frontend/tools/VectorSearchNotes.jsx";
+import {FetchNoteDetailByNoteUUID} from "../ai-frontend/tools/FetchNoteDetailByNoteUUID.jsx";
+import {SearchNotesByTitleTagsContent} from "../ai-frontend/tools/SearchNotesByTitleTagsContent.jsx";
 import {DeleteTasks} from "../ai-frontend/tools/DeleteTasks.jsx";
 import {DeleteUserNotes} from "../ai-frontend/tools/DeleteUserNotes.jsx";
 import {UpdateUserNotes} from "../ai-frontend/tools/UpdateUserNotes.jsx";
@@ -77,10 +77,10 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
         window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(),
-            CreateNewNotes(), FetchNoteByNoteUUID(), VectorSearchNotes(),
+            CreateNewNotes(), FetchNoteDetailByNoteUUID(), SearchNotesByTitleTagsContent(),
             UpdateUserNotes(),
             DeleteTasks(), DeleteUserNotes()];
-        window.TOOL_CATEGORY_NAMES = ['all-tools', 'tasks', 'notes', 'web-search'];
+        window.TOOL_CATEGORY_NAMES = ['tasks', 'notes', 'web-search'];
         hideEmbedLoader();
         if (!React || !window.ReactDOM) {
             throw new Error("Failed to load React or ReactDOM");

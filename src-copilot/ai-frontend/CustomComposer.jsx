@@ -11,7 +11,9 @@ export const CustomComposer = () => {
     React.useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey && threadRuntime.composer.getState().text.trim()) {
+                const isTributeDisplayed = document.querySelector('.tribute-container');
+                if (e.key === 'Enter' && !e.shiftKey && !isTributeDisplayed
+                    && threadRuntime.composer.getState().text.trim()) {
                     e.preventDefault();
                     e.stopPropagation();
                     threadRuntime.composer.send();

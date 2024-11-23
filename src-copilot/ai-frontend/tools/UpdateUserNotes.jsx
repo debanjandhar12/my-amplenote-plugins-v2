@@ -20,7 +20,8 @@ export const UpdateUserNotes = () => {
                         properties: {
                             noteUUID: {
                                 type: "string",
-                                description: "UUID of the note to update"
+                                description: "UUID of the note to update",
+                                minLength: 10
                             },
                             noteTitle: {
                                 type: "string",

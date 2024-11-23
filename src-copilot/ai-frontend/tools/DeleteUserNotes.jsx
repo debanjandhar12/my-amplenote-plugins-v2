@@ -20,7 +20,8 @@ export const DeleteUserNotes = () => {
                         properties: {
                             noteUUID: {
                                 type: "string",
-                                description: "UUID of the note to delete"
+                                description: "UUID of the note to delete",
+                                minLength: 10
                             }
                         },
                         required: ["noteUUID"]

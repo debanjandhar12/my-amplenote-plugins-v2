@@ -18,16 +18,19 @@ export const COMMON_EMBED_COMMANDS = {
         return app.setSetting(key, value);
     },
     "getNoteTitleByUUID": async (app, noteUUID) =>  {
-        return (await app.notes.find(noteUUID)).name;
+        return (await app.notes.find(noteUUID))?.name;
     },
     "getNoteContentByUUID": async (app, noteUUID) => {
-        return await app.getNoteContent({uuid: noteUUID});
+        if (await app.notes.find(noteUUID)) {
+            return await app.getNoteContent({uuid: noteUUID});
+        }
+        return null;
     },
     "getNoteBacklinksByUUID": async (app, noteUUID) => {
-        return await (await app.notes.find(noteUUID)).backlinks();
+        return await (await app.notes.find(noteUUID))?.backlinks();
     },
     "getNoteTagsByUUID": async (app, noteUUID) => {
-        return (await app.notes.find(noteUUID)).tags;
+        return (await app.notes.find(noteUUID))?.tags;
     },
     "getNoteSections": async (app, ...args) => {
         return await app.getNoteSections(...args);
@@ -67,6 +70,12 @@ export const COMMON_EMBED_COMMANDS = {
     },
     "getTask": async (app, ...args) => {
         return await app.getTask(...args);
+    },
+    "findNote": async (app, ...args) => {
+        return await app.findNote(...args);
+    },
+    "filterNotes": async (app, ...args) => {
+        return await app.filterNotes(...args);
     },
     "saveFile": async (app, ...args) => {
         try {
