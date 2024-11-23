@@ -8,7 +8,7 @@ import {errorToString} from "../utils/errorToString.js";
 export const CreateNewNotes = () => {
     return createGenericCUDTool({
         toolName: "CreateNewNotes",
-        description: "Create new notes in amplenote. ",
+        description: "Create new notes in amplenote",
         parameters: {
             type: "object",
             properties: {
@@ -21,18 +21,18 @@ export const CreateNewNotes = () => {
                             noteName: {
                                 type: "string",
                                 minLength: 1,
-                                description: "The name of the note."
+                                description: "Name of note"
                             },
                             noteTags: {
                                 type: "array",
                                 items: {
                                     type: "string"
                                 },
-                                description: "The tags of the note. (Optional)"
+                                description: "Tags for note"
                             },
                             noteContent: {
                                 type: "string",
-                                description: "The content of the note. (Optional)"
+                                description: "Note content"
                             }
                         },
                         required: ["noteName"]

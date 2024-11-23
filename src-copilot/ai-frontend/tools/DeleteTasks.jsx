@@ -5,10 +5,10 @@ import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
 import {errorToString} from "../utils/errorToString.js";
 
-export const DeleteUserTasks = () => {
+export const DeleteTasks = () => {
     return createGenericCUDTool({
-        toolName: "DeleteUserTasks",
-        description: "Delete user tasks.",
+        toolName: "DeleteTasks",
+        description: "Delete tasks",
         parameters: {
             type: "object",
             properties: {
@@ -20,7 +20,7 @@ export const DeleteUserTasks = () => {
                         properties: {
                             taskUUID: {
                                 type: "string",
-                                description: "The UUID of the task to delete."
+                                description: "UUID of the task to delete"
                             }
                         },
                         required: ["taskUUID"]

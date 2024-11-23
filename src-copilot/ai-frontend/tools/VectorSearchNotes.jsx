@@ -6,14 +6,14 @@ import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
 export const VectorSearchNotes = () => {
     return createGenericReadTool({
         toolName: "VectorSearchNotes",
-        description: "Search text inside all user notes.",
+        description: "Search text inside user notes",
         parameters: {
             type: "object",
             properties: {
                 query: {
                     type: "string",
-                    description: "The query to search for.",
-                    minLength: 1,
+                    description: "Search string",
+                    minLength: 1
                 }
             },
             required: ["query"]

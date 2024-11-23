@@ -8,7 +8,7 @@ import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult
 export const UpdateUserNotes = () => {
     return createGenericCUDTool({
         toolName: "UpdateUserNotes",
-        description: "Update user notes.",
+        description: "Update user notes",
         parameters: {
             type: "object",
             properties: {
@@ -20,22 +20,22 @@ export const UpdateUserNotes = () => {
                         properties: {
                             noteUUID: {
                                 type: "string",
-                                description: "The UUID of the note to update."
+                                description: "UUID of the note to update"
                             },
                             noteTitle: {
                                 type: "string",
-                                description: "The title of the note."
+                                description: "New note title"
                             },
                             noteContent: {
                                 type: "string",
-                                description: "The content of the note."
+                                description: "New note content"
                             },
                             tags: {
                                 type: "array",
                                 items: {
                                     type: "string"
                                 },
-                                description: "The tags of the note. (Optional)"
+                                description: "New tag list for note (all old tags will be removed - set null to keep old tags)"
                             }
                         },
                         required: ["noteUUID"]

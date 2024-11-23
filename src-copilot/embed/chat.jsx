@@ -11,7 +11,7 @@ import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.
 import {CreateNewNotes} from "../ai-frontend/tools/CreateNewNotes.jsx";
 import {FetchNoteByNoteUUID} from "../ai-frontend/tools/FetchNoteByNoteUUID.jsx";
 import {VectorSearchNotes} from "../ai-frontend/tools/VectorSearchNotes.jsx";
-import {DeleteUserTasks} from "../ai-frontend/tools/DeleteUserTasks.jsx";
+import {DeleteTasks} from "../ai-frontend/tools/DeleteTasks.jsx";
 import {DeleteUserNotes} from "../ai-frontend/tools/DeleteUserNotes.jsx";
 import {UpdateUserNotes} from "../ai-frontend/tools/UpdateUserNotes.jsx";
 import {errorToString} from "../ai-frontend/utils/errorToString.js";
@@ -79,7 +79,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(),
             CreateNewNotes(), FetchNoteByNoteUUID(), VectorSearchNotes(),
             UpdateUserNotes(),
-            DeleteUserTasks(), DeleteUserNotes()];
+            DeleteTasks(), DeleteUserNotes()];
         window.TOOL_CATEGORY_NAMES = ['all-tools', 'tasks', 'notes', 'web-search'];
         hideEmbedLoader();
         if (!React || !window.ReactDOM) {

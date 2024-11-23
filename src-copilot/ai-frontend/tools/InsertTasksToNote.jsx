@@ -9,7 +9,7 @@ import {errorToString} from "../utils/errorToString.js";
 export const InsertTasksToNote = () => {
     return createGenericCUDTool({
         toolName: "InsertTasksToNote",
-        description: "Create tasks and insert to user's note. ",
+        description: "Create tasks and insert them to note",
         parameters: {
             type: "object",
             properties: {
@@ -22,19 +22,19 @@ export const InsertTasksToNote = () => {
                             taskContent: {
                                 type: "string",
                                 minLength: 1,
-                                description: "The content of the task."
+                                description: "Short description of task"
                             },
                             taskStartAt: {
                                 type: "string",
-                                description: "The start date and time of the task in ISO format."
+                                description: "Start date and time of the task in ISO format"
                             },
-                            taskendAt: {
+                            taskEndAt: {
                                 type: "string",
-                                description: "The end date and time of the task in ISO format. Must be after startAt. (Optional)"
+                                description: "End date and time of the task in ISO format (Optional)"
                             },
                             taskScore: {
                                 type: "number",
-                                description: "The score of the task. (Optional)"
+                                description: "Task score (Optional)"
                             }
                         },
                         required: ["taskContent"]
@@ -156,9 +156,9 @@ const insertTasksToNote = async ({ selectedNoteUUID, item }) => {
             startAt: (Date.parse(item.taskStartAt) / 1000) // convert to timestamp
         });
     }
-    if (item.taskendAt) {
+    if (item.taskEndAt) {
         await appConnector.updateTask(taskUUID, {
-            endAt: (Date.parse(item.taskendAt) / 1000) // convert to timestamp
+            endAt: (Date.parse(item.taskEndAt) / 1000) // convert to timestamp
         });
     }
     if (item.taskScore) {

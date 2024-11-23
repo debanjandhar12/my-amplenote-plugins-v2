@@ -1,5 +1,3 @@
-import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
-import {omit} from "lodash-es";
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
 import {getCorsBypassUrl} from "../../../common-utils/cors-helpers.js";
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
@@ -7,14 +5,14 @@ import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult
 export const WebSearch = () => {
     return createGenericReadTool({
         toolName: "WebSearch",
-        description: "Search the web for information.",
+        description: "Search web for information",
         parameters: {
             type: "object",
             properties: {
                 query: {
                     type: "string",
-                    description: "The query to search for.",
-                    minLength: 1,
+                    description: "Search string",
+                    minLength: 1
                 }
             },
             required: ["query"]

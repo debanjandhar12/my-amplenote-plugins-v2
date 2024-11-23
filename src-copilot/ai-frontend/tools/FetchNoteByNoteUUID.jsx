@@ -4,7 +4,7 @@ import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
 export const FetchNoteByNoteUUID = () => {
     return createGenericReadTool({
         toolName: "FetchNoteByNoteUUID",
-        description: "Call this to get the title, content, backlinks, and tags of a note.",
+        description: "Call this to get the title, backlinks, tags and content of a note",
         parameters: {
             type: "object",
             properties: {

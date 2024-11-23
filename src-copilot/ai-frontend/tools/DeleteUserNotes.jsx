@@ -8,7 +8,7 @@ import {errorToString} from "../utils/errorToString.js";
 export const DeleteUserNotes = () => {
     return createGenericCUDTool({
         toolName: "DeleteUserNotes",
-        description: "Delete user notes.",
+        description: "Delete user notes",
         parameters: {
             type: "object",
             properties: {
@@ -20,7 +20,7 @@ export const DeleteUserNotes = () => {
                         properties: {
                             noteUUID: {
                                 type: "string",
-                                description: "The UUID of the note to delete."
+                                description: "UUID of the note to delete"
                             }
                         },
                         required: ["noteUUID"]
