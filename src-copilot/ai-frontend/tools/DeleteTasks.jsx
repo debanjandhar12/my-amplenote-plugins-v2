@@ -49,7 +49,7 @@ export const DeleteTasks = () => {
                 setFormData({...formData, tasksContainerList});
             };
 
-            const { Text } = RadixUI;
+            const { Text } = window.RadixUI;
             return (
                 <ToolCardContainer>
                     <Text>Select tasks to delete:</Text>

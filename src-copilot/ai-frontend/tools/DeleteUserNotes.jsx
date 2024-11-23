@@ -55,7 +55,7 @@ export const DeleteUserNotes = () => {
                 setFormData({...formData, notesContainerList});
             };
 
-            const { Text } = RadixUI;
+            const { Text } = window.RadixUI;
             return (
                 <ToolCardContainer>
                     <Text>Select notes to delete:</Text>

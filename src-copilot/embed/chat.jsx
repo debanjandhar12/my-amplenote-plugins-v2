@@ -17,6 +17,8 @@ import {UpdateUserNotes} from "../ai-frontend/tools/UpdateUserNotes.jsx";
 import {errorToString} from "../ai-frontend/utils/errorToString.js";
 import {LLM_MAX_TOKENS_DEFAULT, LLM_MAX_TOKENS_SETTING} from "../constants.js";
 import {useDangerousInBrowserRuntimeMod} from "../ai-frontend/utils/useDangerousInBrowserRuntimeMod.js";
+import {UpdateUserTasks} from "../ai-frontend/tools/UpdateUserTasks.jsx";
+import {InsertContentToNote} from "../ai-frontend/tools/InsertContentToNote.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -78,7 +80,8 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.LLM_MODEL = await getLLMModel(window.appSettings);
         window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(),
             CreateNewNotes(), FetchNoteDetailByNoteUUID(), SearchNotesByTitleTagsContent(),
-            UpdateUserNotes(),
+            UpdateUserNotes(), UpdateUserTasks(),
+            InsertContentToNote(),
             DeleteTasks(), DeleteUserNotes()];
         window.TOOL_CATEGORY_NAMES = ['tasks', 'notes', 'web-search'];
         hideEmbedLoader();

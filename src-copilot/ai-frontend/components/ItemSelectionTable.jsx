@@ -26,7 +26,7 @@ export const ItemSelectionTable = ({
     }, []);
 
     const formatValue = (value) => {
-        return typeof value === "object" ? JSON.stringify(value) : value;
+        return typeof value === "object" ? JSON.stringify(value) : value.toString();
     };
 
     const handleCheckedChange = (checked, index) => {
@@ -58,14 +58,14 @@ export const ItemSelectionTable = ({
         return formatValue(itemContainer.item[key]);
     };
 
-    const { Table, Checkbox } = RadixUI;
-    const { CheckCircledIcon } = RadixIcons;
+    const { Table, Checkbox } = window.RadixUI;
+    const { CheckboxIcon } = window.RadixIcons;
     return (
         <Table.Root>
             <Table.Header>
                 <Table.Row>
                     <Table.ColumnHeaderCell style={{ verticalAlign: 'middle' }}>
-                        <CheckCircledIcon />
+                        <CheckboxIcon />
                     </Table.ColumnHeaderCell>
                     {allItemKeys.map((key) => (
                         <Table.ColumnHeaderCell key={key}>

@@ -54,7 +54,7 @@ export const CreateNewNotes = () => {
                 setFormData({...formData, notesContainerList});
             };
 
-            const { Text } = RadixUI;
+            const { Text } = window.RadixUI;
             return (
                 <ToolCardContainer>
                     <Text>Select notes to create:</Text>

@@ -7,7 +7,7 @@ export const ToolCardMessageWithResult = ({ text, result, color = false }) => {
         setIsCollapsed(!isCollapsed);
     };
 
-    const { Text, Button, ChevronDownIcon, ScrollArea, Code } = RadixUI;
+    const { Text, Button, ChevronDownIcon, ScrollArea, Code } = window.RadixUI;
     return (
         <ToolCardContainer>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

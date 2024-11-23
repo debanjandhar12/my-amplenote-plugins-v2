@@ -63,7 +63,7 @@ export const InsertTasksToNote = () => {
             };
             const [noteSelectionArr, setNoteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID] = useNoteSelector({args, setFormData, formData});
 
-           const { Text } = RadixUI;
+            const { Text } = window.RadixUI;
             return (
                 <ToolCardContainer>
                     <Text>Select tasks to insert into note:</Text>
@@ -114,11 +114,11 @@ export const InsertTasksToNote = () => {
             setFormData({...formData, successfulInsertedItems, failedItems, lastError});
             setFormState("completed");
         },
-        onCompleted: ({formData, addResult}) => {
+        onCompleted: async ({formData, addResult}) => {
             const {successfulInsertedItems, failedItems} = formData;
             const lastError = formData.lastError;
             const selectedNoteUUID = formData.currentNoteSelectionUUID;
-            const selectedNoteTitle = appConnector.getNoteTitleByUUID(selectedNoteUUID);
+            const selectedNoteTitle = await appConnector.getNoteTitleByUUID(selectedNoteUUID);
             let resultText = `${successfulInsertedItems.length} tasks inserted successfully into note ${selectedNoteTitle} (uuid: ${selectedNoteUUID}).
                 Details: ${JSON.stringify(successfulInsertedItems)}`;
             if (failedItems.length > 0) {
