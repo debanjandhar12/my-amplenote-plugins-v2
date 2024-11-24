@@ -5,47 +5,32 @@ import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult
 export const FetchUserTasks =() => {
     return createGenericReadTool({
         toolName: "FetchUserTasks",
-        description: "Run SQL query to fetch information about existing tasks. You can use it to get tasks between date range, tasks inside specific note, collect aggregate information on tasks etc. Only SELECT queries are allowed.",
+        description: "Query to fetch information about existing tasks.",
         parameters: {
             type: "object",
             properties: {
-                sqlQuery: {
-                    type: "string",
-                    description: "SQL query to retrieve tasks from the USER_TASKS table.\n" +
-                        "Columns in USER_TASKS include: " +
-                        "completedAt (Date), content (STRING), dismissedAt (Date), endAt (Date), " +
-                        "hideUntil (Date), important (BOOLEAN), noteUUID (STRING), score (NUMBER), " +
-                        "startAt (Date), urgent (BOOLEAN), taskUUID (STRING), " +
-                        "taskDomainUUID (STRING), taskDomainName (STRING).\n" +
-                        "Default sort order is by startAt in descending order. " +
-                        "You can specify other columns for sorting.\n" +
-                        "Example query to select all tasks between 2024-01-21 to 2024-01-22: SELECT content, startAt, endAt, completedAt, important FROM USER_TASKS WHERE startAt BETWEEN DATE(\"2024-01-21T00:00:00\") AND DATE(\"2024-01-22T23:59:59\") ORDER BY startAt DESC;\n" +
-                        "Example query to count all tasks: SELECT COUNT(*) FROM USER_TASKS;"
+                query: {
+                    type: "object",
+                    description: "LokiJS query object (mongodb-like syntax) to find tasks.\n" +
+                        "Available fields: " +
+                        "completedAt, dismissedAt, endAt, hideUntil, startAt (date)\n" +
+                        "content, noteUUID, taskUUID, taskDomainUUID, taskDomainName (string)\n" +
+                        "urgent, important (boolean)\n" +
+                        "score (number)\n" +
+                        "Examples:\n" +
+                        "Find tasks for 25th december: {\"startAt\": {\"$gte\": \"2024-12-25 00:00:00\", \"$lte\": \"2024-12-25 23:59:59\"}};\n" +
+                        "Find tasks in note: {\"noteUUID\": {\"$eq\": \"note-uuid\"}};\n"
                 }
             },
-            required: ["sqlQuery"]
+            required: ["query"]
         },
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({args, formData, setFormData, setFormState}) => {
-            const alasql = (await dynamicImportESM("alasql")).default;
-            window.alasql = alasql;
-            alasql(`CREATE TABLE IF NOT EXISTS USER_TASKS (
-                            completedAt Date,
-                            content STRING,
-                            dismissedAt Date,
-                            endAt Date,
-                            hideUntil Date,
-                            important BOOLEAN,
-                            noteUUID STRING,
-                            score NUMBER,
-                            startAt Date,
-                            urgent BOOLEAN,
-                            taskUUID STRING,
-                            taskDomainUUID STRING,
-                            taskDomainName STRING
-                        );`);
-            alasql(`TRUNCATE TABLE USER_TASKS;`);
+            const Loki = (await dynamicImportESM("lokijs")).default;
+            const db = new Loki("tasks.db");
+            const tasksCollection = db.addCollection("tasks");
+
             let allTasks = [];
             const taskDomains = await appConnector.getTaskDomains();
             for (const taskDomain of taskDomains) {
@@ -68,8 +53,12 @@ export const FetchUserTasks =() => {
                     }];
                 }
             }
-            alasql.tables.USER_TASKS.data = allTasks;
-            setFormData({...formData, sqlOutput: await alasql(args.sqlQuery)});
+            
+            tasksCollection.insert(allTasks);
+            window.tasksCollection = tasksCollection;
+            const queryObj = processQuery(args.query);
+            const results = tasksCollection.find(queryObj);
+            setFormData({...formData, sqlOutput: results});
             setFormState('completed');
         },
         onCompleted: ({addResult, formData}) => {
@@ -80,5 +69,66 @@ export const FetchUserTasks =() => {
             return <ToolCardMessageWithResult result={JSON.stringify(formData.sqlOutput)}
                                               text={`${formData.sqlOutput.length} tasks fetched successfully.`}/>
         }
+    });
+}
+
+const processQuery = (query) => {
+    const queryObj = typeof query === "object" ? query : JSON.parse(query);
+    // convert date strings to Date objects
+    for (const key in queryObj) {
+        if (queryObj[key].hasOwnProperty("$gte")) {
+            queryObj[key].$gte = new Date(queryObj[key].$gte);
+        }
+        if (queryObj[key].hasOwnProperty("$lte")) {
+            queryObj[key].$lte = new Date(queryObj[key].$lte);
+        }
+    }
+    // change all comparison to js ones
+    for (const key in queryObj) {
+        if (queryObj[key].hasOwnProperty("$eq")) {
+            queryObj[key].$jeq = queryObj[key]['$eq'];
+            delete queryObj[key]['$eq'];
+        }
+        if (queryObj[key].hasOwnProperty("$ne")) {
+            queryObj[key].$jne = queryObj[key]['$ne'];
+            delete queryObj[key]['$ne'];
+        }
+        if (queryObj[key].hasOwnProperty("$gt")) {
+            queryObj[key].$jgt = queryObj[key]['$gt'];
+            delete queryObj[key]['$gt'];
+        }
+        if (queryObj[key].hasOwnProperty("$gte")) {
+            queryObj[key].$jgte = queryObj[key]['$gte'];
+            delete queryObj[key]['$gte'];
+        }
+        if (queryObj[key].hasOwnProperty("$lt")) {
+            queryObj[key].$jlt = queryObj[key]['$lt'];
+            delete queryObj[key]['$lt'];
+        }
+        if (queryObj[key].hasOwnProperty("$lte")) {
+            queryObj[key].$jlte = queryObj[key]['$lte'];
+            delete queryObj[key]['$lte'];
+        }
+    }
+    return queryObj;
+}
+
+const processResults = (results) => {
+    return results.map((result) => {
+        let task = {};
+        task.completedAt = result.completedAt ? window.dayjs(result.completedAt).format() : null;
+        task.dismissedAt = result.dismissedAt ? window.dayjs(result.dismissedAt).format() : null;
+        task.endAt = result.endAt ? window.dayjs(result.endAt).format() : null;
+        task.hideUntil = result.hideUntil ? window.dayjs(result.hideUntil).format() : null;
+        task.startAt = result.startAt ? window.dayjs(result.startAt).format() : null;
+        task.content = result.content;
+        task.noteUUID = result.noteUUID;
+        task.taskUUID = result.taskUUID;
+        task.taskDomainUUID = result.taskDomainUUID;
+        task.taskDomainName = result.taskDomainName;
+        task.urgent = result.urgent;
+        task.important = result.important;
+        task.score = result.score;
+        return task;
     });
 }

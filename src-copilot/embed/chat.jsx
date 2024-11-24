@@ -67,6 +67,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.ReactDOM = await dynamicImportESM("react-dom/client");
         window.RadixUI = await dynamicImportESM("@radix-ui/themes");
         window.AssistantUI = await dynamicImportESM("@assistant-ui/react");
+        window.dayjs = (await dynamicImportESM("dayjs")).default;
         window.AssistantUIUtils = {};
         window.AssistantUIUtils.DangerousInBrowserAdapter = (await dynamicImportESM("@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.js")).DangerousInBrowserAdapter;
         window.AssistantUIUtils.splitLocalRuntimeOptions = (await dynamicImportESM("@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.js")).splitLocalRuntimeOptions;

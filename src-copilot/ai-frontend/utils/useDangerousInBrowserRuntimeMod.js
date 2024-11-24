@@ -8,7 +8,6 @@ export const useDangerousInBrowserRuntimeMod = (
     adapter.run = async function* (...args) {
         try {
             for await (const chunk of originalRun.call(this, ...args)) {
-                console.log('chunk', args, chunk);
                 yield chunk;
             }
         } catch (e) {

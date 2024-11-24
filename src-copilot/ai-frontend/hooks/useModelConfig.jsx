@@ -43,8 +43,8 @@ export function useModelConfig(runtime) {
                             window.userData.currentNoteTitle ? `Current note title: ${window.userData.currentNoteTitle}` : '',
                             window.userData.invokerSelectionContent ? `Currently selected content: ${window.userData.invokerSelectionContent}` : ''
                         ].filter(Boolean).join('\n').trim()}
-                    Current time: ${new Date().toISOString()}
-                    
+                    Current time: ${window.dayjs().format()}
+                    ${Intl.DateTimeFormat().resolvedOptions().timeZone ? `Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}\n` : ''}
                     ${
                             window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING] && window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING].trim() !== '' ?
                                 "Additional Instruction from user:-\n"+window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING].trim().replaceAll(/\s+/gm, ' ').trim() :

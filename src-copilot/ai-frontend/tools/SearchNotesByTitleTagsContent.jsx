@@ -9,7 +9,7 @@ import {uniqBy} from "lodash-es";
 export const SearchNotesByTitleTagsContent = () => {
     return createGenericReadTool({
         toolName: "SearchNotesByTitleTagsContent",
-        description: "Use to get noteUUID from title / tags OR search note content. Only provide required parameters. Returns only list of note uuids.",
+        description: "Use to get noteUUID from title / tags OR search note content. Only provide required parameters. Returns list of note uuids.",
         parameters: {
             type: "object",
             properties: {
@@ -84,7 +84,6 @@ export const SearchNotesByTitleTagsContent = () => {
             const searchResults4 = (args.tags && !args.noteTitle && !args.noteContent) ? await appConnector.filterNotes({
                 tag: args.tags && args.tags.length > 0 ? args.tags.join(',') : undefined,
             }) : [];
-            console.log(searchResults1, searchResults2, searchResults3, searchResults4);
             const searchResults = uniqBy([...searchResults1, ...searchResults2,
                 ...searchResults3, ...searchResults4].filter(x => x && x.uuid), 'uuid');
             const searchResultsMapped = searchResults.map(note => ({
