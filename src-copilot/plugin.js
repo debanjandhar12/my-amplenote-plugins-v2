@@ -1,4 +1,5 @@
 import chatHTML from 'inline:./embed/chat.html';
+import searchHTML from 'inline:./embed/search.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
 import {generateText} from "./ai-backend/generateText.js";
@@ -59,19 +60,21 @@ const plugin = {
     },
     appOption: {
         "Sync notes to pinecone": async function (app) {
-            try {
-                const pinecone = new Pinecone();
-                await pinecone.syncNotes(app);
-                await app.alert("Sync completed");
-            } catch (e) {
-                console.error(e);
-                await app.alert(e);
-            }
+            await plugin.onEmbedCall(app, 'syncNotesWithPinecone');
         },
         "Chat with Copilot": async function (app) {
             try {
                 plugin.currentNoteUUID = app.context.noteUUID;
                 await app.openSidebarEmbed(1, {trigger: 'appOption', openChat: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        },
+        "Search notes using natural language": async function (app) {
+            try {
+                plugin.currentNoteUUID = app.context.noteUUID;
+                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -146,6 +149,8 @@ const plugin = {
                 const dailyJotNoteUUID = (await dailyJotNote.url()).split('/').pop();
                 userData = {...userData, dailyJotNoteUUID: dailyJotNoteUUID, dailyJotNoteTitle: dailyJotNote.name};
                 return addWindowVariableToHtmlString(chatHTML, 'userData', userData);
+            } else if (args.openSearch) {
+                return searchHTML;
             }
         } catch (e) {
             console.error(e);
@@ -164,6 +169,16 @@ const plugin = {
                 }
             } catch (e) {
                 throw 'Failed getUserCurrentNoteData - ' + e;
+            }
+        },
+        "syncNotesWithPinecone": async function (app) {
+            try {
+                const pinecone = new Pinecone();
+                await pinecone.syncNotes(app);
+                await app.alert("Sync completed");
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
             }
         }
     }, ['getUserCurrentNoteData'])

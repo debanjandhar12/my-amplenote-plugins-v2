@@ -12,9 +12,18 @@ export class Pinecone {
         const { Pinecone } = await dynamicImportESM("@pinecone-database/pinecone");
         const pineconeClient = new Pinecone({
             apiKey: appSettings[PINECONE_API_KEY_SETTING],
-            fetchApi: (url, options) => {
-                url = getCorsBypassUrl(url);
-                return fetch(url, options);
+            fetchApi: async (url, options) => {
+                if (!window.useCorsBypassForPinecone) {
+                    try {
+                        return await fetch(url, options);
+                    } catch (error) {
+                        if (!error.message?.includes('CORS')) {
+                            throw error;
+                        }
+                        window.useCorsBypassForPinecone = true;
+                    }
+                }
+                return fetch(getCorsBypassUrl(url), options);
             }
         });
         const indexName = PINECONE_INDEX_NAME;

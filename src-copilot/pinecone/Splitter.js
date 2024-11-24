@@ -17,6 +17,8 @@ export class Splitter {
                 pageContent: `---\nnote-title: ${note.name}\ncontent-hierarchy: ${headers.map((header) => `${'#'.repeat(header.depth)} ${
                     this.noteContent.substring(header.position.start.offset, header.position.end.offset).trim().replaceAll('\n','')}`).join(', ')}\n---\n`,
                 noteUUID: note.uuid,
+                noteTitle: note.name,
+                noteTags: (note.tags || []).join(", "),
                 namespace: "note-content",
                 isTagOnly: false,
                 pluginVersion: INDEX_VERSION
@@ -63,6 +65,8 @@ export class Splitter {
             metadata: {
                 pageContent: `---\nnote-title: ${note.name}\nnote-tags: ${(note.tags || []).join(", ")}\n---`,
                 noteUUID: note.uuid,
+                noteTitle: note.name,
+                noteTags: (note.tags || []).join(", "),
                 namespace: "note-tags",
                 isTagOnly: true,
                 pluginVersion: INDEX_VERSION

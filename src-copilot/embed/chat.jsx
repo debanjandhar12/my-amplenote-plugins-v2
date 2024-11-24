@@ -5,7 +5,6 @@ import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../com
 import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK} from "../test/embed/chat.testdata.js";
 import {FetchUserTasks} from "../ai-frontend/tools/FetchUserTasks.jsx";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
-import {ChatInterface} from "../ai-frontend/ChatInterface.jsx";
 import {WebSearch} from "../ai-frontend/tools/WebSearch.jsx";
 import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.jsx";
 import {CreateNewNotes} from "../ai-frontend/tools/CreateNewNotes.jsx";
@@ -14,11 +13,9 @@ import {SearchNotesByTitleTagsContent} from "../ai-frontend/tools/SearchNotesByT
 import {DeleteTasks} from "../ai-frontend/tools/DeleteTasks.jsx";
 import {DeleteUserNotes} from "../ai-frontend/tools/DeleteUserNotes.jsx";
 import {UpdateUserNotes} from "../ai-frontend/tools/UpdateUserNotes.jsx";
-import {errorToString} from "../ai-frontend/utils/errorToString.js";
-import {LLM_MAX_TOKENS_DEFAULT, LLM_MAX_TOKENS_SETTING} from "../constants.js";
-import {useDangerousInBrowserRuntimeMod} from "../ai-frontend/utils/useDangerousInBrowserRuntimeMod.js";
 import {UpdateUserTasks} from "../ai-frontend/tools/UpdateUserTasks.jsx";
 import {InsertContentToNote} from "../ai-frontend/tools/InsertContentToNote.jsx";
+import {ChatApp} from "../ai-frontend/ChatApp.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -89,39 +86,10 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
             throw new Error("Failed to load React or ReactDOM");
         }
         if(document.querySelector('.app-container'))
-            window.ReactDOM.createRoot(document.querySelector('.app-container')).render(React.createElement(App));
+            window.ReactDOM.createRoot(document.querySelector('.app-container')).render(React.createElement(ChatApp));
     } catch (e) {
         window.document.body.innerHTML = '<div style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
         console.error(e);
     }
 })();
 
-
-export const App = () => {
-    // Setup runtime
-    const runtime = useDangerousInBrowserRuntimeMod({
-        model: window.LLM_MODEL,
-        maxSteps: 4,
-        maxTokens: appSettings[LLM_MAX_TOKENS_SETTING] || LLM_MAX_TOKENS_DEFAULT,
-        adapters: {
-            attachments: new AssistantUI.CompositeAttachmentAdapter([
-                new AssistantUI.SimpleImageAttachmentAdapter()
-            ]),
-        },
-        onFinish: async (threadRuntime) => {
-            console.log('onFinish', threadRuntime);
-        },
-        onError: async (threadRuntime, error) => {
-            appConnector.alert(`Error: ${errorToString(error)}`);
-        }
-    });
-    const {Theme} = window.RadixUI;
-    const {AssistantRuntimeProvider} = window.AssistantUI;
-    return (
-        <Theme appearance="dark" accentColor="blue">
-            <AssistantRuntimeProvider runtime={runtime}>
-                <ChatInterface />
-            </AssistantRuntimeProvider>
-        </Theme>
-    )
-}
