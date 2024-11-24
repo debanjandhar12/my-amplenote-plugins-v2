@@ -4,7 +4,7 @@ import {INDEX_VERSION} from "../constants.js";
 
 export class Splitter {
 
-    constructor(maxTokens = 360) {
+    constructor(maxTokens = 260) {
         this.maxTokens = maxTokens;
         this.splitResult = [];
         this.noteContent = '';
@@ -23,7 +23,8 @@ export class Splitter {
                 isTagOnly: false,
                 pluginVersion: INDEX_VERSION
             },
-            dirty: false
+            dirty: false,   // Whether further content is added to this split result
+            addedAmount: 0 // Amount of content added to this split result
         });
     }
 
@@ -34,12 +35,18 @@ export class Splitter {
 
         this.addNoteContentSplitResult(note, headers);
         visit(root, (node) => {
+
             if (node.type === 'heading') {
                 headers = headers.filter((header) => header.depth < node.depth);
                 headers.push(node);
                 this.addNoteContentSplitResult(note, headers);
                 return 'skip';
-            } else if (!['root'].includes(node.type)) {
+            } else if (node.type === 'root' || node.type === 'paragraph') {
+                return true;    // Continue
+            } else if (node.type === 'code' && (node.position.end.offset - node.position.start.offset) > this.maxTokens) {
+                console.log('Skipping code block due to length', node);
+                return 'skip';
+            } else {
                 const nodeValue = noteContent.substring(node.position.start.offset, node.position.end.offset);
                 let nodeTokens = this.tokenize(nodeValue);
                 while (nodeTokens.length > 0) {
@@ -49,16 +56,20 @@ export class Splitter {
                         this.addNoteContentSplitResult(note, headers);
                         currentContent = this.splitResult[this.splitResult.length - 1].metadata.pageContent;
                     }
+                    const addedAmount = nodeTokens.slice(0, remainingSpace).join('').length;
                     this.splitResult[this.splitResult.length - 1].metadata.pageContent += nodeTokens.slice(0, remainingSpace).join('');
                     nodeTokens = nodeTokens.slice(remainingSpace);
                     this.splitResult[this.splitResult.length - 1].dirty = true;
+                    this.splitResult[this.splitResult.length - 1].addedAmount += addedAmount;
                 }
 
                 return 'skip';
             }
         });
         this.splitResult = this.splitResult.filter((result) => result.dirty);
+        this.splitResult = this.splitResult.filter((result) => result.addedAmount > 64);
         this.splitResult.forEach((result) => delete result.dirty);
+        this.splitResult.forEach((result) => delete result.addedAmount);
 
         this.splitResult.push({
             id: note.uuid,

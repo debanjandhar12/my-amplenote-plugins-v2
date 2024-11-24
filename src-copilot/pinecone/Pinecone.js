@@ -38,7 +38,7 @@ export class Pinecone {
         const queryVector = await pineconeClient.inference.embed(
             'multilingual-e5-large',
             [query],
-            {inputType: 'passage', truncate: 'END'}
+            {inputType: 'query', truncate: 'END'}
         );
         const results = await noteContentNameSpace.query({
             vector: queryVector[0].values,
