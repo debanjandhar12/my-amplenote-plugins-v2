@@ -85,8 +85,8 @@ function buildCDNUrl(cdn, pkg, version) {
         if (process.env.NODE_ENV === 'development') {
             url.searchParams.set('dev', true);
         }
-        if (!basePkg !== 'react-dom' && basePkg !== 'react') {
-            url.searchParams.set('bundle-deps', true);
+        if (basePkg !== 'react-dom' && basePkg !== 'react') {
+            url.searchParams.set('bundle-deps', false);
         }
         url.searchParams.set('deps', `react@${pkgJSON.dependencies.react},react-dom@${pkgJSON.dependencies['react-dom']}`);
     }
