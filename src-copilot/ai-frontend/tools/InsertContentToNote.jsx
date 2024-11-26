@@ -15,7 +15,8 @@ export const InsertContentToNote = () => {
                 noteUUID: {
                     type: "string",
                     description: "UUID of note",
-                    minLength: 10
+                    minLength: 36,
+                    maxLength: 36
                 },
                 content: {
                     type: "string",

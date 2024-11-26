@@ -20,14 +20,17 @@ const plugin = {
                 const nearbyContent = noteContent.substring(noteContent.indexOf(randomUUID) - 800, noteContent.indexOf(randomUUID) + 800);
                 // Ask llm to fill
                 await app.context.replaceSelection(`Generating...`);
-                const prompt = "I want you to act as a fill in the blank tool. You take the input and complete it factually. Only reply with words that should replace [BLANK]. NEVER repeat input." + "\n" +
+                const prompt = "I want you to act as a fill in the blank tool. You take markdown input text and complete it factually. Only reply with words that should replace [BLANK]. NEVER repeat input." + "\n" +
                     "Additional instruction: If the surrounding text is in between a sentence, complete the entire sentence. Otherwise, complete the paragraph. DO NOT repeat the input text." + "\n" +
                     "Example:" + "\n" +
-                    "Input: The quick brown fox jumps [CONTINUE]." + "\n" +
+                    "Input: The [CONTINUE] jumps over the lazy dog." + "\n" +
+                    "Output: quick brown fox" + "\n" +
+                    "Example:" + "\n" +
+                    "Input: The quick brown fox jumps [CONTINUE]" + "\n" +
                     "Output: over the lazy dog." + "\n" +
-                    "Example 2:" + "\n" +
-                    "Input: I’m fine, thanks. [CONTINUE]." + "\n" +
-                    "Output: How are you?" + "\n" +
+                    "Example:" + "\n" +
+                    "Input: On the way, we caught sight of the famous waterfall. [CONTINUE]" + "\n" +
+                    "Output: As we stood there, a rainbow formed in the mist creating a captivating sight." + "\n" +
                     "---------------------" + "\n" +
                     "Input: " + "\n" +
                     nearbyContent.replaceAll(randomUUID, '[CONTINUE]');
@@ -45,7 +48,7 @@ const plugin = {
             try {
                 const instructions = await app.prompt("Enter text generation instructions:");
                 if (!instructions) return;
-                const prompt = "I want you to generate text based on the following instructions. You can use markdown. Do not reply anything other than the generated text on provided topic. Instructions:" + "\n" +
+                const prompt = "I want you to generate markdown text based on the following instructions. Do not reply anything other than the generated text on provided topic. Instructions:" + "\n" +
                     instructions.trim() + "\n";
                 const response = await generateText(await getLLMModel(app.settings), prompt);
                 if (response.text)

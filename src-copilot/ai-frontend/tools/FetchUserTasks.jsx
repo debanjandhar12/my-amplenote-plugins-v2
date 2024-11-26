@@ -19,7 +19,8 @@ export const FetchUserTasks =() => {
                         "score (number)\n" +
                         "Examples:\n" +
                         "Find tasks for 25th december: {\"startAt\": {\"$gte\": \"2024-12-25 00:00:00\", \"$lte\": \"2024-12-25 23:59:59\"}};\n" +
-                        "Find tasks in note: {\"noteUUID\": {\"$eq\": \"note-uuid\"}};\n"
+                        "Find tasks in note: {\"noteUUID\": {\"$eq\": \"note-uuid\"}};\n" +
+                        "Find task with content: {\"content\": {\"$regex\":\"groceries\",\"$options\":\"i\"}};\n"
                 }
             },
             required: ["query"]

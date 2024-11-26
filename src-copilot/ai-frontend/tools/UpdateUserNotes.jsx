@@ -21,7 +21,8 @@ export const UpdateUserNotes = () => {
                             noteUUID: {
                                 type: "string",
                                 description: "UUID of the note to update",
-                                minLength: 10
+                                minLength: 36,
+                                maxLength: 36
                             },
                             noteTitle: {
                                 type: "string",
@@ -157,11 +158,11 @@ export const UpdateUserNotes = () => {
 
 const updateNote = async ({ item }) => {
     const oldNoteTitle = await appConnector.getNoteTitleByUUID(item.uuid);
-    if (item.noteTitle && item.noteTitle !== oldNoteTitle) {
-        await appConnector.setNoteName(item.uuid, item.noteTitle);
+    if (item.title && item.title !== oldNoteTitle) {
+        await appConnector.setNoteName({uuid: item.uuid}, item.title);
     }
-    if (item.noteContent) {
-        await appConnector.replaceNoteContent({uuid: item.uuid}, item.noteContent);
+    if (item.content) {
+        await appConnector.replaceNoteContent({uuid: item.uuid}, item.content);
     }
     if (item.tags) {
         const oldTags = await appConnector.getNoteTagsByUUID({uuid: item.uuid});

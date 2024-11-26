@@ -51,7 +51,7 @@ window.addEventListener('resize', function() {
     const appInnerContainer = document.querySelector('.app-container > div > div');
     if (appInnerContainer) {
         Object.assign(appInnerContainer.style, {
-            height: `${iframeHeight - 24}px`,
+            height: `${iframeHeight}px`,
             overflow: 'hidden',
         });
     }
