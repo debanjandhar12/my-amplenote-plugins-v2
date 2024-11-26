@@ -4,6 +4,8 @@ export const ToolFooter = ({submitButtonText = "Submit", cancelButtonText = "Can
                                status, setFormState,
                                shouldDisplayNoteSelector = false, noteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID}) => {
     const isThisToolMessageLast = AssistantUI.useMessage((m) => m.isLast);
+    const isActionDestructive = submitButtonText.toLowerCase().includes('delete')
+    || submitButtonText.toLowerCase().includes('remove');
 
     const { Flex, Button } = window.RadixUI;
     return (
@@ -17,9 +19,11 @@ export const ToolFooter = ({submitButtonText = "Submit", cancelButtonText = "Can
                         status={status}
                     /> : <span />
             }
-            <Flex justify="end">
+            <Flex justify="end" align="center">
                 <Button
-                    color="red"
+                    variant={'ghost'}
+                    color={'red'}
+                    highContrast={true}
                     disabled={status === "requires-action" || !isThisToolMessageLast}
                     onClick={() => {
                         setFormState("canceled");
@@ -27,6 +31,7 @@ export const ToolFooter = ({submitButtonText = "Submit", cancelButtonText = "Can
                     {cancelButtonText}
                 </Button>
                 <Button
+                    color={isActionDestructive ? 'red' : 'primary'}
                     disabled={status === "requires-action" || !isThisToolMessageLast}
                     onClick={() => {
                         setFormState("submitted");

@@ -1,6 +1,6 @@
 import {Pinecone} from "../pinecone/Pinecone.js";
-import {removeYAMLFrontmatterFromMarkdown} from "../pinecone/removeYAMLFrontmatterFromMarkdown.js";
 import {truncate, debounce} from "lodash-es";
+import {processPineconeSearchResults} from "./utils/processPineconeResults.js";
 
 // Custom hook for search functionality
 const useSearch = () => {
@@ -18,30 +18,7 @@ const useSearch = () => {
         
         const pinecone = new Pinecone();
         const results = await pinecone.search(query, appSettings, 10);
-        return processSearchResults(results);
-    };
-
-    const processSearchResults = async (results) => {
-        const filteredResults = results
-            .filter(result => result.score >= 0.75)
-            .reduce((acc, result) => {
-                const uuid = result.metadata.noteUUID;
-                if (!acc[uuid] || acc[uuid].score < result.score) {
-                    acc[uuid] = result;
-                }
-                return acc;
-            }, {});
-
-        const uniqueResults = Object.values(filteredResults)
-            .sort((a, b) => b.score - a.score);
-
-        return Promise.all(
-            uniqueResults.map(async (result) => ({
-                noteTitle: result.metadata.noteTitle,
-                content: await removeYAMLFrontmatterFromMarkdown(result.metadata.pageContent),
-                noteUUID: result.metadata.noteUUID,
-            }))
-        );
+        return processPineconeSearchResults(results);
     };
 
     // Debounced search handler
