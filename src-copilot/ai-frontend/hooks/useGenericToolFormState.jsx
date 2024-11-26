@@ -1,4 +1,4 @@
-export const useToolFormState = (states, initialState = null, params = {}) => {
+export const useGenericToolFormState = (states, initialState = null, params = {}) => {
     const [formState, setFormState] = React.useState();
     const render = states[formState]?.renderer || (() => null);
 

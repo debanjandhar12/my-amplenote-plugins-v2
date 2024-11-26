@@ -19,8 +19,8 @@ export const WebSearch = () => {
         },
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@web-search")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
-        onInit: async ({args, formData, setFormData, setFormState}) => {
-            const searchResults = await search(args.query);
+        onInit: async ({args, formData, setFormData, setFormState, signal}) => {
+            const searchResults = await search(args.query, signal);
             setFormData({...formData, searchResults});
             setFormState('completed');
         },
@@ -35,12 +35,14 @@ export const WebSearch = () => {
     });
 }
 
-const search = async (query) => {
+const search = async (query, signal) => {
     // Other known searx instances: https://searx.perennialte.ch/search, https://searx.foss.family/search, https://search.mdosch.de/searxng/search
-    const response = await fetch(getCorsBypassUrl(`https://search.projectsegfau.lt/search?q=${encodeURIComponent(query)}&format=json`));
+    const response = await fetch(getCorsBypassUrl(`https://search.projectsegfau.lt/search?q=${encodeURIComponent(query)}&format=json`),
+        {signal});
     // use duckduckgo if searx fails
     if (response.status !== 200) {
-        const response2 = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`);
+        const response2 = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`,
+            {signal});
         if (response2.status === 200) {
             return [await response2.json()];
         }

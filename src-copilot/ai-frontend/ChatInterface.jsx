@@ -12,7 +12,7 @@ export const ChatInterface = () => {
     const thread = AssistantUI.useThread();
     const threadRuntime = AssistantUI.useThreadRuntime();
     const assistantAvatar = useAssistantAvatar();
-    const suggestions = useChatSuggestions(thread, 4);
+    const suggestions = useChatSuggestions(thread);
 
     // Based on user data, initialize assistant-ui chat
     React.useEffect(() => {

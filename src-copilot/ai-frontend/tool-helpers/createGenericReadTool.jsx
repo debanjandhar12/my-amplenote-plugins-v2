@@ -1,6 +1,7 @@
 import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
-import {useToolFormState} from "../hooks/useToolFormState.jsx";
+import {useGenericToolFormState} from "../hooks/useGenericToolFormState.jsx";
 import {errorToString} from "../utils/errorToString.js";
+import {useGenericToolParameters} from "../hooks/useGenericToolParameters.jsx";
 
 export const createGenericReadTool = ({
                                           toolName,
@@ -26,13 +27,9 @@ export const createGenericReadTool = ({
         parameters,
         triggerCondition,
         render: ({args, result, addResult, status}) => {
-            const threadRuntime = AssistantUI.useThreadRuntime();
-            const [formData, setFormData] = React.useState({});
-            const [formError, setFormError] = React.useState(null);
-            const cancelFurtherLLMReply = () => {threadRuntime.cancelRun();};
-            const allParameters = {args, status, result, addResult, formError, setFormError,
-                formData, setFormData, cancelFurtherLLMReply};
-            const [formState, setFormState, formRender] = useToolFormState({
+            const allParameters = useGenericToolParameters({args, status, result, addResult});
+
+            const [formState, setFormState, formRender] = useGenericToolFormState({
                 init: {
                     eventHandler: onInit,
                     renderer: renderInit

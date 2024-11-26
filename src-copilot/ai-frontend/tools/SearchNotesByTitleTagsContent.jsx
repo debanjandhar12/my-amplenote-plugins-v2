@@ -50,7 +50,7 @@ export const SearchNotesByTitleTagsContent = () => {
             }
             return <ToolCardMessage text={`Searching for ${JSON.stringify(args)} using amplenote built-in search...`}/>
         },
-        onInit: async ({args, formData, setFormData, setFormState}) => {
+        onInit: async ({args, formData, setFormData, setFormState, signal}) => {
             console.log('SearchNotesByTitleTagsContent onInit', args);
             let isPineconeSearchPossible = false;
             if (!args.noteTitle && !args.tags) {
@@ -60,6 +60,7 @@ export const SearchNotesByTitleTagsContent = () => {
             try {
                 if (isPineconeSearchPossible) {
                     const pinecone = new Pinecone();
+                    // TODO: pass signal
                     const searchResults = await pinecone.search(args.noteContent, appSettings, 4);
                     setFormData({...formData, searchResults});
                     setFormState('completed');

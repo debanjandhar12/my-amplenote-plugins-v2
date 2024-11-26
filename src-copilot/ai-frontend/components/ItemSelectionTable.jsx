@@ -30,7 +30,7 @@ export const ItemSelectionTable = ({
             if (isNaN(value) && (typeof value === 'string' && isNaN(Number(value)))) {
                 const date = new Date(value);
                 if (isNaN(date.getTime())) throw new Error('Invalid date');
-                return date.toLocaleString('en-US', {timeZoneName: 'short', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone}) || value.toString();
+                return date.toLocaleString();
             }
         } catch (e) {}
         return typeof value === "object" ? JSON.stringify(value) : value.toString();

@@ -1,4 +1,4 @@
-export const useChatSuggestions = (thread, count = 4) => {
+export const useChatSuggestions = (thread, count = 2) => {
     const [suggestions, setSuggestions] = React.useState([]);
 
     React.useEffect(() => {
@@ -14,10 +14,16 @@ export const useChatSuggestions = (thread, count = 4) => {
 
 const allSuggestions = [
     {
-        prompt: "Add shopping for groceries at evening today @tasks",
+        prompt: "@tasks Add shopping for groceries at evening today",
     },
     {
-        prompt: "Summarize tasks for today @tasks",
+        prompt: "@tasks Summarize tasks for today",
+    },
+    {
+        prompt: "@notes Summarize this note",
+    },
+    {
+        prompt: "@notes Analyze and add appropriate tags to this note",
     }
 ];
 
