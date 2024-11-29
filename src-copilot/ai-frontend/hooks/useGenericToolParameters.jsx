@@ -17,7 +17,7 @@ export const useGenericToolParameters = ({ args, status, result, addResult }) =>
 
     const addResultWrapper = (input) => {
         if (typeof input === 'string') {
-            addResult(truncate(input, { length: 12000, omission: '[truncated tool output]' }));
+            addResult(truncate(input, { length: 14000, omission: '[truncated tool output]' }));
             return;
         }
         addResult(input);

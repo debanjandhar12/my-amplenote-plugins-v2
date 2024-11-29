@@ -16,6 +16,7 @@ import {UpdateUserNotes} from "../ai-frontend/tools/UpdateUserNotes.jsx";
 import {UpdateUserTasks} from "../ai-frontend/tools/UpdateUserTasks.jsx";
 import {InsertContentToNote} from "../ai-frontend/tools/InsertContentToNote.jsx";
 import {ChatApp} from "../ai-frontend/ChatApp.jsx";
+import {WebBrowser} from "../ai-frontend/tools/WebBrowser.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -76,12 +77,12 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.StringDiff = (await dynamicImportESM("react-string-diff")).StringDiff;
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
-        window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(),
+        window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(), WebBrowser(),
             CreateNewNotes(), FetchNoteDetailByNoteUUID(), SearchNotesByTitleTagsContent(),
             UpdateUserNotes(), UpdateUserTasks(),
             InsertContentToNote(),
             DeleteTasks(), DeleteUserNotes()];
-        window.TOOL_CATEGORY_NAMES = ['tasks', 'notes', 'web-search'];
+        window.TOOL_CATEGORY_NAMES = ['tasks', 'notes', 'web'];
         hideEmbedLoader();
         if (!React || !window.ReactDOM) {
             throw new Error("Failed to load React or ReactDOM");

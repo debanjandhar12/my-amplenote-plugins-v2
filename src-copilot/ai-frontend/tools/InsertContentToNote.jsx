@@ -8,7 +8,7 @@ import {errorToString} from "../utils/errorToString.js";
 export const InsertContentToNote = () => {
     return createGenericCUDTool({
         toolName: "InsertContentToNote",
-        description: "Insert markdown content to note",
+        description: "Insert markdown content to note. Call only if asked to do so.",
         parameters: {
             type: "object",
             properties: {

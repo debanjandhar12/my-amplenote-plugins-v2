@@ -1,11 +1,10 @@
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
-import {getCorsBypassUrl} from "../../../common-utils/cors-helpers.js";
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
 
 export const WebSearch = () => {
     return createGenericReadTool({
         toolName: "WebSearch",
-        description: "Search web for information",
+        description: "Search web for information. Use only when asked to search or to answer questions about current events.",
         parameters: {
             type: "object",
             properties: {
@@ -17,7 +16,7 @@ export const WebSearch = () => {
             },
             required: ["query"]
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@web-search")
+        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@web")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
             const searchResults = await search(args.query, signal);
@@ -36,10 +35,15 @@ export const WebSearch = () => {
 }
 
 const search = async (query, signal) => {
-    // Other known searx instances: https://searx.perennialte.ch/search, https://searx.foss.family/search, https://search.mdosch.de/searxng/search
-    const response = await fetch(getCorsBypassUrl(`https://search.projectsegfau.lt/search?q=${encodeURIComponent(query)}&format=json`),
-        {signal});
-    // use duckduckgo if searx fails
+    // Use jira reader as cors bypass
+    const response = await fetch(`https://r.jina.ai/https://search.projectsegfau.lt/search?q=${encodeURIComponent(query)}&format=json`, {
+        signal,
+        headers: {
+            "Accept": "application/json"
+        }
+    });
+    const responseJson = await response.json()
+    // Use duckduckgo if searx fails
     if (response.status !== 200) {
         const response2 = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`,
             {signal});
@@ -48,5 +52,5 @@ const search = async (query, signal) => {
         }
         throw new Error('Failed to fetch web search results');
     }
-    return (await response.json()).results;
+    return responseJson;
 }

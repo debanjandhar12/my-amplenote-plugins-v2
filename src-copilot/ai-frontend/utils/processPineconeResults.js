@@ -1,8 +1,8 @@
 import {removeYAMLFrontmatterFromMarkdown} from "../../pinecone/removeYAMLFrontmatterFromMarkdown.js";
 
-export const processPineconeSearchResults = async (results) => {
+export const processPineconeSearchResults = async (results, thresholdScore = 0.75) => {
     const filteredResults = results
-        .filter(result => result.score >= 0.75)
+        .filter(result => result.score >= thresholdScore)
         .reduce((acc, result) => {
             const uuid = result.metadata.noteUUID;
             if (!acc[uuid] || acc[uuid].score < result.score) {

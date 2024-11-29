@@ -88,8 +88,8 @@ export const SearchNotesByTitleTagsContent = () => {
                 if (isPineconeSearchPossible) {
                     const pinecone = new Pinecone();
                     // TODO: pass signal
-                    const pineconeResults = await pinecone.search(args.noteContent, appSettings, 4);
-                    searchResults0.push(...await processPineconeSearchResults(pineconeResults));
+                    const pineconeResults = await pinecone.search(args.noteContent, appSettings, args.limitSearchResults);
+                    searchResults0.push(...await processPineconeSearchResults(pineconeResults, 0.80));
                 }
             } catch (e) {
                 console.error(e);

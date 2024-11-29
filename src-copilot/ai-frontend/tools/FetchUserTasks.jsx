@@ -10,8 +10,8 @@ export const FetchUserTasks =() => {
             type: "object",
             properties: {
                 query: {
-                    type: "object",
-                    description: "LokiJS query object (mongodb-like syntax) to find tasks.\n" +
+                    type: "string", // Does not work with OpenAI when set to "object"
+                    description: "MongoDB like query object as string to find tasks.\n" +
                         "Available fields: " +
                         "completedAt, dismissedAt, endAt, hideUntil, startAt (date)\n" +
                         "content, noteUUID, taskUUID, taskDomainUUID, taskDomainName (string)\n" +
@@ -74,6 +74,7 @@ export const FetchUserTasks =() => {
 }
 
 const processQuery = (query) => {
+    if (!query) throw new Error("Provided query cannot be empty");
     const queryObj = typeof query === "object" ? query : JSON.parse(query);
     // convert date strings to Date objects
     for (const key in queryObj) {
