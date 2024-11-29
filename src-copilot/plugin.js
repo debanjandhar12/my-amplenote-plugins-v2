@@ -165,7 +165,9 @@ const plugin = {
         "getUserCurrentNoteData": async (app) => {
             try {
                 const currentNoteUUID = app.context.noteUUID || plugin.currentNoteUUID;
+                if (!currentNoteUUID) return null;
                 const currentNote = await app.findNote({uuid: currentNoteUUID});
+                if (!currentNote) return null;
                 return {
                     currentNoteUUID: currentNote.uuid,
                     currentNoteTitle: currentNote.name
