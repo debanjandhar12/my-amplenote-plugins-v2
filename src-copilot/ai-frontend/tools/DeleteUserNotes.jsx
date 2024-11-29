@@ -22,7 +22,7 @@ export const DeleteUserNotes = () => {
                                 type: "string",
                                 description: "UUID of the note to delete",
                                 minLength: 36,
-                                maxLength: 36
+                                maxLength: 42
                             }
                         },
                         required: ["noteUUID"]

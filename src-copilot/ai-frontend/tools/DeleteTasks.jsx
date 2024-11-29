@@ -20,7 +20,7 @@ export const DeleteTasks = () => {
                         properties: {
                             taskUUID: {
                                 type: "string",
-                                description: "UUID of the task to delete"
+                                description: "UUID of task to delete"
                             }
                         },
                         required: ["taskUUID"]

@@ -26,18 +26,18 @@ export const UpdateUserNotes = () => {
                             },
                             noteTitle: {
                                 type: "string",
-                                description: "New note title"
+                                description: "New title"
                             },
                             noteContent: {
                                 type: "string",
-                                description: "New note content"
+                                description: "New content"
                             },
                             tags: {
                                 type: "array",
                                 items: {
                                     type: "string"
                                 },
-                                description: "New tag list for note (all old tags will be removed - set null to keep old tags)"
+                                description: "New tag list (all old tags will be removed - set null to keep old tags)"
                             }
                         },
                         required: ["noteUUID"]

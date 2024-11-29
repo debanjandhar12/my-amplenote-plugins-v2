@@ -34,7 +34,7 @@ export const InsertTasksToNote = () => {
                             },
                             taskScore: {
                                 type: "number",
-                                description: "Task score (Optional)"
+                                description: "Optional score"
                             }
                         },
                         required: ["taskContent"]

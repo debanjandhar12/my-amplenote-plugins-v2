@@ -16,46 +16,38 @@ export const SearchNotesByTitleTagsContent = () => {
             properties: {
                 noteContent: {
                     type: "string",
-                    description: "Search string",
-                    optional: true
+                    description: "Search string"
                 },
                 noteTitle: {
                     type: "string",
-                    description: "Note title to filter by",
-                    optional: true
+                    description: "Title to filter by"
                 },
                 tags: {
                     type: "array",
                     items: {
                         type: "string"
                     },
-                    description: "Tags to filter notes by",
-                    optional: true
+                    description: "Tags to filter notes by"
                 },
                 isArchived: {
                     type: "boolean",
-                    description: "When true, only search archived notes (Default: null)",
-                    optional: true
+                    description: "When true, only search archived notes (Default: null)"
                 },
                 isSharedByMe: {
                     type: "boolean",
-                    description: "When true, only search notes shared by user (Default: null)",
-                    optional: true
+                    description: "When true, only search notes shared by user (Default: null)"
                 },
                 isSharedWithMe: {
                     type: "boolean",
-                    description: "When true, only search notes shared with user (Default: null)",
-                    optional: true
+                    description: "When true, only search notes shared with user (Default: null)"
                 },
                 strictSearch: {
                     type: "boolean",
-                    description: "When true, strictly match tags and title",
-                    optional: true
+                    description: "When true, strictly match tags and title"
                 },
                 limitSearchResults: {
                     type: "number",
-                    description: "Search result limit (Default: 10)",
-                    optional: true
+                    description: "Search result limit (Default: 10)"
                 }
             }
         },

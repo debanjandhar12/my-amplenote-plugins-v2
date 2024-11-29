@@ -20,19 +20,16 @@ export const CreateNewNotes = () => {
                         properties: {
                             noteName: {
                                 type: "string",
-                                minLength: 1,
-                                description: "Name of note"
+                                minLength: 1
                             },
                             noteTags: {
                                 type: "array",
                                 items: {
                                     type: "string"
-                                },
-                                description: "Tags for note"
+                                }
                             },
                             noteContent: {
-                                type: "string",
-                                description: "Note content"
+                                type: "string"
                             }
                         },
                         required: ["noteName"]

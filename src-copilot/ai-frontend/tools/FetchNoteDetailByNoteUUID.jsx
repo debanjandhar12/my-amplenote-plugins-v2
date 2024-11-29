@@ -14,7 +14,7 @@ export const FetchNoteDetailByNoteUUID = () => {
                         type: "string",
                         description: "UUID of note",
                         minLength: 36,
-                        maxLength: 36
+                        maxLength: 42
                     }
                 },
                 includeContent: {
