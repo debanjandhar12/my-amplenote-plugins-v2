@@ -1,9 +1,12 @@
 import {ToolCardContainer} from "./ToolCardContainer.jsx";
 
-export const ToolCardMessage = ({text, color = false}) => {
-    const { Text } = window.RadixUI;
+export const ToolCardMessage = ({icon, text, color = false}) => {
+    const { Text, Flex } = window.RadixUI;
 
     return <ToolCardContainer>
-        <Text color={color}>{text}</Text>
+        <Flex align="center" gap="2">
+            {icon && icon}
+            <Text color={color}>{text}</Text>
+        </Flex>
     </ToolCardContainer>
 }
