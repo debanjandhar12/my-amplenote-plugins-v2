@@ -1,4 +1,4 @@
-import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
+import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
 import {getLLMModel} from "../ai-backend/getLLMModel.js";
 import {InsertTasksToNote} from "../ai-frontend/tools/InsertTasksToNote.jsx";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
@@ -64,17 +64,29 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
     try {
         showEmbedLoader();
         injectAmplenoteColors();
-        window.React = await dynamicImportESM("react");
-        window.ReactDOM = await dynamicImportESM("react-dom/client");
-        window.RadixUI = await dynamicImportESM("@radix-ui/themes");
-        window.AssistantUI = await dynamicImportESM("@assistant-ui/react");
-        window.dayjs = (await dynamicImportESM("dayjs")).default;
+        const cssLoaded = Promise.all([
+                dynamicImportCSS("@assistant-ui/react/dist/styles/index.css"),
+                dynamicImportCSS("@radix-ui/themes/styles.css"),
+                dynamicImportCSS("@assistant-ui/react-markdown/dist/styles/markdown.css")]);
+        const [React, ReactDOM, AssistantUI, AssistantUIUtilsDangerousInBrowserAdapter, AssistantUIUtilssplitLocalRuntimeOptions,
+            RadixUI, AssistantUIMarkdown, RadixIcons, StringDiffModule]
+            = await dynamicImportMultipleESM(["react", "react-dom/client", "@assistant-ui/react",
+                "@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.js",
+                "@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.js", "@radix-ui/themes",
+                "@assistant-ui/react-markdown", "@radix-ui/react-icons", "react-string-diff"]);
+        window.AssistantUIMarkdown = AssistantUIMarkdown.makeMarkdownText();
+        console.log(AssistantUIMarkdown);
+        window.React = React;
+        window.ReactDOM = ReactDOM;
+        window.AssistantUI = AssistantUI;
+        window.RadixUI = RadixUI;
         window.AssistantUIUtils = {};
-        window.AssistantUIUtils.DangerousInBrowserAdapter = (await dynamicImportESM("@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.js")).DangerousInBrowserAdapter;
-        window.AssistantUIUtils.splitLocalRuntimeOptions = (await dynamicImportESM("@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.js")).splitLocalRuntimeOptions;
-        window.RadixIcons = await dynamicImportESM("@radix-ui/react-icons");
+        window.AssistantUIUtils.DangerousInBrowserAdapter = AssistantUIUtilsDangerousInBrowserAdapter.DangerousInBrowserAdapter;
+        window.AssistantUIUtils.splitLocalRuntimeOptions = AssistantUIUtilssplitLocalRuntimeOptions.splitLocalRuntimeOptions;
+        window.RadixIcons = RadixIcons;
+        window.StringDiff = StringDiffModule.StringDiff;
+        window.dayjs = (await dynamicImportESM("dayjs")).default;
         window.Tribute = (await dynamicImportESM("tributejs")).default;
-        window.StringDiff = (await dynamicImportESM("react-string-diff")).StringDiff;
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
         window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(), WebBrowser(),
@@ -88,7 +100,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
             throw new Error("Failed to load React or ReactDOM");
         }
         if(document.querySelector('.app-container'))
-            window.ReactDOM.createRoot(document.querySelector('.app-container')).render(React.createElement(ChatApp));
+            window.ReactDOM.createRoot(document.querySelector('.app-container')).render(<ChatApp />);
     } catch (e) {
         window.document.body.innerHTML = '<div style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
         console.error(e);

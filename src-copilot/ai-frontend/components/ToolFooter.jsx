@@ -50,13 +50,42 @@ export const NoteSelector = ({ noteSelectionArr = [], currentNoteSelectionUUID, 
 
     const { Select } = window.RadixUI;
     const { FileTextIcon } = window.RadixIcons;
+
+    const isDisabled = status === "requires-action" || !isThisToolMessageLast;
+
+    // Hacky handle open state cuz it isn't working atm for unknown reasons
+    const [open, setOpen] = React.useState(false);
+    const selectRef = React.useRef(null);
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (selectRef.current && !selectRef.current.contains(event.target)) {
+                setOpen(false);
+            }
+        };
+        if (open) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [open]);
+
     return (
         <Select.Root
-            disabled={status === "requires-action" || !isThisToolMessageLast}
+            open={open}
+            disabled={isDisabled}
             value={currentNoteSelectionUUID}
-            onValueChange={(value) => setCurrentNoteSelectionUUID(value)}
+            onValueChange={(value) => {
+                console.log(value);
+                setCurrentNoteSelectionUUID(value);
+                setOpen(false);
+            }}
             className="note-selector">
-            <Select.Trigger>
+            <Select.Trigger 
+                onClick={(e) => {
+                    if (isDisabled) return;
+                    setOpen(!open);
+                }}>
                 <FileTextIcon
                     style={{
                         display: "inline-block",
@@ -66,7 +95,7 @@ export const NoteSelector = ({ noteSelectionArr = [], currentNoteSelectionUUID, 
                 />
                 {displayTitle}
             </Select.Trigger>
-            <Select.Content position="popper" sideOffset={5}>
+            <Select.Content position="popper" sideOffset={5} ref={selectRef}>
                 {noteSelectionArr.map((note) => (
                     <Select.Item key={note.uuid} value={note.uuid} className="select-item">
                         <span>{note.title}</span>

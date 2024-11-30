@@ -31,7 +31,6 @@ export const ChatInterface = () => {
         window.userData = {...window.userData, ...userData};    // update userData
     });
     useModelConfig(runtime);
-
     const { Thread } = window.AssistantUI;
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>
@@ -40,6 +39,7 @@ export const ChatInterface = () => {
                 welcome={{
                     suggestions: suggestions,
                 }}
+                assistantMessage={{ components: { Text: AssistantUIMarkdown } }}
                 assistantAvatar={assistantAvatar}
                 tools={window.ALL_TOOLS}
                 components={{

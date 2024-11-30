@@ -2,7 +2,7 @@ import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../com
 import {EMBED_COMMANDS_MOCK} from "../test/embed/chat.testdata.js";
 import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.jsx";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
-import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
+import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
 import {SearchApp} from "../ai-frontend/SearchApp.jsx";
 
 if(process.env.NODE_ENV === 'development') {
@@ -48,10 +48,12 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
     try {
         showEmbedLoader();
         injectAmplenoteColors();
-        window.React = await dynamicImportESM("react");
-        window.ReactDOM = await dynamicImportESM("react-dom/client");
-        window.RadixUI = await dynamicImportESM("@radix-ui/themes");
-        window.RadixIcons = await dynamicImportESM("@radix-ui/react-icons");
+        const cssLoaded = dynamicImportCSS("@radix-ui/themes/styles.css");
+        const [React, ReactDOM, RadixUI, RadixIcons] = await dynamicImportMultipleESM(["react", "react-dom/client", "@radix-ui/themes", "@radix-ui/react-icons"]);
+        window.React = React;
+        window.ReactDOM = ReactDOM;
+        window.RadixUI = RadixUI;
+        window.RadixIcons = RadixIcons;
         await dynamicImportESM("@pinecone-database/pinecone"); // won't use this but preload here
         window.appSettings = await appConnector.getSettings();
         hideEmbedLoader();
@@ -59,7 +61,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
             throw new Error("Failed to load React or ReactDOM");
         }
         if(document.querySelector('.app-container'))
-            window.ReactDOM.createRoot(document.querySelector('.app-container')).render(React.createElement(SearchApp));
+            window.ReactDOM.createRoot(document.querySelector('.app-container')).render(<SearchApp />);
     } catch (e) {
         window.document.body.innerHTML = '<div style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
         console.error(e);
