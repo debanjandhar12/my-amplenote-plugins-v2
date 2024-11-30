@@ -2,18 +2,27 @@ import {ToolCardContainer} from "./ToolCardContainer.jsx";
 
 export const ToolCardMessageWithResult = ({ icon, text, result, color = false }) => {
     const [isCollapsed, setIsCollapsed] = React.useState(true);
+    const [resolvedIcon, setResolvedIcon] = React.useState(icon);
 
     const toggleCollapse = () => {
         setIsCollapsed(!isCollapsed);
     };
+
+    // Set default icon
+    React.useEffect(() => {
+        if (window.RadixIcons && !icon) {
+            const { CheckCircledIcon } = window.RadixIcons;
+            setResolvedIcon(<CheckCircledIcon />);
+        }
+    }, [icon]);
 
     const { Text, Button, ChevronDownIcon, ScrollArea, Code, Flex } = window.RadixUI;
     return (
         <ToolCardContainer>
             <Flex justify="between" align="center">
                 <Flex align="center" gap="2">
-                    {icon && icon}
-                    <Text color={color}>{text}</Text>
+                    {resolvedIcon && resolvedIcon}
+                    {Text && <Text color={color}>{text}</Text>}
                 </Flex>
                 <Button onClick={toggleCollapse} size="1" variant="soft">
                     <ChevronDownIcon style={{ transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }} />
@@ -25,5 +34,5 @@ export const ToolCardMessageWithResult = ({ icon, text, result, color = false })
                 </ScrollArea>
             </div>}
         </ToolCardContainer>
-    )
+    );
 }

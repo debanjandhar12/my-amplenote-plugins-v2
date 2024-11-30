@@ -106,12 +106,11 @@ export const DeleteTasks = () => {
             addResult(resultText);
         },
         renderCompleted: ({formData}) => {
-            return (
-                <ToolCardMessageWithResult result={JSON.stringify(formData.successfulDeletedItems)}
+            const { CheckboxIcon } = window.RadixIcons;
+            return <ToolCardMessageWithResult result={JSON.stringify(formData.successfulDeletedItems)}
                                            text={`${formData.successfulDeletedItems.length} tasks deleted successfully.` +
                                                (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to delete.` : "")}
-                />
-            )
+                                           icon={<CheckboxIcon />} />
         }
     });
 }

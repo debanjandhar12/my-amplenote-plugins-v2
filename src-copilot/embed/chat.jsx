@@ -6,7 +6,7 @@ import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK} from "../test/embed/chat.test
 import {FetchUserTasks} from "../ai-frontend/tools/FetchUserTasks.jsx";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import {WebSearch} from "../ai-frontend/tools/WebSearch.jsx";
-import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.jsx";
+import {overwriteWithAmplenoteStyle} from "../ai-frontend/utils/overwriteWithAmplenoteStyle.jsx";
 import {CreateNewNotes} from "../ai-frontend/tools/CreateNewNotes.jsx";
 import {FetchNoteDetailByNoteUUID} from "../ai-frontend/tools/FetchNoteDetailByNoteUUID.jsx";
 import {SearchNotesByTitleTagsContent} from "../ai-frontend/tools/SearchNotesByTitleTagsContent.jsx";
@@ -63,7 +63,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
 (async () => {
     try {
         showEmbedLoader();
-        injectAmplenoteColors();
+        overwriteWithAmplenoteStyle();
         const cssLoaded = Promise.all([
                 dynamicImportCSS("@assistant-ui/react/dist/styles/index.css"),
                 dynamicImportCSS("@radix-ui/themes/styles.css"),

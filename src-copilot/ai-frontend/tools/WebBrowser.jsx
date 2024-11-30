@@ -1,5 +1,6 @@
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 
 export const WebBrowser = () => {
     return createGenericReadTool({
@@ -25,11 +26,17 @@ export const WebBrowser = () => {
         },
         onCompleted: ({addResult, formData}) => {
             const {pageContent} = formData;
-            addResult(`Fetched page content. Page content: ${pageContent}`);
+            addResult(`Fetched Page content: ${pageContent}`);
+        },
+        renderInit: ({args}) => {
+            const { Spinner } = window.RadixUI;
+            return <ToolCardMessage text={`Fetching page content for ${args.url}...`} icon={<Spinner />} />
         },
         renderCompleted: ({formData}) => {
+            const { GlobeIcon } = window.RadixIcons;
             return <ToolCardMessageWithResult result={formData.pageContent}
-                                              text={`Page content fetched successfully.`}/>
+                                              text={`Page content fetched successfully.`}
+                                              icon={<GlobeIcon />} />
         }
     });
 }

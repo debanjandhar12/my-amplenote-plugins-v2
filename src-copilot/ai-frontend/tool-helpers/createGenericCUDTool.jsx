@@ -24,14 +24,17 @@ export const createGenericCUDTool = ({
                                                  },
                                                  renderWaitingForUserInput = () => {},
                                                  renderSubmitting = () => {
-                                                     return <ToolCardMessage text={`Processing...`} />
+                                                     const { Spinner } = window.RadixUI;
+                                                     return <ToolCardMessage text={`Processing...`} icon={<Spinner />} />
                                                  },
                                                  renderCanceled = () => {
-                                                    return <ToolCardMessage text={`Tool invocation canceled.`} />
+                                                    const { MinusCircledIcon } = window.RadixIcons;
+                                                    return <ToolCardMessage text={`Tool invocation canceled.`} icon={<MinusCircledIcon />} />
                                                  },
                                                  renderCompleted = () => {},
                                                  renderError = ({formError}) => {
-                                                     return <ToolCardMessage text={"Error: " + errorToString(formError)} color="red" />
+                                                     const { ExclamationCircleIcon } = window.RadixIcons;
+                                                     return <ToolCardMessage text={"Error: " + errorToString(formError)} color="red" icon={<ExclamationCircleIcon />} />
                                                  },
 }) => {
     return AssistantUI.makeAssistantToolUI({

@@ -1,5 +1,6 @@
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
+import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 
 export const FetchNoteDetailByNoteUUID = () => {
     return createGenericReadTool({
@@ -56,9 +57,15 @@ export const FetchNoteDetailByNoteUUID = () => {
             const {noteInfoList} = formData;
             addResult(`Fetched note info. Details: ${JSON.stringify(noteInfoList)}`);
         },
+        renderInit: ({args}) => {
+            const { Spinner } = window.RadixUI;
+            return <ToolCardMessage text={`Fetching note details...`} icon={<Spinner />} />
+        },
         renderCompleted: ({formData}) => {
+            const { FileTextIcon } = window.RadixIcons;
             return <ToolCardMessageWithResult result={JSON.stringify(formData.noteInfoList)}
-                                              text={`Note info fetched successfully.`}/>
+                                              text={`Note info fetched successfully.`}
+                                              icon={<FileTextIcon />} />
         }
     });
 }

@@ -47,5 +47,5 @@ export async function getLLMModel(appSettings) {
             basePath: apiUrl    // Default: https://api.openai.com/v1
         }).languageModel(model);
     }
-    else throw new Error('It is likely that incorrect LLM Settings are provided. Please check plugin settings.');
+    else throw new Error('It is likely that incorrect LLM API URL is provided. Please check plugin settings.');
 }

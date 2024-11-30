@@ -1,6 +1,7 @@
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 
 export const FetchUserTasks =() => {
     return createGenericReadTool({
@@ -66,9 +67,15 @@ export const FetchUserTasks =() => {
             const {sqlOutput} = formData;
             addResult(`Fetched ${sqlOutput.length} tasks. Details: ${JSON.stringify(sqlOutput)}`);
         },
+        renderInit: ({args}) => {
+            const { Spinner } = window.RadixUI;
+            return <ToolCardMessage text={`Searching for tasks...`} icon={<Spinner />} />
+        },
         renderCompleted: ({formData}) => {
+            const { CheckboxIcon } = window.RadixIcons;
             return <ToolCardMessageWithResult result={JSON.stringify(formData.sqlOutput)}
-                                              text={`${formData.sqlOutput.length} tasks fetched successfully.`}/>
+                                              text={`${formData.sqlOutput.length} tasks fetched successfully.`}
+                                              icon={<CheckboxIcon />} />
         }
     });
 }

@@ -157,12 +157,11 @@ export const UpdateUserTasks = () => {
             addResult(resultText);
         },
         renderCompleted: ({formData}) => {
-            return (
-                <ToolCardMessageWithResult result={JSON.stringify(formData.successfulUpdatedItems)}
+            const { CheckboxIcon } = window.RadixIcons;
+            return <ToolCardMessageWithResult result={JSON.stringify(formData.successfulUpdatedItems)}
                                            text={`${formData.successfulUpdatedItems.length} tasks updated successfully.` +
                                                (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to update.` : "")}
-                />
-            )
+                                           icon={<CheckboxIcon />} />
         }
     });
 }

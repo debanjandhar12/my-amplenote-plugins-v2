@@ -80,11 +80,11 @@ export const InsertContentToNote = () => {
                 };
                 fetchNoteTitle();
             }, [formData.currentNoteSelectionUUID]);
-            return (
-                <ToolCardMessageWithResult result={formData.content}
+
+            const { FileTextIcon } = window.RadixIcons;
+            return<ToolCardMessageWithResult result={formData.content}
                                            text={`Content inserted successfully to note ${noteTitle} (uuid: ${formData.currentNoteSelectionUUID}).`}
-                />
-            )
+                                           icon={<FileTextIcon />} />
         }
     });
 }

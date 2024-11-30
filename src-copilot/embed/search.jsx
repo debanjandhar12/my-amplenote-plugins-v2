@@ -1,6 +1,6 @@
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK} from "../test/embed/chat.testdata.js";
-import {injectAmplenoteColors} from "../ai-frontend/utils/injectAmplenoteColors.jsx";
+import {overwriteWithAmplenoteStyle} from "../ai-frontend/utils/overwriteWithAmplenoteStyle.jsx";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
 import {SearchApp} from "../ai-frontend/SearchApp.jsx";
@@ -47,7 +47,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
 (async () => {
     try {
         showEmbedLoader();
-        injectAmplenoteColors();
+        overwriteWithAmplenoteStyle();
         const cssLoaded = dynamicImportCSS("@radix-ui/themes/styles.css");
         const [React, ReactDOM, RadixUI, RadixIcons] = await dynamicImportMultipleESM(["react", "react-dom/client", "@radix-ui/themes", "@radix-ui/react-icons"]);
         window.React = React;

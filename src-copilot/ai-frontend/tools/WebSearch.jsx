@@ -1,5 +1,6 @@
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
 import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 
 export const WebSearch = () => {
     return createGenericReadTool({
@@ -27,9 +28,15 @@ export const WebSearch = () => {
             const {searchResults} = formData;
             addResult(`Search completed. Search Result: ${JSON.stringify(searchResults)}`);
         },
+        renderInit: ({args}) => {
+            const { Spinner } = window.RadixUI;
+            return <ToolCardMessage text={`Searching web for ${args.query}...`} icon={<Spinner />} />
+        },
         renderCompleted: ({formData}) => {
+            const { GlobeIcon } = window.RadixIcons;
             return <ToolCardMessageWithResult result={JSON.stringify(formData.searchResults)}
-                                              text={`Search completed!`}/>
+                                              text={`Search completed!`}
+                                              icon={<GlobeIcon />} />
         }
     });
 }

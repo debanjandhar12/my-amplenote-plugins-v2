@@ -56,17 +56,21 @@ export const SearchNotesByTitleTagsContent = () => {
         renderInit: ({args, formData}) => {
             const {isPineconeSearchPossible, isPineconeError} = formData;
             const {Text} = window.RadixUI;
-            const {ExclamationTriangleIcon} = window.RadixIcons;
+            const {ExclamationTriangleIcon, Spinner} = window.RadixIcons;
             if (isPineconeSearchPossible && isPineconeError) {
                 return <ToolCardContainer>
                     <Text css={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'crimson' }}>
                         <ExclamationTriangleIcon />
                         Pinecone search failed: {errorToString(formData.pineconeError)}
                     </Text>
-                    <Text>Searching for {JSON.stringify(args)} using amplenote built-in search...</Text>
+                    <Text css={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Spinner />
+                        Searching for {JSON.stringify(args)} using amplenote built-in search...
+                    </Text>
                 </ToolCardContainer>
             }
-            return <ToolCardMessage text={`Searching for ${JSON.stringify(args)} using amplenote built-in search...`}/>
+            return <ToolCardMessage text={`Searching for ${JSON.stringify(args)} using amplenote built-in search...`}
+                                    icon={<Spinner />} />
         },
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
             console.log('SearchNotesByTitleTagsContent onInit', args);
@@ -200,8 +204,9 @@ export const SearchNotesByTitleTagsContent = () => {
             if (formData.isPineconeSearchPossible && formData.pineconeError) {
                 text = `Search completed using fallback amplenote built-in search. Pinecone failed with error: ${errorToString(formData.pineconeError)}\n ${formData.searchResults.length} results fetched.`;
             }
+            const { MagnifyingGlassIcon } = window.RadixIcons;
             return <ToolCardMessageWithResult result={JSON.stringify(formData.searchResults)}
-                                              text={text}/>
+                                              text={text} icon={<MagnifyingGlassIcon />}/>
         }
     });
 };

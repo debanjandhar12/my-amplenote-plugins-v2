@@ -146,12 +146,11 @@ export const UpdateUserNotes = () => {
             addResult(resultText);
         },
         renderCompleted: ({formData}) => {
-            return (
-                <ToolCardMessageWithResult result={JSON.stringify(formData.successfulUpdatedItems)}
+            const { FileTextIcon } = window.RadixIcons;
+            return <ToolCardMessageWithResult result={JSON.stringify(formData.successfulUpdatedItems)}
                                            text={`${formData.successfulUpdatedItems.length} notes updated successfully.` +
                                                (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} notes failed to update.` : "")}
-                />
-            )
+                                           icon={<FileTextIcon />} />
         }
     });
 }

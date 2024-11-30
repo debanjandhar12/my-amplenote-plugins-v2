@@ -1,3 +1,5 @@
+import {truncate} from "lodash-es";
+
 /**
  * Creates a table for selecting items, with optional diff view when oldItemContainerList is provided.
  * @param status Current status
@@ -25,7 +27,7 @@ export const ItemSelectionTable = ({
         return keys;
     }, []);
 
-    const formatValue = (value) => {
+    const formatStringValue = (value, key) => {
         try {
             if (isNaN(value) && (typeof value === 'string' && isNaN(Number(value)))) {
                 const date = new Date(value);
@@ -43,7 +45,8 @@ export const ItemSelectionTable = ({
     };
 
     const renderCell = (itemContainer, index, key) => {
-        if (isDiffView) {
+        if (isDiffView &&
+            oldItemContainerList[index].item[key] !== itemContainer.item[key]) {
             const StringDiff = window.StringDiff;
             return (
                 <StringDiff
@@ -56,23 +59,25 @@ export const ItemSelectionTable = ({
                             backgroundColor: '#ff6b6b',
                         }
                     }}
-                    oldValue={formatValue(oldItemContainerList[index].item[key])}
-                    newValue={formatValue(itemContainer.item[key])}
+                    oldValue={formatStringValue(oldItemContainerList[index].item[key])}
+                    newValue={formatStringValue(itemContainer.item[key])}
                     showDiff={true}
                 />
             );
+        } else if (key.toLowerCase().includes('uuid')) {
+            return <TruncatedUUID value={itemContainer.item[key]} />;
         }
-        return formatValue(itemContainer.item[key]);
+        return formatStringValue(itemContainer.item[key]);
     };
 
     const { Table, Checkbox } = window.RadixUI;
-    const { CheckboxIcon } = window.RadixIcons;
+    const { CheckIcon, InfoCircledIcon } = window.RadixIcons;
     return (
         <Table.Root>
             <Table.Header>
                 <Table.Row>
                     <Table.ColumnHeaderCell style={{ verticalAlign: 'middle' }}>
-                        <CheckboxIcon />
+                        <CheckIcon />
                     </Table.ColumnHeaderCell>
                     {allItemKeys.map((key) => (
                         <Table.ColumnHeaderCell key={key}>
@@ -100,5 +105,23 @@ export const ItemSelectionTable = ({
                 ))}
             </Table.Body>
         </Table.Root>
+    );
+};
+
+const TruncatedUUID = ({ value }) => {
+    const truncated = truncate(value, { length: 5, omission: '...' });
+
+    const { InfoCircledIcon } = window.RadixIcons;
+    const { Flex, Tooltip } = window.RadixUI;
+
+    return (
+        <Flex align="center" gap="2">
+            <span>{truncated}</span>
+            <Flex align="center" css={{ cursor: 'help' }}>
+                <Tooltip content={value}>
+                    <InfoCircledIcon />
+                </Tooltip>
+            </Flex>
+        </Flex>
     );
 };

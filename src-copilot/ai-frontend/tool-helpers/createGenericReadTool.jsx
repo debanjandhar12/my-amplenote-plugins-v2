@@ -14,11 +14,13 @@ export const createGenericReadTool = ({
                                               addResult(`Error: ${errorToString(formError)}. Tool invocation failed. Input: ${JSON.stringify(args)}`);
                                           },
                                           renderInit = () => {
-                                              return <ToolCardMessage text="Processing..."/>
+                                              const { Spinner } = window.RadixUI;
+                                              return <ToolCardMessage text={`Processing...`} icon={<Spinner />} />
                                           },
                                           renderCompleted = () => {},
                                           renderError = ({formError}) => {
-                                              return <ToolCardMessage text={"Error: " + errorToString(formError)} color="red"/>
+                                              const { ExclamationCircleIcon } = window.RadixIcons;
+                                              return <ToolCardMessage text={"Error: " + errorToString(formError)} color="red" icon={<ExclamationCircleIcon />} />
                                           },
 }) => {
     return AssistantUI.makeAssistantToolUI({

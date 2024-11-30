@@ -137,12 +137,12 @@ export const InsertTasksToNote = () => {
                 };
                 fetchNoteTitle();
             }, [formData.currentNoteSelectionUUID]);
-            return (
-                <ToolCardMessageWithResult result={JSON.stringify(formData.successfulInsertedItems)}
+
+            const { CheckboxIcon } = window.RadixIcons;
+            return <ToolCardMessageWithResult result={JSON.stringify(formData.successfulInsertedItems)}
                                            text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${noteTitle}.` +
                                                (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to insert.` : "")}
-                />
-            )
+                                           icon={<CheckboxIcon />} />
         }
     });
 }

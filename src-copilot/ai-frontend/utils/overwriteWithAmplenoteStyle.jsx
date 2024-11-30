@@ -1,4 +1,4 @@
-export const injectAmplenoteColors = () => {
+export const overwriteWithAmplenoteStyle = () => {
     const body = document.body;
     // Inject Radix UI colors
     const styleEl = document.createElement('style');
@@ -143,6 +143,11 @@ export const injectAmplenoteColors = () => {
             }
         }
     }`.replace(/\s+/g, ' ').trim();
+    styleEl.innerText += `
+    .app-container .radix-themes {
+        --default-font-size: 15px;
+    }
+    `.replace(/\s+/g, ' ').trim();
     body.appendChild(styleEl);
 
     // Inject Assistant UI colors
