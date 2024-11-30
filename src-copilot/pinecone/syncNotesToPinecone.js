@@ -9,14 +9,23 @@ import {getCorsBypassUrl} from "../../common-utils/cors-helpers.js";
  * @param app
  * @returns {Promise<void>}
  */
-export const syncNotes = async (app) => {
+export const syncNotesToPinecone = async (app) => {
     // -- Initialize pinecone client --
     const { Pinecone } = await dynamicImportESM("@pinecone-database/pinecone");
     const pineconeClient = new Pinecone({
         apiKey: app.settings[PINECONE_API_KEY_SETTING],
-        fetchApi: (url, options) => {
-            url = getCorsBypassUrl(url);
-            return fetch(url, options);
+        fetchApi: async (url, options) => {
+            if (!window.useCorsBypassForPinecone) {
+                try {
+                    return await fetch(url, options);
+                } catch (error) {
+                    if (!error.message?.includes('CORS')) {
+                        throw error;
+                    }
+                    window.useCorsBypassForPinecone = true;
+                }
+            }
+            return fetch(getCorsBypassUrl(url), options);
         }
     });
     const indexName = PINECONE_INDEX_NAME;
@@ -130,7 +139,8 @@ const createIndexIfNotExists = async (pineconeClient, indexName) => {
                     cloud: 'aws',
                     region: 'us-east-1'
                 }
-            }
+            },
+            waitUntilReady: true,
         });
     }
 }
@@ -141,7 +151,8 @@ const deleteNamespaceEntries = async (namespace, noteUUIDList) => {
         namespaceNoteUUIds = [...namespaceNoteUUIds, ...(await namespace.listPaginated({ prefix: noteUUID, limit: 100 }))
             .vectors.map((vector) => vector.id)];
     }
-    if (namespaceNoteUUIds.length > 0) {
-        await namespace.deleteMany(namespaceNoteUUIds);
+    for (let i = 0; i < namespaceNoteUUIds.length; i += 900) {
+        const chunk = namespaceNoteUUIds.slice(i, i + 900);
+        await namespace.deleteMany(chunk);
     }
 };

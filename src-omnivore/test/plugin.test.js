@@ -2,11 +2,12 @@ import {mockApp, mockNote, mockPlugin} from "../../common-utils/test-helpers.js"
 import pluginObject from "../plugin.js"
 import {deleteOmnivoreItem, saveOmnivoreItem} from "../omnivore/api-extended.js";
 import 'cross-fetch/polyfill';
-import {OMINOVRE_API_ENDPOINT, OMNIVORE_API_KEY_SETTING, OMNIVORE_DASHBOARD_COLUMNS_SETTING} from "../constants.js";
+import { OMNIVORE_API_KEY_SETTING, OMNIVORE_DASHBOARD_COLUMNS_SETTING} from "../constants.js";
 import {generateDashboardTable} from "../amplenote/generate-markdown.js";
 import {SAMPLE_OMNIVORE_STATE_DATA} from "./test-data.js";
 import MarkdownIt from "markdown-it";
 import {sortOmnivoreItemHighlights, sortOmnivoreItems} from "../amplenote/util.js";
+import {getOmnivoreApiUrl} from "../omnivore/getOmnivoreUrl.js";
 
 describe("_syncStateWithOmnivore", () => {
     it('when adding / deleting articles, correct ' +
@@ -26,10 +27,10 @@ describe("_syncStateWithOmnivore", () => {
 
         const newItem1 = await saveOmnivoreItem(process.env.OMNIVORE_KEY,
             "https://github.com/omnivore-app/omnivore/blob/main/packages/api/src/schema.ts",
-            OMINOVRE_API_ENDPOINT);
+            getOmnivoreApiUrl(global.app.settings));
         const newItem2 = await saveOmnivoreItem(process.env.OMNIVORE_KEY,
             "https://github.com/omnivore-app/omnivore/commit/dfdb04af9233c4386440db461ac69c9df9e94901",
-            OMINOVRE_API_ENDPOINT);
+            getOmnivoreApiUrl(global.app.settings));
         await new Promise(resolve => setTimeout(resolve, 6000));
         const secondFetch = await plugin._syncStateWithOmnivore.call(plugin, global.app);
         expect(secondFetch.omnivoreItemsStateDelta.length).toBe(2);
@@ -37,8 +38,8 @@ describe("_syncStateWithOmnivore", () => {
         expect(secondFetch.omnivoreDeletedItems.length).toBe(0);
 
 
-        await deleteOmnivoreItem(process.env.OMNIVORE_KEY, newItem1.id, OMINOVRE_API_ENDPOINT);
-        await deleteOmnivoreItem(process.env.OMNIVORE_KEY, newItem2.id, OMINOVRE_API_ENDPOINT);
+        await deleteOmnivoreItem(process.env.OMNIVORE_KEY, newItem1.id, getOmnivoreApiUrl(global.app.settings));
+        await deleteOmnivoreItem(process.env.OMNIVORE_KEY, newItem2.id, getOmnivoreApiUrl(global.app.settings));
         await new Promise(resolve => setTimeout(resolve, 6000));
         const thirdFetch = await plugin._syncStateWithOmnivore.call(plugin, global.app);
         expect(thirdFetch.omnivoreItemsStateDelta.length).toBe(0);
@@ -57,20 +58,20 @@ describe("_syncStateWithOmnivore", () => {
 
         const newItem1 = await saveOmnivoreItem(process.env.OMNIVORE_KEY,
             "https://github.com/omnivore-app/omnivore/blob/main/packages/api/src/schema.ts",
-            OMINOVRE_API_ENDPOINT);
+            getOmnivoreApiUrl(global.app.settings));
         await new Promise(resolve => setTimeout(resolve, 6000));
         const firstFetch = await plugin._syncStateWithOmnivore.call(plugin, global.app);
         const itemFirstFetch = firstFetch.omnivoreItemsState.find(n => n.id === newItem1.id);
 
         const discard = await saveOmnivoreItem(process.env.OMNIVORE_KEY,
             "https://github.com/omnivore-app/omnivore/blob/main/packages/api/src/schema.ts",
-            OMINOVRE_API_ENDPOINT); // Emulate highlights to the article by saving it again
+            getOmnivoreApiUrl(global.app.settings)); // Emulate highlights to the article by saving it again
         await new Promise(resolve => setTimeout(resolve, 6000));
         const secondFetch = await plugin._syncStateWithOmnivore.call(plugin, global.app);
         const itemSecondFetch = secondFetch.omnivoreItemsState.find(n => n.id === newItem1.id);
         expect(secondFetch.omnivoreItemsStateDelta.length).toBe(1);
         expect(itemFirstFetch.updatedAt).not.toBe(itemSecondFetch.updatedAt);
-        await deleteOmnivoreItem(process.env.OMNIVORE_KEY, newItem1.id, OMINOVRE_API_ENDPOINT);
+        await deleteOmnivoreItem(process.env.OMNIVORE_KEY, newItem1.id, getOmnivoreApiUrl(global.app.settings));
     }, 40000);
 });
 

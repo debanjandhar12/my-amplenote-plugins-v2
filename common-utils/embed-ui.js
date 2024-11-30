@@ -1,4 +1,7 @@
 export function showEmbedLoader() {
+    // Start timer for performance monitoring
+    window.LoadingStartTime = performance.now();
+
     // Create overlay
     const overlay = document.createElement('div');
     overlay.id = 'embed-loader-overlay';
@@ -57,6 +60,9 @@ export function showEmbedLoader() {
 }
 
 export function hideEmbedLoader() {
+    window.LoadingEndTime = performance.now();
+    console.log('Loading time:', window.LoadingEndTime - window.LoadingStartTime);
+
     const loader = document.getElementById('embed-loader');
     const overlay = document.getElementById('embed-loader-overlay');
     if (loader) {

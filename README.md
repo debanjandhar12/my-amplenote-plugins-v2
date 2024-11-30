@@ -8,6 +8,8 @@ Current plugin list:
 - [x] Amplenote Mindmap Plugin
 - [x] Amplenote Text2Dia Plugin
 - [x] Amplenote Autolink Plugin
+- [x] Amplenote Bigmoji Plugin
+- [ ] Amplenote Copilot Plugin
 
 # Building, Testing, and Running Plugins
 

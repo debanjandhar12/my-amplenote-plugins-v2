@@ -31,9 +31,9 @@ window.appConnector = new Proxy({}, {
 window.appSettings = window.appSettings || {};
 
 // send signal to so that onclose event can be detected
-setInterval(() => {
+setInterval(async () => {
     if (document.querySelector('.app-container')) {
-        if(!window.appConnector.refreshTimeout())
+        if(!(await window.appConnector.refreshTimeout()))
             showCloseWindowPage();
     }
 }, 100);
@@ -64,18 +64,26 @@ const showCloseWindowPage = () => {
 }
 
 export const App = () => {
+    const [currentPage, setCurrentPage] = React.useState('emoji-picker');
     const [emojiObj, setEmojiObj] = React.useState(null);
     useCustomStyles();
+    const getInitialSearch = () => {
+        if (emojiObj?.native) return emojiObj.native;
+        if (window.emojiData?.native) return window.emojiData.native;
+        return emojiObj?.emojiCode || window.emojiData?.emojiCode;  // for custom emojis, use emojiCode (emojiID)
+    }
     const handleEmojiSelect = (emoji) => {
         console.log(emoji);
         setEmojiObj({
             emojiUUID: Math.random().toString(36).substring(7),
             type: emoji.unified ? 'default' : 'custom',
-            emojiCode: emoji.unified,
+            emojiCode: emoji.unified || emoji.id,
             url: emoji.src, // will be null if emoji is default
-            size: '32',
+            native: emoji.native, // can be null
+            size: emojiObj?.size,
             skin: emoji.skin // this can be null
         });
+        setCurrentPage('emoji-size');
     };
     const handleAddCustomEmoji = async () => {
         return new Promise((resolve, reject) => {
@@ -99,7 +107,7 @@ export const App = () => {
                             if (!emojiId || emojiId.trim() === "") {
                                 app.alert("Emoji name cannot be empty");
                             }
-                            await appConnector.addCustomEmoji(emojiId, imageBase64);
+                            await appConnector.addCustomEmoji(emojiId.replaceAll(/\s+/g, '_'), imageBase64);
                             resolve();
                         } catch (error) {
                             reject(error);
@@ -113,15 +121,18 @@ export const App = () => {
             input.click();
         });
     };
-    const handleSubmit = (size) => {
+    const handleSubmit = () => {
         window.appConnector.setEmbedResult({
-            ...emojiObj,
-            size
+            ...emojiObj
         });
         showCloseWindowPage();
     };
-    return(!emojiObj ?
-        <EmojiPickerPage onSelectEmoji={handleEmojiSelect} onAddCustomEmoji={handleAddCustomEmoji} />  :
-        <EmojiSizePage selectedEmoji={emojiObj} onSubmit={handleSubmit} />
+    return(currentPage === 'emoji-picker' ?
+        <EmojiPickerPage
+            initialSearch={getInitialSearch()}
+            onSelectEmoji={handleEmojiSelect} onAddCustomEmoji={handleAddCustomEmoji} />  :
+        <EmojiSizePage selectedEmoji={emojiObj}
+                       setSelectedEmoji={setEmojiObj}
+                       onSubmit={handleSubmit} setCurrentPage={setCurrentPage} />
     )
 };

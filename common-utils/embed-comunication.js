@@ -18,13 +18,64 @@ export const COMMON_EMBED_COMMANDS = {
         return app.setSetting(key, value);
     },
     "getNoteTitleByUUID": async (app, noteUUID) =>  {
-        return (await app.notes.find(noteUUID)).name;
+        return (await app.notes.find(noteUUID))?.name;
     },
     "getNoteContentByUUID": async (app, noteUUID) => {
-        return await app.getNoteContent({uuid: noteUUID});
+        if (await app.notes.find(noteUUID)) {
+            return await app.getNoteContent({uuid: noteUUID});
+        }
+        return null;
+    },
+    "getNoteBacklinksByUUID": async (app, noteUUID) => {
+        return await (await app.notes.find(noteUUID))?.backlinks();
+    },
+    "getNoteTagsByUUID": async (app, noteUUID) => {
+        return (await app.notes.find(noteUUID))?.tags;
     },
     "getNoteSections": async (app, ...args) => {
         return await app.getNoteSections(...args);
+    },
+    "insertTask": async (app, ...args) => {
+        return await app.insertTask(...args);
+    },
+    "updateTask": async (app, ...args) => {
+        return await app.updateTask(...args);
+    },
+    "createNote": async (app, ...args) => {
+        return await app.createNote(...args);
+    },
+    "deleteNote": async (app, ...args) => {
+        return await app.deleteNote(...args);
+    },
+    "replaceNoteContent": async (app, ...args) => {
+        return await app.replaceNoteContent(...args);
+    },
+    "setNoteName": async (app, ...args) => {
+        return await app.setNoteName(...args);
+    },
+    "addNoteTag": async (app, ...args) => {
+        return await app.addNoteTag(...args);
+    },
+    "removeNoteTag": async (app, ...args) => {
+        return await app.removeNoteTag(...args);
+    },
+    "insertNoteContent": async (app, ...args) => {
+        return await app.insertNoteContent(...args);
+    },
+    "getTaskDomains": async (app) => {
+        return await app.getTaskDomains();
+    },
+    "getTaskDomainTasks": async (app, ...args) => {
+        return await app.getTaskDomainTasks(...args);
+    },
+    "getTask": async (app, ...args) => {
+        return await app.getTask(...args);
+    },
+    "findNote": async (app, ...args) => {
+        return await app.findNote(...args);
+    },
+    "filterNotes": async (app, ...args) => {
+        return await app.filterNotes(...args);
     },
     "saveFile": async (app, ...args) => {
         try {
@@ -40,16 +91,18 @@ export const COMMON_EMBED_COMMANDS = {
     }
 }
 
-export function createOnEmbedCallHandler(embedCommands = {}) {
+export function createOnEmbedCallHandler(embedCommands = {}, logBlacklistedCommands = []) {
     return async function onEmbedCallHandler(app, commandName, ...args) {
-        console.log('onEmbedCall', commandName, args);
         try {
             if (commandName in embedCommands) {
-                return await embedCommands[commandName](app, ...args);
+                const result = await embedCommands[commandName](app, ...args);
+                if (!logBlacklistedCommands.includes(commandName))
+                    console.log('onEmbedCall:', commandName, args, result);
+                return result;
             }
         } catch (e) {
             app.alert("Error:", e.message || e);
-            console.error(e);
+            console.error('onEmbedCall:', commandName, args, e);
             throw e;
         }
         throw new Error(`Unknown command: ${commandName}`);

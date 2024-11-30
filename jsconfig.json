@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
+    "jsx": "react",
     "module": "esnext",
-    "target": "es2019"
+    "target": "es2019",
+    "checkJs": true,
+    "allowJs": true
   },
-  "include": ["*"]
+  "include": ["*"],
+  "exclude": ["node_modules", "dist"]
 }
