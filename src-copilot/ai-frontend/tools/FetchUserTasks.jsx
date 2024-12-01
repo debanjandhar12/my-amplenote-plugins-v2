@@ -60,22 +60,25 @@ export const FetchUserTasks =() => {
             window.tasksCollection = tasksCollection;
             const queryObj = processQuery(args.query);
             const results = tasksCollection.find(queryObj);
-            setFormData({...formData, sqlOutput: results});
+            setFormData({...formData, queryResult: results});
             setFormState('completed');
         },
         onCompleted: ({addResult, formData}) => {
-            const {sqlOutput} = formData;
-            addResult(`Fetched ${sqlOutput.length} tasks. Details: ${JSON.stringify(sqlOutput)}`);
+            const {queryResult} = formData;
+            addResult(`Fetched ${queryResult.length} tasks. Details: ${JSON.stringify(queryResult)}`);
         },
         renderInit: ({args}) => {
             const { Spinner } = window.RadixUI;
             return <ToolCardMessage text={`Searching for tasks...`} icon={<Spinner />} />
         },
-        renderCompleted: ({formData}) => {
+        renderCompleted: ({formData, toolName, args}) => {
             const { CheckboxIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult result={JSON.stringify(formData.sqlOutput)}
-                                              text={`${formData.sqlOutput.length} tasks fetched successfully.`}
-                                              icon={<CheckboxIcon />} />
+            return <ToolCardMessageWithResult
+                result={JSON.stringify(formData.queryResult)}
+                text={`${formData.queryResult.length} tasks fetched successfully.`}
+                icon={<CheckboxIcon />}
+                toolName={toolName}
+                input={args} />
         }
     });
 }

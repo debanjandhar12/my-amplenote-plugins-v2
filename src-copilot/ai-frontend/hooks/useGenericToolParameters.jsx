@@ -1,6 +1,7 @@
 import {truncate} from "lodash-es";
 
-export const useGenericToolParameters = ({ args, status, result, addResult }) => {
+export const useGenericToolParameters = ({ toolName, description, parameters,
+                                             args, status, result, addResult }) => {
     const [formData, setFormData] = React.useState({});
     const [formError, setFormError] = React.useState(null);
 
@@ -24,6 +25,9 @@ export const useGenericToolParameters = ({ args, status, result, addResult }) =>
     }
 
     return {
+        toolName,
+        description,
+        parameters,
         args, 
         status, 
         result, 

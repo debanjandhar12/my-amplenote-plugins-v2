@@ -199,14 +199,18 @@ export const SearchNotesByTitleTagsContent = () => {
             const {searchResults} = formData;
             addResult(`Search completed. Search Result: ${JSON.stringify(searchResults)}`);
         },
-        renderCompleted: ({formData}) => {
+        renderCompleted: ({formData, toolName, args}) => {
             let text = `Search completed! ${formData.searchResults.length} results fetched.`;
             if (formData.isPineconeSearchPossible && formData.pineconeError) {
                 text = `Search completed using fallback amplenote built-in search. Pinecone failed with error: ${errorToString(formData.pineconeError)}\n ${formData.searchResults.length} results fetched.`;
             }
             const { MagnifyingGlassIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult result={JSON.stringify(formData.searchResults)}
-                                              text={text} icon={<MagnifyingGlassIcon />}/>
+            return <ToolCardMessageWithResult 
+                result={JSON.stringify(formData.searchResults)}
+                text={text}
+                icon={<MagnifyingGlassIcon />}
+                toolName={toolName}
+                input={args} />
         }
     });
 };

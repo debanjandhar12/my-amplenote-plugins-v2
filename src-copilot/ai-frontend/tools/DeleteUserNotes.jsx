@@ -111,12 +111,15 @@ export const DeleteUserNotes = () => {
             }
             addResult(resultText);
         },
-        renderCompleted: ({formData}) => {
+        renderCompleted: ({formData, toolName, args}) => {
             const { FileTextIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult result={JSON.stringify(formData.successfulDeletedItems)}
-                                           text={`${formData.successfulDeletedItems.length} notes deleted successfully.` +
-                                               (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} notes failed to delete.` : "")}
-                                           icon={<FileTextIcon />} />
+            return <ToolCardMessageWithResult 
+                result={JSON.stringify(formData.successfulDeletedItems)}
+                text={`${formData.successfulDeletedItems.length} notes deleted successfully.` +
+                    (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} notes failed to delete.` : "")}
+                icon={<FileTextIcon />}
+                toolName={toolName}
+                input={args} />
         }
     })
 }

@@ -71,7 +71,7 @@ export const InsertContentToNote = () => {
             const noteTitle = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
             addResult(`Content inserted successfully to note ${noteTitle} (uuid: ${formData.currentNoteSelectionUUID}).`);
         },
-        renderCompleted: ({formData}) => {
+        renderCompleted: ({formData, toolName, args}) => {
             const [noteTitle, setNoteTitle] = React.useState(null);
             React.useEffect(() => {
                 const fetchNoteTitle = async () => {
@@ -82,9 +82,12 @@ export const InsertContentToNote = () => {
             }, [formData.currentNoteSelectionUUID]);
 
             const { FileTextIcon } = window.RadixIcons;
-            return<ToolCardMessageWithResult result={formData.content}
-                                           text={`Content inserted successfully to note ${noteTitle} (uuid: ${formData.currentNoteSelectionUUID}).`}
-                                           icon={<FileTextIcon />} />
+            return <ToolCardMessageWithResult
+                result={formData.content}
+                text={`Content inserted successfully to note ${noteTitle} (uuid: ${formData.currentNoteSelectionUUID})`}
+                icon={<FileTextIcon />}
+                toolName={toolName}
+                input={args} />
         }
     });
 }

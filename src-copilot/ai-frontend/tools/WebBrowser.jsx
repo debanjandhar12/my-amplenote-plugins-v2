@@ -32,11 +32,14 @@ export const WebBrowser = () => {
             const { Spinner } = window.RadixUI;
             return <ToolCardMessage text={`Fetching page content for ${args.url}...`} icon={<Spinner />} />
         },
-        renderCompleted: ({formData}) => {
+        renderCompleted: ({formData, toolName, args}) => {
             const { GlobeIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult result={formData.pageContent}
-                                              text={`Page content fetched successfully.`}
-                                              icon={<GlobeIcon />} />
+            return <ToolCardMessageWithResult 
+                result={formData.pageContent}
+                text={`Page content fetched successfully.`}
+                icon={<GlobeIcon />}
+                toolName={toolName}
+                input={args} />
         }
     });
 }

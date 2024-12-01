@@ -61,11 +61,14 @@ export const FetchNoteDetailByNoteUUID = () => {
             const { Spinner } = window.RadixUI;
             return <ToolCardMessage text={`Fetching note details...`} icon={<Spinner />} />
         },
-        renderCompleted: ({formData}) => {
+        renderCompleted: ({formData, toolName, args}) => {
             const { FileTextIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult result={JSON.stringify(formData.noteInfoList)}
-                                              text={`Note info fetched successfully.`}
-                                              icon={<FileTextIcon />} />
+            return <ToolCardMessageWithResult 
+                result={JSON.stringify(formData.noteInfoList)}
+                text={`Note info fetched successfully.`}
+                icon={<FileTextIcon />}
+                toolName={toolName}
+                input={args} />
         }
     });
 }

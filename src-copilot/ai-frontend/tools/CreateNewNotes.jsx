@@ -107,12 +107,15 @@ export const CreateNewNotes = () => {
             }
             addResult(resultText);
         },
-        renderCompleted: ({formData}) => {
+        renderCompleted: ({formData, toolName, args}) => {
             const { FileTextIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult result={JSON.stringify(formData.successfulCreatedItems)}
-                                           text={`${formData.successfulCreatedItems.length} notes created successfully.` +
-                                               (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} notes failed to create.` : "")}
-                                           icon={<FileTextIcon />} />
+            return <ToolCardMessageWithResult 
+                result={JSON.stringify(formData.successfulCreatedItems)}
+                text={`${formData.successfulCreatedItems.length} notes created successfully.` +
+                    (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} notes failed to create.` : "")}
+                icon={<FileTextIcon />}
+                toolName={toolName}
+                input={args} />
         }
     });
 }

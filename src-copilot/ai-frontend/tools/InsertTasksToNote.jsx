@@ -128,21 +128,24 @@ export const InsertTasksToNote = () => {
             }
             addResult(resultText);
         },
-        renderCompleted: ({formData}) => {
+        renderCompleted: ({formData, args, toolName}) => {
             const [noteTitle, setNoteTitle] = React.useState(null);
             React.useEffect(() => {
                 const fetchNoteTitle = async () => {
-                            const title = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
-                            setNoteTitle(title);
+                    const title = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
+                    setNoteTitle(title);
                 };
                 fetchNoteTitle();
             }, [formData.currentNoteSelectionUUID]);
 
             const { CheckboxIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult result={JSON.stringify(formData.successfulInsertedItems)}
-                                           text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${noteTitle}.` +
-                                               (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to insert.` : "")}
-                                           icon={<CheckboxIcon />} />
+            return <ToolCardMessageWithResult 
+                result={JSON.stringify(formData.successfulInsertedItems)}
+                text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${noteTitle} (uuid: ${formData.currentNoteSelectionUUID}).` +
+                    (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to insert.` : "")}
+                icon={<CheckboxIcon />}
+                toolName={toolName}
+                input={args} />
         }
     });
 }

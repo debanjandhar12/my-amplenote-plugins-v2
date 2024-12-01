@@ -89,7 +89,7 @@ const useSearch = () => {
 
 // SearchStatus component to handle different states
 const SearchStatus = ({ isLoading, error, isSyncing, syncError, searchText, searchResults }) => {
-    const {Box} = window.RadixUI;
+    const {Box, Spinner} = window.RadixUI;
 
     if (isSyncing) {
         return (
@@ -110,7 +110,7 @@ const SearchStatus = ({ isLoading, error, isSyncing, syncError, searchText, sear
     if (isLoading) {
         return (
             <Box style={{ padding: '20px', textAlign: 'center' }}>
-                Loading...
+                <Spinner /> Loading...
             </Box>
         );
     }

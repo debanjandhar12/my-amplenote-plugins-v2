@@ -19,8 +19,8 @@ export const createGenericReadTool = ({
                                           },
                                           renderCompleted = () => {},
                                           renderError = ({formError}) => {
-                                              const { ExclamationCircleIcon } = window.RadixIcons;
-                                              return <ToolCardMessage text={"Error: " + errorToString(formError)} color="red" icon={<ExclamationCircleIcon />} />
+                                              const { ExclamationTriangleIcon } = window.RadixIcons;
+                                              return <ToolCardMessage text={"Error: " + errorToString(formError)} color="red" icon={<ExclamationTriangleIcon />} />
                                           },
 }) => {
     return AssistantUI.makeAssistantToolUI({
@@ -29,7 +29,9 @@ export const createGenericReadTool = ({
         parameters,
         triggerCondition,
         render: ({args, result, addResult, status}) => {
-            const allParameters = useGenericToolParameters({args, status, result, addResult});
+            const allParameters = useGenericToolParameters({
+                toolName, description, parameters,
+                args, status, result, addResult});
 
             const [formState, setFormState, formRender] = useGenericToolFormState({
                 init: {

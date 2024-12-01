@@ -32,11 +32,14 @@ export const WebSearch = () => {
             const { Spinner } = window.RadixUI;
             return <ToolCardMessage text={`Searching web for ${args.query}...`} icon={<Spinner />} />
         },
-        renderCompleted: ({formData}) => {
+        renderCompleted: ({formData, toolName, args}) => {
             const { GlobeIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult result={JSON.stringify(formData.searchResults)}
-                                              text={`Search completed!`}
-                                              icon={<GlobeIcon />} />
+            return <ToolCardMessageWithResult 
+                result={JSON.stringify(formData.searchResults)}
+                text={`Search completed!`}
+                icon={<GlobeIcon />}
+                toolName={toolName}
+                input={args} />
         }
     });
 }
