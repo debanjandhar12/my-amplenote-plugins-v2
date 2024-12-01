@@ -29,21 +29,21 @@ export const WebSearch = () => {
         },
         renderCompleted: ({formData}) => {
             return <ToolCardMessageWithResult result={JSON.stringify(formData.searchResults)}
-                                              text={`Search completed! ${formData.searchResults.length} results fetched.`}/>
+                                              text={`Search completed!`}/>
         }
     });
 }
 
 const search = async (query, signal) => {
-    // Use jira reader as cors bypass
-    const response = await fetch(`https://r.jina.ai/https://search.projectsegfau.lt/search?q=${encodeURIComponent(query)}&format=json`, {
-        signal,
-        headers: {
-            "Accept": "application/json"
-        }
-    });
-    const responseJson = await response.json()
-    // Use duckduckgo if searx fails
+    // Use jira reader as cors bypass and access to searx
+    // const response = await fetch(`https://r.jina.ai/https://search.projectsegfau.lt/search?q=${encodeURIComponent(query)}&format=json`, {
+    //     signal,
+    //     headers: {
+    //         "Accept": "application/json"
+    //     }
+    // });
+    const response = await fetch(`https://actions.sider.ai/googleGPT/search_with_rerank?query=${encodeURIComponent(query)}`);
+    // Use duckduckgo as fallback
     if (response.status !== 200) {
         const response2 = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`,
             {signal});
@@ -52,5 +52,5 @@ const search = async (query, signal) => {
         }
         throw new Error('Failed to fetch web search results');
     }
-    return responseJson;
+    return await response.json();
 }
