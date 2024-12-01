@@ -26,7 +26,7 @@ export const FetchNoteDetailByNoteUUID = () => {
         },
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
-        onInit: async ({args, formData, setFormData, setFormState, setFormError}) => {
+        onInit: async ({args, formData, setFormData, setFormState}) => {
             const noteUUIDList = args.noteUUIDList;
             const noteInfoList = [];
             for (const noteUUID of noteUUIDList) {
@@ -47,7 +47,7 @@ export const FetchNoteDetailByNoteUUID = () => {
                 noteInfoList.push({noteUUID, noteTitle, tags, backlinks, noteContent});
             }
             if (noteInfoList.every(noteInfo => noteInfo.error)) {
-                setFormError(new Error("Failed to fetch all notes. Sample error: " + noteInfoList[0].error));
+                throw new Error("Failed to fetch all notes. Sample error: " + noteInfoList[0].error);
             }
             setFormData({...formData, noteInfoList});
             setFormState('completed');
