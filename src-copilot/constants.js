@@ -1,5 +1,5 @@
 export const PINECONE_INDEX_NAME = "amplenote";
-export const INDEX_VERSION = 1;
+export const INDEX_VERSION = 2;
 export const LLM_MAX_TOKENS_DEFAULT = 8192;
 
 export const LLM_API_KEY_SETTING = "LLM API Key";

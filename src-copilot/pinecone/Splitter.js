@@ -8,6 +8,7 @@ export class Splitter {
         this.maxTokens = maxTokens;
         this.splitResult = [];
         this.noteContent = '';
+        this.accountSettingId = 'todo';
     }
 
     addNoteContentSplitResult(note, headers) {
@@ -17,11 +18,12 @@ export class Splitter {
                 pageContent: `---\nnote-title: ${note.name}\ncontent-hierarchy: ${headers.map((header) => `${'#'.repeat(header.depth)} ${
                     this.noteContent.substring(header.position.start.offset, header.position.end.offset).trim().replaceAll('\n','')}`).join(', ')}\n---\n`,
                 noteUUID: note.uuid,
-                noteTitle: note.name,
+                noteTitle: note.name || note.title || 'Untitled Note',
                 noteTags: (note.tags || []).join(", "),
                 namespace: "note-content",
                 isTagOnly: false,
-                pluginVersion: INDEX_VERSION
+                pluginVersion: INDEX_VERSION,
+                accountSettingId: this.accountSettingId
             },
             dirty: false,   // Whether further content is added to this split result
             addedAmount: 0 // Amount of content added to this split result
@@ -76,11 +78,12 @@ export class Splitter {
             metadata: {
                 pageContent: `---\nnote-title: ${note.name}\nnote-tags: ${(note.tags || []).join(", ")}\n---`,
                 noteUUID: note.uuid,
-                noteTitle: note.name,
+                noteTitle: note.name || note.title || 'Untitled Note',
                 noteTags: (note.tags || []).join(", "),
                 namespace: "note-tags",
                 isTagOnly: true,
-                pluginVersion: INDEX_VERSION
+                pluginVersion: INDEX_VERSION,
+                accountSettingId: this.accountSettingId
             }
         });
 
