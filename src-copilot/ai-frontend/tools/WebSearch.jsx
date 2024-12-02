@@ -1,5 +1,5 @@
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
-import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardResultMessage} from "../components/ToolCardResultMessage.jsx";
 import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 
 export const WebSearch = () => {
@@ -34,7 +34,7 @@ export const WebSearch = () => {
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { GlobeIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult 
+            return <ToolCardResultMessage
                 result={JSON.stringify(formData.searchResults)}
                 text={`Search completed!`}
                 icon={<GlobeIcon />}

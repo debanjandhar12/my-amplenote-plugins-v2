@@ -1,6 +1,6 @@
 import {ToolCardContainer} from "./ToolCardContainer.jsx";
 
-export const ToolCardMessageWithResult = ({ icon, text, result, input, toolName, color = false }) => {
+export const ToolCardResultMessage = ({ icon, text, result, input, toolName, color = false }) => {
     const [isCollapsed, setIsCollapsed] = React.useState(true);
     const [resolvedIcon, setResolvedIcon] = React.useState(icon);
 
@@ -47,7 +47,9 @@ export const ToolCardMessageWithResult = ({ icon, text, result, input, toolName,
                         </>
                     )}
                     <Text size="1" style={{ color: 'var(--gray-11)', marginBottom: '4px', display: 'block' }}>Output:</Text>
-                    <Code highContrast wrap={'nowrap'}>{typeof result === 'string' ? result : JSON.stringify(result)}</Code>
+                    <Code highContrast wrap={'nowrap'}>
+                        {typeof result === 'string' ? result : JSON.stringify(result)}
+                    </Code>
                 </ScrollArea>
             </div>}
         </ToolCardContainer>

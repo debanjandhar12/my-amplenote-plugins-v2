@@ -2,6 +2,7 @@ import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 import {useGenericToolFormState} from "../hooks/useGenericToolFormState.jsx";
 import {errorToString} from "../utils/errorToString.js";
 import {useGenericToolParameters} from "../hooks/useGenericToolParameters.jsx";
+import {ToolCardErrorMessage} from "../components/ToolCardErrorMessage.jsx";
 
 export const createGenericReadTool = ({
                                           toolName,
@@ -18,9 +19,9 @@ export const createGenericReadTool = ({
                                               return <ToolCardMessage text={`Processing...`} icon={<Spinner />} />
                                           },
                                           renderCompleted = () => {},
-                                          renderError = ({formError}) => {
-                                              const { ExclamationTriangleIcon } = window.RadixIcons;
-                                              return <ToolCardMessage text={"Error: " + errorToString(formError)} color="red" icon={<ExclamationTriangleIcon />} />
+                                          renderError = ({formError, toolName, args}) => {
+                                              return <ToolCardErrorMessage toolName={toolName} input={args}
+                                                  text={"Error: " + errorToString(formError)} color="red" />
                                           },
 }) => {
     return AssistantUI.makeAssistantToolUI({

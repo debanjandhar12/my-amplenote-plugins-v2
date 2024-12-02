@@ -1,6 +1,6 @@
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
-import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardResultMessage} from "../components/ToolCardResultMessage.jsx";
 import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 
 export const FetchUserTasks =() => {
@@ -73,7 +73,7 @@ export const FetchUserTasks =() => {
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { CheckboxIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult
+            return <ToolCardResultMessage
                 result={JSON.stringify(formData.queryResult)}
                 text={`${formData.queryResult.length} tasks fetched successfully.`}
                 icon={<CheckboxIcon />}

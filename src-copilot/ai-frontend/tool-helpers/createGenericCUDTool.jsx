@@ -2,6 +2,7 @@ import { ToolCardMessage } from "../components/ToolCardMessage.jsx";
 import {useGenericToolFormState} from "../hooks/useGenericToolFormState.jsx";
 import {errorToString} from "../utils/errorToString.js";
 import {useGenericToolParameters} from "../hooks/useGenericToolParameters.jsx";
+import {ToolCardErrorMessage} from "../components/ToolCardErrorMessage.jsx";
 
 /**
  * A generic function to create tools that allow user to perform create, update, or delete (cud) operations.
@@ -27,14 +28,14 @@ export const createGenericCUDTool = ({
                                                      const { Spinner } = window.RadixUI;
                                                      return <ToolCardMessage text={`Processing...`} icon={<Spinner />} />
                                                  },
-                                                 renderCanceled = () => {
+                                                 renderCanceled = ({toolName}) => {
                                                     const { MinusCircledIcon } = window.RadixIcons;
-                                                    return <ToolCardMessage text={`Tool invocation canceled.`} icon={<MinusCircledIcon />} />
+                                                    return <ToolCardMessage text={`${toolName} tool invocation canceled.`} icon={<MinusCircledIcon />} />
                                                  },
                                                  renderCompleted = () => {},
-                                                 renderError = ({formError}) => {
-                                                     const { ExclamationTriangleIcon } = window.RadixIcons;
-                                                     return <ToolCardMessage text={"Error: " + errorToString(formError)} color="red" icon={<ExclamationTriangleIcon />} />
+                                                 renderError = ({formError, toolName, args}) => {
+                                                     return <ToolCardErrorMessage toolName={toolName} input={args}
+                                                         text={"Error: " + errorToString(formError)} color="red" />
                                                  },
 }) => {
     return AssistantUI.makeAssistantToolUI({

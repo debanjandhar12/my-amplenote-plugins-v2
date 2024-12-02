@@ -2,7 +2,7 @@ import {createGenericCUDTool} from "../tool-helpers/createGenericCUDTool.jsx";
 import {ToolFooter} from "../components/ToolFooter.jsx";
 import {ItemSelectionTable} from "../components/ItemSelectionTable.jsx";
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
-import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardResultMessage} from "../components/ToolCardResultMessage.jsx";
 import {errorToString} from "../utils/errorToString.js";
 
 export const DeleteTasks = () => {
@@ -107,7 +107,7 @@ export const DeleteTasks = () => {
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { CheckboxIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult 
+            return <ToolCardResultMessage
                 result={JSON.stringify(formData.successfulDeletedItems)}
                 text={`${formData.successfulDeletedItems.length} tasks deleted successfully.` +
                     (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to delete.` : "")}

@@ -1,4 +1,4 @@
-import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardResultMessage} from "../components/ToolCardResultMessage.jsx";
 import {ToolFooter} from "../components/ToolFooter.jsx";
 import {ItemSelectionTable} from "../components/ItemSelectionTable.jsx";
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
@@ -109,7 +109,7 @@ export const CreateNewNotes = () => {
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { FileTextIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult 
+            return <ToolCardResultMessage
                 result={JSON.stringify(formData.successfulCreatedItems)}
                 text={`${formData.successfulCreatedItems.length} notes created successfully.` +
                     (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} notes failed to create.` : "")}

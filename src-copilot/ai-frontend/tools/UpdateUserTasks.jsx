@@ -1,5 +1,5 @@
 import {createGenericCUDTool} from "../tool-helpers/createGenericCUDTool.jsx";
-import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardResultMessage} from "../components/ToolCardResultMessage.jsx";
 import {errorToString} from "../utils/errorToString.js";
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
 import {ItemSelectionTable} from "../components/ItemSelectionTable.jsx";
@@ -158,7 +158,7 @@ export const UpdateUserTasks = () => {
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { CheckboxIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult 
+            return <ToolCardResultMessage
                 result={JSON.stringify(formData.successfulUpdatedItems)}
                 text={`${formData.successfulUpdatedItems.length} tasks updated successfully.` +
                     (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to update.` : "")}

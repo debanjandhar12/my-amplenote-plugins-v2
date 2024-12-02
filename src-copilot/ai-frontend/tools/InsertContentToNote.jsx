@@ -2,7 +2,7 @@ import {createGenericCUDTool} from "../tool-helpers/createGenericCUDTool.jsx";
 import {ToolFooter} from "../components/ToolFooter.jsx";
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
 import {useNoteSelector} from "../hooks/useNoteSelector.jsx";
-import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardResultMessage} from "../components/ToolCardResultMessage.jsx";
 import {errorToString} from "../utils/errorToString.js";
 
 export const InsertContentToNote = () => {
@@ -82,7 +82,7 @@ export const InsertContentToNote = () => {
             }, [formData.currentNoteSelectionUUID]);
 
             const { FileTextIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult
+            return <ToolCardResultMessage
                 result={formData.content}
                 text={`Content inserted successfully to note ${noteTitle} (uuid: ${formData.currentNoteSelectionUUID})`}
                 icon={<FileTextIcon />}

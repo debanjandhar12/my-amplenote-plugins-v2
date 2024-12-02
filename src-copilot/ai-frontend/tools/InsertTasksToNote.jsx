@@ -1,5 +1,5 @@
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
-import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardResultMessage} from "../components/ToolCardResultMessage.jsx";
 import {createGenericCUDTool} from "../tool-helpers/createGenericCUDTool.jsx";
 import {ItemSelectionTable} from "../components/ItemSelectionTable.jsx";
 import {useNoteSelector} from "../hooks/useNoteSelector.jsx";
@@ -139,7 +139,7 @@ export const InsertTasksToNote = () => {
             }, [formData.currentNoteSelectionUUID]);
 
             const { CheckboxIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult 
+            return <ToolCardResultMessage
                 result={JSON.stringify(formData.successfulInsertedItems)}
                 text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${noteTitle} (uuid: ${formData.currentNoteSelectionUUID}).` +
                     (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to insert.` : "")}

@@ -1,4 +1,4 @@
-import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardResultMessage} from "../components/ToolCardResultMessage.jsx";
 import {createGenericReadTool} from "../tool-helpers/createGenericReadTool.jsx";
 import {ToolCardMessage} from "../components/ToolCardMessage.jsx";
 
@@ -63,7 +63,7 @@ export const FetchNoteDetailByNoteUUID = () => {
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { FileTextIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult 
+            return <ToolCardResultMessage
                 result={JSON.stringify(formData.noteInfoList)}
                 text={`Note info fetched successfully.`}
                 icon={<FileTextIcon />}

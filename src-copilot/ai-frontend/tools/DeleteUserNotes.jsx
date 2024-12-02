@@ -1,7 +1,7 @@
 import {ToolCardContainer} from "../components/ToolCardContainer.jsx";
 import {ItemSelectionTable} from "../components/ItemSelectionTable.jsx";
 import {ToolFooter} from "../components/ToolFooter.jsx";
-import {ToolCardMessageWithResult} from "../components/ToolCardMessageWithResult.jsx";
+import {ToolCardResultMessage} from "../components/ToolCardResultMessage.jsx";
 import {createGenericCUDTool} from "../tool-helpers/createGenericCUDTool.jsx";
 import {errorToString} from "../utils/errorToString.js";
 
@@ -113,7 +113,7 @@ export const DeleteUserNotes = () => {
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { FileTextIcon } = window.RadixIcons;
-            return <ToolCardMessageWithResult 
+            return <ToolCardResultMessage
                 result={JSON.stringify(formData.successfulDeletedItems)}
                 text={`${formData.successfulDeletedItems.length} notes deleted successfully.` +
                     (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} notes failed to delete.` : "")}
