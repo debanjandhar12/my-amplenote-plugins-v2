@@ -19,7 +19,7 @@ export const FetchUserTasks =() => {
                         "score (number)\n" +
                         "Examples:\n" +
                         "Find tasks for 25th december: {\"startAt\": {\"$gte\": \"2024-12-25 00:00:00\", \"$lte\": \"2024-12-25 23:59:59\"}};\n" +
-                        "Find tasks in note: {\"noteUUID\": {\"$eq\": \"note-uuid\"}};\n" +
+                        "Find tasks in note: {\"noteUUID\": \"note-uuid\"};\n" +
                         "Find task with content: {\"content\": {\"$regex\":\"groceries\",\"$options\":\"i\"}};\n"
                 }
             },
@@ -86,14 +86,11 @@ const processQuery = (query) => {
         }
     }
     // change all comparison to js ones
+    // https://github.com/techfort/LokiJS/blob/25b9a33d57509717d43b4da06d92064f2b7a6c95/src/lokijs.js#L678
     for (const key in queryObj) {
         if (queryObj[key].hasOwnProperty("$eq")) {
-            queryObj[key].$jeq = queryObj[key]['$eq'];
+            queryObj[key].$aeq = queryObj[key]['$eq'];
             delete queryObj[key]['$eq'];
-        }
-        if (queryObj[key].hasOwnProperty("$ne")) {
-            queryObj[key].$jne = queryObj[key]['$ne'];
-            delete queryObj[key]['$ne'];
         }
         if (queryObj[key].hasOwnProperty("$gt")) {
             queryObj[key].$jgt = queryObj[key]['$gt'];
@@ -110,6 +107,10 @@ const processQuery = (query) => {
         if (queryObj[key].hasOwnProperty("$lte")) {
             queryObj[key].$jlte = queryObj[key]['$lte'];
             delete queryObj[key]['$lte'];
+        }
+        if (queryObj[key].hasOwnProperty("$between")) {
+            queryObj[key].$jbetween = queryObj[key]['$between'];
+            delete queryObj[key]['$between'];
         }
     }
     return queryObj;
