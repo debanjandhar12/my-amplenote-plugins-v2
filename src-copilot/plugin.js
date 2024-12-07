@@ -2,8 +2,8 @@ import chatHTML from 'inline:./embed/chat.html';
 import searchHTML from 'inline:./embed/search.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
-import {generateText} from "./ai-backend/generateText.js";
-import {getLLMModel} from "./ai-backend/getLLMModel.js";
+import {generateText} from "./backend/generateText.js";
+import {getLLMModel} from "./backend/getLLMModel.js";
 import {Pinecone} from "./pinecone/Pinecone.js";
 
 const plugin = {

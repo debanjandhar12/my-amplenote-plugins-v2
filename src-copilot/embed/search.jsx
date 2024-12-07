@@ -1,9 +1,9 @@
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK} from "../test/embed/chat.testdata.js";
-import {overwriteWithAmplenoteStyle} from "../ai-frontend/utils/overwriteWithAmplenoteStyle.jsx";
+import {overwriteWithAmplenoteStyle} from "../frontend/overwriteWithAmplenoteStyle.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
-import {SearchApp} from "../ai-frontend/SearchApp.jsx";
+import {SearchApp} from "../frontend/SearchApp.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);

@@ -1,22 +1,13 @@
 import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
-import {getLLMModel} from "../ai-backend/getLLMModel.js";
-import {InsertTasksToNote} from "../ai-frontend/tools/InsertTasksToNote.jsx";
+import {getLLMModel} from "../backend/getLLMModel.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK} from "../test/embed/chat.testdata.js";
-import {FetchUserTasks} from "../ai-frontend/tools/FetchUserTasks.jsx";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
-import {WebSearch} from "../ai-frontend/tools/WebSearch.jsx";
-import {overwriteWithAmplenoteStyle} from "../ai-frontend/utils/overwriteWithAmplenoteStyle.jsx";
-import {CreateNewNotes} from "../ai-frontend/tools/CreateNewNotes.jsx";
-import {FetchNoteDetailByNoteUUID} from "../ai-frontend/tools/FetchNoteDetailByNoteUUID.jsx";
-import {SearchNotesByTitleTagsContent} from "../ai-frontend/tools/SearchNotesByTitleTagsContent.jsx";
-import {DeleteTasks} from "../ai-frontend/tools/DeleteTasks.jsx";
-import {DeleteUserNotes} from "../ai-frontend/tools/DeleteUserNotes.jsx";
-import {UpdateUserNotes} from "../ai-frontend/tools/UpdateUserNotes.jsx";
-import {UpdateUserTasks} from "../ai-frontend/tools/UpdateUserTasks.jsx";
-import {InsertContentToNote} from "../ai-frontend/tools/InsertContentToNote.jsx";
-import {ChatApp} from "../ai-frontend/ChatApp.jsx";
-import {WebBrowser} from "../ai-frontend/tools/WebBrowser.jsx";
+import {overwriteWithAmplenoteStyle} from "../frontend/overwriteWithAmplenoteStyle.js";
+import {ChatApp} from "../frontend/ChatApp.jsx";
+import {parse} from "../markdown/markdown-parser.js";
+import {ToolRegistry} from "../frontend/tools-core/registry/ToolRegistry.js";
+import {ToolCategoryRegistry} from "../frontend/tools-core/registry/ToolCategoryRegistry.js";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -75,7 +66,6 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
                 "@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.js", "@radix-ui/themes",
                 "@assistant-ui/react-markdown", "@radix-ui/react-icons", "react-string-diff"]);
         window.AssistantUIMarkdown = AssistantUIMarkdown.makeMarkdownText();
-        console.log(AssistantUIMarkdown);
         window.React = React;
         window.ReactDOM = ReactDOM;
         window.AssistantUI = AssistantUI;
@@ -87,15 +77,12 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.StringDiff = StringDiffModule.StringDiff;
         window.dayjs = (await dynamicImportESM("dayjs")).default;
         window.Tribute = (await dynamicImportESM("tributejs")).default;
+        parse(''); // Load unified js in background
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
-        window.ALL_TOOLS = [InsertTasksToNote(), FetchUserTasks(), WebSearch(), WebBrowser(),
-            CreateNewNotes(), FetchNoteDetailByNoteUUID(), SearchNotesByTitleTagsContent(),
-            UpdateUserNotes(), UpdateUserTasks(),
-            InsertContentToNote(),
-            DeleteTasks(), DeleteUserNotes()];
-        window.TOOL_CATEGORY_NAMES = ['tasks', 'notes', 'web'];
         hideEmbedLoader();
+        ToolRegistry.registerAllTools();
+        ToolCategoryRegistry.registerAllCategory();
         if (!React || !window.ReactDOM) {
             throw new Error("Failed to load React or ReactDOM");
         }

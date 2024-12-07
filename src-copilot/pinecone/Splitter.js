@@ -1,4 +1,4 @@
-import { parse } from './markdown-parser';
+import { parse } from '../markdown/markdown-parser.js';
 import { visit } from "unist-util-visit";
 import {INDEX_VERSION} from "../constants.js";
 
