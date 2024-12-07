@@ -20,18 +20,19 @@ export async function getLLMModel(appSettings) {
     else if (apiUrl.includes('localhost')) {
         const {createOllama} = await dynamicImportESM("ollama-ai-provider");
         return createOllama({
-            apiKey: apiKey, // Default: http://localhost:11434/api
-            basePath: apiUrl
+            apiKey: apiKey,
+            basePath: apiUrl // Default: http://localhost:11434/api
         }).languageModel(model);
     }
-    // Google Generative AI does not support tools properly
-    // else if (apiUrl.includes('googleapis')) {
-    //     const {createGoogleGenerativeAI} = await dynamicImportESM("@ai-sdk/google");
-    //     return createGoogleGenerativeAI({
-    //         apiKey: apiKey,
-    //         basePath: apiUrl // Default: https://generativelanguage.googleapis.com/v1beta
-    //     }).languageModel(model);
-    // }
+    else if (apiUrl.includes('googleapis')) {
+        // Google only implements subset of OpenAI API Schema. Hence, structuredOutputs is set to false.
+        // Keeping it as true will result in error as tools use union type parameter.
+        const {createGoogleGenerativeAI} = await dynamicImportESM("@ai-sdk/google");
+        return createGoogleGenerativeAI({
+            apiKey: apiKey,
+            basePath: apiUrl // Default: https://generativelanguage.googleapis.com/v1beta
+        }).languageModel(model, {structuredOutputs: false});
+    }
     else if (apiUrl.includes('anthropic')) {
         const {createAnthropic} = await dynamicImportESM("@ai-sdk/anthropic");
         return createAnthropic({
@@ -45,7 +46,7 @@ export async function getLLMModel(appSettings) {
         return createOpenAI({
             apiKey: apiKey,
             basePath: apiUrl    // Default: https://api.openai.com/v1
-        }).languageModel(model);
+        }).languageModel(model, {parallelToolCalls: false});
     }
     else throw new Error('It is likely that incorrect LLM API URL is provided. Please check plugin settings.');
 }
