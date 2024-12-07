@@ -42,6 +42,12 @@ async function startServer(ctx, pluginTargetPath) {
         }
     });
 
+    // Endpoint to serve .env file
+    app.get('/.env', async (req, res) => {
+        const fileContent = await fs.readFile(path.resolve(`${pluginTargetPath}/../.env`));
+        res.send(fileContent);
+    });
+
     // Serve HTML files from the embed folder
     app.get('/embed/:file', (req, res) => {
         const file = req.params.file;
