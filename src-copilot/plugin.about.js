@@ -97,7 +97,21 @@ Q) [What is pinecone?][^7]
 
 [^6]: [How do I set up plugin with Ollama?]()
 
-    Documentation for this provider is not available yet. It should be possible to set it up similar to AmpleAI plugin.
+    First, start the Ollama server:
+    \`\`\`
+    OLLAMA_ORIGINS=https://plugins.amplenote.com ollama serve
+    \`\`\`
+    
+    If the server is already running without the origins set, stop the server and restart it with the above command.
+    For instructions to stop the server, see https://github.com/ollama/ollama/issues/690.
+    
+    Next, go to the plugin settings and set settings as below:
+    - LLM API URL: \`http://localhost:11434/api/chat\`
+    - LLM Model:  \`llama3.1\`
+    
+    ![](https://images.amplenote.com/89b05c00-b4c3-11ef-a30d-892876cea4a6/d7923eed-6dd3-4fbb-a6d6-fffaada38946.png)
+    
+    > For this provider, \`llama3.1\` model is recommended.
 
 [^7]: [What is pinecone?]()
 

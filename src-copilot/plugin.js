@@ -20,23 +20,34 @@ const plugin = {
                 const nearbyContent = noteContent.substring(noteContent.indexOf(randomUUID) - 800, noteContent.indexOf(randomUUID) + 800);
                 // Ask llm to fill
                 await app.context.replaceSelection(`Generating...`);
-                const prompt = "I want you to act as a fill in the blank tool. You take markdown input text and complete it factually. Only reply with words that should replace [BLANK]. NEVER repeat input." + "\n" +
+                const prompt = "I want you to act as a fill in the mask tool. You take markdown input text and complete it factually. Only reply with words that should replace [MASK]. NEVER repeat input." + "\n" +
                     "Additional instruction: If the surrounding text is in between a sentence, complete the entire sentence. Otherwise, complete the paragraph. DO NOT repeat the input text." + "\n" +
-                    "Example:" + "\n" +
-                    "Input: The [CONTINUE] jumps over the lazy dog." + "\n" +
-                    "Output: quick brown fox" + "\n" +
-                    "Example:" + "\n" +
-                    "Input: The quick brown fox jumps [CONTINUE]" + "\n" +
+                    "Examples:" + "\n" +
+                    "Input:The [MASK] jumps over the lazy dog." + "\n" +
+                    "Output:quick brown fox" + "\n" +
+                    "Input:The quick brown fox jumps[MASK]" + "\n" +
                     "Output: over the lazy dog." + "\n" +
-                    "Example:" + "\n" +
-                    "Input: On the way, we caught sight of the famous waterfall. [CONTINUE]" + "\n" +
-                    "Output: As we stood there, a rainbow formed in the mist creating a captivating sight." + "\n" +
+                    "Input:On the way, we caught sight of the famous waterfall. [MASK]" + "\n" +
+                    "Output:A rainbow formed in the mist as we stood there. The sight was truly captivating." + "\n" +
                     "---------------------" + "\n" +
                     "Input: " + "\n" +
-                    nearbyContent.replaceAll(randomUUID, '[CONTINUE]');
+                    nearbyContent.replaceAll(randomUUID, '[MASK]');
                 const response = await generateText(await getLLMModel(app.settings), prompt);
-                if (response.text)
-                    await app.context.replaceSelection(response.text);
+                if (response.text) {
+                    let responseText = response.text;
+                    if (responseText.startsWith('Output:') &&
+                        !(nearbyContent.toLowerCase().includes('input')
+                            || nearbyContent.toLowerCase().includes('output'))) {
+                        responseText = responseText.substring(6);   // Remove the "Output:" prefix
+                    }
+                    const lastCharInOriginalContent = nearbyContent.substring(noteContent.indexOf(randomUUID) - 1);
+                    const firstCharInResponse = responseText.substring(0, 1);
+                    if (lastCharInOriginalContent === firstCharInResponse
+                        && firstCharInResponse === ' ') {
+                        responseText = responseText.substring(1);   // Remove the first space
+                    }
+                    await app.context.replaceSelection(responseText);
+                }
                 else
                     throw new Error('LLM response is empty');
             } catch (e) {
