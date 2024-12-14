@@ -1,5 +1,6 @@
 import {useTributeSetup} from "../hooks/useTributeSetup.jsx";
 import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
+import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
 // Based on: https://github.com/Yonom/assistant-ui/blob/main/packages/react/src/ui/composer.tsx
 export const CustomComposer = () => {
@@ -23,6 +24,12 @@ export const CustomComposer = () => {
             });
         }
     }, [threadRuntime, textareaRef]);
+
+    // Pass textareaRef to ChatAppContext
+    const {setThreadNewMsgComposerRef} = React.useContext(getChatAppContext());
+    React.useEffect(() => {
+        setThreadNewMsgComposerRef(textareaRef);
+    }, [textareaRef, setThreadNewMsgComposerRef]);
 
     const {Composer} = window.AssistantUI;
     return (

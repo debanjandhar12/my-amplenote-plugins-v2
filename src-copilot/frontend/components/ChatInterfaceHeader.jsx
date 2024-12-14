@@ -1,4 +1,5 @@
 import {USER_PROMPT_LIST_SETTING} from "../../constants.js";
+import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
 export const ChatInterfaceHeader = () => {
     // Fetch runtime and other assistant-ui contexts
@@ -28,6 +29,7 @@ export const ChatInterfaceHeader = () => {
 const UserPromptLibraryPopover = () => {
     const composer = AssistantUI.useComposerRuntime();
     const [userPromptList, setUserPromptList] = React.useState([]);
+    const { threadNewMsgComposerRef } = React.useContext(getChatAppContext());
 
     React.useEffect(() => {
         (async () => {
@@ -41,7 +43,8 @@ const UserPromptLibraryPopover = () => {
 
     const handleInsertPrompt = React.useCallback((prompt) => {
         composer.setText(prompt.message);
-        // composer.focus(); // TODO: Fix this
+        // composer.focus(); -> Removed from assistant-ui. They will bring it back in the future.
+        threadNewMsgComposerRef.current.focus();
         const newPromptList = userPromptList.map(prompt2 => {
             if(prompt2.uuid === prompt.uuid) return { ...prompt, usageCount: prompt.usageCount + 1 };
             return prompt2;

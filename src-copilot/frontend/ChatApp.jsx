@@ -2,6 +2,7 @@ import {useDangerousInBrowserRuntimeMod} from "./hooks/useDangerousInBrowserRunt
 import {LLM_MAX_TOKENS_DEFAULT, LLM_MAX_TOKENS_SETTING} from "../constants.js";
 import {errorToString} from "./tools-core/utils/errorToString.js";
 import {ChatInterface} from "./ChatInterface.jsx";
+import {ChatAppContextProvider} from "./context/ChatAppContext.jsx";
 
 export const ChatApp = () => {
     // Setup runtime
@@ -21,13 +22,16 @@ export const ChatApp = () => {
             appConnector.alert(`Error: ${errorToString(error)}`);
         }
     });
+
     const {Theme} = window.RadixUI;
     const {AssistantRuntimeProvider} = window.AssistantUI;
     return (
-        <Theme appearance="dark" accentColor="blue">
-            <AssistantRuntimeProvider runtime={runtime}>
-                <ChatInterface />
-            </AssistantRuntimeProvider>
-        </Theme>
+        <ChatAppContextProvider>
+            <Theme appearance="dark" accentColor="blue">
+                <AssistantRuntimeProvider runtime={runtime}>
+                    <ChatInterface />
+                </AssistantRuntimeProvider>
+            </Theme>
+        </ChatAppContextProvider>
     )
 }
