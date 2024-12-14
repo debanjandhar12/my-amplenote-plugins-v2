@@ -36,11 +36,25 @@ export const EMBED_COMMANDS_MOCK = {
     "getSettings": async () => {
         await dynamicImportEnv();
         return {
-            [LLM_API_KEY_SETTING]: process.env.GROQ_LLM_API_KEY,
-            [LLM_API_URL_SETTING]: "https://api.groq.com/openai/v1/chat/completions",
-            [LLM_MODEL_SETTING]: "llama-3.2-90b-vision-preview",
+            ...getLLMProviderSettings('groq'),
             [USER_PROMPT_LIST_SETTING]: JSON.stringify([{uuid:'a', message: "Test A", usageCount:0},{uuid: 'b', message: "Test B", usageCount:0}]),
             [PINECONE_API_KEY_SETTING]: process.env.PINECONE_API_KEY
+        }
+    }
+}
+
+export const getLLMProviderSettings = (provider) => {
+    if (provider === 'groq') {
+        return {
+            [LLM_API_KEY_SETTING]: process.env.GROQ_LLM_API_KEY,
+            [LLM_API_URL_SETTING]: "https://api.groq.com/openai/v1/chat/completions",
+            [LLM_MODEL_SETTING]: "llama-3.2-90b-vision-preview"
+        }
+    } else if (provider === 'openai') {
+        return {
+            [LLM_API_KEY_SETTING]: process.env.OPENAI_LLM_API_KEY,
+            [LLM_API_URL_SETTING]: "https://api.openai.com/v1/chat/completions",
+            [LLM_MODEL_SETTING]: "gpt-4o-mini"
         }
     }
 }

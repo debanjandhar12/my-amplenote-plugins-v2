@@ -60,6 +60,7 @@
     "make-synchronous": "^1.0.0",
     "playwright": "^1.47.2",
     "core-js": "^3.38.1",
+    "expect-playwright": "^0.8.0",
     "@testing-library/react": "^16.0.1",
     "@testing-library/jest-dom": "^6.5.0",
     "esbuild-plugin-external-global": "^1.0.1"

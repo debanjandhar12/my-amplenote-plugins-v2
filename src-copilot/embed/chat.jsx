@@ -89,7 +89,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         if(document.querySelector('.app-container'))
             window.ReactDOM.createRoot(document.querySelector('.app-container')).render(<ChatApp />);
     } catch (e) {
-        window.document.body.innerHTML = '<div style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
+        window.document.body.innerHTML = '<div class="error" style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
         console.error(e);
     }
 })();
