@@ -1,24 +1,40 @@
 import {USER_PROMPT_LIST_SETTING} from "../../constants.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
+import {capitalize} from "lodash-es";
 
 export const ChatInterfaceHeader = () => {
     // Fetch runtime and other assistant-ui contexts
     const runtime = AssistantUI.useAssistantRuntime();
+    const threadMessagesLength = AssistantUI.useThread((m) => (m?.messages?.length || 0));
 
     // New chat button functionality
     const onClickNewChat = React.useCallback(() => runtime.switchToNewThread(), [runtime]);
 
     const {Box, Tooltip, Button, Popover} = window.RadixUI;
-    const {PlusIcon} = window.RadixIcons;
+    const {PlusIcon, MagicWandIcon} = window.RadixIcons;
     return (
         <Box style={{
             display: 'flex', justifyContent: 'flex-end', paddingRight: '4px',
             position: 'sticky', top: 0, zIndex: '1000', backgroundColor: 'var(--color-background)'
         }}>
-            <UserPromptLibraryPopover />
+            {threadMessagesLength === 0 &&
+                <Popover.Root>
+                    <Popover.Trigger asChild>
+                        <Button variant="ghost" size="1" style={{ margin: '2px', paddingTop: '5px'}}>
+                            <Tooltip content="Prompt Library" style={{padding: '2px'}}>
+                                <MagicWandIcon width="13" height="13" />
+                            </Tooltip>
+                        </Button>
+                    </Popover.Trigger>
+                    <Popover.Content style={{width: '360px'}}>
+                        <UserPromptLibrary />
+                    </Popover.Content>
+                </Popover.Root>
+            }
+            <ChatInterfaceMenu />
             <Tooltip content="New chat">
                 <Button variant="ghost" size="1" style={{marginRight: '4px', margin: '2px'}}
-                                onClick={onClickNewChat}>
+                        onClick={onClickNewChat}>
                     <PlusIcon />
                 </Button>
             </Tooltip>
@@ -26,15 +42,92 @@ export const ChatInterfaceHeader = () => {
     )
 }
 
-const UserPromptLibraryPopover = () => {
+const ChatInterfaceMenu = () => {
+    const threadMessages = AssistantUI.useThread((t) => t.messages);
+    const threadMessagesLength = AssistantUI.useThread((t) => t.messages?.length || 0);
+    const threadId = AssistantUI.useThread((t) => t.id);
+
+    const handleExportAsNote = React.useCallback(async () => {
+        let noteContent = '';
+        for (const message of threadMessages) {
+            noteContent += `<mark style="color:undefined;">${capitalize(message.role)}<!-- {"cycleColor":"${
+                message.role === 'assistant' ? '59' : '57'
+            }"} --></mark>\n`;
+            for (const contentPart of message.content) {
+                if (contentPart.type === 'text') {
+                    noteContent += contentPart.text + '\n';
+                } else if (contentPart.type === 'tool-call') {
+                    noteContent += `<<Tool call: ${contentPart.toolName}>>\n`;
+                }
+            }
+        }
+        const noteName = `Exported Copilot chat - ${threadId}`;
+        let note = appConnector.findNote({name: noteName});
+        if (!note) {
+            note = await appConnector.notes.create(noteName, []);
+            if (!note || !note.uuid) {
+                throw new Error(`Failed to create note: ${noteName}`);
+            }
+        }
+        await appConnector.replaceNoteContent({uuid: note.uuid}, noteContent);
+        await appConnector.navigate(appConnector.getNoteURL({uuid: note.uuid}));
+        await appConnector.alert(`Chat exported to note: ${noteName}`);
+    }, [threadMessages]);
+
+    const {Box, Popover, DropdownMenu, Button } = window.RadixUI;
+    const {DropdownMenuIcon, MagicWandIcon, Share2Icon, FilePlusIcon, CounterClockwiseClockIcon} = window.RadixIcons;
+    return (
+        <Box>
+            <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                    <Button variant="ghost" size="1" style={{ margin: '2px' }}>
+                        <DropdownMenuIcon />
+                    </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content>
+                    <DropdownMenu.Item disabled title="Coming soon">
+                        <CounterClockwiseClockIcon /> Chat History
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Sub>
+                        <DropdownMenu.SubTrigger>
+                            <Share2Icon /> Export chat as
+                        </DropdownMenu.SubTrigger>
+                        <DropdownMenu.SubContent>
+                            <DropdownMenu.Item onClick={handleExportAsNote}>
+                                <FilePlusIcon /> New Note
+                            </DropdownMenu.Item>
+                        </DropdownMenu.SubContent>
+                    </DropdownMenu.Sub>
+                    {
+                        threadMessagesLength > 0 &&
+                        <>
+                            <DropdownMenu.Separator />
+                            <DropdownMenu.Sub>
+                                <DropdownMenu.SubTrigger>
+                                    <MagicWandIcon /> Prompt Library
+                                </DropdownMenu.SubTrigger>
+                                <DropdownMenu.SubContent style={{width: '360px'}}>
+                                    <UserPromptLibrary />
+                                </DropdownMenu.SubContent>
+                            </DropdownMenu.Sub>
+                        </>
+                    }
+                </DropdownMenu.Content>
+            </DropdownMenu.Root>
+        </Box>
+    );
+};
+
+const UserPromptLibrary = () => {
     const composer = AssistantUI.useComposerRuntime();
-    const [userPromptList, setUserPromptList] = React.useState([]);
+    const [userPromptList, setUserPromptList] = React.useState(null);
     const { threadNewMsgComposerRef } = React.useContext(getChatAppContext());
 
     React.useEffect(() => {
         (async () => {
             try {
-                setUserPromptList(JSON.parse((await window.appConnector.getSettings())[USER_PROMPT_LIST_SETTING]).sort((a, b) => b.usageCount - a.usageCount));
+                const settings = await window.appConnector.getSettings();
+                setUserPromptList(JSON.parse(settings[USER_PROMPT_LIST_SETTING]).sort((a, b) => b.usageCount - a.usageCount));
             } catch (e) {
                 console.error(e);
             }
@@ -46,7 +139,7 @@ const UserPromptLibraryPopover = () => {
         // composer.focus(); -> Removed from assistant-ui. They will bring it back in the future.
         threadNewMsgComposerRef.current.focus();
         const newPromptList = userPromptList.map(prompt2 => {
-            if(prompt2.uuid === prompt.uuid) return { ...prompt, usageCount: prompt.usageCount + 1 };
+            if (prompt2.uuid === prompt.uuid) return { ...prompt, usageCount: prompt.usageCount + 1 };
             return prompt2;
         });
         setUserPromptList(newPromptList);
@@ -83,56 +176,49 @@ const UserPromptLibraryPopover = () => {
         setUserPromptList(userPromptList.filter(p => p.uuid !== prompt.uuid));
     }, [userPromptList]);
 
-    const {Popover, Button, Tooltip, ScrollArea, Text, Box, Card, Flex, IconButton} = window.RadixUI;
-    const {Pencil2Icon, TrashIcon} = window.RadixIcons;
+    if (!userPromptList) return null;
+
+    const {Button, Tooltip, ScrollArea, Text, Box, Card, Flex, IconButton} = window.RadixUI;
+    const { TrashIcon} = window.RadixIcons;
     return (
-        <Popover.Root>
-            <Popover.Trigger asChild>
-                <Button variant="ghost" size="1" style={{margin: '2px'}}>
-                    <Tooltip content="User prompts">
-                        <Pencil2Icon />
-                    </Tooltip>
-                </Button>
-            </Popover.Trigger>
-            <Popover.Content width="360px">
-                <ScrollArea style={{ maxHeight: '320px' }}>
-                    <Box style={{ padding: '8px' }}>
-                        {userPromptList.map((prompt) => (
-                            <Card asChild key={prompt.uuid} style={{ padding: '8px', margin: '6px' }}>
-                                <a href="#" onClick={() => handleInsertPrompt(prompt)}>
-                                    <Flex justify="between" align="start" style={{ padding: '2px', minHeight: '33px' }}>
-                                        <Text style={{ fontSize: '11px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
-                                            {prompt.message}
-                                        </Text>
-                                        <IconButton
-                                            variant="ghost"
-                                            color="red"
-                                            size="1"
-                                            style={{ alignSelf: 'center' }}
-                                            onClick={(e) => handleDeletePrompt(e, prompt)}>
-                                            <TrashIcon />
-                                        </IconButton>
-                                    </Flex>
-                                </a>
-                            </Card>
-                        ))}
-                        {userPromptList.length === 0 && (
-                            <Text style={{textAlign: 'center', color: 'var(--color-text-muted)'}}>
-                                No saved prompts yet
-                            </Text>
-                        )}
-                    </Box>
-                </ScrollArea>
-                <Box style={{marginTop: '16px'}}>
-                    <Button
-                        onClick={handleAddPrompt}
-                        variant="soft"
-                        size="1"
-                        style={{ width: '100%' }}>
-                        Add New Prompt
-                    </Button>
+        <>
+            <ScrollArea style={{ maxHeight: '320px' }} type={'auto'}>
+                <Box style={{ padding: '8px' }}>
+                    {userPromptList.map((prompt) => (
+                        <Card asChild key={prompt.uuid} style={{ padding: '8px', margin: '6px' }}>
+                            <a href="#" onClick={() => handleInsertPrompt(prompt)}>
+                                <Flex justify="between" align="start" style={{ padding: '2px', minHeight: '33px' }}>
+                                    <Text style={{ fontSize: '11px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                                        {prompt.message}
+                                    </Text>
+                                    <IconButton
+                                        variant="ghost"
+                                        color="red"
+                                        size="1"
+                                        style={{ alignSelf: 'center' }}
+                                        onClick={(e) => handleDeletePrompt(e, prompt)}>
+                                        <TrashIcon />
+                                    </IconButton>
+                                </Flex>
+                            </a>
+                        </Card>
+                    ))}
+                    {userPromptList.length === 0 && (
+                        <Text style={{ textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                            No saved prompts yet
+                        </Text>
+                    )}
                 </Box>
-            </Popover.Content>
-        </Popover.Root>
-    )
-}
+            </ScrollArea>
+            <Box style={{ marginTop: '16px' }}>
+                <Button
+                    onClick={handleAddPrompt}
+                    variant="soft"
+                    size="1"
+                    style={{ width: '100%' }}>
+                    Add New Prompt
+                </Button>
+            </Box>
+        </>
+    );
+};
