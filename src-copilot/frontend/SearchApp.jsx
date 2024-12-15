@@ -11,14 +11,32 @@ const useSearch = () => {
     const [error, setError] = React.useState(null);
     const [isSyncing, setIsSyncing] = React.useState(false);
     const [syncError, setSyncError] = React.useState(null);
+    const [searchOpts, setSearchOpts] = React.useState({isArchived: false});
 
     // Search functionality
-    const performSearch = async (query) => {
+    const performSearch = async (query, opts = {}) => {
         if (!query.trim()) return [];
-        
+
         const pinecone = new Pinecone();
-        const results = await pinecone.search(query, appSettings, 10);
-        return processPineconeSearchResults(results);
+        const results = await pinecone.search(query, appSettings,
+            opts.isArchived === null ? 10 : 15);
+        const processedResults = await processPineconeSearchResults(results);
+
+        // Filter results
+        const checkIsArchived = async (uuid) => {
+            const note = await appConnector.filterNotes({
+                group: "archived",
+                query: uuid
+            });
+            return note && note.length > 0;
+        };
+        const filteredProcessedResults = await Promise.all(processedResults.filter(async (result) => {
+            const isArchived = await checkIsArchived(result.uuid);
+            return opts.isArchived === null || isArchived === opts.isArchived;
+        }));
+
+        return filteredProcessedResults.length > 10 ?
+            filteredProcessedResults.slice(0, 10) : filteredProcessedResults;
     };
 
     // Debounced search handler
@@ -34,7 +52,7 @@ const useSearch = () => {
             setError(null);
 
             try {
-                const results = await performSearch(searchText);
+                const results = await performSearch(searchText, searchOpts);
                 setSearchResults(results);
             } catch (error) {
                 console.error('Search error:', error);
@@ -43,12 +61,12 @@ const useSearch = () => {
                 setIsLoading(false);
             }
         }, 320),
-        [searchText]
+        [searchText, searchOpts]
     );
 
     const handleSearch = React.useCallback(() => {
         debouncedSearch();
-    }, [debouncedSearch, searchText]);
+    }, [debouncedSearch, searchText, searchOpts]);
 
     // Sync functionality
     const handleSync = async () => {
@@ -72,7 +90,7 @@ const useSearch = () => {
     React.useEffect(() => {
         handleSearch();
         return () => debouncedSearch.cancel();
-    }, [searchText, handleSearch]);
+    }, [searchText, handleSearch, searchOpts]);
 
     // Public interface
     return {
@@ -83,13 +101,15 @@ const useSearch = () => {
         error,
         isSyncing,
         syncError,
-        handleSync
+        handleSync,
+        searchOpts,
+        setSearchOpts
     };
 };
 
 // SearchStatus component to handle different states
 const SearchStatus = ({ isLoading, error, isSyncing, syncError, searchText, searchResults }) => {
-    const {Box, Spinner} = window.RadixUI;
+    const {Flex, Box, Spinner, Text} = window.RadixUI;
 
     if (isSyncing) {
         return (
@@ -110,7 +130,10 @@ const SearchStatus = ({ isLoading, error, isSyncing, syncError, searchText, sear
     if (isLoading) {
         return (
             <Box style={{ padding: '20px', textAlign: 'center' }}>
-                <Spinner /> Loading...
+                <Flex direction={'column'} align={'center'} justify={'center'}>
+                    <Spinner size="3" />
+                    <Text color="gray" size="2">Searching</Text>
+                </Flex>
             </Box>
         );
     }
@@ -134,10 +157,10 @@ const SearchStatus = ({ isLoading, error, isSyncing, syncError, searchText, sear
     return null;
 };
 
-const SearchMenu = ({ onSync, isSyncing }) => {
-    const {IconButton, DropdownMenu} = window.RadixUI;
-    const {DotsHorizontalIcon} = window.RadixIcons;
-    
+const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts }) => {
+    const { Text, IconButton, DropdownMenu, Switch, Flex } = window.RadixUI;
+    const { DotsHorizontalIcon } = window.RadixIcons;
+
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
@@ -146,7 +169,16 @@ const SearchMenu = ({ onSync, isSyncing }) => {
                 </IconButton>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content>
-                <DropdownMenu.Item 
+                <Text color="gray" style={{ fontSize: '14px', padding: '4px' }}>Search Options</Text>
+                <Flex align="center" justify="between" style={{ width: '100%', padding: '12px', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
+                    Archived
+                    <Switch
+                        checked={searchOpts.isArchived}
+                        onCheckedChange={(checked) => setSearchOpts({ ...searchOpts, isArchived: checked })}
+                    />
+                </Flex>
+                <DropdownMenu.Separator />
+                <DropdownMenu.Item
                     onSelect={onSync}
                     disabled={isSyncing}
                 >
@@ -189,7 +221,9 @@ export const SearchApp = () => {
         error,
         isSyncing,
         syncError,
-        handleSync
+        handleSync,
+        searchOpts,
+        setSearchOpts
     } = useSearch();
 
     const {Theme, ScrollArea, Flex, TextField} = window.RadixUI;
@@ -199,7 +233,7 @@ export const SearchApp = () => {
         <Theme appearance="dark" accentColor="blue">
             <Flex direction="column" gap="3" style={{ height: '100vh', padding: '16px' }}>
                 <Flex align="center" gap="2">
-                    <TextField.Root 
+                    <TextField.Root
                         placeholder="Search notes..."
                         variant="soft"
                         value={searchText}
@@ -216,10 +250,10 @@ export const SearchApp = () => {
                         </TextField.Slot>
                         {searchText && (
                             <TextField.Slot style={{ paddingRight: '0px' }}>
-                                <Cross2Icon 
-                                    height="16" 
-                                    width="16" 
-                                    style={{ 
+                                <Cross2Icon
+                                    height="16"
+                                    width="16"
+                                    style={{
                                         cursor: 'pointer',
                                         opacity: 0.7,
                                     }}
@@ -228,12 +262,17 @@ export const SearchApp = () => {
                             </TextField.Slot>
                         )}
                     </TextField.Root>
-                    <SearchMenu onSync={handleSync} isSyncing={isSyncing} />
+                    <SearchMenu
+                        onSync={handleSync}
+                        isSyncing={isSyncing}
+                        searchOpts={searchOpts}
+                        setSearchOpts={setSearchOpts}
+                    />
                 </Flex>
 
                 <ScrollArea style={{ flex: 1 }}>
                     <Flex direction="column" gap="3">
-                        <SearchStatus 
+                        <SearchStatus
                             isLoading={isLoading}
                             error={error}
                             isSyncing={isSyncing}
@@ -243,16 +282,17 @@ export const SearchApp = () => {
                         />
                         {!isLoading && !isSyncing && !error && !syncError &&
                             searchResults.map((result, index) => (
-                            <NoteCard
-                                key={index}
-                                title={result.noteTitle}
-                                content={result.content}
-                                noteUUID={result.noteUUID}
-                            />
-                        ))}
+                                <NoteCard
+                                    key={index}
+                                    title={result.noteTitle}
+                                    content={result.content}
+                                    noteUUID={result.noteUUID}
+                                />
+                            ))}
                     </Flex>
                 </ScrollArea>
             </Flex>
         </Theme>
     );
 };
+
