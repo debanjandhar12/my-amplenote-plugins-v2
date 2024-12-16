@@ -54,9 +54,10 @@ export const SearchNotesByTitleTagsContent = () => {
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         renderInit: ({args, formData}) => {
-            const {isPineconeSearchPossible, isPineconeError} = formData;
-            const {Text} = window.RadixUI;
-            const {ExclamationTriangleIcon, Spinner} = window.RadixIcons;
+            const {isPineconeSearchPossible, pineconeError} = formData;
+            const {Text, Spinner} = window.RadixUI;
+            const {ExclamationTriangleIcon} = window.RadixIcons;
+            const isPineconeError = pineconeError !== null;
             if (isPineconeSearchPossible && isPineconeError) {
                 return <ToolCardContainer>
                     <Text css={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'crimson' }}>
@@ -65,11 +66,14 @@ export const SearchNotesByTitleTagsContent = () => {
                     </Text>
                     <Text css={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Spinner />
-                        Searching for {JSON.stringify(args)} using amplenote built-in search...
+                        Searching user notes using amplenote built-in search...
                     </Text>
                 </ToolCardContainer>
+            } else if (isPineconeSearchPossible) {
+                return <ToolCardMessage text={`Searching user notes using pinecone...`}
+                                        icon={<Spinner />} />
             }
-            return <ToolCardMessage text={`Searching for ${JSON.stringify(args)} using amplenote built-in search...`}
+            return <ToolCardMessage text={`Searching user notes using amplenote built-in search...`}
                                     icon={<Spinner />} />
         },
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
@@ -77,8 +81,9 @@ export const SearchNotesByTitleTagsContent = () => {
             let isPineconeSearchPossible = args.noteContent && args.isArchived === undefined &&
                 args.isSharedByMe === undefined && args.isSharedWithMe === undefined;
             setFormData({...formData, isPineconeSearchPossible});
-            
-            // Perform searches
+            let pineconeError = null;
+
+            // Perform pinecone search
             let searchResults0 = [];
             try {
                 if (isPineconeSearchPossible) {
@@ -88,9 +93,12 @@ export const SearchNotesByTitleTagsContent = () => {
                     searchResults0.push(...await processPineconeSearchResults(pineconeResults, 0.80));
                 }
             } catch (e) {
-                console.error(e);
-                setFormData({...formData, pineconeError: e});
+                pineconeError = e;
+                console.error(pineconeError);
+                setFormData({...formData, isPineconeSearchPossible, pineconeError});
             }
+
+            // Perform amplenote search
             const groups = [];
             if (args.isArchived === true) groups.push('archived');
             if (args.isSharedByMe === true) groups.push('shared');
@@ -192,7 +200,8 @@ export const SearchNotesByTitleTagsContent = () => {
                 searchResultsMapped = searchResultsMapped.slice(0, args.limitSearchResults);
             }
 
-            setFormData({...formData, searchResults: searchResultsMapped});
+            setFormData({...formData, searchResults: searchResultsMapped,
+                isPineconeSearchPossible, pineconeError});
             setFormState('completed');
         },
         onCompleted: ({addResult, formData}) => {

@@ -50,27 +50,28 @@ const ChatInterfaceMenu = () => {
     const handleExportAsNote = React.useCallback(async () => {
         let noteContent = '';
         for (const message of threadMessages) {
-            noteContent += `<mark style="color:undefined;">${capitalize(message.role)}<!-- {"cycleColor":"${
+            noteContent += `<mark style="color:undefined;">**${capitalize(message.role)}**<!-- {"cycleColor":"${
                 message.role === 'assistant' ? '59' : '57'
             }"} --></mark>\n`;
             for (const contentPart of message.content) {
                 if (contentPart.type === 'text') {
                     noteContent += contentPart.text + '\n';
                 } else if (contentPart.type === 'tool-call') {
-                    noteContent += `<<Tool call: ${contentPart.toolName}>>\n`;
+                    noteContent += `«Tool call: ${contentPart.toolName}»\n`;
                 }
             }
         }
         const noteName = `Exported Copilot chat - ${threadId}`;
-        let note = appConnector.findNote({name: noteName});
+        let note = await appConnector.findNote({name: noteName});
         if (!note) {
-            note = await appConnector.notes.create(noteName, []);
+            note = await appConnector.createNote(noteName, []);
+            note = await appConnector.findNote({name: noteName});
             if (!note || !note.uuid) {
                 throw new Error(`Failed to create note: ${noteName}`);
             }
         }
         await appConnector.replaceNoteContent({uuid: note.uuid}, noteContent);
-        await appConnector.navigate(appConnector.getNoteURL({uuid: note.uuid}));
+        await appConnector.navigate(`https://www.amplenote.com/notes/${note.uuid}`);
         await appConnector.alert(`Chat exported to note: ${noteName}`);
     }, [threadMessages]);
 
@@ -89,7 +90,7 @@ const ChatInterfaceMenu = () => {
                         <CounterClockwiseClockIcon /> Chat History
                     </DropdownMenu.Item>
                     <DropdownMenu.Sub>
-                        <DropdownMenu.SubTrigger>
+                        <DropdownMenu.SubTrigger disabled={threadMessagesLength === 0}>
                             <Share2Icon /> Export chat as
                         </DropdownMenu.SubTrigger>
                         <DropdownMenu.SubContent>
@@ -127,7 +128,7 @@ const UserPromptLibrary = () => {
         (async () => {
             try {
                 const settings = await window.appConnector.getSettings();
-                setUserPromptList(JSON.parse(settings[USER_PROMPT_LIST_SETTING]).sort((a, b) => b.usageCount - a.usageCount));
+                setUserPromptList((JSON.parse(settings[USER_PROMPT_LIST_SETTING]) || []).sort((a, b) => b.usageCount - a.usageCount));
             } catch (e) {
                 console.error(e);
             }
