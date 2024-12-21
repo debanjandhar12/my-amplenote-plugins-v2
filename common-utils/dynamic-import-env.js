@@ -1,6 +1,10 @@
-import dotenv from "dotenv";
+import dynamicImportESM from "./dynamic-import-esm.js";
 
 export const dynamicImportEnv = async () => {
+    if (process.env.NODE_ENV === 'production') {
+        return;
+    }
+    const dotenv = await dynamicImportESM("dotenv");
     try {
         dotenv.config();
     } catch {}
