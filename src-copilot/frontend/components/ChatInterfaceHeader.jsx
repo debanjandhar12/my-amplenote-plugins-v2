@@ -17,20 +17,18 @@ export const ChatInterfaceHeader = () => {
             display: 'flex', justifyContent: 'flex-end', paddingRight: '4px',
             position: 'sticky', top: 0, zIndex: '1000', backgroundColor: 'var(--color-background)'
         }}>
-            {threadMessagesLength === 0 &&
-                <Popover.Root>
-                    <Popover.Trigger asChild>
-                        <Button variant="ghost" size="1" style={{ margin: '2px', paddingTop: '5px'}}>
-                            <Tooltip content="Prompt Library" style={{padding: '2px'}}>
-                                <MagicWandIcon width="13" height="13" />
-                            </Tooltip>
-                        </Button>
-                    </Popover.Trigger>
-                    <Popover.Content style={{width: '360px'}}>
-                        <UserPromptLibrary />
-                    </Popover.Content>
-                </Popover.Root>
-            }
+            <Popover.Root>
+                <Popover.Trigger asChild>
+                    <Button variant="ghost" size="1" style={{ margin: '2px', paddingTop: '5px'}} className={'user-prompt-library-button'}>
+                        <Tooltip content="Prompt Library" style={{padding: '2px'}}>
+                            <MagicWandIcon width="13" height="13" />
+                        </Tooltip>
+                    </Button>
+                </Popover.Trigger>
+                <Popover.Content style={{width: '360px'}}>
+                    <UserPromptLibrary />
+                </Popover.Content>
+            </Popover.Root>
             <ChatInterfaceMenu />
             <Tooltip content="New chat">
                 <Button variant="ghost" size="1" style={{marginRight: '4px', margin: '2px'}}
@@ -45,8 +43,23 @@ export const ChatInterfaceHeader = () => {
 const ChatInterfaceMenu = () => {
     const threadMessages = AssistantUI.useThread((t) => t.messages);
     const threadMessagesLength = AssistantUI.useThread((t) => t.messages?.length || 0);
-    const threadId = AssistantUI.useThread((t) => t.id);
+    const threadId = AssistantUI.useThread((t) => t.threadId);
+    const [exportNoteExists, setExportNoteExists] = React.useState(false);
+    const exportNoteName = `Copilot chat - ${threadId}`;
 
+    // -- Init --
+    React.useEffect(() => {
+        (async () => {
+            try {
+                let note = await window.appConnector.findNote({name: exportNoteName});
+                if (note) {
+                    setExportNoteExists(true);
+                }
+            } catch (e) {}
+        })();
+    }, [threadId]);
+
+    // -- Actions --
     const handleExportAsNote = React.useCallback(async () => {
         let noteContent = '';
         for (const message of threadMessages) {
@@ -61,22 +74,27 @@ const ChatInterfaceMenu = () => {
                 }
             }
         }
-        const noteName = `Exported Copilot chat - ${threadId}`;
-        let note = await appConnector.findNote({name: noteName});
+        let note = await appConnector.findNote({name: exportNoteName});
         if (!note) {
-            note = await appConnector.createNote(noteName, []);
-            note = await appConnector.findNote({name: noteName});
+            note = await appConnector.createNote(exportNoteName, []);
+            note = await appConnector.findNote({name: exportNoteName});
             if (!note || !note.uuid) {
-                throw new Error(`Failed to create note: ${noteName}`);
+                throw new Error(`Failed to create note: ${exportNoteName}`);
             }
         }
+        setExportNoteExists(true);
         await appConnector.replaceNoteContent({uuid: note.uuid}, noteContent);
         await appConnector.navigate(`https://www.amplenote.com/notes/${note.uuid}`);
         await appConnector.alert(`Chat exported to note: ${noteName}`);
-    }, [threadMessages]);
+    }, [threadMessages, threadId, setExportNoteExists]);
+    const handleExportAsJSON = React.useCallback(async () => {
+        const jsonContent = "data:text/json;charset=utf-8,"
+            + encodeURIComponent(JSON.stringify(threadMessages, null, 2));
+        await appConnector.saveFile({data: jsonContent, name: threadId + '.json'});
+    }, [threadMessages, threadId]);
 
-    const {Box, Popover, DropdownMenu, Button } = window.RadixUI;
-    const {DropdownMenuIcon, MagicWandIcon, Share2Icon, FilePlusIcon, CounterClockwiseClockIcon} = window.RadixIcons;
+    const {Flex, Text, Box, Popover, DropdownMenu, Button } = window.RadixUI;
+    const {DropdownMenuIcon, CodeIcon, Share2Icon, FilePlusIcon, CounterClockwiseClockIcon} = window.RadixIcons;
     return (
         <Box>
             <DropdownMenu.Root>
@@ -95,24 +113,41 @@ const ChatInterfaceMenu = () => {
                         </DropdownMenu.SubTrigger>
                         <DropdownMenu.SubContent>
                             <DropdownMenu.Item onClick={handleExportAsNote}>
-                                <FilePlusIcon /> New Note
+                                <Flex style={{ alignItems: 'center' }}>
+                                    <FilePlusIcon />
+                                    <Flex style={{ flexDirection: 'column', marginLeft: '8px' }}>
+                                        <Flex style={{ alignItems: 'center' }}>
+                                            {!exportNoteExists ? 'New Note' : 'Update Note'}
+                                        </Flex>
+                                        <Text size="1" style={{ color: 'var(--gray-11)'}}>
+                                            {exportNoteName}
+                                        </Text>
+                                    </Flex>
+                                </Flex>
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Separator />
+                            <DropdownMenu.Item onClick={handleExportAsJSON}>
+                                <Flex style={{ alignItems: 'center' }}>
+                                    <CodeIcon />
+                                    <Text style={{ marginLeft: '8px' }}>Download JSON</Text>
+                                </Flex>
                             </DropdownMenu.Item>
                         </DropdownMenu.SubContent>
                     </DropdownMenu.Sub>
-                    {
-                        threadMessagesLength > 0 &&
-                        <>
-                            <DropdownMenu.Separator />
-                            <DropdownMenu.Sub>
-                                <DropdownMenu.SubTrigger>
-                                    <MagicWandIcon /> Prompt Library
-                                </DropdownMenu.SubTrigger>
-                                <DropdownMenu.SubContent style={{width: '360px'}}>
-                                    <UserPromptLibrary />
-                                </DropdownMenu.SubContent>
-                            </DropdownMenu.Sub>
-                        </>
-                    }
+                    {/*{*/}
+                    {/*    threadMessagesLength > 0 &&*/}
+                    {/*    <>*/}
+                    {/*        <DropdownMenu.Separator />*/}
+                    {/*        <DropdownMenu.Sub>*/}
+                    {/*            <DropdownMenu.SubTrigger>*/}
+                    {/*                <MagicWandIcon /> Prompt Library*/}
+                    {/*            </DropdownMenu.SubTrigger>*/}
+                    {/*            <DropdownMenu.SubContent style={{width: '360px'}}>*/}
+                    {/*                <UserPromptLibrary />*/}
+                    {/*            </DropdownMenu.SubContent>*/}
+                    {/*        </DropdownMenu.Sub>*/}
+                    {/*    </>*/}
+                    {/*}*/}
                 </DropdownMenu.Content>
             </DropdownMenu.Root>
         </Box>
@@ -128,8 +163,9 @@ const UserPromptLibrary = () => {
         (async () => {
             try {
                 const settings = await window.appConnector.getSettings();
-                setUserPromptList((JSON.parse(settings[USER_PROMPT_LIST_SETTING]) || []).sort((a, b) => b.usageCount - a.usageCount));
+                setUserPromptList((JSON.parse(settings[USER_PROMPT_LIST_SETTING])).sort((a, b) => b.usageCount - a.usageCount));
             } catch (e) {
+                setUserPromptList([]);
                 console.error(e);
             }
         })();
@@ -186,7 +222,7 @@ const UserPromptLibrary = () => {
             <ScrollArea style={{ maxHeight: '320px' }} type={'auto'}>
                 <Box style={{ padding: '8px' }}>
                     {userPromptList.map((prompt) => (
-                        <Card asChild key={prompt.uuid} style={{ padding: '8px', margin: '6px' }}>
+                        <Card asChild key={prompt.uuid} style={{ padding: '8px', margin: '6px' }} className={'user-prompt-card'}>
                             <a href="#" onClick={() => handleInsertPrompt(prompt)}>
                                 <Flex justify="between" align="start" style={{ padding: '2px', minHeight: '33px' }}>
                                     <Text style={{ fontSize: '11px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
@@ -213,6 +249,7 @@ const UserPromptLibrary = () => {
             </ScrollArea>
             <Box style={{ marginTop: '16px' }}>
                 <Button
+                    className={'user-prompt-library-add-button'}
                     onClick={handleAddPrompt}
                     variant="soft"
                     size="1"
