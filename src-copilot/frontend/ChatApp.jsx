@@ -15,10 +15,11 @@ export const ChatApp = () => {
                 new AssistantUI.SimpleImageAttachmentAdapter()
             ]),
         },
-        onFinish: async (threadRuntime) => {
-            console.log('onFinish', threadRuntime);
+        onFinish: async (result) => {
+            window.dispatchEvent(new CustomEvent('onLLMCallFinish', {detail: result}));
+            console.log('onLLMCallFinish', result);
         },
-        onError: async (threadRuntime, error) => {
+        onError: async (error) => {
             appConnector.alert(`Error: ${errorToString(error)}`);
         }
     });

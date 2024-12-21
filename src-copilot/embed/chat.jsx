@@ -1,7 +1,7 @@
 import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
 import {getLLMModel} from "../backend/getLLMModel.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK} from "../test/embed/chat.testdata.js";
+import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK} from "../test/chat/chat.testdata.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import {overwriteWithAmplenoteStyle} from "../frontend/overwriteWithAmplenoteStyle.js";
 import {ChatApp} from "../frontend/ChatApp.jsx";
@@ -26,6 +26,7 @@ window.appConnector = new Proxy({}, {
             return target[prop];
         }
         return async function(...args) {
+            window.dispatchEvent(new CustomEvent('callAmplenotePlugin', {detail: [prop, ...args]}));
             return await window.callAmplenotePlugin(prop, ...args);
         };
     }
@@ -91,6 +92,8 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
     } catch (e) {
         window.document.body.innerHTML = '<div class="error" style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
         console.error(e);
+    } finally {
+        window.dispatchEvent(new CustomEvent('appLoaded'));
     }
 })();
 

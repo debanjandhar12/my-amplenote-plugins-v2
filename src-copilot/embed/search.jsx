@@ -1,5 +1,5 @@
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK} from "../test/embed/chat.testdata.js";
+import {EMBED_COMMANDS_MOCK} from "../test/chat/chat.testdata.js";
 import {overwriteWithAmplenoteStyle} from "../frontend/overwriteWithAmplenoteStyle.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
@@ -19,6 +19,7 @@ window.appConnector = new Proxy({}, {
             return target[prop];
         }
         return async function(...args) {
+            window.dispatchEvent(new CustomEvent('callAmplenotePlugin', [prop, ...args]));
             return await window.callAmplenotePlugin(prop, ...args);
         };
     }
@@ -65,5 +66,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
     } catch (e) {
         window.document.body.innerHTML = '<div style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
         console.error(e);
+    } finally {
+        window.dispatchEvent(new CustomEvent('appLoaded'));
     }
 })();

@@ -21,5 +21,5 @@ export default {
       url: 'https://plugins.amplenote.com/'
   },
   setupFiles: ['<rootDir>/jest.setup.js'],
-  setupFilesAfterEnv: ["expect-playwright"]
+  setupFilesAfterEnv: ["./common-utils/playwright-helpers.ts"]
 };

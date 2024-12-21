@@ -13,7 +13,7 @@ export const useDangerousInBrowserRuntimeMod = (
         } catch (e) {
             if (e.name !== 'AbortError') {
                 console.log(e);
-                options.onError?.(this, e);
+                options.onError?.(e);
             }
             throw e;
         }

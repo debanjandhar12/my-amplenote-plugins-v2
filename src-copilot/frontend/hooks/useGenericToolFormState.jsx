@@ -14,7 +14,8 @@ export const useGenericToolFormState = (states, initialState = null, params = {}
         if (!params.result && states[formState].eventHandler) {   // only run if result is not already set
             (async () => {
                 try {
-                    console.log('tool state change', formState, {...params, formState, setFormState});
+                    window.dispatchEvent(new CustomEvent('onToolStateChange', {detail: formState}));
+                    console.log('onToolStateChange', formState);
                     await states[formState].eventHandler({...params, formState, setFormState});
                 } catch (e) {
                     console.error(e);
