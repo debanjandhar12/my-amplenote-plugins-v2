@@ -1,6 +1,8 @@
 import {USER_PROMPT_LIST_SETTING} from "../../constants.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
 import {capitalize} from "lodash-es";
+import {replaceParagraphTextInMarkdown} from "../../markdown/replaceParagraphTextInMarkdown.jsx";
+import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
 
 export const ChatInterfaceHeader = () => {
     // Fetch runtime and other assistant-ui contexts
@@ -68,7 +70,15 @@ const ChatInterfaceMenu = () => {
             }"} --></mark>\n`;
             for (const contentPart of message.content) {
                 if (contentPart.type === 'text') {
-                    noteContent += contentPart.text + '\n';
+                    // Replace tool category mentions with code
+                    let tempText = contentPart.text;
+                    for (const categoryName of ToolCategoryRegistry.getAllCategoriesNames()) {
+                        const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
+                        tempText = await replaceParagraphTextInMarkdown(tempText, (oldVal) => {
+                            return oldVal.replaceAll('@' + categoryName, '`@' + toolCategory.name + '`');
+                        });
+                    }
+                    noteContent += tempText + '\n';
                 } else if (contentPart.type === 'tool-call') {
                     noteContent += `«Tool call: ${contentPart.toolName}»\n`;
                 }
