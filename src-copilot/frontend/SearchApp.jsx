@@ -169,6 +169,13 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts }) => {
                 </IconButton>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content>
+                <DropdownMenu.Item
+                    onSelect={onSync}
+                    disabled={isSyncing}
+                >
+                    {isSyncing ? 'Syncing...' : 'Sync notes with Pinecone'}
+                </DropdownMenu.Item>
+                <DropdownMenu.Separator />
                 <Text color="gray" style={{ fontSize: '14px', padding: '4px' }}>Search Options</Text>
                 <Flex align="center" justify="between" style={{ width: '100%', padding: '12px', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
                     Archived
@@ -177,13 +184,6 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts }) => {
                         onCheckedChange={(checked) => setSearchOpts({ ...searchOpts, isArchived: checked })}
                     />
                 </Flex>
-                <DropdownMenu.Separator />
-                <DropdownMenu.Item
-                    onSelect={onSync}
-                    disabled={isSyncing}
-                >
-                    {isSyncing ? 'Syncing...' : 'Sync notes with Pinecone'}
-                </DropdownMenu.Item>
             </DropdownMenu.Content>
         </DropdownMenu.Root>
     );

@@ -55,19 +55,24 @@ export const SearchNotesByTitleTagsContent = () => {
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         renderInit: ({args, formData}) => {
             const {isPineconeSearchPossible, pineconeError} = formData;
-            const {Text, Spinner} = window.RadixUI;
+            const {Flex, Text, Spinner} = window.RadixUI;
             const {ExclamationTriangleIcon} = window.RadixIcons;
-            const isPineconeError = pineconeError !== null;
-            if (isPineconeSearchPossible && isPineconeError) {
+            if (isPineconeSearchPossible && pineconeError) {
                 return <ToolCardContainer>
-                    <Text css={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'crimson' }}>
-                        <ExclamationTriangleIcon />
-                        Pinecone search failed: {errorToString(formData.pineconeError)}
-                    </Text>
-                    <Text css={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Spinner />
-                        Searching user notes using amplenote built-in search...
-                    </Text>
+                    <Flex direction="column" gap="2">
+                        <Flex style={{ alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'rgba(0, 0, 0, 0.05)', borderRadius: '4px' }}>
+                            <ExclamationTriangleIcon />
+                            <Text style={{ color: 'crimson' }}>
+                                Pinecone search failed: {errorToString(formData.pineconeError)}
+                            </Text>
+                        </Flex>
+                        <Flex style={{ alignItems: 'center', gap: '8px' }}>
+                            <Spinner />
+                            <Text>
+                                Searching user notes using fallback amplenote built-in search...
+                            </Text>
+                        </Flex>
+                    </Flex>
                 </ToolCardContainer>
             } else if (isPineconeSearchPossible) {
                 return <ToolCardMessage text={`Searching user notes using pinecone...`}
@@ -77,7 +82,6 @@ export const SearchNotesByTitleTagsContent = () => {
                                     icon={<Spinner />} />
         },
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
-            console.log('SearchNotesByTitleTagsContent onInit', args);
             let isPineconeSearchPossible = args.noteContent && args.isArchived === undefined &&
                 args.isSharedByMe === undefined && args.isSharedWithMe === undefined;
             setFormData({...formData, isPineconeSearchPossible});
@@ -209,17 +213,39 @@ export const SearchNotesByTitleTagsContent = () => {
             addResult(`Search completed. Search Result: ${JSON.stringify(searchResults)}`);
         },
         renderCompleted: ({formData, toolName, args}) => {
-            let text = `Search completed! ${formData.searchResults.length} results fetched.`;
+            const {Flex, Text} = window.RadixUI;
+            const {MagnifyingGlassIcon, ExclamationTriangleIcon} = window.RadixIcons;
             if (formData.isPineconeSearchPossible && formData.pineconeError) {
-                text = `Search completed using fallback amplenote built-in search. Pinecone failed with error: ${errorToString(formData.pineconeError)}\n ${formData.searchResults.length} results fetched.`;
+                return <ToolCardResultMessage
+                    result={JSON.stringify(formData.searchResults)}
+                    toolName={toolName}
+                    input={args}>
+                    <Flex direction="column" gap="2">
+                        <Flex style={{ alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'rgba(0, 0, 0, 0.05)', borderRadius: '4px' }}>
+                            <ExclamationTriangleIcon />
+                            <Text style={{ color: 'crimson' }}>
+                                Pinecone search failed: {errorToString(formData.pineconeError)}
+                            </Text>
+                        </Flex>
+                        <Flex style={{ alignItems: 'center', gap: '8px' }}>
+                            <MagnifyingGlassIcon />
+                            <Text>
+                                Search completed using fallback amplenote built-in search. {formData.searchResults.length} results fetched.
+                            </Text>
+                        </Flex>
+                    </Flex>
+                </ToolCardResultMessage>
             }
-            const { MagnifyingGlassIcon } = window.RadixIcons;
+            let text = `Search completed! ${formData.searchResults.length} results fetched.`;
+            if (formData.isPineconeSearchPossible && !formData.pineconeError) {
+                text = `Search completed using pinecone! ${formData.searchResults.length} results fetched.`;
+            }
             return <ToolCardResultMessage
                 result={JSON.stringify(formData.searchResults)}
-                text={text}
-                icon={<MagnifyingGlassIcon />}
+                icon={<MagnifyingGlassIcon/>}
                 toolName={toolName}
-                input={args} />
+                text={text}
+                input={args}/>;
         }
     });
 };

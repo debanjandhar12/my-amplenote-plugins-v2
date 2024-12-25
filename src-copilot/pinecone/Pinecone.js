@@ -10,6 +10,8 @@ export class Pinecone {
     async search(query, appSettings, limit = 10) {
         // -- Initialize pinecone client --
         const { Pinecone } = await dynamicImportESM("@pinecone-database/pinecone");
+        if (!appSettings[PINECONE_API_KEY_SETTING])
+            throw new Error('Pinecone API Key is not set in plugin settings.');
         const pineconeClient = new Pinecone({
             apiKey: appSettings[PINECONE_API_KEY_SETTING],
             fetchApi: async (url, options) => {

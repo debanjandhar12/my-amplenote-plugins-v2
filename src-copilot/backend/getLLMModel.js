@@ -46,7 +46,7 @@ export async function getLLMModel(appSettings) {
         return createOpenAI({
             apiKey: apiKey,
             basePath: apiUrl    // Default: https://api.openai.com/v1
-        }).languageModel(model, {parallelToolCalls: false});
+        }).languageModel(model); // {parallelToolCalls: false} causing issues with generateText
     }
     else throw new Error('It is likely that incorrect LLM API URL is provided. Please check plugin settings.');
 }
