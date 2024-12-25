@@ -78,6 +78,15 @@ const ChatInterfaceMenu = () => {
                             return oldVal.replaceAll('@' + categoryName, '`@' + toolCategory.name + '`');
                         });
                     }
+                    // Trick to remove toolplan tags with toolPlanStartTag and toolPlanEndTag.
+                    // This is done so <toolplan> doesn't get recognized as a markdown tag.
+                    // Without this, replaceParagraphTextInMarkdown won't work.
+                    tempText = tempText.replaceAll('<toolplan>', 'toolPlanStartTag').replaceAll('</toolplan>', 'toolPlanEndTag');
+                    tempText = await replaceParagraphTextInMarkdown(tempText, (oldVal) => {
+                        return oldVal.replace(/toolPlanStartTag(.*?)toolPlanEndTag/g, '');
+                    });
+                    tempText = tempText.replaceAll('toolPlanStartTag', '<toolplan>').replaceAll('toolPlanEndTag', '</toolplan>');
+
                     noteContent += tempText + '\n';
                 } else if (contentPart.type === 'tool-call') {
                     noteContent += `«Tool call: ${contentPart.toolName}»\n`;

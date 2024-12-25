@@ -1,6 +1,7 @@
 // Based on https://github.com/Yonom/assistant-ui/blob/70ea4a87283d9dc34965ef9d9a80504a05ab8979/packages/react/src/ui/user-message.tsx
 import {replaceParagraphTextInMarkdown} from "../../markdown/replaceParagraphTextInMarkdown.jsx";
 import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
+import {ToolCategoryMentionComponent} from "./makeCustomMarkdownText.jsx";
 
 const UserMessage = () => {
     const { UserMessage, MessagePrimitive, UserActionBar, BranchPicker } = window.AssistantUI;
@@ -36,7 +37,7 @@ const UserMessageContent = (props) => {
 };
 
 const UserMessageText = ({ text }) => {
-    const [htmlText, setHtmlText] = React.useState(null);
+    const [children, setChildren] = React.useState(null);
 
     React.useEffect(() => {
         const processText = async () => {
@@ -44,16 +45,25 @@ const UserMessageText = ({ text }) => {
             for (const categoryName of ToolCategoryRegistry.getAllCategoriesNames()) {
                 const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
                 tempText = await replaceParagraphTextInMarkdown(tempText, (oldVal) => {
-                    return oldVal.replaceAll('@' + categoryName, '<a class="user_msg_tool_category_mention" title="' + toolCategory.description + '" href="javascript:void(0)">@' + categoryName + '</a>');
+                    return oldVal.replace(new RegExp('@' + categoryName + '(\\s|$)', 'g'), '<toolcategorymention123XG>@' + categoryName + '</toolcategorymention123XG>$1');
                 });
             }
-            setHtmlText(tempText);
+            const tempChildren = tempText.split(' ').map((part, i) => {
+                if (part.startsWith('<toolcategorymention123XG>') && part.endsWith('</toolcategorymention123XG>')) {
+                    const toolCategory = ToolCategoryRegistry.getCategory(part.substring(part.indexOf('>@') + 2, part.lastIndexOf('<')));
+                    return <ToolCategoryMentionComponent key={i} {...toolCategory}>{part.substring(part.indexOf('>@') + 2, part.lastIndexOf('<'))}</ToolCategoryMentionComponent>;
+                }
+                return i === 0 ? part : ' ' + part;
+            });
+            setChildren(tempChildren);
         };
 
         processText();
     }, [text]);
 
-    return <div dangerouslySetInnerHTML={{ __html: htmlText }} />;
+    return <div className="aui-md-p">
+        {children}
+    </div>
 };
 
 export { UserMessage };

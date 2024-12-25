@@ -19,7 +19,8 @@ export class ToolRegistry {
             CreateNewNotes(), FetchNoteDetailByNoteUUID(), SearchNotesByTitleTagsContent(),
             UpdateUserNotes(), UpdateUserTasks(),
             InsertContentToNote(),
-            DeleteTasks(), DeleteUserNotes()];
+            // DeleteTasks(), // No api support for deleting task yet
+            DeleteUserNotes()];
     }
 
     static getTool(toolName) {

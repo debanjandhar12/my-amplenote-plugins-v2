@@ -8,6 +8,7 @@ import {ChatApp} from "../frontend/ChatApp.jsx";
 import {parse} from "../markdown/markdown-parser.js";
 import {ToolRegistry} from "../frontend/tools-core/registry/ToolRegistry.js";
 import {ToolCategoryRegistry} from "../frontend/tools-core/registry/ToolCategoryRegistry.js";
+import {makeCustomMarkdownText} from "../frontend/components/makeCustomMarkdownText.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.userData = window.userData || EMBED_USER_DATA_MOCK;
@@ -66,7 +67,8 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
                 "@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.js",
                 "@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.js", "@radix-ui/themes",
                 "@assistant-ui/react-markdown", "@radix-ui/react-icons", "react-string-diff"]);
-        window.AssistantUIMarkdown = AssistantUIMarkdown.makeMarkdownText();
+        window.AssistantUIMarkdown = AssistantUIMarkdown;
+        window.AssistantUIMarkdownComponent = makeCustomMarkdownText();
         window.React = React;
         window.ReactDOM = ReactDOM;
         window.AssistantUI = AssistantUI;

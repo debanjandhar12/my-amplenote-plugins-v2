@@ -6,21 +6,21 @@ export class ToolCategoryRegistry {
     static registerAllCategory() {
         ToolCategoryRegistry.categories.push({
             name: "tasks",
-            description: `Enables tools for working with amplenote tasks:
-            ${ToolRegistry.getToolsByCategory("tasks")
-                .map(tool => tool.unstable_tool.toolName).join('\n ')}`.replaceAll('\n', '&#013;').replace(/\s+/g, ' ').trim()
+            description: "<b>Enables tools for amplenote tasks:</b><br />" +
+            ToolRegistry.getToolsByCategory("tasks")
+                .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
         });
         ToolCategoryRegistry.categories.push({
             name: "notes",
-            description: `Enables tools for working with amplenote notes:
-            ${ToolRegistry.getToolsByCategory("notes")
-                .map(tool => tool.unstable_tool.toolName).join('\n ')}`.replaceAll('\n', '&#013;').replace(/\s+/g, ' ').trim()
+            description: "<b>Enables tools for amplenote notes:</b><br />" +
+            ToolRegistry.getToolsByCategory("notes")
+                .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
         });
         ToolCategoryRegistry.categories.push({
             name: "web",
-            description: `Enables tools for searching the web:
-            ${ToolRegistry.getToolsByCategory("web")
-                .map(tool => tool.unstable_tool.toolName).join('\n ')}`.replaceAll('\n', '&#013;').replace(/\s+/g, ' ').trim()
+            description: "<b>Enables tools for searching the web:</b><br />" +
+            ToolRegistry.getToolsByCategory("web")
+                .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
         });
     }
 

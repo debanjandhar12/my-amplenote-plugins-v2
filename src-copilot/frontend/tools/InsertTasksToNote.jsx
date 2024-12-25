@@ -141,7 +141,7 @@ export const InsertTasksToNote = () => {
             const { CheckboxIcon } = window.RadixIcons;
             return <ToolCardResultMessage
                 result={JSON.stringify(formData.successfulInsertedItems)}
-                text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${noteTitle} (uuid: ${formData.currentNoteSelectionUUID}).` +
+                text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${noteTitle}.` +
                     (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to insert.` : "")}
                 icon={<CheckboxIcon />}
                 toolName={toolName}

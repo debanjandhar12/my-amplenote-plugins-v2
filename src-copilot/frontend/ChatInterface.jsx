@@ -39,7 +39,7 @@ export const ChatInterface = () => {
                 welcome={{
                     suggestions: suggestions,
                 }}
-                assistantMessage={{ components: { Text: AssistantUIMarkdown } }}
+                assistantMessage={{ components: { Text: AssistantUIMarkdownComponent } }}
                 assistantAvatar={assistantAvatar}
                 tools={ToolRegistry.getAllTools()}
                 components={{

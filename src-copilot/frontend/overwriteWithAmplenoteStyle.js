@@ -183,7 +183,7 @@ export const overwriteWithAmplenoteStyle = () => {
     // Inject some custom styles
     const styleEl3 = document.createElement('style');
     styleEl3.innerText = `
-    .user_msg_tool_category_mention {
+    .tool_category_mention {
         background-color: var(--accent-a3);
         border-radius: var(--aui-radius);
     }
