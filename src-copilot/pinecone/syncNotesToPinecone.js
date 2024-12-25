@@ -1,4 +1,9 @@
-import {INDEX_VERSION, PINECONE_API_KEY_SETTING, PINECONE_INDEX_NAME} from "../constants.js";
+import {
+    INDEX_VERSION,
+    LAST_PINECONE_SYNC_TIME_SETTING,
+    PINECONE_API_KEY_SETTING,
+    PINECONE_INDEX_NAME
+} from "../constants.js";
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 import {Splitter} from "./Splitter.js";
 import {chunk, isArray} from "lodash-es";
@@ -35,7 +40,8 @@ export const syncNotesToPinecone = async (app) => {
     const noteContentNameSpace = index.namespace('note-content');
 
     // -- Fetch target notes from amplenote --
-    const lastSyncTime = app.settings["lastSyncTime"];
+    let lastSyncTime = app.settings[LAST_PINECONE_SYNC_TIME_SETTING];
+    let pluginUUID = app.context.pluginUUID;
     const allNotes = await app.filterNotes({});
 
     // -- Delete non-existent notes from pinecone --
@@ -68,6 +74,20 @@ export const syncNotesToPinecone = async (app) => {
         if (olderEntriesVersion < INDEX_VERSION) {
             await deleteNamespaceEntries(noteTagNameSpace, notesInPinecone);
             await deleteNamespaceEntries(noteContentNameSpace, notesInPinecone);
+            lastSyncTime = null;
+            notesInPinecone.length = 0; // Delete all notesInPinecone
+        }
+    }
+
+    // -- Delete other plugin uuid notes from pinecone --
+    if (notesInPinecone.length > 0) {
+        const olderEntriesPluginUUID = await (noteTagNameSpace.fetch([notesInPinecone[0]]).then(response => {
+            return response.records[notesInPinecone[0]].metadata.pluginUUID;
+        }));
+        if (olderEntriesPluginUUID !== pluginUUID) {
+            await deleteNamespaceEntries(noteTagNameSpace, notesInPinecone);
+            await deleteNamespaceEntries(noteContentNameSpace, notesInPinecone);
+            lastSyncTime = null;
             notesInPinecone.length = 0; // Delete all notesInPinecone
         }
     }
@@ -90,7 +110,7 @@ export const syncNotesToPinecone = async (app) => {
     const records = [];
     for (const note of filteredNotes) {
         console.log('note', note);
-        const splitter = new Splitter();
+        const splitter = new Splitter(260, pluginUUID);
         const splitResultForNote = await splitter.split(app, note);
         records.push(...splitResultForNote);
     }
@@ -124,7 +144,7 @@ export const syncNotesToPinecone = async (app) => {
         }
     }
 
-    app.setSetting("lastSyncTime", new Date().toISOString());
+    app.setSetting(LAST_PINECONE_SYNC_TIME_SETTING, new Date().toISOString());
 }
 
 const createIndexIfNotExists = async (pineconeClient, indexName) => {

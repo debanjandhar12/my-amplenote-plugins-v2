@@ -4,11 +4,11 @@ import {INDEX_VERSION} from "../constants.js";
 
 export class Splitter {
 
-    constructor(maxTokens = 260) {
+    constructor(maxTokens = 260, pluginUUID) {
         this.maxTokens = maxTokens;
         this.splitResult = [];
         this.noteContent = '';
-        this.accountSettingId = 'todo';
+        this.pluginUUID = pluginUUID;
     }
 
     addNoteContentSplitResult(note, headers) {
@@ -23,7 +23,7 @@ export class Splitter {
                 namespace: "note-content",
                 isTagOnly: false,
                 pluginVersion: INDEX_VERSION,
-                accountSettingId: this.accountSettingId
+                pluginUUID: this.pluginUUID
             },
             dirty: false,   // Whether further content is added to this split result
             addedAmount: 0 // Amount of content added to this split result
@@ -87,7 +87,7 @@ export class Splitter {
                 namespace: "note-tags",
                 isTagOnly: true,
                 pluginVersion: INDEX_VERSION,
-                accountSettingId: this.accountSettingId
+                pluginUUID: this.pluginUUID
             }
         });
 
