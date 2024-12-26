@@ -22,10 +22,13 @@ export const useInitAttachments = () => {
             if (window.userData.invokerNoteUUID && !window.userData.invokerSelectionContent) {
                 const noteUUID = window.userData.invokerNoteUUID;
                 const noteName = await appConnector.getNoteTitleByUUID(noteUUID);
+                const noteContent = await appConnector.getNoteContentByUUID(noteUUID);
                 const file = new File([`
                 @notes
                 Current note title: ${noteName}
                 Current note UUID: ${noteUUID}
+                Current note content: ${noteContent.length > 8000 ?
+                    'Content too long. Use note detail tool to get full content if required.' : noteContent}
                 `.trim()], noteName, {type: "text/amplenote-note"});
                 await threadRuntime.composer.addAttachment(file);
                 await threadRuntime.composer.setText('@notes ');

@@ -113,7 +113,7 @@ const plugin = {
                 await app.alert(e);
             }
         },
-        "Chat with Copilot": async function (app, selectionContent) {
+        "Chat": async function (app, selectionContent) {
             try {
                 plugin.currentNoteUUID = app.context.noteUUID;
                 await app.openSidebarEmbed(1, {trigger: 'replaceSelection', noteUUID: app?.context?.noteUUID,
@@ -125,7 +125,15 @@ const plugin = {
         }
     },
     noteOption: {
-        "Chat with Copilot": {
+        "Chat": async function (app) {
+            try {
+                await app.openSidebarEmbed(1, {trigger: 'noteOption', openChat: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        },
+        "Chat with context": {
             check: async function (app, noteUUID) {
                 plugin.currentNoteUUID = noteUUID;
                 return true;
@@ -141,7 +149,7 @@ const plugin = {
         }
     },
     taskOption: {
-        "Chat with Copilot": async function (app, taskObj) {
+        "Chat": async function (app, taskObj) {
             try {
                 plugin.currentNoteUUID = app.context.noteUUID;
                 await app.openSidebarEmbed(1, {trigger: 'taskOption', taskUUID: taskObj.uuid, openChat: true});
@@ -152,7 +160,7 @@ const plugin = {
         }
     },
     imageOption: {
-        "Chat with Copilot": async function (app, image) {
+        "Chat": async function (app, image) {
             try {
                 plugin.currentNoteUUID = app.context.noteUUID;
                 await app.openSidebarEmbed(1, {trigger: 'imageOption', image, openChat: true});
@@ -166,7 +174,7 @@ const plugin = {
         try {
             if (args.openChat) {
                 let userData = {};
-                if (args.trigger === 'noteOption') {
+                if (args.trigger === 'noteOption' && args.noteUUID) {
                     const noteInfo = await app.findNote({uuid: args.noteUUID});
                     userData = {...userData, invokerNoteUUID: args.noteUUID, invokerNoteTitle: noteInfo.name};
                 } else if (args.trigger === 'imageOption') {
