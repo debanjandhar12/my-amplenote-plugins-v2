@@ -5,31 +5,34 @@ import {useAssistantAvatar} from "./hooks/useAssistantAvatar.jsx";
 import {useModelConfig} from "./hooks/useModelConfig.jsx";
 import {UserMessage} from "./components/UserMessage.jsx";
 import {ToolRegistry} from "./tools-core/registry/ToolRegistry.js";
+import {getCorsBypassUrl} from "../../common-utils/cors-helpers.js";
+import {useInitAttachments} from "./hooks/useInitAttachments.jsx";
 
 export const ChatInterface = () => {
     // Fetch runtime and other assistant-ui contexts
     const runtime = AssistantUI.useAssistantRuntime();
     const thread = AssistantUI.useThread();
-    const threadRuntime = AssistantUI.useThreadRuntime();
     const assistantAvatar = useAssistantAvatar();
     const suggestions = useChatSuggestions(thread);
 
-    // Based on user data, initialize assistant-ui chat
-    React.useEffect(() => {
-        if (window.userData.invokerImageSrc) {
-            fetch(window.userData.invokerImageSrc)
-                .then(response => response.blob())
-                .then(async blob => {
-                    const file = new File([blob], "image.jpg", { type: "image/jpeg" });
-                    await threadRuntime.composer.addAttachment(file);
-                });
-        }
-    }, []);
+    // Based on user data, initialize assistant-ui attachments
+    useInitAttachments();
 
     // Handle tools and system prompt dynamically by setting model config
-    window.appConnector.getUserCurrentNoteData().then(async (userData) => {
-        window.userData = {...window.userData, ...userData};    // update userData
-    });
+    React.useEffect(() => {
+        const updateUserData = async () => {
+            window.appConnector.getUserCurrentNoteData().then(async (userData) => {
+                window.userData = {...window.userData, ...userData};    // update userData
+            });
+        }
+        updateUserData();
+        const intervalId = setInterval(() => updateUserData(), 4000);
+        const unsubscribe = runtime.thread.subscribe(() => updateUserData());
+        return () => {
+            clearInterval(intervalId);
+            unsubscribe();
+        }
+    }, [runtime]);
     useModelConfig(runtime);
     const { Thread } = window.AssistantUI;
     return (

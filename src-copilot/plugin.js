@@ -78,7 +78,6 @@ const plugin = {
         },
         "Chat with Copilot": async function (app) {
             try {
-                plugin.currentNoteUUID = app.context.noteUUID;
                 await app.openSidebarEmbed(1, {trigger: 'appOption', openChat: true});
             } catch (e) {
                 console.error(e);
@@ -87,7 +86,6 @@ const plugin = {
         },
         "Search notes using natural language": async function (app) {
             try {
-                plugin.currentNoteUUID = app.context.noteUUID;
                 await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
             } catch (e) {
                 console.error(e);
@@ -118,7 +116,8 @@ const plugin = {
         "Chat with Copilot": async function (app, selectionContent) {
             try {
                 plugin.currentNoteUUID = app.context.noteUUID;
-                await app.openSidebarEmbed(1, {trigger: 'replaceSelection', selectionContent: app?.context?.selectionContent || selectionContent, openChat: true});
+                await app.openSidebarEmbed(1, {trigger: 'replaceSelection', noteUUID: app?.context?.noteUUID,
+                    selectionContent: app?.context?.selectionContent || selectionContent, openChat: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -126,10 +125,26 @@ const plugin = {
         }
     },
     noteOption: {
-        "Chat with Copilot": async function (app, noteUUID) {
-            try {
+        "Chat with Copilot": {
+            check: async function (app, noteUUID) {
                 plugin.currentNoteUUID = noteUUID;
-                await app.openSidebarEmbed(1, {trigger: 'noteOption', noteUUID, openChat: true});
+                return true;
+            },
+            run: async function (app, noteUUID) {
+                try {
+                    await app.openSidebarEmbed(1, {trigger: 'noteOption', noteUUID, openChat: true});
+                } catch (e) {
+                    console.error(e);
+                    await app.alert(e);
+                }
+            }
+        }
+    },
+    taskOption: {
+        "Chat with Copilot": async function (app, taskObj) {
+            try {
+                plugin.currentNoteUUID = app.context.noteUUID;
+                await app.openSidebarEmbed(1, {trigger: 'taskOption', taskUUID: taskObj.uuid, openChat: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -157,7 +172,9 @@ const plugin = {
                 } else if (args.trigger === 'imageOption') {
                     userData = {...userData, invokerImageSrc: args.image.src};
                 } else if (args.trigger === 'replaceSelection') {
-                    userData = {...userData, invokerSelectionContent: args.selectionContent};
+                    userData = {...userData, invokerSelectionContent: args.selectionContent, invokerNoteUUID: args.noteUUID};
+                } else if (args.trigger === 'taskOption') {
+                    userData = {...userData, invokerTaskUUID: args.taskUUID};
                 }
                 const dailyJotNote = await app.notes.dailyJot(Math.floor(Date.now() / 1000));
                 const dailyJotNoteUUID = (await dailyJotNote.url()).split('/').pop();

@@ -2,12 +2,13 @@
 import {replaceParagraphTextInMarkdown} from "../../markdown/replaceParagraphTextInMarkdown.jsx";
 import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
 import {ToolCategoryMentionComponent} from "./makeCustomMarkdownText.jsx";
+import {FileAttachmentDisplay} from "./FileAttachmentDisplay.jsx";
 
 const UserMessage = () => {
     const { UserMessage, MessagePrimitive, UserActionBar, BranchPicker } = window.AssistantUI;
     return (
         <UserMessage.Root>
-            <UserMessage.Attachments />
+            <UserMessage.Attachments components={{ File: FileAttachmentDisplay }} />
             <MessagePrimitive.If hasContent>
                 <UserActionBar />
                 <UserMessageContent />

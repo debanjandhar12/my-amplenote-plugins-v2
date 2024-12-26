@@ -1,6 +1,7 @@
 import {useTributeSetup} from "../hooks/useTributeSetup.jsx";
 import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
+import {FileAttachmentDisplay} from "./FileAttachmentDisplay.jsx";
 
 // Based on: https://github.com/Yonom/assistant-ui/blob/main/packages/react/src/ui/composer.tsx
 export const CustomComposer = () => {
@@ -36,7 +37,10 @@ export const CustomComposer = () => {
         <Composer.Root>
             {allowAttachments &&
                 <>
-                    <Composer.Attachments />
+                    <Composer.Attachments
+                        components={{
+                            File: FileAttachmentDisplay
+                        }} />
                     <Composer.AddAttachment />
                 </>}
             <Composer.Input ref={textareaRef} />

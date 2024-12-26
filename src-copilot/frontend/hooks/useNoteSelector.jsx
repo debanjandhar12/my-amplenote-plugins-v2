@@ -16,7 +16,8 @@ export const useNoteSelector = ({args, setFormData, formData}) => {
                     title: noteTitle,
                 });
             }
-            addIfNotPresent(noteArray, userData.currentNoteUUID, userData.currentNoteTitle);
+            addIfNotPresent(noteArray, userData.currentNoteUUID, userData.currentNoteUUID);
+            addIfNotPresent(noteArray, userData.invokerNoteUUID, userData.invokerNoteUUID);
             addIfNotPresent(noteArray, userData.dailyJotNoteUUID, userData.dailyJotNoteTitle);
             setCurrentNoteSelectionUUID(args.noteUUID || noteArray[0]?.uuid);
             setNoteSelectionArr(noteArray);
