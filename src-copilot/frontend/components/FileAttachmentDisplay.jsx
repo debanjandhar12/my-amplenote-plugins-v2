@@ -2,13 +2,13 @@
 export const FileAttachmentDisplay = (args) => {
     const canRemove = AssistantUI.useAttachment((a) => a.source !== "message");
     const attachmentFile = AssistantUI.useAttachment((a) => a.file);
-    const { FileIcon, FileTextIcon,  } = window.RadixIcons;
+    const { FileIcon, FileTextIcon, CheckboxIcon, CursorTextIcon } = window.RadixIcons;
     let fileTypeName = null;
     let fileIcon = null;
     switch (attachmentFile.type) {
         case "text/amplenote-task":
             fileTypeName = "Amplenote Task";
-            fileIcon = <FileIcon />;
+            fileIcon = <CheckboxIcon />;
             break;
         case "text/amplenote-note":
             fileTypeName = "Amplenote Note";
@@ -16,7 +16,7 @@ export const FileAttachmentDisplay = (args) => {
             break;
         case "text/amplenote-selection":
             fileTypeName = "Current Selection";
-            fileIcon = <FileTextIcon />;
+            fileIcon = <CursorTextIcon />;
             break;
         default:
             fileTypeName = 'File';

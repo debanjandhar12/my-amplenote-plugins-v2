@@ -52,7 +52,10 @@ const UserMessageText = ({ text }) => {
             const tempChildren = tempText.split(' ').map((part, i) => {
                 if (part.startsWith('<toolcategorymention123XG>') && part.endsWith('</toolcategorymention123XG>')) {
                     const toolCategory = ToolCategoryRegistry.getCategory(part.substring(part.indexOf('>@') + 2, part.lastIndexOf('<')));
-                    return <ToolCategoryMentionComponent key={i} {...toolCategory}>{part.substring(part.indexOf('>@') + 2, part.lastIndexOf('<'))}</ToolCategoryMentionComponent>;
+                    return <span key={i}>
+                        {i === 0 ? '' : ' '}
+                        <ToolCategoryMentionComponent {...toolCategory}>{part.substring(part.indexOf('>@') + 2, part.lastIndexOf('<'))}</ToolCategoryMentionComponent>
+                    </span>
                 }
                 return i === 0 ? part : ' ' + part;
             });

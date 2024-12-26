@@ -71,7 +71,10 @@ export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
                         for (const categoryName of ToolCategoryRegistry.getAllCategoriesNames()) {
                             const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
                             if (toolCategory && part === `@${toolCategory.name}`) {
-                                return <ToolCategoryMentionComponent key={i} {...toolCategory}>{toolCategory.name}</ToolCategoryMentionComponent>;
+                                return <span key={i}>
+                                    {i === 0 ? '' : ' '}
+                                    <ToolCategoryMentionComponent {...toolCategory}>{toolCategory.name}</ToolCategoryMentionComponent>
+                                </span>
                             }
                         }
                         return i === 0 ? part : ' ' + part;
@@ -101,9 +104,14 @@ export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
             },
             a: ({node, children, href, ...props}) => {
                 return <a className="aui-md-a" {...props} href={href}
-                          onClick={(e) => {
+                          onClick={async (e) => {
                               e.preventDefault();
-                              window.appConnector.navigate(href);
+                              const isOpenSuccess = await appConnector.navigate(href);
+                              console.log('isOpenSuccess', isOpenSuccess);
+                              if (!isOpenSuccess) {
+                                  appConnector.alert(`Failed to open link due to amplenote restrictions: ${href}`+
+                                      `\n\nPlease right click on the link and select "Open link in new tab".`);
+                              }
                           }}>
                     {children}
                 </a>

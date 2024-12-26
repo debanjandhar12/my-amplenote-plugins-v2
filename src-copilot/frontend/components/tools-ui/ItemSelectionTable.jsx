@@ -28,6 +28,7 @@ export const ItemSelectionTable = ({
     }, []);
 
     const formatStringValue = (value, key) => {
+        if (value === null || value === undefined) return '';
         try {
             if (isNaN(value) && (typeof value === 'string' && isNaN(Number(value)))) {
                 const date = new Date(value);
