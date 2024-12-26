@@ -20,13 +20,13 @@ export const ChatInterfaceHeader = () => {
             position: 'sticky', top: 0, zIndex: '1000', backgroundColor: 'var(--color-background)'
         }}>
             <Popover.Root>
-                <Popover.Trigger asChild>
-                    <Button variant="ghost" size="1" style={{ margin: '2px', paddingTop: '5px'}} className={'user-prompt-library-button'}>
-                        <Tooltip content="Prompt Library" style={{padding: '2px'}}>
-                            <MagicWandIcon width="13" height="13" />
-                        </Tooltip>
-                    </Button>
-                </Popover.Trigger>
+                <Tooltip content="Prompt Library" style={{padding: '2px'}}>
+                    <Popover.Trigger asChild>
+                        <Button variant="ghost" size="1" style={{ margin: '2px', paddingTop: '5px'}} className={'user-prompt-library-button'}>
+                                <MagicWandIcon width="13" height="13" />
+                        </Button>
+                    </Popover.Trigger>
+                </Tooltip>
                 <Popover.Content style={{width: '360px'}}>
                     <UserPromptLibrary />
                 </Popover.Content>
