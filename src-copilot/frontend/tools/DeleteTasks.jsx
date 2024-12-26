@@ -96,14 +96,15 @@ export const DeleteTasks = () => {
         onCompleted: ({formData, addResult}) => {
             const {successfulDeletedItems, failedItems} = formData;
             const lastError = formData.lastError;
-            let resultText = `${successfulDeletedItems.length} tasks deleted successfully.
-                Details: ${JSON.stringify(successfulDeletedItems)}`;
-            if (failedItems.length > 0) {
-                resultText += `\n${failedItems.length} tasks failed to delete.
-                    Details: ${JSON.stringify(failedItems)}\n
-                    Error sample: ${errorToString(lastError)}`;
+            if (failedItems.length === 0) {
+                addResult({resultSummary: `${successfulDeletedItems.length} tasks deleted successfully.`,
+                    resultDetail: successfulDeletedItems});
+            } else {
+                addResult({resultSummary: `${successfulDeletedItems.length} tasks deleted successfully. ` +
+                        `${failedItems.length} tasks failed to delete. ` +
+                        `Error sample: ${errorToString(lastError)}`,
+                    resultDetail: successfulDeletedItems, failedResultDetail: failedItems});
             }
-            addResult(resultText);
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { CheckboxIcon } = window.RadixIcons;

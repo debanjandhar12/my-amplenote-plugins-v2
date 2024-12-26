@@ -210,7 +210,7 @@ export const SearchNotesByTitleTagsContent = () => {
         },
         onCompleted: ({addResult, formData}) => {
             const {searchResults} = formData;
-            addResult(`Search completed. Search Result: ${JSON.stringify(searchResults)}`);
+            addResult({resultSummary: `Search completed.`, searchResults});
         },
         renderCompleted: ({formData, toolName, args}) => {
             const {Flex, Text} = window.RadixUI;

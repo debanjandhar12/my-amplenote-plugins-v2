@@ -119,14 +119,15 @@ export const InsertTasksToNote = () => {
             const lastError = formData.lastError;
             const selectedNoteUUID = formData.currentNoteSelectionUUID;
             const selectedNoteTitle = await appConnector.getNoteTitleByUUID(selectedNoteUUID);
-            let resultText = `${successfulInsertedItems.length} tasks inserted successfully into note ${selectedNoteTitle} (uuid: ${selectedNoteUUID}).
-                Details: ${JSON.stringify(successfulInsertedItems)}`;
-            if (failedItems.length > 0) {
-                resultText += `\n${failedItems.length} tasks failed to insert into note.
-                    Details: ${JSON.stringify(failedItems)}\n
-                    Error sample: ${errorToString(lastError)}`;
+            if (failedItems.length === 0) {
+                addResult({resultSummary: `${successfulInsertedItems.length} tasks inserted successfully into note ${selectedNoteTitle} (uuid: ${selectedNoteUUID}).`,
+                    resultDetails: successfulInsertedItems});
+            } else {
+                addResult({resultSummary: `${successfulInsertedItems.length} tasks inserted successfully into note ${selectedNoteTitle} (uuid: ${selectedNoteUUID}).` +
+                        `${failedItems.length} tasks failed to insert into note.` +
+                        `Error sample: ${errorToString(lastError)}`,
+                    resultDetails: successfulInsertedItems, failedResultDetails: failedItems});
             }
-            addResult(resultText);
         },
         renderCompleted: ({formData, args, toolName}) => {
             const [noteTitle, setNoteTitle] = React.useState(null);

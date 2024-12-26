@@ -26,7 +26,7 @@ export const WebSearch = () => {
         },
         onCompleted: ({addResult, formData}) => {
             const {searchResults} = formData;
-            addResult(`Search completed. Search Result: ${JSON.stringify(searchResults)}`);
+            addResult({resultSummary: `Search completed.`, searchResults});
         },
         renderInit: ({args}) => {
             const { Spinner } = window.RadixUI;

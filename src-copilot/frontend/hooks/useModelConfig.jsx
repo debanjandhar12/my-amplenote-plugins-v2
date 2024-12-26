@@ -39,8 +39,8 @@ export function useModelConfig(runtime) {
                         if (lastMessage && (lastMessage.role === 'user' ||
                             (lastMessage.role === 'assistant' && lastMessage.content.length <= 1))) {
                             // If current message by assistant has one or less calls
-                            toolUsageMessage ="To interact with Amplenote, call tools. Before tool call, think and write short step-by-step plan for your future self inside <toolplan></toolplan> tags ensuring to fetch required parameters first. Then, make only the first tool call in same reply. Example plan to add tag in note title: <toolplan>1. Search note by title to get noteUUID since we don't have it. 2. Fetch note tag detail if not present in search result. 3. Update note tags.</toolplan>"
-                                + " " + "The <toolplan> will only be visible to you and not to user. Do not talk to user about parameters directly."
+                            toolUsageMessage ="To interact with Amplenote, call tools. Before tool call, think and write short step-by-step plan for your future self inside <toolplan></toolplan> tags ensuring to fetch required parameters first. Example plan to add tag in note title: <toolplan>1. Search note by title to get noteUUID since we don't have it. 2. Fetch note tag detail if not present in search result. 3. Update note tags.</toolplan>"
+                                + " " + "Then after writing plan, make the first tool call. The <toolplan> will only be visible to you and not to user. Do not talk to user about parameters and tool calls directly."
                                 + " " + toolUsageMessage;
                         } else {
                             toolUsageMessage += "To interact with Amplenote, call tools." + " " + toolUsageMessage;

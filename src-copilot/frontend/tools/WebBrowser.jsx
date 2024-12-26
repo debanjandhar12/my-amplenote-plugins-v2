@@ -26,7 +26,7 @@ export const WebBrowser = () => {
         },
         onCompleted: ({addResult, formData}) => {
             const {pageContent} = formData;
-            addResult(`Fetched Page content: ${pageContent}`);
+            addResult({resultSummary: `Page content fetched successfully.`, pageContent});
         },
         renderInit: ({args}) => {
             const { Spinner } = window.RadixUI;

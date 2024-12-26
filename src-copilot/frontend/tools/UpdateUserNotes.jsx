@@ -136,14 +136,17 @@ export const UpdateUserNotes = () => {
         onCompleted: ({formData, addResult}) => {
             const {successfulUpdatedItems, failedItems} = formData;
             const lastError = formData.lastError;
-            let resultText = `${successfulUpdatedItems.length} notes updated successfully.
-                Details: ${JSON.stringify(successfulUpdatedItems)}`;
-            if (failedItems.length > 0) {
-                resultText += `\n${failedItems.length} notes failed to update.
-                    Details: ${JSON.stringify(failedItems)}\n
-                    Error sample: ${errorToString(lastError)}`;
+            if (failedItems.length === 0) {
+                addResult({resultSummary: `${successfulUpdatedItems.length} notes updated successfully.`,
+                    resultDetail: successfulUpdatedItems});
+            } else {
+                addResult({
+                    resultSummary: `${successfulUpdatedItems.length} notes updated successfully. ` +
+                        `${failedItems.length} notes failed to update. ` +
+                        `Error sample: ${errorToString(lastError)}`,
+                    resultDetail: successfulUpdatedItems, failedResultDetail: failedItems
+                });
             }
-            addResult(resultText);
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { FileTextIcon } = window.RadixIcons;

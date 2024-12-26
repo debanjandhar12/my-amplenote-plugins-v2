@@ -5,11 +5,14 @@ import {useNoteSelector} from "../hooks/useNoteSelector.jsx";
 import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
 import {getLLMModel} from "../../backend/getLLMModel.js";
 import {generateText} from "../../backend/generateText.js";
+import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
 
 export const ModifyNoteContent = () => {
     return createGenericCUDTool({
         toolName: "ModifyNoteContent",
-        description: "Modify / replace user's note content. Call only if required.",
+        description: "Do not this tool unless user has specifically asked to insert or edit note content.\n"+
+            "This tool should never be called for replying to questions related to note content."+
+            " For instance, DO NOT call this tool if user is asking to summarize note. User doesn't want to modify note content.",
         parameters: {
             type: "object",
             properties: {
@@ -28,6 +31,10 @@ export const ModifyNoteContent = () => {
         },
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
+        renderInit: () => {
+            const { Spinner } = window.RadixUI;
+            return <ToolCardMessage text={`Generating content...`} icon={<Spinner />} />
+        },
         onInit: async ({setFormState, formData, setFormData, args}) => {
             const noteUUID = args.noteUUID;
             const contentModificationInstruction = args.contentModificationInstruction;
@@ -123,7 +130,7 @@ export const ModifyNoteContent = () => {
         },
         onCompleted: async ({formData, addResult}) => {
             const noteTitle = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
-            addResult(`${noteTitle} note content updated. New content: ${formData.newContent}`);
+            addResult({resultSummary: `${noteTitle} note content updated.`, newContent: formData.newContent});
         },
         renderCompleted: ({formData, toolName, args}) => {
             const [noteTitle, setNoteTitle] = React.useState(null);

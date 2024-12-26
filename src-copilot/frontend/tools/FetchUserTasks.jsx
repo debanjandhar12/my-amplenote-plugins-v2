@@ -65,7 +65,7 @@ export const FetchUserTasks =() => {
         },
         onCompleted: ({addResult, formData}) => {
             const {queryResult} = formData;
-            addResult(`Fetched ${queryResult.length} tasks. Details: ${JSON.stringify(queryResult)}`);
+            addResult({resultSummary: `Query completed. Fetched ${queryResult.length} tasks.`, resultDetail: queryResult});
         },
         renderInit: ({args}) => {
             const { Spinner } = window.RadixUI;

@@ -102,14 +102,15 @@ export const DeleteUserNotes = () => {
         onCompleted: ({formData, addResult}) => {
             const {successfulDeletedItems, failedItems} = formData;
             const lastError = formData.lastError;
-            let resultText = `${successfulDeletedItems.length} notes deleted successfully.
-                Details: ${JSON.stringify(successfulDeletedItems)}`;
-            if (failedItems.length > 0) {
-                resultText += `\n${failedItems.length} notes failed to delete.
-                    Details: ${JSON.stringify(failedItems)}\n
-                    Error sample: ${errorToString(lastError)}`;
+            if (failedItems.length === 0) {
+                addResult({resultSummary: `${successfulDeletedItems.length} notes deleted successfully.`,
+                    resultDetail: successfulDeletedItems});
+            } else {
+                addResult({resultSummary: `${successfulDeletedItems.length} notes deleted successfully. ` +
+                        `${failedItems.length} notes failed to delete. ` +
+                        `Error sample: ${errorToString(lastError)}`,
+                    resultDetail: successfulDeletedItems, failedResultDetail: failedItems});
             }
-            addResult(resultText);
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { FileTextIcon } = window.RadixIcons;

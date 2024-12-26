@@ -18,10 +18,15 @@ export const useGenericToolParameters = ({ toolName, description, parameters,
 
     const addResultWrapper = (input) => {
         if (typeof input === 'string') {
-            addResult(truncate(input, { length: 14000, omission: '[truncated tool output]' }));
-            return;
+            return addResult(truncate(input, { length: 16000, omission: '[truncated tool output]' }));
         }
-        addResult(input);
+        else if (typeof input === 'object') {
+            const inputJSON = JSON.stringify(input);
+            if (inputJSON.length > 16000) {
+                return addResult(truncate(inputJSON, { length: 16000, omission: '[truncated tool output]' }));
+            }
+        }
+        return addResult(input);
     }
 
     return {

@@ -55,7 +55,7 @@ export const FetchNoteDetailByNoteUUID = () => {
         },
         onCompleted: ({addResult, formData}) => {
             const {noteInfoList} = formData;
-            addResult(`Fetched note info. Details: ${JSON.stringify(noteInfoList)}`);
+            addResult({resultSummary: `Note info fetched successfully.`, resultDetail: noteInfoList});
         },
         renderInit: ({args}) => {
             const { Spinner } = window.RadixUI;

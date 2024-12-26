@@ -45,6 +45,10 @@ export const UpdateUserTasks = () => {
                                 description: "ISO format dismissed date and time of the task." +
                                     "Set to current time to toogle task as dismissed and null to toggle as undismissed."
                             },
+                            hideUntil: {
+                                type: "string",
+                                description: "ISO format hide until date and time of the task."
+                            },
                             taskScore: {
                                 type: "number"
                             },
@@ -71,6 +75,7 @@ export const UpdateUserTasks = () => {
                 const taskEndAt = taskItem.taskEndAt;
                 const completedAt = taskItem.completedAt;
                 const dismissedAt = taskItem.dismissedAt;
+                const hideUntil = taskItem.hideUntil;
                 const taskScore = taskItem.taskScore;
                 const important = taskItem.important;
                 const urgent = taskItem.urgent;
@@ -82,6 +87,7 @@ export const UpdateUserTasks = () => {
                         endAt: taskEndAt,
                         completedAt: completedAt,
                         dismissedAt: dismissedAt,
+                        hideUntil: hideUntil,
                         score: taskScore,
                         important: important,
                         urgent: urgent,
@@ -102,6 +108,7 @@ export const UpdateUserTasks = () => {
                         endAt: task.endAt,
                         completedAt: task.completedAt,
                         dismissedAt: task.dismissedAt,
+                        hideUntil: task.hideUntil,
                         score: task.score,
                         important: task.important,
                         urgent: task.urgent,
@@ -163,14 +170,17 @@ export const UpdateUserTasks = () => {
         onCompleted: ({formData, addResult}) => {
             const {successfulUpdatedItems, failedItems} = formData;
             const lastError = formData.lastError;
-            let resultText = `${successfulUpdatedItems.length} tasks updated successfully.
-                Details: ${JSON.stringify(successfulUpdatedItems)}`;
-            if (failedItems.length > 0) {
-                resultText += `\n${failedItems.length} tasks failed to update.
-                    Details: ${JSON.stringify(failedItems)}\n
-                    Error sample: ${errorToString(lastError)}`;
+            if (failedItems.length === 0) {
+                addResult({resultSummary: `${successfulUpdatedItems.length} tasks updated successfully.`,
+                    resultDetail: successfulUpdatedItems});
+            } else {
+                addResult({
+                    resultSummary: `${successfulUpdatedItems.length} tasks updated successfully. ` +
+                        `${failedItems.length} tasks failed to update. ` +
+                        `Error sample: ${errorToString(lastError)}`,
+                    resultDetail: successfulUpdatedItems, failedResultDetail: failedItems
+                });
             }
-            addResult(resultText);
         },
         renderCompleted: ({formData, toolName, args}) => {
             const { CheckboxIcon } = window.RadixIcons;
@@ -210,6 +220,11 @@ const updateTask = async ({ item }) => {
     if (item.dismissedAt) {
         await appConnector.updateTask(item.uuid, {
             dismissedAt: (Date.parse(item.dismissedAt) / 1000) // convert to timestamp
+        });
+    }
+    if (item.hideUntil) {
+        await appConnector.updateTask(item.uuid, {
+            hideUntil: (Date.parse(item.hideUntil) / 1000) // convert to timestamp
         });
     }
     if (item.taskScore) {

@@ -22,11 +22,11 @@ const allSuggestions = [
         displayCondition: () => true,
     },
     {
-        prompt: "@web Search for current president of US",
+        prompt: "@web Search for best song of current year",
         displayCondition: () => true,
     },
     {
-        prompt: "@notes Summarize this note",
+        prompt: "@notes Provide summary of current note",
         displayCondition: () => window.userData.currentNoteUUID !== null,
     },
     {
