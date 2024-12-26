@@ -25,15 +25,25 @@ export const UpdateUserTasks = () => {
                             },
                             taskContent: {
                                 type: "string",
-                                description: "New short task content"
+                                description: "Short task content"
                             },
                             taskStartAt: {
                                 type: "string",
-                                description: "New ISO format start date and time of the task"
+                                description: "ISO format start date and time of the task"
                             },
                             taskEndAt: {
                                 type: "string",
-                                description: "New ISO format end date and time of the task"
+                                description: "ISO format end date and time of the task"
+                            },
+                            completedAt: {
+                                type: "string",
+                                description: "ISO format completed date and time of the task." +
+                                    "Set to current time to toogle task as completed and null to toggle as uncompleted."
+                            },
+                            dismissedAt: {
+                                type: "string",
+                                description: "ISO format dismissed date and time of the task." +
+                                    "Set to current time to toogle task as dismissed and null to toggle as undismissed."
                             },
                             taskScore: {
                                 type: "number"
@@ -59,6 +69,8 @@ export const UpdateUserTasks = () => {
                 const taskContent = taskItem.taskContent;
                 const taskStartAt = taskItem.taskStartAt;
                 const taskEndAt = taskItem.taskEndAt;
+                const completedAt = taskItem.completedAt;
+                const dismissedAt = taskItem.dismissedAt;
                 const taskScore = taskItem.taskScore;
                 const important = taskItem.important;
                 const urgent = taskItem.urgent;
@@ -68,6 +80,8 @@ export const UpdateUserTasks = () => {
                         content: taskContent,
                         startAt: taskStartAt,
                         endAt: taskEndAt,
+                        completedAt: completedAt,
+                        dismissedAt: dismissedAt,
                         score: taskScore,
                         important: important,
                         urgent: urgent,
@@ -86,6 +100,8 @@ export const UpdateUserTasks = () => {
                         content: task.content,
                         startAt: task.startAt,
                         endAt: task.endAt,
+                        completedAt: task.completedAt,
+                        dismissedAt: task.dismissedAt,
                         score: task.score,
                         important: task.important,
                         urgent: task.urgent,
@@ -184,6 +200,16 @@ const updateTask = async ({ item }) => {
     if (item.taskEndAt) {
         await appConnector.updateTask(item.uuid, {
             endAt: (Date.parse(item.taskEndAt) / 1000) // convert to timestamp
+        });
+    }
+    if (item.completedAt) {
+        await appConnector.updateTask(item.uuid, {
+            completedAt: (Date.parse(item.completedAt) / 1000) // convert to timestamp
+        });
+    }
+    if (item.dismissedAt) {
+        await appConnector.updateTask(item.uuid, {
+            dismissedAt: (Date.parse(item.dismissedAt) / 1000) // convert to timestamp
         });
     }
     if (item.taskScore) {
