@@ -2,7 +2,7 @@ import {truncate} from "lodash-es";
 
 export const ToolFooter = ({submitButtonText = "Submit", cancelButtonText = "Cancel",
                                status, setFormState,
-                               shouldDisplayNoteSelector = false, noteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID}) => {
+                               shouldDisplayNoteSelector = false, noteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID, disableNoteSelector = false}) => {
     const isThisToolMessageLast = AssistantUI.useMessage((m) => m.isLast);
     const isActionDestructive = submitButtonText.toLowerCase().includes('delete')
     || submitButtonText.toLowerCase().includes('remove');
@@ -16,6 +16,7 @@ export const ToolFooter = ({submitButtonText = "Submit", cancelButtonText = "Can
                         noteSelectionArr={noteSelectionArr}
                         currentNoteSelectionUUID={currentNoteSelectionUUID}
                         setCurrentNoteSelectionUUID={setCurrentNoteSelectionUUID}
+                        disableNoteSelector={disableNoteSelector}
                         status={status}
                     /> : <span />
             }
@@ -43,7 +44,8 @@ export const ToolFooter = ({submitButtonText = "Submit", cancelButtonText = "Can
     )
 }
 
-export const NoteSelector = ({ noteSelectionArr = [], currentNoteSelectionUUID, setCurrentNoteSelectionUUID, status }) => {
+export const NoteSelector = ({ noteSelectionArr = [], currentNoteSelectionUUID,
+                                 setCurrentNoteSelectionUUID, status, disableNoteSelector }) => {
     const isThisToolMessageLast = AssistantUI.useMessage((m) => m.isLast);
     const currentNote = noteSelectionArr.find((note) => note.uuid === currentNoteSelectionUUID);
     const displayTitle = currentNote?.title ? truncate(currentNote.title, { length: 12 }) : 'Select Note';
@@ -51,7 +53,7 @@ export const NoteSelector = ({ noteSelectionArr = [], currentNoteSelectionUUID, 
     const { Select } = window.RadixUI;
     const { FileTextIcon } = window.RadixIcons;
 
-    const isDisabled = status === "requires-action" || !isThisToolMessageLast;
+    const isDisabled = status === "requires-action" || !isThisToolMessageLast || disableNoteSelector;
 
     // Hacky handle open state cuz it isn't working atm for unknown reasons
     const [open, setOpen] = React.useState(false);

@@ -24,6 +24,10 @@ export const createGenericCUDTool = ({
                                                      addResult(`Error: ${errorToString(formError)}. Tool invocation failed.`);
                                                  },
                                                  renderWaitingForUserInput = () => {},
+                                                 renderInit = () => {
+                                                     const { Spinner } = window.RadixUI;
+                                                     return <ToolCardMessage text={`Initializing...`} icon={<Spinner />} />
+                                                 },
                                                  renderSubmitting = () => {
                                                      const { Spinner } = window.RadixUI;
                                                      return <ToolCardMessage text={`Processing...`} icon={<Spinner />} />
@@ -51,7 +55,7 @@ export const createGenericCUDTool = ({
             const [formState, setFormState, formRender] = useGenericToolFormState({
                 init: {
                     eventHandler: onInit,
-                    renderer: null,
+                    renderer: renderInit,
                 },
                 waitingForUserInput: {
                     eventHandler: null,

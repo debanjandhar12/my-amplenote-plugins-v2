@@ -1,6 +1,6 @@
 import {DeleteUserNotes} from "../../tools/DeleteUserNotes.jsx";
 import {DeleteTasks} from "../../tools/DeleteTasks.jsx";
-import {InsertContentToNote} from "../../tools/InsertContentToNote.jsx";
+import {ModifyNoteContent} from "../../tools/ModifyNoteContent.jsx";
 import {UpdateUserTasks} from "../../tools/UpdateUserTasks.jsx";
 import {UpdateUserNotes} from "../../tools/UpdateUserNotes.jsx";
 import {CreateNewNotes} from "../../tools/CreateNewNotes.jsx";
@@ -18,7 +18,7 @@ export class ToolRegistry {
         ToolRegistry.tools = [InsertTasksToNote(), FetchUserTasks(), WebSearch(), WebBrowser(),
             CreateNewNotes(), FetchNoteDetailByNoteUUID(), SearchNotesByTitleTagsContent(),
             UpdateUserNotes(), UpdateUserTasks(),
-            InsertContentToNote(),
+            ModifyNoteContent(),
             // DeleteTasks(), // No api support for deleting task yet
             DeleteUserNotes()];
     }
