@@ -12,14 +12,14 @@ export default {
     description: 'AI plugin with chat interface',
     settings: [PINECONE_API_KEY_SETTING, LLM_API_KEY_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING, LLM_MAX_TOKENS_SETTING,
         CUSTOM_LLM_INSTRUCTION_SETTING, CUSTOM_LLM_AVATAR_SETTING, USER_PROMPT_LIST_SETTING],
-    version: '0.0.1',
+    version: '0.1.0',
     icon: 'chat',
     instructions: `
-<mark>Note: This plugin is still in its alpha stage, so you may encounter bugs. Please report them below.</mark>
+<mark>Note: This plugin is in its beta stage, so you may encounter bugs. Please report them below.</mark>
 
 AI assistant for Amplenote with superpowers.
 
-![Demo](https://images.amplenote.com/99c9b8b8-ae63-11ef-92f6-77fd47660337/4be8e124-0c75-44d7-bb1d-751dd7a4961d.gif)
+![Demo](https://images.amplenote.com/93d25f9e-b4c3-11ef-ba27-d3c11d33cbac/8344c634-a1a4-4423-8ca0-eb7adf6b91a8.gif)
 
 <mark style="color:undefined;">**Features:**<!-- {"cycleColor":"57"} --></mark>
 - [Chat Interface with support for tool calling and custom prompts][^1].
@@ -40,6 +40,7 @@ Q) [What is pinecone?][^7]
 
 ### Changelog
 - 30/10/2024: Alpha v0.0.1 release
+- 27/12/2024: Beta v0.1.0 release
 
 [^1]: [Chat Interface with support for tool calling and custom prompts]()
     
