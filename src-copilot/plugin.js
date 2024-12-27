@@ -5,6 +5,9 @@ import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
 import {generateText} from "./backend/generateText.js";
 import {getLLMModel} from "./backend/getLLMModel.js";
 import {Pinecone} from "./pinecone/Pinecone.js";
+import {LLM_API_URL_SETTING} from "./constants.js";
+import {getImageModel} from "./backend/getImageModel.js";
+import {generateImage} from "./backend/generateImage.js";
 
 const plugin = {
     currentNoteUUID: null,
@@ -70,23 +73,52 @@ const plugin = {
                 console.error(e);
                 await app.alert(e);
             }
+        },
+        "Generate image": {
+            check: async function (app, image) {
+                try {
+                    if (app.settings[LLM_API_URL_SETTING].trim() !== '') {
+                        const imageModel = await getImageModel(app.settings);
+                        return !!imageModel;
+                    }
+                } catch (e) { console.error(e); }
+                return false;
+            },
+            run: async function (app) {
+                try {
+                    const imageModel = await getImageModel(app.settings);
+                    const prompt = await app.prompt("Enter image generation instructions:");
+                    const response = await generateImage(imageModel, prompt);
+                    console.log('response', response);
+                    if (response.image) {
+                        const imgUrl = await app.attachNoteMedia({uuid: app.context.noteUUID}, 'data:image/webp;base64,' +response.image.base64);
+                        await app.context.replaceSelection(`![](${imgUrl})`);
+                    }
+                    else {
+                        throw new Error('LLM response is empty');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    await app.alert(e);
+                }
+            }
         }
     },
     appOption: {
         "Sync notes to pinecone": async function (app) {
             await plugin.onEmbedCall(app, 'syncNotesWithPinecone');
         },
-        "Chat with Copilot": async function (app) {
+        "Search notes using natural language": async function (app) {
             try {
-                await app.openSidebarEmbed(1, {trigger: 'appOption', openChat: true});
+                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
             }
         },
-        "Search notes using natural language": async function (app) {
+        "Chat with Copilot": async function (app) {
             try {
-                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
+                await app.openSidebarEmbed(1, {trigger: 'appOption', openChat: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -96,6 +128,7 @@ const plugin = {
     replaceText: {
         "Edit": async function (app, selectionContent) {
             try {
+                // TODO: Use prompt from ModifyNoteContent tool?
                 const instructions = await app.prompt("Enter edit instructions:");
                 if (!instructions) return;
                 const prompt = "I want you to edit the following text based on the following instructions. You can use markdown. DO not reply anything other than the edited text. Instructions:" + "\n" +
@@ -118,6 +151,39 @@ const plugin = {
                 plugin.currentNoteUUID = app.context.noteUUID;
                 await app.openSidebarEmbed(1, {trigger: 'replaceSelection', noteUUID: app?.context?.noteUUID,
                     selectionContent: app?.context?.selectionContent || selectionContent, openChat: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        },
+        "More options": async function (app, selectionContent) {
+            try {
+                const action = await app.prompt("Enter prompt type:", {
+                    inputs: [
+                        { label: "", type: "select", options: [
+                                { label: "Rephrase", value: "Rephrase" },
+                                { label: "Fix grammar", value: "Fix grammar in" },
+                                { label: "Summarize", value: "Summarize" },
+                                { label: "Explain", value: "Explain" },
+                            ], value: "Rephrase" }
+                    ]
+                });
+                if (!action) return;
+                const prompt = `${action} the following text:\n` + selectionContent;
+                const response = await generateText(await getLLMModel(app.settings), prompt);
+                if (response.text) {
+                    const shouldReplace = await app.alert(response.text, {
+                        preface: "Copilot response:",
+                        actions: [
+                            { label: "Replace", value: "replace", icon: "edit" },
+                        ]
+                    });
+                    if (shouldReplace === "replace") {
+                        await app.replaceNoteContent({uuid: app.context.noteUUID}, response.text);
+                    }
+                } else {
+                    throw new Error('LLM response is empty');
+                }
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -199,6 +265,7 @@ const plugin = {
     onEmbedCall : createOnEmbedCallHandler({
         ...COMMON_EMBED_COMMANDS,
         "getUserCurrentNoteData": async (app) => {
+            console.log('current url', app.context.url, app.context.noteUUID, window.location.href, window.location);
             try {
                 const currentNoteUUID = app.context.noteUUID || plugin.currentNoteUUID;
                 if (!currentNoteUUID) return null;
