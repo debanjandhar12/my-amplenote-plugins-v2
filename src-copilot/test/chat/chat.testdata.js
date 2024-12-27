@@ -9,7 +9,6 @@ import {dynamicImportEnv} from "../../../common-utils/dynamic-import-env.js";
 
 export const EMBED_USER_DATA_MOCK = {
     currentNoteUUID: 'mock-uuid',
-    currentNoteTitle: 'Mock Note',
     dailyJotNoteUUID: 'mock-daily-jot-uuid',
     dailyJotNoteTitle: 'Mock Note'
 }
@@ -26,8 +25,7 @@ export const EMBED_COMMANDS_MOCK = {
     },
     "getUserCurrentNoteData": async () => {
         return {
-            currentNoteUUID: 'mock-uuid',
-            currentNoteTitle: 'Mock Note'
+            currentNoteUUID: 'mock-uuid'
         }
     },
     "alert": async (...args) => {

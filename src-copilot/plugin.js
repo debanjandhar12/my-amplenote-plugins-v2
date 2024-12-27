@@ -148,7 +148,6 @@ const plugin = {
         },
         "Chat": async function (app, selectionContent) {
             try {
-                plugin.currentNoteUUID = app.context.noteUUID;
                 await app.openSidebarEmbed(1, {trigger: 'replaceSelection', noteUUID: app?.context?.noteUUID,
                     selectionContent: app?.context?.selectionContent || selectionContent, openChat: true});
             } catch (e) {
@@ -199,25 +198,18 @@ const plugin = {
                 await app.alert(e);
             }
         },
-        "Chat with context": {
-            check: async function (app, noteUUID) {
-                plugin.currentNoteUUID = noteUUID;
-                return true;
-            },
-            run: async function (app, noteUUID) {
-                try {
-                    await app.openSidebarEmbed(1, {trigger: 'noteOption', noteUUID, openChat: true});
-                } catch (e) {
-                    console.error(e);
-                    await app.alert(e);
-                }
+        "Chat with context": async function (app, noteUUID) {
+            try {
+                await app.openSidebarEmbed(1, {trigger: 'noteOption', noteUUID, openChat: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
             }
         }
     },
     taskOption: {
         "Chat": async function (app, taskObj) {
             try {
-                plugin.currentNoteUUID = app.context.noteUUID;
                 await app.openSidebarEmbed(1, {trigger: 'taskOption', taskUUID: taskObj.uuid, openChat: true});
             } catch (e) {
                 console.error(e);
@@ -228,7 +220,6 @@ const plugin = {
     imageOption: {
         "Chat": async function (app, image) {
             try {
-                plugin.currentNoteUUID = app.context.noteUUID;
                 await app.openSidebarEmbed(1, {trigger: 'imageOption', image, openChat: true});
             } catch (e) {
                 console.error(e);
@@ -265,15 +256,21 @@ const plugin = {
     onEmbedCall : createOnEmbedCallHandler({
         ...COMMON_EMBED_COMMANDS,
         "getUserCurrentNoteData": async (app) => {
-            console.log('current url', app.context.url, app.context.noteUUID, window.location.href, window.location);
             try {
-                const currentNoteUUID = app.context.noteUUID || plugin.currentNoteUUID;
+                let currentNoteUUID = app.context.noteUUID;
+                if (!currentNoteUUID) {
+                    const currentURL = app.context.url;
+                    const regex = /amplenote\.com\/notes\/([a-f0-9-]+)/;
+                    const matches = currentURL.match(regex);
+                    if (matches && matches.length > 1) {
+                        currentNoteUUID = matches[1];
+                    }
+                }
                 if (!currentNoteUUID) return null;
                 const currentNote = await app.findNote({uuid: currentNoteUUID});
                 if (!currentNote) return null;
                 return {
-                    currentNoteUUID: currentNote.uuid,
-                    currentNoteTitle: currentNote.name
+                    currentNoteUUID: currentNote.uuid
                 }
             } catch (e) {
                 throw 'Failed getUserCurrentNoteData - ' + e;
