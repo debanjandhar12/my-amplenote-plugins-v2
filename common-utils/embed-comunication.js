@@ -1,9 +1,13 @@
 // @ts-ignore
 export const COMMON_EMBED_COMMANDS = {
     "navigate": async (app, url) => {
-        if (app.navigate(url)) return true;
-        if (window.open(url, '_blank')) return true;
-        return false;
+        if (await app.navigate(url)) return true;
+        try {
+            const res = window.open(url, '_blank');
+            return res != null;
+        } catch (e) {
+            return false;
+        }
     },
     "prompt": async (app, ...args) => {
         return await app.prompt(...args);

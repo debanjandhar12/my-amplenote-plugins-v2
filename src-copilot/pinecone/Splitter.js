@@ -1,14 +1,14 @@
-import { parse } from './markdown-parser';
+import { parse } from '../markdown/markdown-parser.js';
 import { visit } from "unist-util-visit";
 import {INDEX_VERSION} from "../constants.js";
 
 export class Splitter {
 
-    constructor(maxTokens = 260) {
+    constructor(maxTokens = 260, pluginUUID) {
         this.maxTokens = maxTokens;
         this.splitResult = [];
         this.noteContent = '';
-        this.accountSettingId = 'todo';
+        this.pluginUUID = pluginUUID;
     }
 
     addNoteContentSplitResult(note, headers) {
@@ -23,7 +23,7 @@ export class Splitter {
                 namespace: "note-content",
                 isTagOnly: false,
                 pluginVersion: INDEX_VERSION,
-                accountSettingId: this.accountSettingId
+                pluginUUID: this.pluginUUID
             },
             dirty: false,   // Whether further content is added to this split result
             addedAmount: 0 // Amount of content added to this split result
@@ -51,6 +51,10 @@ export class Splitter {
             } else {
                 const nodeValue = noteContent.substring(node.position.start.offset, node.position.end.offset);
                 let nodeTokens = this.tokenize(nodeValue);
+                if (nodeTokens.length > this.maxTokens * 1000) {
+                    console.log('Skipping else node due to length', node);
+                    return 'skip';
+                }
                 while (nodeTokens.length > 0) {
                     let currentContent = this.splitResult[this.splitResult.length - 1].metadata.pageContent;
                     const remainingSpace = this.maxTokens - this.tokenize(currentContent).length;
@@ -69,7 +73,7 @@ export class Splitter {
             }
         });
         this.splitResult = this.splitResult.filter((result) => result.dirty);
-        this.splitResult = this.splitResult.filter((result) => result.addedAmount > 64);
+        this.splitResult = this.splitResult.filter((result) => result.addedAmount > 16);
         this.splitResult.forEach((result) => delete result.dirty);
         this.splitResult.forEach((result) => delete result.addedAmount);
 
@@ -83,7 +87,7 @@ export class Splitter {
                 namespace: "note-tags",
                 isTagOnly: true,
                 pluginVersion: INDEX_VERSION,
-                accountSettingId: this.accountSettingId
+                pluginUUID: this.pluginUUID
             }
         });
 

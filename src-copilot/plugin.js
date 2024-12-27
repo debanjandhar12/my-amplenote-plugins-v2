@@ -2,9 +2,12 @@ import chatHTML from 'inline:./embed/chat.html';
 import searchHTML from 'inline:./embed/search.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
-import {generateText} from "./ai-backend/generateText.js";
-import {getLLMModel} from "./ai-backend/getLLMModel.js";
+import {generateText} from "./backend/generateText.js";
+import {getLLMModel} from "./backend/getLLMModel.js";
 import {Pinecone} from "./pinecone/Pinecone.js";
+import {LLM_API_URL_SETTING} from "./constants.js";
+import {getImageModel} from "./backend/getImageModel.js";
+import {generateImage} from "./backend/generateImage.js";
 
 const plugin = {
     currentNoteUUID: null,
@@ -20,23 +23,34 @@ const plugin = {
                 const nearbyContent = noteContent.substring(noteContent.indexOf(randomUUID) - 800, noteContent.indexOf(randomUUID) + 800);
                 // Ask llm to fill
                 await app.context.replaceSelection(`Generating...`);
-                const prompt = "I want you to act as a fill in the blank tool. You take markdown input text and complete it factually. Only reply with words that should replace [BLANK]. NEVER repeat input." + "\n" +
+                const prompt = "I want you to act as a fill in the mask tool. You take markdown input text and complete it factually. Only reply with words that should replace [MASK]. NEVER repeat input." + "\n" +
                     "Additional instruction: If the surrounding text is in between a sentence, complete the entire sentence. Otherwise, complete the paragraph. DO NOT repeat the input text." + "\n" +
-                    "Example:" + "\n" +
-                    "Input: The [CONTINUE] jumps over the lazy dog." + "\n" +
-                    "Output: quick brown fox" + "\n" +
-                    "Example:" + "\n" +
-                    "Input: The quick brown fox jumps [CONTINUE]" + "\n" +
+                    "Examples:" + "\n" +
+                    "Input:The [MASK] jumps over the lazy dog." + "\n" +
+                    "Output:quick brown fox" + "\n" +
+                    "Input:The quick brown fox jumps[MASK]" + "\n" +
                     "Output: over the lazy dog." + "\n" +
-                    "Example:" + "\n" +
-                    "Input: On the way, we caught sight of the famous waterfall. [CONTINUE]" + "\n" +
-                    "Output: As we stood there, a rainbow formed in the mist creating a captivating sight." + "\n" +
+                    "Input:On the way, we caught sight of the famous waterfall. [MASK]" + "\n" +
+                    "Output:A rainbow formed in the mist as we stood there. The sight was truly captivating." + "\n" +
                     "---------------------" + "\n" +
                     "Input: " + "\n" +
-                    nearbyContent.replaceAll(randomUUID, '[CONTINUE]');
+                    nearbyContent.replaceAll(randomUUID, '[MASK]');
                 const response = await generateText(await getLLMModel(app.settings), prompt);
-                if (response.text)
-                    await app.context.replaceSelection(response.text);
+                if (response.text) {
+                    let responseText = response.text;
+                    if (responseText.startsWith('Output:') &&
+                        !(nearbyContent.toLowerCase().includes('input')
+                            || nearbyContent.toLowerCase().includes('output'))) {
+                        responseText = responseText.substring(6);   // Remove the "Output:" prefix
+                    }
+                    const lastCharInOriginalContent = nearbyContent.substring(noteContent.indexOf(randomUUID) - 1);
+                    const firstCharInResponse = responseText.substring(0, 1);
+                    if (lastCharInOriginalContent === firstCharInResponse
+                        && firstCharInResponse === ' ') {
+                        responseText = responseText.substring(1);   // Remove the first space
+                    }
+                    await app.context.replaceSelection(responseText);
+                }
                 else
                     throw new Error('LLM response is empty');
             } catch (e) {
@@ -59,25 +73,52 @@ const plugin = {
                 console.error(e);
                 await app.alert(e);
             }
+        },
+        "Generate image": {
+            check: async function (app, image) {
+                try {
+                    if (app.settings[LLM_API_URL_SETTING].trim() !== '') {
+                        const imageModel = await getImageModel(app.settings);
+                        return !!imageModel;
+                    }
+                } catch (e) { console.error(e); }
+                return false;
+            },
+            run: async function (app) {
+                try {
+                    const imageModel = await getImageModel(app.settings);
+                    const prompt = await app.prompt("Enter image generation instructions:");
+                    const response = await generateImage(imageModel, prompt);
+                    console.log('response', response);
+                    if (response.image) {
+                        const imgUrl = await app.attachNoteMedia({uuid: app.context.noteUUID}, 'data:image/webp;base64,' +response.image.base64);
+                        await app.context.replaceSelection(`![](${imgUrl})`);
+                    }
+                    else {
+                        throw new Error('LLM response is empty');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    await app.alert(e);
+                }
+            }
         }
     },
     appOption: {
         "Sync notes to pinecone": async function (app) {
             await plugin.onEmbedCall(app, 'syncNotesWithPinecone');
         },
-        "Chat with Copilot": async function (app) {
+        "Search notes using natural language": async function (app) {
             try {
-                plugin.currentNoteUUID = app.context.noteUUID;
-                await app.openSidebarEmbed(1, {trigger: 'appOption', openChat: true});
+                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
             }
         },
-        "Search notes using natural language": async function (app) {
+        "Chat with Copilot": async function (app) {
             try {
-                plugin.currentNoteUUID = app.context.noteUUID;
-                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
+                await app.openSidebarEmbed(1, {trigger: 'appOption', openChat: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -87,6 +128,7 @@ const plugin = {
     replaceText: {
         "Edit": async function (app, selectionContent) {
             try {
+                // TODO: Use prompt from ModifyNoteContent tool?
                 const instructions = await app.prompt("Enter edit instructions:");
                 if (!instructions) return;
                 const prompt = "I want you to edit the following text based on the following instructions. You can use markdown. DO not reply anything other than the edited text. Instructions:" + "\n" +
@@ -104,10 +146,43 @@ const plugin = {
                 await app.alert(e);
             }
         },
-        "Chat with Copilot": async function (app, selectionContent) {
+        "Chat": async function (app, selectionContent) {
             try {
-                plugin.currentNoteUUID = app.context.noteUUID;
-                await app.openSidebarEmbed(1, {trigger: 'replaceSelection', selectionContent: app?.context?.selectionContent || selectionContent, openChat: true});
+                await app.openSidebarEmbed(1, {trigger: 'replaceSelection', noteUUID: app?.context?.noteUUID,
+                    selectionContent: app?.context?.selectionContent || selectionContent, openChat: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        },
+        "More options": async function (app, selectionContent) {
+            try {
+                const action = await app.prompt("Enter prompt type:", {
+                    inputs: [
+                        { label: "", type: "select", options: [
+                                { label: "Rephrase", value: "Rephrase" },
+                                { label: "Fix grammar", value: "Fix grammar in" },
+                                { label: "Summarize", value: "Summarize" },
+                                { label: "Explain", value: "Explain" },
+                            ], value: "Rephrase" }
+                    ]
+                });
+                if (!action) return;
+                const prompt = `${action} the following text:\n` + selectionContent;
+                const response = await generateText(await getLLMModel(app.settings), prompt);
+                if (response.text) {
+                    const shouldReplace = await app.alert(response.text, {
+                        preface: "Copilot response:",
+                        actions: [
+                            { label: "Replace", value: "replace", icon: "edit" },
+                        ]
+                    });
+                    if (shouldReplace === "replace") {
+                        await app.replaceNoteContent({uuid: app.context.noteUUID}, response.text);
+                    }
+                } else {
+                    throw new Error('LLM response is empty');
+                }
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -115,9 +190,16 @@ const plugin = {
         }
     },
     noteOption: {
-        "Chat with Copilot": async function (app, noteUUID) {
+        "Chat": async function (app) {
             try {
-                plugin.currentNoteUUID = noteUUID;
+                await app.openSidebarEmbed(1, {trigger: 'noteOption', openChat: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        },
+        "Chat with context": async function (app, noteUUID) {
+            try {
                 await app.openSidebarEmbed(1, {trigger: 'noteOption', noteUUID, openChat: true});
             } catch (e) {
                 console.error(e);
@@ -125,10 +207,19 @@ const plugin = {
             }
         }
     },
-    imageOption: {
-        "Chat with Copilot": async function (app, image) {
+    taskOption: {
+        "Chat": async function (app, taskObj) {
             try {
-                plugin.currentNoteUUID = app.context.noteUUID;
+                await app.openSidebarEmbed(1, {trigger: 'taskOption', taskUUID: taskObj.uuid, openChat: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        }
+    },
+    imageOption: {
+        "Chat": async function (app, image) {
+            try {
                 await app.openSidebarEmbed(1, {trigger: 'imageOption', image, openChat: true});
             } catch (e) {
                 console.error(e);
@@ -140,13 +231,15 @@ const plugin = {
         try {
             if (args.openChat) {
                 let userData = {};
-                if (args.trigger === 'noteOption') {
+                if (args.trigger === 'noteOption' && args.noteUUID) {
                     const noteInfo = await app.findNote({uuid: args.noteUUID});
                     userData = {...userData, invokerNoteUUID: args.noteUUID, invokerNoteTitle: noteInfo.name};
                 } else if (args.trigger === 'imageOption') {
                     userData = {...userData, invokerImageSrc: args.image.src};
                 } else if (args.trigger === 'replaceSelection') {
-                    userData = {...userData, invokerSelectionContent: args.selectionContent};
+                    userData = {...userData, invokerSelectionContent: args.selectionContent, invokerNoteUUID: args.noteUUID};
+                } else if (args.trigger === 'taskOption') {
+                    userData = {...userData, invokerTaskUUID: args.taskUUID};
                 }
                 const dailyJotNote = await app.notes.dailyJot(Math.floor(Date.now() / 1000));
                 const dailyJotNoteUUID = (await dailyJotNote.url()).split('/').pop();
@@ -164,13 +257,20 @@ const plugin = {
         ...COMMON_EMBED_COMMANDS,
         "getUserCurrentNoteData": async (app) => {
             try {
-                const currentNoteUUID = app.context.noteUUID || plugin.currentNoteUUID;
+                let currentNoteUUID = app.context.noteUUID;
+                if (!currentNoteUUID) {
+                    const currentURL = app.context.url;
+                    const regex = /amplenote\.com\/notes\/([a-f0-9-]+)/;
+                    const matches = currentURL.match(regex);
+                    if (matches && matches.length > 1) {
+                        currentNoteUUID = matches[1];
+                    }
+                }
                 if (!currentNoteUUID) return null;
                 const currentNote = await app.findNote({uuid: currentNoteUUID});
                 if (!currentNote) return null;
                 return {
-                    currentNoteUUID: currentNote.uuid,
-                    currentNoteTitle: currentNote.name
+                    currentNoteUUID: currentNote.uuid
                 }
             } catch (e) {
                 throw 'Failed getUserCurrentNoteData - ' + e;

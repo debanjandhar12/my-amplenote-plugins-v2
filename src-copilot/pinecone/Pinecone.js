@@ -1,6 +1,6 @@
 import {syncNotesToPinecone} from "./syncNotesToPinecone.js";
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
-import {PINECONE_API_KEY_SETTING, PINECONE_INDEX_NAME} from "../constants.js";
+import {LAST_PINECONE_SYNC_TIME_SETTING, PINECONE_API_KEY_SETTING, PINECONE_INDEX_NAME} from "../constants.js";
 import {getCorsBypassUrl} from "../../common-utils/cors-helpers.js";
 
 export class Pinecone {
@@ -8,6 +8,19 @@ export class Pinecone {
         await syncNotesToPinecone(app);
     }
     async search(query, appSettings, limit = 10) {
+        // -- Basic validation --
+        if (!appSettings[PINECONE_API_KEY_SETTING]) {
+            throw new Error('Pinecone API Key is not set in plugin settings.');
+        }
+        if (appSettings[LAST_PINECONE_SYNC_TIME_SETTING]) {
+            let parsedLastSyncTime = null;
+            try {
+                parsedLastSyncTime = new Date(appSettings[LAST_PINECONE_SYNC_TIME_SETTING]);
+            } catch (e) {}
+            if (parsedLastSyncTime && parsedLastSyncTime < new Date(Date.now() - 1000 * 60 * 60 * 24 * 30)) {
+                throw new Error('Last pinecone sync was done older than 30 days ago. Please sync notes again.');
+            }
+        }
         // -- Initialize pinecone client --
         const { Pinecone } = await dynamicImportESM("@pinecone-database/pinecone");
         const pineconeClient = new Pinecone({

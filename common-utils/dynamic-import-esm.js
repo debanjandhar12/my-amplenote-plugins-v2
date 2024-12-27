@@ -2,14 +2,24 @@ import pkgJSON from "../package.json";
 
 /***
  * Dynamically imports multiple ESM modules from a CDN.
- * THis WORKS ONLY ON EMBED (i.e. browser). Useful for loading all react stuff in one go and
- * avoiding multiple react issues.
  * @template T
  * @param {string[]} pkgs - The package names to import.
  * @returns {Promise<T>} - A Promise that resolves to array of imported module.
  */
 export const dynamicImportMultipleESM = async (pkgs) => {
-    const { build } = await dynamicImportESM("build");
+    if (process.env.NODE_ENV === 'test') {
+        try {
+            return pkgs.map(pkg => require(pkg));
+        } catch (e) {
+            console.warn(`Failed to require one or more packages from local: ${e.message}`);
+        }
+        try {
+            return await Promise.all(pkgs.map(pkg => import(pkg)));
+        } catch (e) {
+            console.warn(`Failed to import one or more packages from local: ${e.message}`);
+        }
+    }
+
     const pkgsDetailsMap = new Map(pkgs.map(pkg => [pkg, {
         version: resolvePackageVersion(pkg),
         folder: getPackageFolderString(pkg),
@@ -30,6 +40,7 @@ export const dynamicImportMultipleESM = async (pkgs) => {
     ]
     `.trim();
     console.log('Loading bundle from:\n', dependencies, buildStr);
+    const { build } = await dynamicImportESM("build");
     const buildObj = {dependencies, source: buildStr};
     const buildResObj = await build(buildObj);
     const bundleUrl = new URL(buildResObj.bundleUrl);
