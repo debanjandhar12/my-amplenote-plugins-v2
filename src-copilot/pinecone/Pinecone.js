@@ -20,6 +20,8 @@ export class Pinecone {
             if (parsedLastSyncTime && parsedLastSyncTime < new Date(Date.now() - 1000 * 60 * 60 * 24 * 30)) {
                 throw new Error('Last pinecone sync was done older than 30 days ago. Please sync notes again.');
             }
+        } else {
+            throw new Error('Please sync notes to pinecone first.');
         }
         // -- Initialize pinecone client --
         const { Pinecone } = await dynamicImportESM("@pinecone-database/pinecone");

@@ -22,17 +22,18 @@ AI assistant for Amplenote with superpowers.
 ![Demo](https://images.amplenote.com/93d25f9e-b4c3-11ef-ba27-d3c11d33cbac/8344c634-a1a4-4423-8ca0-eb7adf6b91a8.gif)
 
 <mark style="color:undefined;">**Features:**<!-- {"cycleColor":"57"} --></mark>
-- [Chat Interface with support for tool calling and custom prompts][^1].
+- [Chat Interface with support for tool calling](https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb)
+- [User defined custom prompts](https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb#How_to_use_custom_prompts%3F)
 - Support for multiple llm providers: [OpenAI (recommended)](https://platform.openai.com/account/api-keys), [Groq AI Interface (free)](https://console.groq.com/), [FireWorks](https://fireworks.ai/account/api-keys), [Ollama](https://github.com/ollama/ollama).
-- Support for various plugin actions: [Continue][^2], Generate, Edit, Quick Command etc.
-- [Support for natural language searching][^3].
+- Support for quick plugin actions: [Continue][^2], Generate Text & Image, Edit, Rewrite, Fix grammar, etc.
+- [Support for natural language searching](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#How_to_use_the_search_interface%3F).
 - A lot more. Too many to list here!
 
 <mark style="color:undefined;">**Common FAQs:**<!-- {"cycleColor":"57"} --></mark>
-Q) [How do I set up plugin with OpenAI API?][^4]
-Q) [How do I set up plugin with Groq AI Interface?][^5]
-Q) [How do I set up plugin with Ollama?][^6]
-Q) [What is pinecone?][^7]
+Q) [How do I set up plugin with OpenAI API?][^3]
+Q) [How do I set up plugin with Groq AI Interface?][^4]
+Q) [How do I set up plugin with Ollama?][^5]
+Q) [How do I set up pinecone vector database?](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#How_to_set_up_pinecone%3F)
 `.trim().replaceAll('\n', '<br />'),
     template: `
 ### Code
@@ -61,20 +62,7 @@ Q) [What is pinecone?][^7]
     
     ![](https://images.amplenote.com/99c9b8b8-ae63-11ef-92f6-77fd47660337/9dcc98ee-8852-43e6-ad05-bffd0bb92619.png)
     
-[^3]: [Support for natural language searching]()
-
-    > This search screen needs pinecone to be set up. Pinecone is optional for other screen and chat interface can be used without pinecone.
-    
-    The plugin supports natural language searching. It uses pinecone to search notes and web pages. 
-    
-    To start, you need to set up pinecone api key in the plugin settings. Then:
-    - Sync notes to pinecone using \`Sync notes to pinecone\` option.
-    - Open the search screen using \`Search notes using natural language\` option from app menu (\`CTRL + O\`).
-    - Type in the search query.
-    
-    ![](https://images.amplenote.com/99c9b8b8-ae63-11ef-92f6-77fd47660337/4e1fce1c-1fc8-49cf-bec5-9fe9c4f6fb6e.png)
-    
-[^4]: [How do I set up plugin with OpenAI API?]()
+[^3]: [How do I set up plugin with OpenAI API?]()
 
     To set up plugin with OpenAI API, go to the plugin settings and set settings as below:
     - LLM API Key: \`<<Your API key here>>\`
@@ -85,7 +73,7 @@ Q) [What is pinecone?][^7]
     
     > For this provider, \`gpt-4o-mini\` model is recommended.
 
-[^5]: [How do I set up plugin with Groq AI Interface?]()
+[^4]: [How do I set up plugin with Groq AI Interface?]()
 
     To set up plugin with Groq AI Interface, go to the plugin settings and set settings as below:
     - LLM API Key: \`<<Your API key here>>\`
@@ -96,7 +84,7 @@ Q) [What is pinecone?][^7]
     
     > For this provider, \`llama-3.2-90b-vision-preview\` model is recommended.
 
-[^6]: [How do I set up plugin with Ollama?]()
+[^5]: [How do I set up plugin with Ollama?]()
 
     First, start the Ollama server:
     \`\`\`
@@ -113,11 +101,5 @@ Q) [What is pinecone?][^7]
     ![](https://images.amplenote.com/89b05c00-b4c3-11ef-a30d-892876cea4a6/d7923eed-6dd3-4fbb-a6d6-fffaada38946.png)
     
     > For this provider, \`llama3.1\` model is recommended.
-
-[^7]: [What is pinecone?]()
-
-    Pinecone is a vector database that allows you to store and query vectors of text. It is used for natural language search in this plugin.
-    
-    It is completely optional and required for search screen only. 
 `.trim()
 };

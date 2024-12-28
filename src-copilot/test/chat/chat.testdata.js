@@ -3,7 +3,7 @@ import {
     LLM_API_KEY_SETTING,
     LLM_API_URL_SETTING,
     LLM_MODEL_SETTING,
-    PINECONE_API_KEY_SETTING
+    PINECONE_API_KEY_SETTING, LAST_PINECONE_SYNC_TIME_SETTING
 } from "../../constants.js";
 import {dynamicImportEnv} from "../../../common-utils/dynamic-import-env.js";
 
@@ -39,7 +39,8 @@ export const EMBED_COMMANDS_MOCK = {
         return {
             ...getLLMProviderSettings('groq'),
             [USER_PROMPT_LIST_SETTING]: JSON.stringify([{uuid:'a', message: "Test A", usageCount:0},{uuid: 'b', message: "Test B", usageCount:0}]),
-            [PINECONE_API_KEY_SETTING]: process.env.PINECONE_API_KEY
+            [PINECONE_API_KEY_SETTING]: process.env.PINECONE_API_KEY,
+            [LAST_PINECONE_SYNC_TIME_SETTING]: new Date().toISOString()
         }
     }
 }
