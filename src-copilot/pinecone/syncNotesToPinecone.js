@@ -67,11 +67,11 @@ export const syncNotesToPinecone = async (app) => {
     }
 
     // -- Delete older version entries --
+    let firstNoteFetchResponse = null;
     if (notesInPinecone.length > 0) {
-        const olderEntriesVersion = await (noteTagNameSpace.fetch([notesInPinecone[0]]).then(response => {
-            return response.records[notesInPinecone[0]].metadata.pluginVersion;
-        }));
-        if (olderEntriesVersion < INDEX_VERSION) {
+        firstNoteFetchResponse = await noteTagNameSpace.fetch([notesInPinecone[0]]);
+        const olderEntriesVersion = firstNoteFetchResponse.records[notesInPinecone[0]].metadata.pluginVersion;
+        if (olderEntriesVersion !== INDEX_VERSION) {
             await deleteNamespaceEntries(noteTagNameSpace, notesInPinecone);
             await deleteNamespaceEntries(noteContentNameSpace, notesInPinecone);
             lastSyncTime = null;
@@ -80,10 +80,8 @@ export const syncNotesToPinecone = async (app) => {
     }
 
     // -- Delete other plugin uuid notes from pinecone --
-    if (notesInPinecone.length > 0) {
-        const olderEntriesPluginUUID = await (noteTagNameSpace.fetch([notesInPinecone[0]]).then(response => {
-            return response.records[notesInPinecone[0]].metadata.pluginUUID;
-        }));
+    if (notesInPinecone.length > 0 && firstNoteFetchResponse) {
+        const olderEntriesPluginUUID = firstNoteFetchResponse.records[notesInPinecone[0]].metadata.pluginUUID;
         if (olderEntriesPluginUUID !== pluginUUID) {
             await deleteNamespaceEntries(noteTagNameSpace, notesInPinecone);
             await deleteNamespaceEntries(noteContentNameSpace, notesInPinecone);

@@ -1,5 +1,5 @@
 export const PINECONE_INDEX_NAME = "amplenote";
-export const INDEX_VERSION = 4;
+export const INDEX_VERSION = 5;
 export const LAST_PINECONE_SYNC_TIME_SETTING = "lastSyncTime";
 export const LLM_MAX_TOKENS_DEFAULT = 8192;
 
