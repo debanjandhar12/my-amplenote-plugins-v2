@@ -24,7 +24,7 @@ export const ModifyNoteContent = () => {
                 },
                 contentModificationInstruction: {
                     type: "string",
-                    description: "Short instruction on how to modify content. This will be used by another llm to modify content."
+                    description: "Detailed instruction on how to modify content. This will be used by another llm to modify content."
                 }
             },
             required: ["noteUUID", "content"]
@@ -123,9 +123,7 @@ export const ModifyNoteContent = () => {
         },
         onSubmitted: async ({formData, setFormData, setFormState}) => {
             const selectedNoteUUID = formData.currentNoteSelectionUUID;
-            const replaceNoteContentResult = await appConnector.
-                replaceNoteContent({uuid: selectedNoteUUID}, formData.newContent);
-            if (!replaceNoteContentResult) throw new Error('Failed to update note content');
+            await appConnector.replaceNoteContent({uuid: selectedNoteUUID}, formData.newContent);
             setFormState("completed");
         },
         onCompleted: async ({formData, addResult}) => {
