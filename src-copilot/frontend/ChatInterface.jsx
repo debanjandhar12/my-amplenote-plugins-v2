@@ -6,7 +6,7 @@ import {useModelConfig} from "./hooks/useModelConfig.jsx";
 import {UserMessage} from "./components/UserMessage.jsx";
 import {ToolRegistry} from "./tools-core/registry/ToolRegistry.js";
 import {getCorsBypassUrl} from "../../common-utils/cors-helpers.js";
-import {useInitAttachments} from "./hooks/useInitAttachments.jsx";
+import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
 
 export const ChatInterface = () => {
     // Fetch runtime and other assistant-ui contexts
@@ -15,14 +15,24 @@ export const ChatInterface = () => {
     const assistantAvatar = useAssistantAvatar();
     const suggestions = useChatSuggestions(thread);
 
-    // Based on user data, initialize assistant-ui attachments
-    useInitAttachments();
+    // Send heartbeat signals to plugin
+    React.useEffect(() => {
+        const intervalId = setInterval(() => {
+            window.appConnector.ping();
+        }, 300);
+        window.appConnector.ping();
+        return () => clearInterval(intervalId);
+    }, []);
 
-    // Handle tools and system prompt dynamically by setting model config
+    // Handle attachments, tools and system prompt dynamically by setting model config
+    useAmplenoteAttachments();
     React.useEffect(() => {
         const updateUserData = async () => {
             window.appConnector.getUserCurrentNoteData().then(async (userData) => {
-                window.userData = {...window.userData, ...userData};    // update userData
+                window.userData = {...window.userData, ...userData};
+            });
+            window.appConnector.getUserDailyJotNote().then(async (userData) => {
+                window.userData = {...window.userData, ...userData};
             });
         }
         updateUserData();
@@ -34,6 +44,7 @@ export const ChatInterface = () => {
         }
     }, [runtime]);
     useModelConfig(runtime);
+
     const { Thread } = window.AssistantUI;
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>

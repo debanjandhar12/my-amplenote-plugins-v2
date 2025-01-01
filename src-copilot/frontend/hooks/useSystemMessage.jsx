@@ -5,6 +5,9 @@ export function useSystemMessage(currentMessages, toolsToAdd) {
         message.attachments && message.attachments.length > 0 && 
         message.attachments.some(attachment => attachment.type === 'image')
     );
+    const messageContainsAttachments = currentMessages.some(message =>
+        message.attachments && message.attachments.length > 0
+    );
 
     const lastMessage = currentMessages[currentMessages.length - 1] || null;
     const lastLastMessage = currentMessages[currentMessages.length - 2] || null;
@@ -67,6 +70,7 @@ export function useSystemMessage(currentMessages, toolsToAdd) {
     const userInfo = [
         window.userData.dailyJotNoteUUID && (tasksWordMentioned || jotWordMentioned) ? `Today's daily jot note UUID: ${window.userData.dailyJotNoteUUID}` : '',
         window.userData.currentNoteUUID && notesWordMentioned ? `Current Note UUID: ${window.userData.currentNoteUUID}` : '',
+        messageContainsAttachments && window.userData.currentNoteUUID && notesWordMentioned ? `Prefer attached note over current note unless specified otherwise.` : '',
     ].filter(Boolean).join('\n').trim();
 
     const systemMsg = `

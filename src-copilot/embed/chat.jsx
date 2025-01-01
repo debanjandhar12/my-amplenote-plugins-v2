@@ -1,7 +1,7 @@
 import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
 import {getLLMModel} from "../backend/getLLMModel.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK} from "../test/chat/chat.testdata.js";
+import {EMBED_COMMANDS_MOCK} from "../test/chat/chat.testdata.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import {overwriteWithAmplenoteStyle} from "../frontend/overwriteWithAmplenoteStyle.js";
 import {ChatApp} from "../frontend/ChatApp.jsx";
@@ -11,12 +11,9 @@ import {ToolCategoryRegistry} from "../frontend/tools-core/registry/ToolCategory
 import {makeCustomMarkdownText} from "../frontend/components/makeCustomMarkdownText.jsx";
 
 if(process.env.NODE_ENV === 'development') {
-    window.userData = window.userData || EMBED_USER_DATA_MOCK;
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
 }
 else {
-    if (window.INJECTED_USER_DATA_MOCK)
-        window.userData = deserializeWithFunctions(window.INJECTED_USER_DATA_MOCK);
     if (window.INJECTED_EMBED_COMMANDS_MOCK)
         window.callAmplenotePlugin = createCallAmplenotePluginMock(deserializeWithFunctions(window.INJECTED_EMBED_COMMANDS_MOCK));
 }
@@ -33,6 +30,7 @@ window.appConnector = new Proxy({}, {
     }
 });
 window.appSettings = window.appSettings || {};
+window.userData = window.userData || {};
 
 // Resize iframe height to fit content handler
 const body = document.body,

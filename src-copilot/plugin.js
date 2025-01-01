@@ -146,13 +146,23 @@ const plugin = {
                 await app.alert(e);
             }
         },
-        "Chat": async function (app, selectionContent) {
-            try {
-                await app.openSidebarEmbed(1, {trigger: 'replaceSelection', noteUUID: app?.context?.noteUUID,
-                    selectionContent: app?.context?.selectionContent || selectionContent, openChat: true});
-            } catch (e) {
-                console.error(e);
-                await app.alert(e);
+        "Chat with selection": {
+            check: async function (app, selectionContent) {
+                return !(await plugin.isEmbedOpen(app));
+            },
+            run: async function (app, selectionContent) {
+                await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'selection', noteUUID: app?.context?.noteUUID, selectionContent: selectionContent});
+            }
+        },
+        "Add selection to chat": {
+            check: async function (app, selectionContent) {
+                return await plugin.isEmbedOpen(app);
+            },
+            run: async function (app, selectionContent) {
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'selection', noteUUID: app?.context?.noteUUID, selectionContent: selectionContent});
             }
         },
         "More options": async function (app, selectionContent) {
@@ -190,71 +200,115 @@ const plugin = {
         }
     },
     noteOption: {
-        "Chat": async function (app) {
-            try {
-                await app.openSidebarEmbed(1, {trigger: 'noteOption', openChat: true});
-            } catch (e) {
-                console.error(e);
-                await app.alert(e);
+        "Chat": {
+            check: async function (app) {
+                return !(await plugin.isEmbedOpen(app));
+            },
+            run: async function (app) {
+                await app.openSidebarEmbed(1, {openChat: true});
             }
         },
-        "Chat with context": async function (app, noteUUID) {
-            try {
-                await app.openSidebarEmbed(1, {trigger: 'noteOption', noteUUID, openChat: true});
-            } catch (e) {
-                console.error(e);
-                await app.alert(e);
+        "Chat with note": {
+            check: async function (app, noteUUID) {
+                return !(await plugin.isEmbedOpen(app));
+            },
+            run: async function (app, noteUUID) {
+                await app.openSidebarEmbed(1, {openChat: true});
+                const note = await app.findNote({uuid: noteUUID});
+                const noteContent = await app.getNoteContent({uuid: noteUUID});
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'note', noteUUID: noteUUID, noteTitle: note.name, noteContent: noteContent});
+            }
+        },
+        "Add note to chat": {
+            check: async function (app, noteUUID) {
+                return await plugin.isEmbedOpen(app);
+            },
+            run: async function (app, noteUUID) {
+                const note = await app.findNote({uuid: noteUUID});
+                const noteContent = await app.getNoteContent({uuid: noteUUID});
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'note', noteUUID: noteUUID, noteTitle: note.name, noteContent: noteContent});
             }
         }
     },
     taskOption: {
-        "Chat": async function (app, taskObj) {
-            try {
-                await app.openSidebarEmbed(1, {trigger: 'taskOption', taskUUID: taskObj.uuid, openChat: true});
-            } catch (e) {
-                console.error(e);
-                await app.alert(e);
+        "Chat with task": {
+            check: async function (app, taskObj) {
+                return !(await plugin.isEmbedOpen(app));
+            },
+            run: async function (app, taskObj) {
+                await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'task', taskUUID: taskObj.uuid});
+            }
+        },
+        "Add task to chat": {
+            check: async function (app, taskObj) {
+                return await plugin.isEmbedOpen(app);
+            },
+            run: async function (app, taskObj) {
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'task', taskUUID: taskObj.uuid, taskContent: taskObj.content,
+                        taskStartAt: taskObj.startAt, taskEndAt: taskObj.endAt,
+                        completedAt: taskObj.completedAt, dismissedAt: taskObj.dismissedAt,
+                        hideUntil: taskObj.hideUntil, taskScore: taskObj.score,
+                        important: taskObj.important, urgent: taskObj.urgent});
             }
         }
     },
     imageOption: {
-        "Chat": async function (app, image) {
-            try {
-                await app.openSidebarEmbed(1, {trigger: 'imageOption', image, openChat: true});
-            } catch (e) {
-                console.error(e);
-                await app.alert(e);
+        "Chat with image": {
+            check: async function (app, image) {
+                return !(await plugin.isEmbedOpen(app));
+            },
+            run: async function (app, image) {
+                await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'image', src: image.src});
+            }
+        },
+        "Add image to chat": {
+            check: async function (app, image) {
+                return await plugin.isEmbedOpen(app);
+            },
+            run: async function (app, image) {
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'image', src: image.src});
             }
         }
     },
     renderEmbed: async function (app, args, source = 'embed') {
-        try {
-            if (args.openChat) {
-                let userData = {};
-                if (args.trigger === 'noteOption' && args.noteUUID) {
-                    const noteInfo = await app.findNote({uuid: args.noteUUID});
-                    userData = {...userData, invokerNoteUUID: args.noteUUID, invokerNoteTitle: noteInfo.name};
-                } else if (args.trigger === 'imageOption') {
-                    userData = {...userData, invokerImageSrc: args.image.src};
-                } else if (args.trigger === 'replaceSelection') {
-                    userData = {...userData, invokerSelectionContent: args.selectionContent, invokerNoteUUID: args.noteUUID};
-                } else if (args.trigger === 'taskOption') {
-                    userData = {...userData, invokerTaskUUID: args.taskUUID};
-                }
-                const dailyJotNote = await app.notes.dailyJot(Math.floor(Date.now() / 1000));
-                const dailyJotNoteUUID = (await dailyJotNote.url()).split('/').pop();
-                userData = {...userData, dailyJotNoteUUID: dailyJotNoteUUID, dailyJotNoteTitle: dailyJotNote.name};
-                return addWindowVariableToHtmlString(chatHTML, 'userData', userData);
-            } else if (args.openSearch) {
-                return searchHTML;
-            }
-        } catch (e) {
-            console.error(e);
-            return 'Error parsing object tag';
+        if (args.openChat) {
+            return chatHTML;
+        } else if (args.openSearch) {
+            return searchHTML;
         }
+    },
+    "sendMessageToEmbed": async function (app, channel, message) {
+        if (!window.messageQueue) {
+            window.messageQueue = {};
+        }
+        window.messageQueue[channel] = window.messageQueue[channel] || [];
+        window.messageQueue[channel].push(message);
+    },
+    "isEmbedOpen": async function (app) {
+        // For this to work, the embed must send heartbeat signals to the plugin
+        return window.lastHeartbeatFromChatEmbed
+            && window.lastHeartbeatFromChatEmbed > Date.now() - 1000;
     },
     onEmbedCall : createOnEmbedCallHandler({
         ...COMMON_EMBED_COMMANDS,
+        "ping": async function (app) {
+          window.lastHeartbeatFromChatEmbed = Date.now();
+          return true;
+        },
+        "receiveMessageFromPlugin": async function (app, channel) {
+            if (window.messageQueue && window.messageQueue[channel]) {
+                return window.messageQueue[channel].shift();
+            }
+            return null;
+        },
         "getUserCurrentNoteData": async (app) => {
             try {
                 let currentNoteUUID = app.context.noteUUID;
@@ -266,14 +320,24 @@ const plugin = {
                         currentNoteUUID = matches[1];
                     }
                 }
-                if (!currentNoteUUID) return null;
+                if (!currentNoteUUID) return {currentNoteUUID: null};
                 const currentNote = await app.findNote({uuid: currentNoteUUID});
-                if (!currentNote) return null;
-                return {
-                    currentNoteUUID: currentNote.uuid
-                }
+                if (!currentNote) return {currentNoteUUID: null};
+                return {currentNoteUUID: currentNote.uuid, currentNoteName: currentNote.name}
             } catch (e) {
                 throw 'Failed getUserCurrentNoteData - ' + e;
+            }
+        },
+        "getUserDailyJotNote": async function (app) {
+            try {
+                const dailyJotNote = await app.notes.dailyJot(Math.floor(Date.now() / 1000));
+                const dailyJotNoteUUID = (await dailyJotNote.url()).split('/').pop();
+                return {
+                    dailyJotNoteUUID: dailyJotNoteUUID,
+                    dailyJotNoteName: dailyJotNote.name
+                }
+            } catch (e) {
+                throw 'Failed getUserDailyJotNote - ' + e;
             }
         },
         "syncNotesWithPinecone": async function (app) {
@@ -286,7 +350,8 @@ const plugin = {
                 await app.alert(e);
             }
         }
-    }, ['getUserCurrentNoteData'])
+    }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
+        'receiveMessageFromPlugin', 'ping'])
 }
 
 export default plugin;
