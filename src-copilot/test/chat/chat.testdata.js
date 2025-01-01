@@ -33,6 +33,7 @@ export const EMBED_COMMANDS_MOCK = {
     },
     "navigate": async (url) => {
         window.open(url, '_blank');
+        return true;
     },
     "getSettings": async () => {
         await dynamicImportEnv();
