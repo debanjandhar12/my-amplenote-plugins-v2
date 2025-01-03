@@ -12,7 +12,7 @@ export default {
     description: 'AI plugin with chat interface',
     settings: [PINECONE_API_KEY_SETTING, LLM_API_KEY_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING, LLM_MAX_TOKENS_SETTING,
         CUSTOM_LLM_INSTRUCTION_SETTING, CUSTOM_LLM_AVATAR_SETTING, USER_PROMPT_LIST_SETTING],
-    version: '0.1.0',
+    version: '0.1.1',
     icon: 'chat',
     instructions: `
 <mark>Note: This plugin is in its beta stage, so you may encounter bugs. Please report them below.</mark>
@@ -42,6 +42,7 @@ Q) [How do I set up pinecone vector database?](https://public.amplenote.com/jKhh
 ### Changelog
 - 30/10/2024: Alpha v0.0.1 release
 - 27/12/2024: Beta v0.1.0 release
+- 27/12/2024: Beta v0.1.1 release
 
 [^1]: [Chat Interface with support for tool calling and custom prompts]()
     
