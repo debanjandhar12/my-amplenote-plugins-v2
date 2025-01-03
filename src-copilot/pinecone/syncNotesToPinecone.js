@@ -40,7 +40,7 @@ export const syncNotesToPinecone = async (app) => {
     const noteContentNameSpace = index.namespace('note-content');
 
     // -- Fetch target notes from amplenote --
-    let lastSyncTime = app.settings[LAST_PINECONE_SYNC_TIME_SETTING];
+    let lastSyncTime = app.settings[LAST_PINECONE_SYNC_TIME_SETTING];   // Will be set null on index version update
     let pluginUUID = app.context.pluginUUID;
     const allNotes = await app.filterNotes({});
 
@@ -108,7 +108,7 @@ export const syncNotesToPinecone = async (app) => {
     const records = [];
     for (const note of filteredNotes) {
         console.log('note', note);
-        const splitter = new Splitter(400, pluginUUID);
+        const splitter = new Splitter(480, pluginUUID);
         const splitResultForNote = await splitter.split(app, note);
         records.push(...splitResultForNote);
     }

@@ -5,7 +5,7 @@ import {INDEX_VERSION} from "../constants.js";
 
 export class Splitter {
 
-    constructor(maxTokens = 260, pluginUUID) {
+    constructor(maxTokens, pluginUUID) {
         this.maxTokens = maxTokens;
         this.splitResult = [];
         this.noteContent = '';
