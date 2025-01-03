@@ -5,7 +5,6 @@ import {useAssistantAvatar} from "./hooks/useAssistantAvatar.jsx";
 import {useModelConfig} from "./hooks/useModelConfig.jsx";
 import {UserMessage} from "./components/UserMessage.jsx";
 import {ToolRegistry} from "./tools-core/registry/ToolRegistry.js";
-import {getCorsBypassUrl} from "../../common-utils/cors-helpers.js";
 import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
 
 export const ChatInterface = () => {
@@ -43,7 +42,7 @@ export const ChatInterface = () => {
             unsubscribe();
         }
     }, [runtime]);
-    useModelConfig(runtime);
+    useModelConfig();
 
     const { Thread } = window.AssistantUI;
     return (

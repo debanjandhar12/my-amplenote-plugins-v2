@@ -3,6 +3,7 @@ import {StringDiff} from "react-string-diff";
 import Tribute from "tributejs";
 import ReactDOM = require("react-dom/client");
 import React = require("react");
+import * as AssistantUIMarkdown from "@assistant-ui/react-markdown";
 import * as RadixUI from "@radix-ui/themes";
 import * as RadixIcons from "@radix-ui/react-icons";
 import {splitLocalRuntimeOptions} from "@assistant-ui/react/dist/runtimes/local/LocalRuntimeOptions";
@@ -23,6 +24,7 @@ declare global {
             DangerousInBrowserAdapter: typeof DangerousInBrowserAdapter;
             splitLocalRuntimeOptions: typeof splitLocalRuntimeOptions;
         }
+        AssistantUIMarkdown: typeof AssistantUIMarkdown;
         appSettings: Record<string, any>;
     }
 }
