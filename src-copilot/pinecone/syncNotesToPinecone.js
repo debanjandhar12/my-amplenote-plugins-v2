@@ -108,7 +108,7 @@ export const syncNotesToPinecone = async (app) => {
     const records = [];
     for (const note of filteredNotes) {
         console.log('note', note);
-        const splitter = new Splitter(260, pluginUUID);
+        const splitter = new Splitter(400, pluginUUID);
         const splitResultForNote = await splitter.split(app, note);
         records.push(...splitResultForNote);
     }

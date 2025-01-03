@@ -1,5 +1,6 @@
-import { parse } from '../markdown/markdown-parser.js';
+import {parse} from '../markdown/markdown-parser.js';
 import { visit } from "unist-util-visit";
+import { toString as mdastToString } from "mdast-util-to-string";
 import {INDEX_VERSION} from "../constants.js";
 
 export class Splitter {
@@ -37,7 +38,6 @@ export class Splitter {
 
         this.addNoteContentSplitResult(note, headers);
         visit(root, (node) => {
-
             if (node.type === 'heading') {
                 headers = headers.filter((header) => header.depth < node.depth);
                 headers.push(node);
@@ -45,11 +45,15 @@ export class Splitter {
                 return 'skip';
             } else if (node.type === 'root' || node.type === 'paragraph') {
                 return true;    // Continue
-            } else if (node.type === 'code' && (node.position.end.offset - node.position.start.offset) > this.maxTokens) {
+            } else if (node.type === 'code' && node.position &&
+                node.position.end.offset - node.position.start.offset > this.maxTokens) {
                 console.log('Skipping code block due to length', node);
                 return 'skip';
             } else {
-                const nodeValue = noteContent.substring(node.position.start.offset, node.position.end.offset);
+                const nodeValue = node.position ?
+                    noteContent.substring(node.position.start.offset, node.position.end.offset)
+                    : mdastToString(node);
+
                 let nodeTokens = this.tokenize(nodeValue);
                 if (nodeTokens.length > this.maxTokens * 1000) {
                     console.log('Skipping else node due to length', node);
@@ -68,12 +72,11 @@ export class Splitter {
                     this.splitResult[this.splitResult.length - 1].dirty = true;
                     this.splitResult[this.splitResult.length - 1].addedAmount += addedAmount;
                 }
-
                 return 'skip';
             }
         });
         this.splitResult = this.splitResult.filter((result) => result.dirty);
-        this.splitResult = this.splitResult.filter((result) => result.addedAmount > 16);
+        this.splitResult = this.splitResult.filter((result) => result.addedAmount > 8);
         this.splitResult.forEach((result) => delete result.dirty);
         this.splitResult.forEach((result) => delete result.addedAmount);
 
@@ -94,8 +97,16 @@ export class Splitter {
         return this.splitResult;
     }
 
-    tokenize(content) {
-        // Dummy tokenize function, replace with actual implementation
-        return content.split(/\s+/).map((token) => token+' ');
-    }
+        tokenize(content) {
+            const maxCharsLimitInAToken = 12;
+            return (content.match(/\S+|\s+/g) || []).flatMap(token => {
+                if (token.length <= maxCharsLimitInAToken) return [token];
+                // Else Split by maxCharsLimitInAToken
+                const chunks = [];
+                for (let i = 0; i < token.length; i += maxCharsLimitInAToken) {
+                    chunks.push(token.slice(i, Math.min(i + maxCharsLimitInAToken, token.length)));
+                }
+                return chunks;
+            });
+        }
 }
