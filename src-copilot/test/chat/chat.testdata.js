@@ -17,6 +17,12 @@ export const EMBED_COMMANDS_MOCK = {
     "updateTask": async (...args) => {
         return true;
     },
+    "ping": async () => {
+        return true;
+    },
+    "receiveMessageFromPlugin": async () => {
+        return null;
+    },
     "getUserCurrentNoteData": async () => {
         return {
             currentNoteUUID: 'mock-uuid'

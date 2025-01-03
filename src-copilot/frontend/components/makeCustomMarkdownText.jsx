@@ -6,7 +6,7 @@ import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.
  * This returns Markdown text component with following changes:
  * 1. Support for syntax highlighting
  * 2. Support for displaying tool category mentions
- * 3. Support for displaying toolplan tags
+ * 3. Support for displaying toolplan codeblocks
  * TODO - Make this a generic component
  */
 export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
@@ -48,23 +48,6 @@ export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
                 // === Process children ===
                 // It may have been better to process it as a rehype plugin and have a custom
                 // component for it, but this is faster to build and works well enough.
-                // This does have issue with things like: <toolplan>**a**</toolplan>
-                const processToolplanTags = ((text) => {
-                    // Delay rendering toolplan tags if tool is running
-                    if (text.includes('<toolplan>') && !text.includes('</toolplan>')
-                        && AssistantUI.useThread((t) => t.isRunning)) {
-                        return null;
-                    }
-                    // Replace toolplan tags with components
-                    const parts = text.split(/(<toolplan>.*?<\/toolplan>)/g);
-                    return parts.map((part, i) => {
-                        const toolplanMatch = part.match(/^<toolplan>(.*?)<\/toolplan>$/);
-                        if (toolplanMatch) {
-                            return <ToolPlanComponent key={i}>{toolplanMatch[1]}</ToolPlanComponent>;
-                        }
-                        return part;
-                    });
-                });
                 const processToolCategoryMentionTags = (text) => {
                     const parts = text.split(' ');
                     const result = parts.map((part, i) => {
@@ -84,23 +67,16 @@ export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
                 children = Array.isArray(children)
                                 ? children.map(child => {
                                                 if (typeof child !== 'string') return child;
-                                                return processToolplanTags(child);
-                                })
-                                : typeof children === 'string'
-                                                ? processToolplanTags(children)
-                                                : children;
-                children = Array.isArray(children)
-                                ? children.map(child => {
-                                                if (typeof child !== 'string') return child;
                                                 return processToolCategoryMentionTags(child);
                                 })
                                 : typeof children === 'string'
                                                 ? processToolCategoryMentionTags(children)
                                                 : children;
-
-                return <div className="aui-md-p" {...props}>
-                    {children}
-                </div>
+                return (
+                    <div className="aui-md-p" {...props}>
+                        {children}
+                    </div>
+                );
             },
             a: ({node, children, href, ...props}) => {
                 return <a className="aui-md-a" {...props} href={href}
@@ -115,6 +91,17 @@ export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
                           }}>
                     {children}
                 </a>
+            },
+            CodeHeader: ({ ...args }) => {
+                if (args.language === 'toolplan') {
+                    return null;
+                }
+                return <AssistantUIMarkdown.CodeHeader {...args} />;
+            },
+            by_language: {
+                toolplan: {
+                    SyntaxHighlighter: ToolPlanComponent
+                },
             },
             ...overrideComponents
         },
@@ -149,18 +136,20 @@ const rehypeCompressTextNodes = () => {
     };
 };
 
-const ToolPlanComponent = ({ children }) => {
+const ToolPlanComponent = ({ code }) => {
     const { Text, Box, Flex, Tooltip } = window.RadixUI;
-return <Box className="aui-toolplan" style={{ border: '1px solid var(--gray-6)', padding: '4px 6px', marginBottom: '2px', opacity: 0.8, display: 'inline-block' }}>
-        <Text size="1" style={{ color: 'var(--gray-11)' }}>
-            Thinking execution plan...
-        </Text>
-        <Tooltip content={children}>
-            <Text size="1" style={{ color: 'var(--gray-11)', cursor: 'help' }}>
-                ⓘ
+    return (
+        <Box className="aui-toolplan" style={{ border: '1px solid var(--gray-6)', padding: '4px 6px', marginBottom: '2px', opacity: 0.8, display: 'inline-block' }}>
+            <Text size="1" style={{ color: 'var(--gray-11)' }}>
+                Thinking execution plan...
             </Text>
-        </Tooltip>
-    </Box>
+            <Tooltip content={code}>
+                <Text size="1" style={{ color: 'var(--gray-11)', cursor: 'help' }}>
+                    ⓘ
+                </Text>
+            </Tooltip>
+        </Box>
+    )
 };
 
 export const ToolCategoryMentionComponent = ({ children, description }) => {
