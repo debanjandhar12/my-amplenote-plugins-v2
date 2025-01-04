@@ -11,6 +11,9 @@ export const EMBED_COMMANDS_MOCK = {
     "getNoteTitleByUUID": async (noteUUID) => {
         return "Mock Note"
     },
+    "getNoteContentByUUID": async (noteUUID) => {
+        return ""
+    },
     "insertTask": async (...args) => {
         return true;
     },

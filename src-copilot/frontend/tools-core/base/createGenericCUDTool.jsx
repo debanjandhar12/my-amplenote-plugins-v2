@@ -16,8 +16,8 @@ export const createGenericCUDTool = ({
                                                  onCompleted = () => {},
                                                  onSubmitted = () => {},
                                                  onCanceled = ({addResult, args, cancelFurtherLLMReply}) => {
-                                                     addResult(`Tool invocation canceled by user. No operation was performed. Wait for further instructions. User will hate you if you call this again without finding out what they are thinking.
-                                                     Input (canceled): ${JSON.stringify(args)}`);
+                                                     addResult("Tool invocation canceled by user. No operation was performed.\n"+
+                                                     `Input (canceled): ${JSON.stringify(args)}`);
                                                      cancelFurtherLLMReply();
                                                  },
                                                  onError = ({formError, addResult}) => {
