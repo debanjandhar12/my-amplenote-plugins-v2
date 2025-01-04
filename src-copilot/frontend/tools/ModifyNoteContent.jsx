@@ -27,7 +27,7 @@ export const ModifyNoteContent = () => {
                     description: "Detailed instruction on how to modify content. This will be used by another llm to modify content."
                 }
             },
-            required: ["noteUUID", "content"]
+            required: ["noteUUID", "contentModificationInstruction"]
         },
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
