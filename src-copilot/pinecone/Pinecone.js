@@ -1,7 +1,7 @@
 import {syncNotesToPinecone} from "./syncNotesToPinecone.js";
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 import {LAST_PINECONE_SYNC_TIME_SETTING, PINECONE_API_KEY_SETTING, PINECONE_INDEX_NAME} from "../constants.js";
-import {getCorsBypassUrl} from "../../common-utils/cors-helpers.js";
+import {fetchWithFallback, getCorsBypassUrl} from "../../common-utils/cors-helpers.js";
 
 export class Pinecone {
     async syncNotes(app) {
@@ -28,17 +28,7 @@ export class Pinecone {
         const pineconeClient = new Pinecone({
             apiKey: appSettings[PINECONE_API_KEY_SETTING],
             fetchApi: async (url, options) => {
-                if (!window.useCorsBypassForPinecone) {
-                    try {
-                        return await fetch(url, options);
-                    } catch (error) {
-                        if (!error.message?.includes('CORS')) {
-                            throw error;
-                        }
-                        window.useCorsBypassForPinecone = true;
-                    }
-                }
-                return fetch(getCorsBypassUrl(url), options);
+                return fetchWithFallback([url, getCorsBypassUrl(url)], options, false);
             }
         });
         const indexName = PINECONE_INDEX_NAME;

@@ -7,8 +7,7 @@ import {
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 import {Splitter} from "./Splitter.js";
 import {chunk, isArray} from "lodash-es";
-import {getCorsBypassUrl} from "../../common-utils/cors-helpers.js";
-import {attemptEmbedding} from "./attemptEmbedding.js";
+import {fetchWithFallback, getCorsBypassUrl} from "../../common-utils/cors-helpers.js";
 
 /**
  * Creates / updates / deletes notes to pinecone. This does not delete notes from pinecone.
@@ -21,17 +20,7 @@ export const syncNotesToPinecone = async (app) => {
     const pineconeClient = new Pinecone({
         apiKey: app.settings[PINECONE_API_KEY_SETTING],
         fetchApi: async (url, options) => {
-            if (!window.useCorsBypassForPinecone) {
-                try {
-                    return await fetch(url, options);
-                } catch (error) {
-                    if (!error.message?.includes('CORS')) {
-                        throw error;
-                    }
-                    window.useCorsBypassForPinecone = true;
-                }
-            }
-            return fetch(getCorsBypassUrl(url), options);
+            return fetchWithFallback([url, getCorsBypassUrl(url)], options, false);
         }
     });
     const indexName = PINECONE_INDEX_NAME;
@@ -115,10 +104,13 @@ export const syncNotesToPinecone = async (app) => {
     }
 
     // -- Add / update data to pinecone --
-    for (const recordChunk of chunk(records, 64)) {
+    for (const recordChunk of chunk(records, 32)) {
         // 1. Generate embeddings
-        const embeddings = await attemptEmbedding(pineconeClient,
-            recordChunk.map(record => record.metadata.pageContent), 'passage');
+        const embeddings = await pineconeClient.inference.embed(
+            'multilingual-e5-large',
+            recordChunk.map(record => record.metadata.pageContent),
+            {inputType: 'passage', truncate: 'END'}
+        );
         embeddings.forEach((embedding, index) => {
             recordChunk[index].values = embedding.values;
         });

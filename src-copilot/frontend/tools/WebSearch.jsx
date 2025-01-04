@@ -1,6 +1,7 @@
 import {createGenericReadTool} from "../tools-core/base/createGenericReadTool.jsx";
 import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
 import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
+import {fetchWithFallback, getCorsBypassUrl} from "../../../common-utils/cors-helpers.js";
 
 export const WebSearch = () => {
     return createGenericReadTool({
@@ -45,21 +46,11 @@ export const WebSearch = () => {
 }
 
 const search = async (query, signal) => {
-    // Use jira reader as cors bypass and access to searx
-    // const response = await fetch(`https://r.jina.ai/https://search.projectsegfau.lt/search?q=${encodeURIComponent(query)}&format=json`, {
-    //     signal,
-    //     headers: {
-    //         "Accept": "application/json"
-    //     }
-    // });
-    const response = await fetch(`https://actions.sider.ai/googleGPT/search_with_rerank?query=${encodeURIComponent(query)}`);
-    // Use duckduckgo as fallback
+    const response = await fetchWithFallback([`https://actions.sider.ai/googleGPT/search_with_rerank?query=${encodeURIComponent(query)}`,
+        getCorsBypassUrl(`https://search.projectsegfau.lt/search?q=${encodeURIComponent(query)}&format=json`),
+        `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`
+    ]);
     if (response.status !== 200) {
-        const response2 = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`,
-            {signal});
-        if (response2.status === 200) {
-            return [await response2.json()];
-        }
         throw new Error('Failed to fetch web search results');
     }
     return await response.json();
