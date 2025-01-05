@@ -1,13 +1,12 @@
 import chatHTML from 'inline:./embed/chat.html';
 import searchHTML from 'inline:./embed/search.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
-import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
 import {generateText} from "./backend/generateText.js";
 import {getLLMModel} from "./backend/getLLMModel.js";
-import {Pinecone} from "./pinecone/Pinecone.js";
 import {LLM_API_URL_SETTING} from "./constants.js";
 import {getImageModel} from "./backend/getImageModel.js";
 import {generateImage} from "./backend/generateImage.js";
+import {LocalVecDB} from "./LocalVecDB/LocalVecDB.js";
 
 const plugin = {
     currentNoteUUID: null,
@@ -105,9 +104,6 @@ const plugin = {
         }
     },
     appOption: {
-        "Sync notes to pinecone": async function (app) {
-            await plugin.onEmbedCall(app, 'syncNotesWithPinecone');
-        },
         "Search notes using natural language": async function (app) {
             try {
                 await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
@@ -340,14 +336,21 @@ const plugin = {
                 throw 'Failed getUserDailyJotNote - ' + e;
             }
         },
-        "syncNotesWithPinecone": async function (app) {
+        "isLocalVecDBSyncRequired": async function (app) {
+
+        },
+        "syncNotesWithLocalVecDB": async function (app) {
+            await new LocalVecDB().syncNotes(app);
+        },
+        "searchInLocalVecDB": async function (app, queryText, limit) {
             try {
-                const pinecone = new Pinecone();
-                await pinecone.syncNotes(app);
-                await app.alert("Sync completed");
+                // const isSyncRequired = await plugin.onEmbedCall(app, 'isLocalVecDBSyncRequired');
+                // if (isSyncRequired) {
+                //     await plugin.onEmbedCall(app, 'syncNotesWithLocalVecDB');
+                // }
+                return await new LocalVecDB().search(app, queryText, limit);
             } catch (e) {
                 console.error(e);
-                await app.alert(e);
             }
         }
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',

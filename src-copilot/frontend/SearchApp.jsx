@@ -1,6 +1,5 @@
-import {Pinecone} from "../pinecone/Pinecone.js";
 import {truncate, debounce} from "lodash-es";
-import {processPineconeSearchResults} from "./tools-core/utils/processPineconeResults.js";
+import {processVectorDBResults} from "./tools-core/utils/processVectorDBResults.js";
 
 // Custom hook for search functionality
 const useSearch = () => {
@@ -17,10 +16,8 @@ const useSearch = () => {
     const performSearch = async (query, opts = {}) => {
         if (!query.trim()) return [];
 
-        const pinecone = new Pinecone();
-        const results = await pinecone.search(query, appSettings,
-            opts.isArchived === null ? 10 : 15);
-        const processedResults = await processPineconeSearchResults(results);
+        const results = await window.appConnector.searchInLocalVecDB(query);
+        const processedResults = await processVectorDBResults(results);
 
         // Filter results
         const checkIsArchived = async (uuid) => {
@@ -74,7 +71,7 @@ const useSearch = () => {
         setSyncError(null);
 
         try {
-            await window.appConnector.syncNotesWithPinecone();
+            await window.appConnector.syncNotesWithLocalVecDB();
             if (searchText.trim()) {
                 await handleSearch();
             }

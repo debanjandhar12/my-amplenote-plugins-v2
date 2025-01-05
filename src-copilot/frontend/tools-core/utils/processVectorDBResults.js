@@ -1,8 +1,9 @@
 import {stripYAMLAndMarkdownFormatting} from "../../../markdown/stripYAMLAndMarkdownFormatting.js";
 
-export const processPineconeSearchResults = async (results, thresholdScore = 0.75) => {
+export const processVectorDBResults = async (results, thresholdScore = 0.35) => {
     const filteredResults = results
         .filter(result => result.score >= thresholdScore)
+        //Keep only the highest-scored result for each unique noteUUID.
         .reduce((acc, result) => {
             const uuid = result.metadata.noteUUID;
             if (!acc[uuid] || acc[uuid].score < result.score) {

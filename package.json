@@ -64,7 +64,9 @@
     "core-js": "^3.38.1",
     "@testing-library/react": "^16.0.1",
     "@testing-library/jest-dom": "^6.5.0",
-    "esbuild-plugin-external-global": "^1.0.1"
+    "esbuild-plugin-external-global": "^1.0.1",
+    "@huggingface/transformers": "3.2.4",
+    "idb": "^8.0.1"
   },
   "scripts": {
     "test": "jest --testPathPattern=src-copilot",

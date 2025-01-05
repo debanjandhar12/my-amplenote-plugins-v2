@@ -21,10 +21,7 @@ export class Splitter {
                 noteUUID: note.uuid,
                 noteTitle: note.name || note.title || 'Untitled Note',
                 noteTags: (note.tags || []).join(", "),
-                namespace: "note-content",
-                isTagOnly: false,
-                pluginVersion: INDEX_VERSION,
-                pluginUUID: this.pluginUUID
+                isTagOnly: false
             },
             dirty: false,   // Whether further content is added to this split result
             addedAmount: 0 // Amount of content added to this split result
@@ -80,33 +77,19 @@ export class Splitter {
         this.splitResult.forEach((result) => delete result.dirty);
         this.splitResult.forEach((result) => delete result.addedAmount);
 
-        this.splitResult.push({
-            id: note.uuid,
-            metadata: {
-                pageContent: `---\nnote-title: ${note.name}\nnote-tags: ${(note.tags || []).join(", ")}\n---`,
-                noteUUID: note.uuid,
-                noteTitle: note.name || note.title || 'Untitled Note',
-                noteTags: (note.tags || []).join(", "),
-                namespace: "note-tags",
-                isTagOnly: true,
-                pluginVersion: INDEX_VERSION,
-                pluginUUID: this.pluginUUID
-            }
-        });
-
         return this.splitResult;
     }
 
-        tokenize(content) {
-            const maxCharsLimitInAToken = 12;
-            return (content.match(/\S+|\s+/g) || []).flatMap(token => {
-                if (token.length <= maxCharsLimitInAToken) return [token];
-                // Else Split by maxCharsLimitInAToken
-                const chunks = [];
-                for (let i = 0; i < token.length; i += maxCharsLimitInAToken) {
-                    chunks.push(token.slice(i, Math.min(i + maxCharsLimitInAToken, token.length)));
-                }
-                return chunks;
-            });
-        }
+    tokenize(content) {
+        const maxCharsLimitInAToken = 12;
+        return (content.match(/\S+|\s+/g) || []).flatMap(token => {
+            if (token.length <= maxCharsLimitInAToken) return [token];
+            // Else Split by maxCharsLimitInAToken
+            const chunks = [];
+            for (let i = 0; i < token.length; i += maxCharsLimitInAToken) {
+                chunks.push(token.slice(i, Math.min(i + maxCharsLimitInAToken, token.length)));
+            }
+            return chunks;
+        });
+    }
 }

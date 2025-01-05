@@ -1,11 +1,10 @@
 import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
 import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
-import {Pinecone} from "../../pinecone/Pinecone.js";
 import {createGenericReadTool} from "../tools-core/base/createGenericReadTool.jsx";
 import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
 import {uniqBy} from "lodash-es";
-import {processPineconeSearchResults} from "../tools-core/utils/processPineconeResults.js";
+import {processVectorDBResults} from "../tools-core/utils/processVectorDBResults.js";
 
 export const SearchNotesByTitleTagsContent = () => {
     return createGenericReadTool({
@@ -87,14 +86,14 @@ export const SearchNotesByTitleTagsContent = () => {
             setFormData({...formData, isPineconeSearchPossible});
             let pineconeError = null;
 
-            // Perform pinecone search
+            // Perform pinecone-decrypted search
             let searchResults0 = [];
             try {
                 if (isPineconeSearchPossible) {
                     const pinecone = new Pinecone();
                     // TODO: pass signal
                     const pineconeResults = await pinecone.search(args.noteContent, appSettings, args.limitSearchResults);
-                    searchResults0.push(...await processPineconeSearchResults(pineconeResults, 0.80));
+                    searchResults0.push(...await processVectorDBResults(pineconeResults));
                 }
             } catch (e) {
                 pineconeError = e;
