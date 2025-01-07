@@ -53,10 +53,10 @@ export class IndexedDBManager {
         const notesObjectStore = tx.objectStore('notes');
         const index = notesObjectStore.index('noteUUID');
         for (const noteUUID of noteUUIDArr) {
-            const cursor = await index.openCursor(noteUUID);
+            let cursor = await index.openCursor(noteUUID);
             while (cursor) {
                 await cursor.delete();
-                cursor.continue();
+                cursor = await cursor.continue();
             }
         }
         await tx.done;

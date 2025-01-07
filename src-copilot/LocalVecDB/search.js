@@ -1,5 +1,5 @@
 import {IndexedDBManager} from "./IndexedDBManager.js";
-import {getEmbeddingFromText} from "./EmbedingManager.js";
+import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
 
 // Based on: https://github.com/babycommando/entity-db/blob/main/src/index.js
 export const search = async (app, queryText, limit = 32) => {
