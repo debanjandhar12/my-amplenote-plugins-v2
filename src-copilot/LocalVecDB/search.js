@@ -7,8 +7,8 @@ export const search = async (app, queryText, limit = 32) => {
     try {
         // Get embeddings for the query text
         const indexedDBManager = new IndexedDBManager();
-        const allEmbeddings = await indexedDBManager.getAllNotesEmbeddings();
         const queryVector = (await getEmbeddingFromText(app, queryText, "query"))[0];
+        const allEmbeddings = await indexedDBManager.getAllNotesEmbeddings();
 
         // Calculate cosine similarity for each vector and sort by similarity
         const similarities = allEmbeddings.map((entry) => {

@@ -10,8 +10,8 @@ export class LocalVecDB {
         return await search(app, query, limit);
     }
 
-    async syncNotes(app) {
-        await syncNotes(app);
+    async syncNotes(app, sendMessageToEmbed) {
+        await syncNotes(app, sendMessageToEmbed);
     }
 
     async isSyncRequired(app) {

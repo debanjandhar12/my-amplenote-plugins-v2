@@ -9,15 +9,38 @@ export async function generateEmbeddingUsingPinecone(app, textArray, inputType) 
             apiKey: app.settings[PINECONE_API_KEY_SETTING],
         });
     }
+
     const embeddingConfig = await getEmbeddingConfig(app);
-    const embeddings = await pineconeClient.inference.embed(
-        embeddingConfig.model,
-        textArray,
-        {inputType, truncate: 'END'}
-    );
-    if (textArray.length >= 16) {    // Don't wait for small requests
-        // Wait for few seconds to avoid rate limit of 250k tokens / min
-        await new Promise(resolve => setTimeout(resolve, 3000));
-    }
+    let embeddings = await attemptEmbedding(embeddingConfig, textArray, inputType);
+
     return embeddings.map(embedding => embedding.values);
+}
+
+async function attemptEmbedding(embeddingConfig, textArray, inputType) {
+    try {
+        const result = await pineconeClient.inference.embed(
+            embeddingConfig.model,
+            textArray,
+            {inputType, truncate: 'END'}
+        );
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return result;
+    } catch (e) {
+        if (e.message?.includes('rate limit') || e.message?.includes('failed to reach Pinecone')) {
+            console.warn('Pinecone embedding rate limit error detected. Waiting for 60 seconds...', e);
+            await handleRateLimit();
+            const result = await pineconeClient.inference.embed(
+                embeddingConfig.model,
+                textArray,
+                {inputType, truncate: 'END'}
+            );
+            return result;
+        }
+        throw e;
+    }
+}
+
+async function handleRateLimit() {
+    const RATE_LIMIT_DURATION_MS = 60000;
+    await new Promise(resolve => setTimeout(resolve, RATE_LIMIT_DURATION_MS));
 }

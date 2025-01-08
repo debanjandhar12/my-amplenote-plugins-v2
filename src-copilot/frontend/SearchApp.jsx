@@ -9,6 +9,7 @@ const useSearch = () => {
     const [isLoading, setIsLoading] = React.useState(false);
     const [error, setError] = React.useState(null);
     const [isSyncing, setIsSyncing] = React.useState(false);
+    const [syncProgressText, setSyncProgressText] = React.useState('');
     const [syncError, setSyncError] = React.useState(null);
     const [searchOpts, setSearchOpts] = React.useState({isArchived: false});
 
@@ -69,7 +70,13 @@ const useSearch = () => {
     const handleSync = async () => {
         setIsSyncing(true);
         setSyncError(null);
-
+        setSyncProgressText(null);
+        while(await window.appConnector.receiveMessageFromPlugin('syncNotesProgress') != null) {} // Clear any previous progress messages
+        const syncProgressListenerIntervalId = setInterval(async () => {
+            const syncProgressText = await window.appConnector.receiveMessageFromPlugin('syncNotesProgress');
+            if (!syncProgressText) return;
+            setSyncProgressText(syncProgressText);
+        }, 1000);
         try {
             await window.appConnector.syncNotesWithLocalVecDB();
             if (searchText.trim()) {
@@ -80,6 +87,7 @@ const useSearch = () => {
             setSyncError(error.message || 'Failed to sync notes');
         } finally {
             setIsSyncing(false);
+            clearInterval(syncProgressListenerIntervalId);
         }
     };
 
@@ -98,6 +106,7 @@ const useSearch = () => {
         error,
         isSyncing,
         syncError,
+        syncProgressText,
         handleSync,
         searchOpts,
         setSearchOpts
@@ -105,13 +114,19 @@ const useSearch = () => {
 };
 
 // SearchStatus component to handle different states
-const SearchStatus = ({ isLoading, error, isSyncing, syncError, searchText, searchResults }) => {
+const SearchStatus = ({ isLoading, error, isSyncing, syncError, syncProgressText, searchText, searchResults }) => {
     const {Flex, Box, Spinner, Text} = window.RadixUI;
 
     if (isSyncing) {
         return (
             <Box style={{ padding: '20px', textAlign: 'center', backgroundColor: '#0ea5e9', color: 'white', borderRadius: '6px' }}>
                 Syncing notes with LocalVecDB...
+                {
+                    syncProgressText &&
+                    <Box style={{ marginTop: '4px', backgroundColor: '#0369a1', color: 'white', borderRadius: '4px', padding: '10px' }}>
+                        <Text size="1">{syncProgressText}</Text>
+                    </Box>
+                }
             </Box>
         );
     }
@@ -218,6 +233,7 @@ export const SearchApp = () => {
         error,
         isSyncing,
         syncError,
+        syncProgressText,
         handleSync,
         searchOpts,
         setSearchOpts
@@ -273,6 +289,7 @@ export const SearchApp = () => {
                             isLoading={isLoading}
                             error={error}
                             isSyncing={isSyncing}
+                            syncProgressText={syncProgressText}
                             syncError={syncError}
                             searchText={searchText}
                             searchResults={searchResults}

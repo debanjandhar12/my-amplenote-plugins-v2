@@ -281,14 +281,14 @@ const plugin = {
             return searchHTML;
         }
     },
-    "sendMessageToEmbed": async function (app, channel, message) {
+    sendMessageToEmbed: async function (app, channel, message) {
         if (!window.messageQueue) {
             window.messageQueue = {};
         }
         window.messageQueue[channel] = window.messageQueue[channel] || [];
         window.messageQueue[channel].push(message);
     },
-    "isEmbedOpen": async function (app) {
+    isEmbedOpen: async function (app) {
         // For this to work, the embed must send heartbeat signals to the plugin
         return window.lastHeartbeatFromChatEmbed
             && window.lastHeartbeatFromChatEmbed > Date.now() - 1000;
@@ -300,7 +300,8 @@ const plugin = {
           return true;
         },
         "receiveMessageFromPlugin": async function (app, channel) {
-            if (window.messageQueue && window.messageQueue[channel]) {
+            if (window.messageQueue && window.messageQueue[channel] &&
+                window.messageQueue[channel].length > 0) {
                 return window.messageQueue[channel].shift();
             }
             return null;
@@ -340,7 +341,7 @@ const plugin = {
 
         },
         "syncNotesWithLocalVecDB": async function (app) {
-            await new LocalVecDB().syncNotes(app);
+            await new LocalVecDB().syncNotes(app, plugin.sendMessageToEmbed);
         },
         "searchInLocalVecDB": async function (app, queryText, limit) {
             try {

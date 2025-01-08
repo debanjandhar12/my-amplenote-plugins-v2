@@ -5,7 +5,7 @@ import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
 import {chunk} from "lodash-es";
 import {getEmbeddingConfig} from "./embeddings/getEmbeddingConfig.js";
 
-export const syncNotes = async (app) => {
+export const syncNotes = async (app, sendMessageToEmbed) => {
     const performanceStartTime = performance.now();
     const indexedDBManager = new IndexedDBManager();
     const embeddingConfig = await getEmbeddingConfig(app);
@@ -15,11 +15,11 @@ export const syncNotes = async (app) => {
     const lastEmbeddingModel = await indexedDBManager.getConfigValue('lastEmbeddingModel');
 
     // -- Reset DB if plugin UUID / embedding model has changed --
-    if (lastPluginUUID && lastPluginUUID !== app.context.pluginUUID) {
+    if (lastPluginUUID !== app.context.pluginUUID) {
         await indexedDBManager.resetDB();
         lastSyncTime = new Date(0).toISOString();
     }
-    if (lastEmbeddingModel && lastEmbeddingModel !== embeddingConfig.model) {
+    if (lastEmbeddingModel !== embeddingConfig.model) {
         await indexedDBManager.resetDB();
         lastSyncTime = new Date(0).toISOString();
     }
@@ -44,7 +44,10 @@ export const syncNotes = async (app) => {
         try {
             const aParsedUpdatedAt = new Date(a.updated || a.updatedAt);
             const bParsedUpdatedAt = new Date(b.updated || b.updatedAt);
-            return aParsedUpdatedAt - bParsedUpdatedAt;
+            if (aParsedUpdatedAt.toISOString() !== bParsedUpdatedAt.toISOString()) {
+                return aParsedUpdatedAt - bParsedUpdatedAt;
+            }
+            return a.uuid.localeCompare(b.uuid);
         } catch (e) {
             return -1;
         }
@@ -59,7 +62,7 @@ export const syncNotes = async (app) => {
     }
 
     // -- Delete existing records with target noteUUIDs --
-    await indexedDBManager.deleteNoteEmbeddingByNoteUUIDList(records.map(record => record.noteUUID));
+    await indexedDBManager.deleteNoteEmbeddingByNoteUUIDList(records.map(record => record.metadata.noteUUID));
 
     // -- Create embeddings for split records and add to database --
     // Chunk the records into smaller chunks (required for pinecone embedding interference)
@@ -75,21 +78,22 @@ export const syncNotes = async (app) => {
             )
         ).size;
         const totalNotes = new Set(records.map(record => record.metadata.noteUUID)).size;
-        console.log(`Process: ${totalNotes-remainingNotes} / ${totalNotes}`);
+        sendMessageToEmbed(app, 'syncNotesProgress',
+            `Using ${embeddingConfig.provider} embedding${embeddingConfig.provider==='local' ? 
+                ` with ${embeddingConfig.webGpuAvailable ? 'gpu' : 'cpu'}`:''}: ${totalNotes-remainingNotes} / ${totalNotes}`);
         // 2. Generate embeddings and add to records
-        (await getEmbeddingFromText(app,
-                recordChunk.map(record => record.metadata.pageContent))).forEach((embedding, index) => {
+        const embeddings = await getEmbeddingFromText(app,
+            recordChunk.map(record => record.metadata.pageContent));
+        embeddings.forEach((embedding, index) => {
             recordChunk[index].values = embedding;
         });
-        // 3. Add noteUUID to records
-        recordChunk.forEach(record => record.noteUUID = record.metadata.noteUUID);
-        // 4. Insert / update records
+        // 3. Insert / update records
         await indexedDBManager.putMultipleNoteEmbedding(recordChunk);
-        // 5. Update configs so that partial failures can be resumed
+        // 4. Update configs so that partial failures can be resumed
         try {
             const note = targetNotes[targetNotes.findIndex(n => n.uuid === recordChunk[recordChunk.length-1].metadata.noteUUID)];
             const parsedUpdatedAt = new Date(note.updated || note.updatedAt);
-            parsedUpdatedAt.setMinutes(parsedUpdatedAt.getMinutes() - 1);
+            parsedUpdatedAt.setSeconds(parsedUpdatedAt.getSeconds() - 1);
             await indexedDBManager.setConfigValue('lastSyncTime', parsedUpdatedAt.toISOString());
         } catch (e) {}
         await indexedDBManager.setConfigValue('lastPluginUUID', app.context.pluginUUID);

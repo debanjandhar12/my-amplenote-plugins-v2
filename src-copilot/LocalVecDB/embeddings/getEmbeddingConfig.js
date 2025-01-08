@@ -1,6 +1,6 @@
 import {PINECONE_API_KEY_SETTING} from "../../constants.js";
 
-let adapter;
+let adapter = null;
 export async function getEmbeddingConfig(app) {
     if (app && app.settings &&
         app.settings[PINECONE_API_KEY_SETTING] && app.settings[PINECONE_API_KEY_SETTING].trim() !== '') {
@@ -8,16 +8,16 @@ export async function getEmbeddingConfig(app) {
             provider: "pinecone",
             apiKey: app.settings[PINECONE_API_KEY_SETTING],
             model: "multilingual-e5-large",
-            maxConcurrency: 32
+            maxConcurrency: 64
         }
     }
 
     // Use local models using huggingface transformers
     try {
-        if (!adapter && navigator.gpu)
-            adapter = await navigator.gpu.requestAdapter();
+        if (adapter === null && navigator.gpu)
+            adapter = await navigator.gpu.requestAdapter() || false;
     } catch (e) {}
-    const webGpuAvailable = adapter !== false && adapter !== null;
+    const webGpuAvailable = adapter !== false;
     return {
         provider: "local",
         model: "xenova/bge-small-en-v1.5",
