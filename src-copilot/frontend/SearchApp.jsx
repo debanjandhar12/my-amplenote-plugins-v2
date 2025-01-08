@@ -111,7 +111,7 @@ const SearchStatus = ({ isLoading, error, isSyncing, syncError, searchText, sear
     if (isSyncing) {
         return (
             <Box style={{ padding: '20px', textAlign: 'center', backgroundColor: '#0ea5e9', color: 'white', borderRadius: '6px' }}>
-                Syncing notes with Pinecone...
+                Syncing notes with LocalVecDB...
             </Box>
         );
     }
@@ -170,7 +170,7 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts }) => {
                     onSelect={onSync}
                     disabled={isSyncing}
                 >
-                    {isSyncing ? 'Syncing...' : 'Sync notes with Pinecone'}
+                    {isSyncing ? 'Syncing...' : 'Sync notes with LocalVecDB'}
                 </DropdownMenu.Item>
                 <DropdownMenu.Separator />
                 <Text color="gray" style={{ fontSize: '14px', padding: '4px' }}>Search Options</Text>
