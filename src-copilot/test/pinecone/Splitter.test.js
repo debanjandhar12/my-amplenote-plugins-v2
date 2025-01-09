@@ -6,7 +6,7 @@ describe('Splitter', () => {
         const splitter = new Splitter(100);
         const app = mockApp({uuid: 'mock-uuid'});
         app.getNoteContent = jest.fn().mockResolvedValue('');
-        const result = await splitter.split(app, mockNote);
+        const result = await splitter.splitNote(app, mockNote);
         expect(result.length).toBe(0);
     });
     test('should correctly split content based on headers', async () => {
@@ -21,7 +21,7 @@ Content under header 2 under header 2
     `;
         const app = mockApp({uuid: 'mock-uuid'});
         app.getNoteContent = jest.fn().mockResolvedValue(content);
-        const result = await splitter.split(app, mockNote);
+        const result = await splitter.splitNote(app, mockNote);
         expect(result.length).toBe(3);
     });
     test('should correctly split on large content', async () => {
@@ -29,7 +29,7 @@ Content under header 2 under header 2
         const splitter = new Splitter(100);
         const app = mockApp({uuid: 'mock-uuid'});
         app.getNoteContent = jest.fn().mockResolvedValue(content);
-        const result = await splitter.split(app, mockNote);
+        const result = await splitter.splitNote(app, mockNote);
         expect(result.length).toBe(5);
     });
     test('should ignore large code blocks', async () => {
@@ -42,7 +42,7 @@ ${'const a = 1;'.repeat(1000)}
         const splitter = new Splitter(100);
         const app = mockApp({uuid: 'mock-uuid'});
         app.getNoteContent = jest.fn().mockResolvedValue(content);
-        const result = await splitter.split(app, mockNote);
+        const result = await splitter.splitNote(app, mockNote);
         expect(result.length).toBe(1);
     });
     test('works correctly with markdown formatting', async () => {
@@ -50,7 +50,7 @@ ${'const a = 1;'.repeat(1000)}
         const content = `Hello **World**`;
         const app = mockApp({uuid: 'mock-uuid'});
         app.getNoteContent = jest.fn().mockResolvedValue(content);
-        const result = await splitter.split(app, mockNote);
+        const result = await splitter.splitNote(app, mockNote);
         expect(result.length).toBe(1);
         // Word world should not be repeated simply because it is wrapped in bold
         // This bug was encounted when async was used with unist-util-visit
@@ -64,7 +64,7 @@ ${'const a = 1;'.repeat(1000)}
         const splitter = new Splitter(100);
         const app = mockApp({uuid: 'mock-uuid'});
         app.getNoteContent = jest.fn().mockResolvedValue(content);
-        const result = await splitter.split(app, mockNote);
+        const result = await splitter.splitNote(app, mockNote);
         expect(result.length).toBe(1);
     });
     test('works correctly with new line', async () => {
@@ -72,7 +72,7 @@ ${'const a = 1;'.repeat(1000)}
        const splitter = new Splitter(100);
        const app = mockApp({uuid: 'mock-uuid'});
        app.getNoteContent = jest.fn().mockResolvedValue(content);
-       const result = await splitter.split(app, mockNote);
+       const result = await splitter.splitNote(app, mockNote);
        expect(result.length).toBe(1);
        expect(result[0].metadata.pageContent.includes("\nThis is another new line."))
            .toBe(true);
@@ -82,7 +82,7 @@ ${'const a = 1;'.repeat(1000)}
         const splitter = new Splitter(100);
         const app = mockApp({uuid: 'mock-uuid'});
         app.getNoteContent = jest.fn().mockResolvedValue(content);
-        const result = await splitter.split(app, mockNote);
+        const result = await splitter.splitNote(app, mockNote);
         expect(result.length).toBe(2);
     });
 });
