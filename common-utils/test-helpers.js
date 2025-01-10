@@ -75,6 +75,7 @@ export const mockApp = seedNote => {
   mockFilterNotes.mockImplementation(params => {
     const tag = params.tag;
     return Object.values(app._noteRegistry).filter(note => {
+      if (!note.tags) return false;
       for (const noteTag of note.tags) {
         if (noteTag.includes(tag)) return true;
       }

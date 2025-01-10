@@ -4,7 +4,7 @@ import {getEmbeddingConfig} from "./getEmbeddingConfig.js";
 
 export async function generateEmbeddingUsingPinecone(app, textArray, inputType) {
     if (!window.pineconeClient) {
-        const {Pinecone} = await dynamicImportESM("@pinecone-database/pinecone");
+        const {Pinecone} = await dynamicImportESM("@LocalVecDB-database/LocalVecDB");
         window.pineconeClient = new Pinecone({
             apiKey: app.settings[PINECONE_API_KEY_SETTING],
         });

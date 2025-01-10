@@ -65,7 +65,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
     await indexedDBManager.deleteNoteEmbeddingByNoteUUIDList(records.map(record => record.metadata.noteUUID));
 
     // -- Create embeddings for split records and add to database --
-    // Chunk the records into smaller chunks (required for pinecone embedding interference)
+    // Chunk the records into smaller chunks (required for LocalVecDB embedding interference)
     const chunkSize = embeddingConfig.maxConcurrency;
     const recordsChunks = chunk(records, chunkSize);
     for (const recordChunk of recordsChunks) {
@@ -83,7 +83,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
                 ` with ${embeddingConfig.webGpuAvailable ? 'gpu' : 'cpu'}`:''}: ${totalNotes-remainingNotes} / ${totalNotes}`);
         // 2. Generate embeddings and add to records
         const embeddings = await getEmbeddingFromText(app,
-            recordChunk.map(record => record.metadata.pageContent));
+            recordChunk.map(record => record.metadata.noteContentPart));
         embeddings.forEach((embedding, index) => {
             recordChunk[index].values = embedding;
         });

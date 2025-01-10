@@ -1,5 +1,5 @@
 import {truncate, debounce} from "lodash-es";
-import {processVectorDBResults} from "./tools-core/utils/processVectorDBResults.js";
+import {processLocalVecDBResults} from "./tools-core/utils/processLocalVecDBResults.js";
 
 // Custom hook for search functionality
 const useSearch = () => {
@@ -18,7 +18,7 @@ const useSearch = () => {
         if (!query.trim()) return [];
 
         const results = await window.appConnector.searchInLocalVecDB(query);
-        const processedResults = await processVectorDBResults(results);
+        const processedResults = await processLocalVecDBResults(results);
 
         // Filter results
         const checkIsArchived = async (uuid) => {
@@ -201,11 +201,11 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts }) => {
     );
 };
 
-const NoteCard = ({ title, content, noteUUID }) => {
+const NoteCard = ({ title, noteContentPart, noteUUID , headingAnchor }) => {
     const {Card, Flex} = window.RadixUI;
     const handleClick = (e) => {
         e.preventDefault();
-        window.appConnector.navigate(`https://www.amplenote.com/notes/${noteUUID}`);
+        window.appConnector.navigate(`https://www.amplenote.com/notes/${noteUUID}` + (headingAnchor ? `#${headingAnchor}` : ''));
     };
 
     return (
@@ -216,7 +216,7 @@ const NoteCard = ({ title, content, noteUUID }) => {
                         {title || 'Untitled Note'}
                     </h3>
                     <p style={{margin: 0, color: '#666', fontSize: '14px'}}>
-                        {truncate(content, {length: 150})}
+                        {truncate(noteContentPart, {length: 150})}
                     </p>
                 </Flex>
             </a>
@@ -257,6 +257,7 @@ export const SearchApp = () => {
                             fontSize: '16px',
                             flex: 1
                         }}
+                        autoFocus={true}
                     >
                         <TextField.Slot style={{ paddingLeft: '2px' }}>
                             <MagnifyingGlassIcon height="16" width="16" />
@@ -299,8 +300,9 @@ export const SearchApp = () => {
                                 <NoteCard
                                     key={index}
                                     title={result.noteTitle}
-                                    content={result.content}
+                                    noteContentPart={result.noteContentPart}
                                     noteUUID={result.noteUUID}
+                                    headingAnchor={result.headingAnchor}
                                 />
                             ))}
                     </Flex>
