@@ -2,6 +2,7 @@ import { parse } from '../markdown/markdown-parser.js';
 import { visit } from "unist-util-visit";
 import { toString as mdastToString } from "mdast-util-to-string";
 import {isArray, truncate} from "lodash-es";
+import {getExtendedNoteHandleProperties} from "./getExtendedNoteHandleProperties.js";
 
 export class Splitter {
     constructor(maxTokens) {
@@ -48,22 +49,7 @@ export class Splitter {
 
     async _collectNoteInfo(app, note) {
         this.noteContent = await app.getNoteContent({ uuid: note.uuid });
-        const isArchivedSearch = await app.filterNotes({group: "archived", query: note.uuid});
-        const isArchived = isArchivedSearch && isArchivedSearch.length > 0;
-        const isTaskListNoteSearch = await app.filterNotes({group: "taskList", query: note.uuid});
-        const isTaskListNote = isTaskListNoteSearch && isTaskListNoteSearch.length > 0;
-        const isSharedByMeSearch = await app.filterNotes({group: "shared", query: note.uuid});
-        const isSharedByMe = isSharedByMeSearch && isSharedByMeSearch.length > 0;
-        const isSharedWithMeSearch = await app.filterNotes({group: "shareReceived", query: note.uuid});
-        const isSharedWithMe = isSharedWithMeSearch && isSharedWithMeSearch.length > 0;
-        
-        this.noteProperties = { 
-            isArchived,
-            isTaskListNote,
-            isSharedByMe, 
-            isSharedWithMe,
-            isPublished: note.published 
-        };
+        this.noteProperties = await getExtendedNoteHandleProperties(app, note);
     }
 
     _rebalanceChunks() {

@@ -345,15 +345,7 @@ const plugin = {
             await new LocalVecDB().syncNotes(app, plugin.sendMessageToEmbed);
         },
         "searchInLocalVecDB": async function (app, queryText, opts) {
-            try {
-                // const getSyncState = await plugin.onEmbedCall(app, 'isLocalVecDBSyncRequired');
-                // if (getSyncState) {
-                //     await plugin.onEmbedCall(app, 'syncNotesWithLocalVecDB');
-                // }
-                return await new LocalVecDB().search(app, queryText, opts);
-            } catch (e) {
-                console.error(e);
-            }
+            return await new LocalVecDB().search(app, queryText, opts);
         }
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
         'receiveMessageFromPlugin', 'ping'])

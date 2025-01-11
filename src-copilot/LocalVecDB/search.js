@@ -5,11 +5,12 @@ import {getSyncState} from "./getSyncState.js";
 // Based on: https://github.com/babycommando/entity-db/blob/main/src/index.js
 export const search = async (app, queryText, {limit = 32,
     isArchived = null, isSharedByMe = null, isSharedWithMe = null, isDailyJot = null}) => {
-    try {
-        if (!queryText || !queryText.trim()) return [];
-        if (await getSyncState(app) === 'Not synced')
-            throw new Error('Embeddings not found. Please sync notes with LocalVecDB.');
+    if (await getSyncState(app) === 'Not synced')
+        throw new Error('No syncing has been performed, or the last sync is outdated. Please sync your notes with LocalVecDB.');
 
+    if (!queryText || !queryText.trim()) return [];
+
+    try {
         // Get embeddings for the query text
         const indexedDBManager = new IndexedDBManager();
         const queryVector = (await getEmbeddingFromText(app, queryText, "query"))[0];

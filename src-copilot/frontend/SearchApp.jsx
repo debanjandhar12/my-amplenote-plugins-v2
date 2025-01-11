@@ -1,4 +1,4 @@
-import {truncate, debounce} from "lodash-es";
+import {debounce, truncate} from "lodash-es";
 import {processLocalVecDBResults} from "./tools-core/utils/processLocalVecDBResults.js";
 
 // Custom hook for search functionality
@@ -11,7 +11,8 @@ const useSearch = () => {
     const [isSyncing, setIsSyncing] = React.useState(false);
     const [syncProgressText, setSyncProgressText] = React.useState('');
     const [syncError, setSyncError] = React.useState(null);
-    const [searchOpts, setSearchOpts] = React.useState({isArchived: false});
+    const [searchOpts, setSearchOpts] = React.useState({
+        isArchived: null, isSharedByMe: null, isSharedWithMe: null, isTaskListNote: null, isPublished: null});
     const [syncStatus, setSyncStatus] = React.useState('');
 
     // Fetch initial sync status
@@ -28,27 +29,9 @@ const useSearch = () => {
     }, []);
 
     // Search functionality
-    const performSearch = async (query, opts = {}) => {
-        if (!query.trim()) return [];
-
-        const results = await window.appConnector.searchInLocalVecDB(query);
-        const processedResults = await processLocalVecDBResults(results);
-
-        // Filter results
-        const checkIsArchived = async (uuid) => {
-            const note = await appConnector.filterNotes({
-                group: "archived",
-                query: uuid
-            });
-            return note && note.length > 0;
-        };
-        const filteredProcessedResults = await Promise.all(processedResults.filter(async (result) => {
-            const isArchived = await checkIsArchived(result.uuid);
-            return opts.isArchived === null || isArchived === opts.isArchived;
-        }));
-
-        return filteredProcessedResults.length > 10 ?
-            filteredProcessedResults.slice(0, 10) : filteredProcessedResults;
+    const performSearch = async (query, searchOpts = {}) => {
+        const results = await window.appConnector.searchInLocalVecDB(query, searchOpts);
+        return await processLocalVecDBResults(results);
     };
 
     // Debounced search handler
@@ -67,8 +50,9 @@ const useSearch = () => {
                 const results = await performSearch(searchText, searchOpts);
                 setSearchResults(results);
             } catch (error) {
-                console.error('Search error:', error);
-                setError(error.message || 'An error occurred while searching');
+                console.error(error);
+                setError((typeof error === 'string' ? error : error.message)
+                    || 'An error occurred while searching');
             } finally {
                 setIsLoading(false);
             }
@@ -185,8 +169,46 @@ const SearchStatus = ({ isLoading, error, isSyncing, syncError, syncProgressText
     return null;
 };
 
+const FilterRow = ({ label, isEnabled, value, onChange }) => {
+    const { Switch, IconButton, Flex } = window.RadixUI;
+    const { EyeOpenIcon, EyeClosedIcon } = window.RadixIcons;
+
+    const handleSwitchChange = (checked) => {
+        onChange(checked ? true : null);
+    };
+
+    const handleIconClick = () => {
+        if (!isEnabled) return;
+        onChange(value !== true);
+    };
+
+    return (
+        <Flex align="center" justify="between" style={{ width: '100%', padding: '12px', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
+            {label}
+            <Flex align="center" gap="2">
+                <Switch
+                    size="1"
+                    checked={isEnabled}
+                    onCheckedChange={handleSwitchChange}
+                />
+                <IconButton
+                    title={
+                    value == null? '' :
+                        value === true ? 'Included' : 'Excluded'}
+                    variant="soft" 
+                    size="1"
+                    disabled={!isEnabled}
+                    onClick={handleIconClick}
+                >
+                    {value === true || value === null ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                </IconButton>
+            </Flex>
+        </Flex>
+    );
+};
+
 const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts, syncStatus }) => {
-    const { Text, IconButton, DropdownMenu, Switch, Flex } = window.RadixUI;
+    const { Text, IconButton, DropdownMenu } = window.RadixUI;
     const { DotsHorizontalIcon } = window.RadixIcons;
 
     const getSyncStatusColor = (status) => {
@@ -200,6 +222,10 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts, syncStatus }
         }
     };
 
+    const handleFilterChange = (key, value) => {
+        setSearchOpts(prev => ({ ...prev, [key]: value }));
+    };
+
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
@@ -209,7 +235,7 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts, syncStatus }
             </DropdownMenu.Trigger>
             <DropdownMenu.Content>
                 <Text style={{ fontSize: '14px', padding: '4px' }} color={'gray'}>
-                    LocalVecDB Status: <Text color={getSyncStatusColor(syncStatus)}>{syncStatus}</Text>
+                    DB Status: <Text color={getSyncStatusColor(syncStatus)}>{syncStatus}</Text>
                 </Text>
                 <DropdownMenu.Item
                     onSelect={onSync}
@@ -219,13 +245,36 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts, syncStatus }
                 </DropdownMenu.Item>
                 <DropdownMenu.Separator />
                 <Text color="gray" style={{ fontSize: '14px', padding: '4px' }}>Search Options</Text>
-                <Flex align="center" justify="between" style={{ width: '100%', padding: '12px', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
-                    Archived
-                    <Switch
-                        checked={searchOpts.isArchived}
-                        onCheckedChange={(checked) => setSearchOpts({ ...searchOpts, isArchived: checked })}
-                    />
-                </Flex>
+                <FilterRow
+                    label="Archived"
+                    isEnabled={searchOpts.isArchived !== null}
+                    value={searchOpts.isArchived}
+                    onChange={(value) => handleFilterChange('isArchived', value)}
+                />
+                <FilterRow
+                    label="Task List"
+                    isEnabled={searchOpts.isTaskListNote !== null}
+                    value={searchOpts.isTaskListNote}
+                    onChange={(value) => handleFilterChange('isTaskListNote', value)}
+                />
+                <FilterRow
+                    label="Published"
+                    isEnabled={searchOpts.isPublished !== null}
+                    value={searchOpts.isPublished}
+                    onChange={(value) => handleFilterChange('isPublished', value)}
+                />
+                <FilterRow
+                    label="Shared by Me"
+                    isEnabled={searchOpts.isSharedByMe !== null}
+                    value={searchOpts.isSharedByMe}
+                    onChange={(value) => handleFilterChange('isSharedByMe', value)}
+                />
+                <FilterRow
+                    label="Shared with Me"
+                    isEnabled={searchOpts.isSharedWithMe !== null}
+                    value={searchOpts.isSharedWithMe}
+                    onChange={(value) => handleFilterChange('isSharedWithMe', value)}
+                />
             </DropdownMenu.Content>
         </DropdownMenu.Root>
     );

@@ -16,6 +16,24 @@ export const getSyncState = async (app) => {
         return 'Not synced';
     }
     const allNotes = await app.filterNotes({});
+    let lastSyncTime = await indexedDBManager.getConfigValue('lastSyncTime')
+        || new Date(0).toISOString();
+    const targetNotes = allNotes
+        // Filter out notes that are already synced
+        .filter(note => {
+            try {
+                const parsedCreatedAt = new Date(note.created || note.createdAt);
+                const parsedUpdatedAt = new Date(note.updated || note.updatedAt);
+                const parsedLastSyncTime = new Date(lastSyncTime);
+                if (parsedCreatedAt == null || parsedUpdatedAt == null) return true;
+                return parsedUpdatedAt > parsedLastSyncTime || parsedCreatedAt > parsedLastSyncTime;
+            } catch (e) {
+                return true;
+            }
+        });
+    if (targetNotes.length >= (allNotes.length/4)) {
+        return 'Not synced';
+    }
 
-    return allNotes.length === uniqueNoteUUIDsCount ? 'Fully Synced' : 'Partially synced';
+    return targetNotes.length === 0 ? 'Fully Synced' : 'Partially synced';
 }
