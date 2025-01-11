@@ -4,7 +4,7 @@ import {getSyncState} from "./getSyncState.js";
 
 // Based on: https://github.com/babycommando/entity-db/blob/main/src/index.js
 export const search = async (app, queryText, {limit = 32,
-    isArchived = null, isSharedByMe = null, isSharedWithMe = null, isDailyJot = null}) => {
+    isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null}) => {
     if (await getSyncState(app) === 'Not synced')
         throw new Error('No syncing has been performed, or the last sync is outdated. Please sync your notes with LocalVecDB.');
 
@@ -19,7 +19,7 @@ export const search = async (app, queryText, {limit = 32,
             if (isArchived !== null && !entry.metadata.isArchived === isArchived) return false;
             if (isSharedByMe !== null && !entry.metadata.isSharedByMe === isSharedByMe) return false;
             if (isSharedWithMe !== null && !entry.metadata.isSharedWithMe === isSharedWithMe) return false;
-            if (isDailyJot !== null && !entry.metadata.isDailyJot === isDailyJot) return false;
+            if (isTaskListNote !== null && !entry.metadata.isTaskListNote === isTaskListNote) return false;
             return true;
         });
 
