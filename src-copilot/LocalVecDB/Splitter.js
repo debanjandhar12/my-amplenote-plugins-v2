@@ -50,15 +50,16 @@ export class Splitter {
         this.noteContent = await app.getNoteContent({ uuid: note.uuid });
         const isArchivedSearch = await app.filterNotes({group: "archived", query: note.uuid});
         const isArchived = isArchivedSearch && isArchivedSearch.length > 0;
-        const isDailyJot = note.tags && isArray(note.tags) && note.tags.includes("daily-jot");
+        const isTaskListNoteSearch = await app.filterNotes({group: "taskList", query: note.uuid});
+        const isTaskListNote = isTaskListNoteSearch && isTaskListNoteSearch.length > 0;
         const isSharedByMeSearch = await app.filterNotes({group: "shared", query: note.uuid});
         const isSharedByMe = isSharedByMeSearch && isSharedByMeSearch.length > 0;
         const isSharedWithMeSearch = await app.filterNotes({group: "shareReceived", query: note.uuid});
         const isSharedWithMe = isSharedWithMeSearch && isSharedWithMeSearch.length > 0;
         
         this.noteProperties = { 
-            isArchived, 
-            isDailyJot, 
+            isArchived,
+            isTaskListNote,
             isSharedByMe, 
             isSharedWithMe,
             isPublished: note.published 

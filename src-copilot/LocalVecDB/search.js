@@ -1,17 +1,29 @@
 import {IndexedDBManager} from "./IndexedDBManager.js";
 import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
+import {getSyncState} from "./getSyncState.js";
 
 // Based on: https://github.com/babycommando/entity-db/blob/main/src/index.js
-export const search = async (app, queryText, limit = 32) => {
-    if (!queryText || !queryText.trim()) return [];
+export const search = async (app, queryText, {limit = 32,
+    isArchived = null, isSharedByMe = null, isSharedWithMe = null, isDailyJot = null}) => {
     try {
+        if (!queryText || !queryText.trim()) return [];
+        if (await getSyncState(app) === 'Not synced')
+            throw new Error('Embeddings not found. Please sync notes with LocalVecDB.');
+
         // Get embeddings for the query text
         const indexedDBManager = new IndexedDBManager();
         const queryVector = (await getEmbeddingFromText(app, queryText, "query"))[0];
         const allEmbeddings = await indexedDBManager.getAllNotesEmbeddings();
+        const filteredEmbeddings = allEmbeddings.filter(entry => {
+            if (isArchived !== null && !entry.metadata.isArchived === isArchived) return false;
+            if (isSharedByMe !== null && !entry.metadata.isSharedByMe === isSharedByMe) return false;
+            if (isSharedWithMe !== null && !entry.metadata.isSharedWithMe === isSharedWithMe) return false;
+            if (isDailyJot !== null && !entry.metadata.isDailyJot === isDailyJot) return false;
+            return true;
+        });
 
         // Calculate cosine similarity for each vector and sort by similarity
-        const similarities = allEmbeddings.map((entry) => {
+        const similarities = filteredEmbeddings.map((entry) => {
             const score = cosineSimilarity(queryVector, entry.values);
             return { ...entry, score };
         });

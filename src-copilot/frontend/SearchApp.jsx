@@ -12,6 +12,20 @@ const useSearch = () => {
     const [syncProgressText, setSyncProgressText] = React.useState('');
     const [syncError, setSyncError] = React.useState(null);
     const [searchOpts, setSearchOpts] = React.useState({isArchived: false});
+    const [syncStatus, setSyncStatus] = React.useState('');
+
+    // Fetch initial sync status
+    const updateSyncStatus = async () => {
+        try {
+            const status = await window.appConnector.getLocalVecDBSyncState();
+            setSyncStatus(status);
+        } catch (e) {
+            setSyncStatus('Error');
+        }
+    };
+    React.useEffect(() => {
+        updateSyncStatus();
+    }, []);
 
     // Search functionality
     const performSearch = async (query, opts = {}) => {
@@ -87,6 +101,7 @@ const useSearch = () => {
             setSyncError(error.message || 'Failed to sync notes');
         } finally {
             setIsSyncing(false);
+            updateSyncStatus();
             clearInterval(syncProgressListenerIntervalId);
         }
     };
@@ -109,7 +124,8 @@ const useSearch = () => {
         syncProgressText,
         handleSync,
         searchOpts,
-        setSearchOpts
+        setSearchOpts,
+        syncStatus
     };
 };
 
@@ -169,9 +185,20 @@ const SearchStatus = ({ isLoading, error, isSyncing, syncError, syncProgressText
     return null;
 };
 
-const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts }) => {
+const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts, syncStatus }) => {
     const { Text, IconButton, DropdownMenu, Switch, Flex } = window.RadixUI;
     const { DotsHorizontalIcon } = window.RadixIcons;
+
+    const getSyncStatusColor = (status) => {
+        switch (status) {
+            case 'Fully Synced':
+                return 'green';
+            case 'Partially synced':
+                return 'yellow';
+            default:
+                return 'red';
+        }
+    };
 
     return (
         <DropdownMenu.Root>
@@ -181,6 +208,9 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts }) => {
                 </IconButton>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content>
+                <Text style={{ fontSize: '14px', padding: '4px' }} color={'gray'}>
+                    LocalVecDB Status: <Text color={getSyncStatusColor(syncStatus)}>{syncStatus}</Text>
+                </Text>
                 <DropdownMenu.Item
                     onSelect={onSync}
                     disabled={isSyncing}
@@ -236,7 +266,8 @@ export const SearchApp = () => {
         syncProgressText,
         handleSync,
         searchOpts,
-        setSearchOpts
+        setSearchOpts,
+        syncStatus
     } = useSearch();
 
     const {Theme, ScrollArea, Flex, TextField} = window.RadixUI;
@@ -281,6 +312,7 @@ export const SearchApp = () => {
                         isSyncing={isSyncing}
                         searchOpts={searchOpts}
                         setSearchOpts={setSearchOpts}
+                        syncStatus={syncStatus}
                     />
                 </Flex>
 

@@ -24,6 +24,20 @@ export class IndexedDBManager {
         return notesObjectStore.getAll();
     }
 
+    async getUniqueNoteUUIDsInNoteEmbeddings() {
+        await this.init();
+        const tx = this.db.transaction('notes');
+        const notesObjectStore = tx.objectStore('notes');
+        const index = notesObjectStore.index('metadata.noteUUID');
+        const uniqueUUIDs = new Set();
+        let cursor = await index.openCursor();
+        while (cursor) {
+            uniqueUUIDs.add(cursor.value.metadata.noteUUID);
+            cursor = await cursor.continue();
+        }
+        return uniqueUUIDs;
+    }
+
     /**
      * Inserts / Updates a note embedding in the notes object store.
      * @param noteEmbeddingObjArr
@@ -95,6 +109,7 @@ export class IndexedDBManager {
             notesObjectStore.createIndex('metadata.noteUUID', 'metadata.noteUUID', {unique: false});
             db.createObjectStore('config', {keyPath: 'key'});
         } else { // Reset DB called without version upgrade
+            await this.init();
             // Truncate all object stores
             const tx = this.db.transaction(this.db.objectStoreNames, 'readwrite');
             for (const storeName of this.db.objectStoreNames) {

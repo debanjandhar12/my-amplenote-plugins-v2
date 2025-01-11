@@ -7,6 +7,7 @@ import {LLM_API_URL_SETTING} from "./constants.js";
 import {getImageModel} from "./backend/getImageModel.js";
 import {generateImage} from "./backend/generateImage.js";
 import {LocalVecDB} from "./LocalVecDB/LocalVecDB.js";
+import {getSyncState} from "./LocalVecDB/getSyncState.js";
 
 const plugin = {
     currentNoteUUID: null,
@@ -337,19 +338,19 @@ const plugin = {
                 throw 'Failed getUserDailyJotNote - ' + e;
             }
         },
-        "isLocalVecDBSyncRequired": async function (app) {
-
+        "getLocalVecDBSyncState": async function (app) {
+            return await getSyncState(app);
         },
         "syncNotesWithLocalVecDB": async function (app) {
             await new LocalVecDB().syncNotes(app, plugin.sendMessageToEmbed);
         },
-        "searchInLocalVecDB": async function (app, queryText, limit) {
+        "searchInLocalVecDB": async function (app, queryText, opts) {
             try {
-                // const isSyncRequired = await plugin.onEmbedCall(app, 'isLocalVecDBSyncRequired');
-                // if (isSyncRequired) {
+                // const getSyncState = await plugin.onEmbedCall(app, 'isLocalVecDBSyncRequired');
+                // if (getSyncState) {
                 //     await plugin.onEmbedCall(app, 'syncNotesWithLocalVecDB');
                 // }
-                return await new LocalVecDB().search(app, queryText, limit);
+                return await new LocalVecDB().search(app, queryText, opts);
             } catch (e) {
                 console.error(e);
             }

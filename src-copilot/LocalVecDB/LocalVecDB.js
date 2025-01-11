@@ -3,18 +3,18 @@
 // **
 import {syncNotes} from "./syncNotes.js";
 import {search} from "./search.js";
-import {isSyncRequired} from "./isSyncRequired.js";
+import {getSyncState} from "./getSyncState.js";
 
 export class LocalVecDB {
-    async search(app, query, limit) {
-        return await search(app, query, limit);
+    async search(app, query, opts) {
+        return await search(app, query, opts);
     }
 
     async syncNotes(app, sendMessageToEmbed) {
         await syncNotes(app, sendMessageToEmbed);
     }
 
-    async isSyncRequired(app) {
-        return await isSyncRequired(app);
+    async getSyncState(app) {
+        return await getSyncState(app);
     }
 }
