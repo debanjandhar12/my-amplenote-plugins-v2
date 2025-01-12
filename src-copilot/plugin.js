@@ -113,6 +113,15 @@ const plugin = {
                 await app.alert(e);
             }
         },
+        "Sync notes with LocalVecDB": async function (app) {
+            try {
+                await plugin.sendMessageToEmbed(app, 'startSyncToLocalVecDBInSearchInterface', true);
+                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        },
         "Chat with Copilot": async function (app) {
             try {
                 await app.openSidebarEmbed(1, {trigger: 'appOption', openChat: true});
@@ -226,6 +235,15 @@ const plugin = {
                 const noteContent = await app.getNoteContent({uuid: noteUUID});
                 await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'note', noteUUID: noteUUID, noteTitle: note.name, noteContent: noteContent});
+            }
+        },
+        "Related notes": async function (app, noteUUID) {
+            try {
+                plugin.sendMessageToEmbed(app, 'searchForTextInSearchInterface', `<<Related: ${noteUUID}>>`);
+                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
             }
         }
     },

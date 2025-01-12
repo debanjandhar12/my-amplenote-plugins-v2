@@ -28,6 +28,24 @@ const useSearch = () => {
         updateSyncStatus();
     }, []);
 
+        // Fetch search and sync messages on Init
+        React.useEffect(() => {
+            const fetchInitMessages = async () => {
+                // Check for search text updates
+                const searchTextMsg = await window.appConnector.receiveMessageFromPlugin('searchForTextInSearchInterface');
+                if (searchTextMsg !== null) {
+                    setSearchText(searchTextMsg);
+                }
+    
+                // Check for sync start command
+                const startSync = await window.appConnector.receiveMessageFromPlugin('startSyncToLocalVecDBInSearchInterface');
+                if (startSync === true) {
+                    handleSync();
+                }
+            }
+            fetchInitMessages();
+        }, []);    
+
     // Search functionality
     const performSearch = async (query, searchOpts = {}) => {
         const results = await window.appConnector.searchInLocalVecDB(query, searchOpts);
@@ -47,7 +65,26 @@ const useSearch = () => {
             setError(null);
 
             try {
-                const results = await performSearch(searchText, searchOpts);
+                let results;
+                const isSpecialSearchText = searchText.match(/^<<Related:\s*([a-zA-Z0-9-]+)>>$/);
+                if (isSpecialSearchText) {
+                    const noteUUID = isSpecialSearchText[1];
+                    const noteTitle = await window.appConnector.getNoteTitleByUUID(noteUUID);
+                    const noteContent = await window.appConnector.getNoteContentByUUID(noteUUID);
+                    const noteTags = await window.appConnector.getNoteTagsByUUID({uuid: noteUUID});
+                    if (!noteContent && !noteTitle && !noteTags) {
+                        throw new Error("Could not find note with UUID: " + noteUUID);
+                    }
+                    results = await performSearch('---\n'
+                        + `title: ${noteTitle || 'Untitled Note'}\n`
+                        + `tags: ${noteTags.join(', ')}\n`
+                        + '---\n'
+                        + noteContent, searchOpts);
+                    // Filter out the current note from results
+                    results = results.filter(result => result.noteUUID !== noteUUID);
+                } else {
+                    results = await performSearch(searchText, searchOpts);
+                }
                 setSearchResults(results);
             } catch (error) {
                 console.error(error);
@@ -77,6 +114,7 @@ const useSearch = () => {
         }, 1000);
         try {
             await window.appConnector.syncNotesWithLocalVecDB();
+            window.appConnector.alert("Sync completed!");
             if (searchText.trim()) {
                 await handleSearch();
             }
@@ -284,7 +322,7 @@ const NoteCard = ({ title, noteContentPart, noteUUID , headingAnchor }) => {
     const {Card, Flex} = window.RadixUI;
     const handleClick = (e) => {
         e.preventDefault();
-        window.appConnector.navigate(`https://www.amplenote.com/notes/${noteUUID}` + (headingAnchor ? `#${headingAnchor}` : ''));
+        window.appConnector.navigate(`https://www.amplenote.com/notes/${noteUUID}` + (headingAnchor ? `#${encodeURIComponent(headingAnchor)}` : ''));
     };
 
     return (
