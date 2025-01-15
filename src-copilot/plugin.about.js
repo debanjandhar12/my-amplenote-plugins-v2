@@ -9,15 +9,13 @@ import {
 
 export default {
     name: 'Ample Copilot',
-    description: 'AI plugin with chat interface',
+    description: 'Next-gen AI plugin with chat interface and natural language searching.',
     settings: [LLM_API_KEY_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING, LLM_MAX_TOKENS_SETTING,
         CUSTOM_LLM_INSTRUCTION_SETTING, CUSTOM_LLM_AVATAR_SETTING, PINECONE_API_KEY_SETTING, USER_PROMPT_LIST_SETTING],
-    version: '0.1.1',
+    version: '0.2.0',
     icon: 'chat',
     instructions: `
-<mark>Note: This plugin is in its beta stage, so you may encounter bugs. Please report them below.</mark>
-
-AI assistant for Amplenote with superpowers.
+The plugins adds various AI capabilities to Amplenote. It includes a chat interface, natural language searching, and more.
 
 ![Demo](https://images.amplenote.com/93d25f9e-b4c3-11ef-ba27-d3c11d33cbac/8344c634-a1a4-4423-8ca0-eb7adf6b91a8.gif)
 
@@ -25,8 +23,8 @@ AI assistant for Amplenote with superpowers.
 - [Chat Interface with support for tool calling](https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb)
 - [User defined custom prompts](https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb#How_to_use_custom_prompts%3F)
 - Support for multiple llm providers: [OpenAI (recommended)](https://platform.openai.com/account/api-keys), [Groq AI Interface (free)](https://console.groq.com/), [FireWorks](https://fireworks.ai/account/api-keys), [Ollama](https://github.com/ollama/ollama).
-- Support for quick plugin actions: [Continue][^2], Generate Text & Image, Edit, Rewrite, Fix grammar, etc.
 - [Support for natural language searching](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#How_to_use_the_search_interface%3F).
+- Support for quick plugin actions: [Continue][^2], Generate Text & Image, Edit, Rewrite, Fix grammar, etc.
 - A lot more. Too many to list here!
 
 <mark style="color:undefined;">**Common FAQs:**<!-- {"cycleColor":"57"} --></mark>
@@ -34,6 +32,8 @@ Q) [How do I set up plugin with OpenAI API?][^3]
 Q) [How do I set up plugin with Groq AI Interface?][^4]
 Q) [How do I set up plugin with Ollama?][^5]
 Q) [How do I set up pinecone vector database?](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#How_to_set_up_pinecone%3F)
+
+<mark>Note: This plugin is currently in its beta stage. If you encounter any issues, please report them below.</mark>
 `.trim().replaceAll('\n', '<br />'),
     template: `
 ### Code
