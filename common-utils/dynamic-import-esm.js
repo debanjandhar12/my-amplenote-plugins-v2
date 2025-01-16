@@ -43,7 +43,7 @@ export const dynamicImportMultipleESM = async (pkgs) => {
     const { build } = await dynamicImportESM("build");
     const buildObj = {dependencies, source: buildStr};
     const buildResObj = await build(buildObj);
-    const bundleUrl = new URL(buildResObj.bundleUrl);
+    const bundleUrl = new URL(buildResObj.bundleUrl.replace('https://esm.sh/', 'https://legacy.esm.sh/v135/'));
     if (process.env.NODE_ENV === 'development') {
         bundleUrl.searchParams.set('dev', true);
     }
@@ -71,12 +71,12 @@ const dynamicImportESM = async (pkg, pkgVersion = null) => {
         }
     }
 
-    const cdnList = ['https://esm.sh/', 'https://esm.run/'];
+    const cdnList = ['https://legacy.esm.sh/', 'https://esm.run/'];
     const resolvedVersion = resolvePackageVersion(pkg, pkgVersion);
     let importCompleted = false;
     const importPromises = cdnList.map(async cdn => {
         const url = buildCDNUrl(cdn, pkg, resolvedVersion);
-        if(cdn !== 'https://esm.sh/') {
+        if(cdn !== 'https://legacy.esm.sh/') {
             // wait 0.6 sec as we want esm.sh to be the first to resolve preferably
             await new Promise(resolve => setTimeout(resolve, 600));
         }
@@ -132,11 +132,11 @@ function buildCDNUrl(cdn, pkg, version) {
     const versionString = version !== 'latest' ? `@${version}` : '';
     const folderString = getPackageFolderString(pkg);
     const url = new URL(`${cdn}${basePkg}${versionString}${folderString}`);
-    if (cdn !== 'https://esm.sh/' && (basePkg.includes('react')
+    if (cdn !== 'https://legacy.esm.sh/' && (basePkg.includes('react')
         || basePkg.includes('radix') || basePkg.includes('build'))) {
         throw new Error(`React based packages is not supported in ${cdn}`);
     }
-    if (cdn === 'https://esm.sh/') {
+    if (cdn === 'https://legacy.esm.sh/') {
         if (process.env.NODE_ENV === 'development') {
             url.searchParams.set('dev', true);
         }
@@ -157,7 +157,7 @@ function buildCDNUrl(cdn, pkg, version) {
  */
 export const dynamicImportCSS = async (pkg, pkgVersion = null) => {
     const resolvedVersion = resolvePackageVersion(pkg, pkgVersion);
-    const url = buildCDNUrl('https://esm.sh/', pkg, resolvedVersion);
+    const url = buildCDNUrl('https://legacy.esm.sh/', pkg, resolvedVersion);
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = url;
