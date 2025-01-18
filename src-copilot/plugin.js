@@ -8,6 +8,7 @@ import {getImageModel} from "./backend/getImageModel.js";
 import {generateImage} from "./backend/generateImage.js";
 import {LocalVecDB} from "./LocalVecDB/LocalVecDB.js";
 import {getSyncState} from "./LocalVecDB/getSyncState.js";
+import {getMatchedPartWithFuzzySearch} from "./utils/getMatchedPartWithFuzzySearch.jsx";
 
 const plugin = {
     currentNoteUUID: null,
@@ -364,6 +365,9 @@ const plugin = {
         },
         "searchInLocalVecDB": async function (app, queryText, opts) {
             return await new LocalVecDB().search(app, queryText, opts);
+        },
+        "getMatchedPartWithFuzzySearch": async function (app, noteUUID, searchText, limit) {
+            return await getMatchedPartWithFuzzySearch(app, noteUUID, searchText, limit);
         }
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
         'receiveMessageFromPlugin', 'ping'])

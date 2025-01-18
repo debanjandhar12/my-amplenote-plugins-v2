@@ -45,7 +45,11 @@ export const FetchNoteDetailByNoteUUID = () => {
                 }
                 const backlinks = await appConnector.getNoteBacklinksByUUID({uuid: noteUUID});
                 const tags = await appConnector.getNoteTagsByUUID({uuid: noteUUID});
-                noteInfoList.push({noteUUID, noteTitle, tags, backlinks, noteContent});
+                const noteInfo = {noteUUID, noteTitle, tags, backlinks};
+                if (noteContent !== null) {
+                    noteInfo.noteContent = noteContent;
+                }
+                noteInfoList.push(noteInfo);
             }
             if (noteInfoList.every(noteInfo => noteInfo.error)) {
                 throw new Error("Failed to fetch all notes. Sample error: " + noteInfoList[0].error);

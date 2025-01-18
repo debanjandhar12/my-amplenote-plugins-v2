@@ -5,6 +5,7 @@ import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
 import {uniqBy} from "lodash-es";
 import {processLocalVecDBResults} from "../tools-core/utils/processLocalVecDBResults.js";
+import {stripYAMLAndMarkdownFormatting} from "../../markdown/stripYAMLAndMarkdownFormatting.js";
 
 export const SearchNotesByTitleTagsContent = () => {
     return createGenericReadTool({
@@ -103,6 +104,7 @@ export const SearchNotesByTitleTagsContent = () => {
             if (args.isSharedWithMe === true) groups.push('shareReceived');
             // TODO: Handle false explicitly set by llm but we have
             //  no group for unarchived, unshared, unshareReceived currently
+            // TODO 2: None of below are full text search. Need to add full text search support.
             const searchResults1 = args.noteTitle ? [await appConnector.findNote({
                 name: args.noteTitle
             })] : [];
@@ -110,8 +112,8 @@ export const SearchNotesByTitleTagsContent = () => {
                 query: args.noteTitle,
                 ...(groups.length > 0 && { group: groups.join(',') })
             }) : [];
-            const searchResults3 = (!args || args.noteContent) ? await appConnector.filterNotes({
-                query: args?.noteContent || '',
+            const searchResults3 = args.noteContent ? await appConnector.filterNotes({
+                query: args.noteContent,
                 ...(groups.length > 0 && { group: groups.join(',') })
             }) : [];
             const searchResults4 = args.tags ? await appConnector.filterNotes({
@@ -119,14 +121,23 @@ export const SearchNotesByTitleTagsContent = () => {
                 ...(groups.length > 0 && { group: groups.join(',') })
             }) : [];
             const searchResults5 = !args.noteTitle && !args.noteContent && groups.length > 0
-                && await appConnector.filterNotes({
+                ? await appConnector.filterNotes({
                 group: groups.join(',')
-            });
+            }) : [];
+
+            // Add matched part using fuzzy search for amplenote built-in search results
+            const amplenoteSearchResults = [...searchResults1, ...searchResults2, ...searchResults3, ...searchResults4, ...searchResults5];
+            for (const result of amplenoteSearchResults) {
+                if (args.noteContent.trim() === '') continue;
+                const matchedParts = await appConnector.getMatchedPartWithFuzzySearch(result.noteUUID || result.uuid, args.noteContent.trim());
+                if (matchedParts.length > 0) {
+                    result.noteContentPart = matchedParts[0];
+                }
+            }
 
             // Count occurrences of each UUID across all search methods and sort by count
             const uuidCounts = {};
-            const allSearchResults = [...searchResults0, ...searchResults1,
-                ...searchResults2, ...searchResults3, ...searchResults4, ...searchResults5].filter(x => x && (x.uuid || x.noteUUID));
+            const allSearchResults = [...searchResults0, ...amplenoteSearchResults].filter(x => x && (x.uuid || x.noteUUID));
 
             // Filter by group is always strict if specified
             const allSearchResultsFilteredByGroup = await Promise.all(allSearchResults.filter(async result => {
@@ -172,7 +183,7 @@ export const SearchNotesByTitleTagsContent = () => {
                     title: note.name || note.title || note.noteTitle,
                     tags: args.tags && note.tags && typeof note.tags === 'string' ?
                         note.tags.split(',') : note.tags,
-                    ...(note.noteContentPart && { noteContentPart: note.noteContentPart })
+                    ...(note.noteContentPart && { noteContentPart: stripYAMLAndMarkdownFormatting(note.noteContentPart) })
                 }));
 
             // Apply strict filtering if enabled
