@@ -26,18 +26,20 @@ export const FileAttachmentDisplay = (args) => {
     const { AttachmentUI, AttachmentPrimitive } = window.AssistantUI;
     return (
         <AttachmentUI.Root>
-            <span className="aui-avatar-root aui-attachment-thumb">
-                <span>
-                    {fileIcon}
+            <div className={'aui-attachment-content'}>
+                <span className="aui-avatar-root aui-attachment-thumb">
+                    <span>
+                        {fileIcon}
+                    </span>
                 </span>
-            </span>
-            <div className="aui-attachment-text">
-                <p className="aui-attachment-name">
-                    <AttachmentPrimitive.Name/>
-                </p>
-                <p className="aui-attachment-type">{fileTypeName}</p>
+                <div className="aui-attachment-text">
+                    <p className="aui-attachment-name">
+                        <AttachmentPrimitive.Name/>
+                    </p>
+                    <p className="aui-attachment-type">{fileTypeName}</p>
+                </div>
             </div>
-                {canRemove && <AttachmentUI.Remove/>}
+            {canRemove && <AttachmentUI.Remove/>}
         </AttachmentUI.Root>
     );
 };

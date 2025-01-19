@@ -4,6 +4,7 @@ import {overwriteWithAmplenoteStyle} from "../frontend/overwriteWithAmplenoteSty
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
 import {SearchApp} from "../frontend/SearchApp.jsx";
+import {parse} from "../markdown/markdown-parser.js";
 
 if(process.env.NODE_ENV === 'development') {
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
@@ -55,8 +56,8 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.ReactDOM = ReactDOM;
         window.RadixUI = RadixUI;
         window.RadixIcons = RadixIcons;
-        await dynamicImportESM("@pinecone-database/pinecone"); // won't use this but preload here
         window.appSettings = await appConnector.getSettings();
+        parse(''); // Load unified js in background
         hideEmbedLoader();
         if (!React || !window.ReactDOM) {
             throw new Error("Failed to load React or ReactDOM");

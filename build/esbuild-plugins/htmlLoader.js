@@ -1,7 +1,5 @@
 import {promises as fs} from "fs";
 import path from 'path';
-import * as esbuild from "esbuild";
-import {esbuildOptions} from "../esbuild-options.js";
 
 /**
  * This esbuild plugin implements custom behavior for loading html files and inlined html files.

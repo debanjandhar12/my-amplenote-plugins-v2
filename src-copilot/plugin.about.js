@@ -4,36 +4,36 @@ import {
     LLM_API_KEY_SETTING,
     LLM_API_URL_SETTING,
     LLM_MODEL_SETTING,
-    PINECONE_API_KEY_SETTING, CUSTOM_LLM_AVATAR_SETTING, LLM_MAX_TOKENS_SETTING
+    CUSTOM_LLM_AVATAR_SETTING, LLM_MAX_TOKENS_SETTING, PINECONE_API_KEY_SETTING
 } from "./constants.js";
 
 export default {
     name: 'Ample Copilot',
-    description: 'AI plugin with chat interface',
-    settings: [PINECONE_API_KEY_SETTING, LLM_API_KEY_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING, LLM_MAX_TOKENS_SETTING,
-        CUSTOM_LLM_INSTRUCTION_SETTING, CUSTOM_LLM_AVATAR_SETTING, USER_PROMPT_LIST_SETTING],
-    version: '0.1.1',
+    description: 'Next-gen AI plugin with chat ui and natural language searching.',
+    settings: [LLM_API_KEY_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING, LLM_MAX_TOKENS_SETTING,
+        CUSTOM_LLM_INSTRUCTION_SETTING, CUSTOM_LLM_AVATAR_SETTING, PINECONE_API_KEY_SETTING, USER_PROMPT_LIST_SETTING],
+    version: '0.2.0',
     icon: 'chat',
     instructions: `
-<mark>Note: This plugin is in its beta stage, so you may encounter bugs. Please report them below.</mark>
-
-AI assistant for Amplenote with superpowers.
+The plugins adds various AI capabilities to Amplenote various AI capabilities to Amplenote, such as the ability to talk to all your notes for answers and insights and to edit and rewrite your notes interactively with AI.
 
 ![Demo](https://images.amplenote.com/93d25f9e-b4c3-11ef-ba27-d3c11d33cbac/8344c634-a1a4-4423-8ca0-eb7adf6b91a8.gif)
 
 <mark style="color:undefined;">**Features:**<!-- {"cycleColor":"57"} --></mark>
-- [Chat Interface with support for tool calling](https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb)
+- [Chat UI with support for tool calling](https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb)
 - [User defined custom prompts](https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb#How_to_use_custom_prompts%3F)
 - Support for multiple llm providers: [OpenAI (recommended)](https://platform.openai.com/account/api-keys), [Groq AI Interface (free)](https://console.groq.com/), [FireWorks](https://fireworks.ai/account/api-keys), [Ollama](https://github.com/ollama/ollama).
+- [Natural language search support with LocalVecDB](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi).
 - Support for quick plugin actions: [Continue][^2], Generate Text & Image, Edit, Rewrite, Fix grammar, etc.
-- [Support for natural language searching](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#How_to_use_the_search_interface%3F).
 - A lot more. Too many to list here!
 
 <mark style="color:undefined;">**Common FAQs:**<!-- {"cycleColor":"57"} --></mark>
 Q) [How do I set up plugin with OpenAI API?][^3]
 Q) [How do I set up plugin with Groq AI Interface?][^4]
 Q) [How do I set up plugin with Ollama?][^5]
-Q) [How do I set up pinecone vector database?](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#How_to_set_up_pinecone%3F)
+Q) [How do I speed up LocalVecDB indexing?](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#Q%29_How_to_use_Pinecone_embeddings_inference%3F)
+
+<mark>Note: This plugin is currently in its beta stage. If you encounter any issues, please report them below.</mark>
 `.trim().replaceAll('\n', '<br />'),
     template: `
 ### Code
@@ -43,12 +43,13 @@ Q) [How do I set up pinecone vector database?](https://public.amplenote.com/jKhh
 - 30/10/2024: Alpha v0.0.1 release
 - 27/12/2024: Beta v0.1.0 release
 - 27/12/2024: Beta v0.1.1 release
+- 10/01/2024: Beta v0.2.0 release
 
-[^1]: [Chat Interface with support for tool calling and custom prompts]()
+[^1]: [Chat ui with support for tool calling and custom prompts]()
     
-    The chat interface is one of the most powerful features of this plugin. It allows you to interact with the llm in a chat-like interface. The LLM can access enabled tools to perform various actions. It is what makes this plugin so powerful.
+    The chat ui is one of the most powerful features of this plugin. It allows you to interact with the llm in a chat-like interface. The LLM can access enabled tools to perform various actions. It is what makes this plugin so powerful.
     
-    To use tools in the chat interface, you need to enable them by typing \`@tool_category_name\` in the chat input. For example, see the attached image. 
+    To use tools in the chat ui, you need to enable them by typing \`@tool_category_name\` in the chat input. For example, see the attached image. 
     Once enabled, they will be accessible to LLM throughout the chat session.
     
     Currently, the following tool categories are available: \`@tasks\`, \`@notes\`, \`@web\`.

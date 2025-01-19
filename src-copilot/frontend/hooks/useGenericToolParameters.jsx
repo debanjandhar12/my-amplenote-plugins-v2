@@ -6,6 +6,7 @@ export const useGenericToolParameters = ({ toolName, description, parameters,
     const [formError, setFormError] = React.useState(null);
 
     const threadRuntime = AssistantUI.useThreadRuntime();
+    const thread = AssistantUI.useThread();
     const cancelFurtherLLMReply = () => {threadRuntime.cancelRun();};
 
     const abortControllerRef = React.useRef(new AbortController());
@@ -42,6 +43,7 @@ export const useGenericToolParameters = ({ toolName, description, parameters,
         formData, 
         setFormData, 
         cancelFurtherLLMReply,
-        signal: abortControllerRef.current.signal
+        signal: abortControllerRef.current.signal,
+        thread
     };
 }

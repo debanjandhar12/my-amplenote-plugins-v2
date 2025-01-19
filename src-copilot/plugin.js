@@ -1,13 +1,14 @@
 import chatHTML from 'inline:./embed/chat.html';
 import searchHTML from 'inline:./embed/search.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
-import {addWindowVariableToHtmlString} from "../common-utils/embed-helpers.js";
 import {generateText} from "./backend/generateText.js";
 import {getLLMModel} from "./backend/getLLMModel.js";
-import {Pinecone} from "./pinecone/Pinecone.js";
 import {LLM_API_URL_SETTING} from "./constants.js";
 import {getImageModel} from "./backend/getImageModel.js";
 import {generateImage} from "./backend/generateImage.js";
+import {LocalVecDB} from "./LocalVecDB/LocalVecDB.js";
+import {getSyncState} from "./LocalVecDB/getSyncState.js";
+import {getMatchedPartWithFuzzySearch} from "./utils/getMatchedPartWithFuzzySearch.jsx";
 
 const plugin = {
     currentNoteUUID: null,
@@ -105,11 +106,17 @@ const plugin = {
         }
     },
     appOption: {
-        "Sync notes to pinecone": async function (app) {
-            await plugin.onEmbedCall(app, 'syncNotesWithPinecone');
-        },
         "Search notes using natural language": async function (app) {
             try {
+                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        },
+        "Sync notes with LocalVecDB": async function (app) {
+            try {
+                await plugin.sendMessageToEmbed(app, 'startSyncToLocalVecDBInSearchInterface', true);
                 await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
             } catch (e) {
                 console.error(e);
@@ -230,6 +237,15 @@ const plugin = {
                 await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'note', noteUUID: noteUUID, noteTitle: note.name, noteContent: noteContent});
             }
+        },
+        "Related notes": async function (app, noteUUID) {
+            try {
+                plugin.sendMessageToEmbed(app, 'searchForTextInSearchInterface', `<<Related: ${noteUUID}>>`);
+                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
         }
     },
     taskOption: {
@@ -285,14 +301,14 @@ const plugin = {
             return searchHTML;
         }
     },
-    "sendMessageToEmbed": async function (app, channel, message) {
+    sendMessageToEmbed: async function (app, channel, message) {
         if (!window.messageQueue) {
             window.messageQueue = {};
         }
         window.messageQueue[channel] = window.messageQueue[channel] || [];
         window.messageQueue[channel].push(message);
     },
-    "isEmbedOpen": async function (app) {
+    isEmbedOpen: async function (app) {
         // For this to work, the embed must send heartbeat signals to the plugin
         return window.lastHeartbeatFromChatEmbed
             && window.lastHeartbeatFromChatEmbed > Date.now() - 1000;
@@ -304,7 +320,8 @@ const plugin = {
           return true;
         },
         "receiveMessageFromPlugin": async function (app, channel) {
-            if (window.messageQueue && window.messageQueue[channel]) {
+            if (window.messageQueue && window.messageQueue[channel] &&
+                window.messageQueue[channel].length > 0) {
                 return window.messageQueue[channel].shift();
             }
             return null;
@@ -340,15 +357,17 @@ const plugin = {
                 throw 'Failed getUserDailyJotNote - ' + e;
             }
         },
-        "syncNotesWithPinecone": async function (app) {
-            try {
-                const pinecone = new Pinecone();
-                await pinecone.syncNotes(app);
-                await app.alert("Sync completed");
-            } catch (e) {
-                console.error(e);
-                await app.alert(e);
-            }
+        "getLocalVecDBSyncState": async function (app) {
+            return await getSyncState(app);
+        },
+        "syncNotesWithLocalVecDB": async function (app) {
+            await new LocalVecDB().syncNotes(app, plugin.sendMessageToEmbed);
+        },
+        "searchInLocalVecDB": async function (app, queryText, opts) {
+            return await new LocalVecDB().search(app, queryText, opts);
+        },
+        "getMatchedPartWithFuzzySearch": async function (app, noteUUID, searchText, limit) {
+            return await getMatchedPartWithFuzzySearch(app, noteUUID, searchText, limit);
         }
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
         'receiveMessageFromPlugin', 'ping'])

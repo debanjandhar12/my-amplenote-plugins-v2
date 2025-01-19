@@ -7,6 +7,7 @@ import _ from 'lodash-es';
 import {DistWriterPlugin} from "./build/esbuild-plugins/distWriter.js";
 import {esbuildOptions} from "./build/esbuild-options.js";
 import {HtmlLoaderPlugin} from "./build/esbuild-plugins/htmlLoader.js";
+import {InlineJSLoader} from "./build/esbuild-plugins/inlineJSLoader.js";
 
 
 // -- Start the server --
@@ -78,6 +79,7 @@ async function main() {
         opts.entryPoints = [`${pluginTargetPath}/plugin.js`];
         opts.plugins.push(DistWriterPlugin);
         opts.plugins.push(HtmlLoaderPlugin);
+        opts.plugins.push(InlineJSLoader);
         try {
             const htmlFiles = (await fs.readdir((`${pluginTargetPath}/embed`))).filter(file => file.endsWith('.html'));
             htmlFiles.forEach(file => {

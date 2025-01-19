@@ -1,6 +1,5 @@
-import {Pinecone} from "../pinecone/Pinecone.js";
-import {truncate, debounce} from "lodash-es";
-import {processPineconeSearchResults} from "./tools-core/utils/processPineconeResults.js";
+import {debounce, truncate} from "lodash-es";
+import {processLocalVecDBResults} from "./tools-core/utils/processLocalVecDBResults.js";
 
 // Custom hook for search functionality
 const useSearch = () => {
@@ -10,33 +9,47 @@ const useSearch = () => {
     const [isLoading, setIsLoading] = React.useState(false);
     const [error, setError] = React.useState(null);
     const [isSyncing, setIsSyncing] = React.useState(false);
+    const [syncProgressText, setSyncProgressText] = React.useState('');
     const [syncError, setSyncError] = React.useState(null);
-    const [searchOpts, setSearchOpts] = React.useState({isArchived: false});
+    const [searchOpts, setSearchOpts] = React.useState({
+        isArchived: null, isSharedByMe: null, isSharedWithMe: null, isTaskListNote: null, isPublished: null});
+    const [syncStatus, setSyncStatus] = React.useState('');
+
+    // Fetch initial sync status
+    const updateSyncStatus = async () => {
+        try {
+            const status = await window.appConnector.getLocalVecDBSyncState();
+            setSyncStatus(status);
+        } catch (e) {
+            setSyncStatus('Error');
+        }
+    };
+    React.useEffect(() => {
+        updateSyncStatus();
+    }, []);
+
+        // Fetch search and sync messages on Init
+        React.useEffect(() => {
+            const fetchInitMessages = async () => {
+                // Check for search text updates
+                const searchTextMsg = await window.appConnector.receiveMessageFromPlugin('searchForTextInSearchInterface');
+                if (searchTextMsg !== null) {
+                    setSearchText(searchTextMsg);
+                }
+    
+                // Check for sync start command
+                const startSync = await window.appConnector.receiveMessageFromPlugin('startSyncToLocalVecDBInSearchInterface');
+                if (startSync === true) {
+                    handleSync();
+                }
+            }
+            fetchInitMessages();
+        }, []);    
 
     // Search functionality
-    const performSearch = async (query, opts = {}) => {
-        if (!query.trim()) return [];
-
-        const pinecone = new Pinecone();
-        const results = await pinecone.search(query, appSettings,
-            opts.isArchived === null ? 10 : 15);
-        const processedResults = await processPineconeSearchResults(results);
-
-        // Filter results
-        const checkIsArchived = async (uuid) => {
-            const note = await appConnector.filterNotes({
-                group: "archived",
-                query: uuid
-            });
-            return note && note.length > 0;
-        };
-        const filteredProcessedResults = await Promise.all(processedResults.filter(async (result) => {
-            const isArchived = await checkIsArchived(result.uuid);
-            return opts.isArchived === null || isArchived === opts.isArchived;
-        }));
-
-        return filteredProcessedResults.length > 10 ?
-            filteredProcessedResults.slice(0, 10) : filteredProcessedResults;
+    const performSearch = async (query, searchOpts = {}) => {
+        const results = await window.appConnector.searchInLocalVecDB(query, searchOpts);
+        return await processLocalVecDBResults(results);
     };
 
     // Debounced search handler
@@ -52,11 +65,31 @@ const useSearch = () => {
             setError(null);
 
             try {
-                const results = await performSearch(searchText, searchOpts);
+                let results;
+                const isSpecialSearchText = searchText.match(/^<<Related:\s*([a-zA-Z0-9-]+)>>$/);
+                if (isSpecialSearchText) {
+                    const noteUUID = isSpecialSearchText[1];
+                    const noteTitle = await window.appConnector.getNoteTitleByUUID(noteUUID);
+                    const noteContent = await window.appConnector.getNoteContentByUUID(noteUUID);
+                    const noteTags = await window.appConnector.getNoteTagsByUUID({uuid: noteUUID});
+                    if (!noteContent && !noteTitle && !noteTags) {
+                        throw new Error("Could not find note with UUID: " + noteUUID);
+                    }
+                    results = await performSearch('---\n'
+                        + `title: ${noteTitle || 'Untitled Note'}\n`
+                        + `tags: ${noteTags.join(', ')}\n`
+                        + '---\n'
+                        + noteContent, searchOpts);
+                    // Filter out the current note from results
+                    results = results.filter(result => result.noteUUID !== noteUUID);
+                } else {
+                    results = await performSearch(searchText, searchOpts);
+                }
                 setSearchResults(results);
             } catch (error) {
-                console.error('Search error:', error);
-                setError(error.message || 'An error occurred while searching');
+                console.error(error);
+                setError((typeof error === 'string' ? error : error.message)
+                    || 'An error occurred while searching');
             } finally {
                 setIsLoading(false);
             }
@@ -72,9 +105,16 @@ const useSearch = () => {
     const handleSync = async () => {
         setIsSyncing(true);
         setSyncError(null);
-
+        setSyncProgressText(null);
+        while(await window.appConnector.receiveMessageFromPlugin('syncNotesProgress') != null) {} // Clear any previous progress messages
+        const syncProgressListenerIntervalId = setInterval(async () => {
+            const syncProgressText = await window.appConnector.receiveMessageFromPlugin('syncNotesProgress');
+            if (!syncProgressText) return;
+            setSyncProgressText(syncProgressText);
+        }, 1000);
         try {
-            await window.appConnector.syncNotesWithPinecone();
+            await window.appConnector.syncNotesWithLocalVecDB();
+            window.appConnector.alert("Sync completed!");
             if (searchText.trim()) {
                 await handleSearch();
             }
@@ -83,6 +123,8 @@ const useSearch = () => {
             setSyncError(error.message || 'Failed to sync notes');
         } finally {
             setIsSyncing(false);
+            updateSyncStatus();
+            clearInterval(syncProgressListenerIntervalId);
         }
     };
 
@@ -101,20 +143,28 @@ const useSearch = () => {
         error,
         isSyncing,
         syncError,
+        syncProgressText,
         handleSync,
         searchOpts,
-        setSearchOpts
+        setSearchOpts,
+        syncStatus
     };
 };
 
 // SearchStatus component to handle different states
-const SearchStatus = ({ isLoading, error, isSyncing, syncError, searchText, searchResults }) => {
+const SearchStatus = ({ isLoading, error, isSyncing, syncError, syncProgressText, searchText, searchResults }) => {
     const {Flex, Box, Spinner, Text} = window.RadixUI;
 
     if (isSyncing) {
         return (
             <Box style={{ padding: '20px', textAlign: 'center', backgroundColor: '#0ea5e9', color: 'white', borderRadius: '6px' }}>
-                Syncing notes with Pinecone...
+                Syncing notes with LocalVecDB...
+                {
+                    syncProgressText &&
+                    <Box style={{ marginTop: '4px', backgroundColor: '#0369a1', color: 'white', borderRadius: '4px', padding: '10px' }}>
+                        <Text size="1">{syncProgressText}</Text>
+                    </Box>
+                }
             </Box>
         );
     }
@@ -157,9 +207,62 @@ const SearchStatus = ({ isLoading, error, isSyncing, syncError, searchText, sear
     return null;
 };
 
-const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts }) => {
-    const { Text, IconButton, DropdownMenu, Switch, Flex } = window.RadixUI;
+const FilterRow = ({ label, isEnabled, value, onChange }) => {
+    const { Switch, IconButton, Flex } = window.RadixUI;
+    const { EyeOpenIcon, EyeClosedIcon } = window.RadixIcons;
+
+    const handleSwitchChange = (checked) => {
+        onChange(checked ? true : null);
+    };
+
+    const handleIconClick = () => {
+        if (!isEnabled) return;
+        onChange(value !== true);
+    };
+
+    return (
+        <Flex align="center" justify="between" style={{ width: '100%', padding: '12px', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
+            {label}
+            <Flex align="center" gap="2">
+                <Switch
+                    size="1"
+                    checked={isEnabled}
+                    onCheckedChange={handleSwitchChange}
+                />
+                <IconButton
+                    title={
+                    value == null? '' :
+                        value === true ? 'Included' : 'Excluded'}
+                    variant="soft" 
+                    size="1"
+                    disabled={!isEnabled}
+                    onClick={handleIconClick}
+                >
+                    {value === true || value === null ? <EyeOpenIcon /> : <EyeClosedIcon />}
+                </IconButton>
+            </Flex>
+        </Flex>
+    );
+};
+
+const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts, syncStatus }) => {
+    const { Text, IconButton, DropdownMenu } = window.RadixUI;
     const { DotsHorizontalIcon } = window.RadixIcons;
+
+    const getSyncStatusColor = (status) => {
+        switch (status) {
+            case 'Fully Synced':
+                return 'green';
+            case 'Partially synced':
+                return 'yellow';
+            default:
+                return 'red';
+        }
+    };
+
+    const handleFilterChange = (key, value) => {
+        setSearchOpts(prev => ({ ...prev, [key]: value }));
+    };
 
     return (
         <DropdownMenu.Root>
@@ -169,31 +272,57 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts }) => {
                 </IconButton>
             </DropdownMenu.Trigger>
             <DropdownMenu.Content>
+                <Text style={{ fontSize: '14px', padding: '4px' }} color={'gray'}>
+                    DB Status: <Text color={getSyncStatusColor(syncStatus)}>{syncStatus}</Text>
+                </Text>
                 <DropdownMenu.Item
                     onSelect={onSync}
                     disabled={isSyncing}
                 >
-                    {isSyncing ? 'Syncing...' : 'Sync notes with Pinecone'}
+                    {isSyncing ? 'Syncing...' : 'Sync notes with LocalVecDB'}
                 </DropdownMenu.Item>
                 <DropdownMenu.Separator />
                 <Text color="gray" style={{ fontSize: '14px', padding: '4px' }}>Search Options</Text>
-                <Flex align="center" justify="between" style={{ width: '100%', padding: '12px', fontSize: '14px', paddingTop: '4px', paddingBottom: '4px' }}>
-                    Archived
-                    <Switch
-                        checked={searchOpts.isArchived}
-                        onCheckedChange={(checked) => setSearchOpts({ ...searchOpts, isArchived: checked })}
-                    />
-                </Flex>
+                <FilterRow
+                    label="Archived"
+                    isEnabled={searchOpts.isArchived !== null}
+                    value={searchOpts.isArchived}
+                    onChange={(value) => handleFilterChange('isArchived', value)}
+                />
+                <FilterRow
+                    label="Task List"
+                    isEnabled={searchOpts.isTaskListNote !== null}
+                    value={searchOpts.isTaskListNote}
+                    onChange={(value) => handleFilterChange('isTaskListNote', value)}
+                />
+                <FilterRow
+                    label="Published"
+                    isEnabled={searchOpts.isPublished !== null}
+                    value={searchOpts.isPublished}
+                    onChange={(value) => handleFilterChange('isPublished', value)}
+                />
+                <FilterRow
+                    label="Shared by Me"
+                    isEnabled={searchOpts.isSharedByMe !== null}
+                    value={searchOpts.isSharedByMe}
+                    onChange={(value) => handleFilterChange('isSharedByMe', value)}
+                />
+                <FilterRow
+                    label="Shared with Me"
+                    isEnabled={searchOpts.isSharedWithMe !== null}
+                    value={searchOpts.isSharedWithMe}
+                    onChange={(value) => handleFilterChange('isSharedWithMe', value)}
+                />
             </DropdownMenu.Content>
         </DropdownMenu.Root>
     );
 };
 
-const NoteCard = ({ title, content, noteUUID }) => {
+const NoteCard = ({ title, noteContentPart, noteUUID , headingAnchor }) => {
     const {Card, Flex} = window.RadixUI;
     const handleClick = (e) => {
         e.preventDefault();
-        window.appConnector.navigate(`https://www.amplenote.com/notes/${noteUUID}`);
+        window.appConnector.navigate(`https://www.amplenote.com/notes/${noteUUID}` + (headingAnchor ? `#${encodeURIComponent(headingAnchor)}` : ''));
     };
 
     return (
@@ -204,7 +333,7 @@ const NoteCard = ({ title, content, noteUUID }) => {
                         {title || 'Untitled Note'}
                     </h3>
                     <p style={{margin: 0, color: '#666', fontSize: '14px'}}>
-                        {truncate(content, {length: 150})}
+                        {truncate(noteContentPart, {length: 150})}
                     </p>
                 </Flex>
             </a>
@@ -221,9 +350,11 @@ export const SearchApp = () => {
         error,
         isSyncing,
         syncError,
+        syncProgressText,
         handleSync,
         searchOpts,
-        setSearchOpts
+        setSearchOpts,
+        syncStatus
     } = useSearch();
 
     const {Theme, ScrollArea, Flex, TextField} = window.RadixUI;
@@ -244,6 +375,7 @@ export const SearchApp = () => {
                             fontSize: '16px',
                             flex: 1
                         }}
+                        autoFocus={true}
                     >
                         <TextField.Slot style={{ paddingLeft: '2px' }}>
                             <MagnifyingGlassIcon height="16" width="16" />
@@ -267,6 +399,7 @@ export const SearchApp = () => {
                         isSyncing={isSyncing}
                         searchOpts={searchOpts}
                         setSearchOpts={setSearchOpts}
+                        syncStatus={syncStatus}
                     />
                 </Flex>
 
@@ -276,6 +409,7 @@ export const SearchApp = () => {
                             isLoading={isLoading}
                             error={error}
                             isSyncing={isSyncing}
+                            syncProgressText={syncProgressText}
                             syncError={syncError}
                             searchText={searchText}
                             searchResults={searchResults}
@@ -285,8 +419,9 @@ export const SearchApp = () => {
                                 <NoteCard
                                     key={index}
                                     title={result.noteTitle}
-                                    content={result.content}
+                                    noteContentPart={result.noteContentPart}
                                     noteUUID={result.noteUUID}
+                                    headingAnchor={result.headingAnchor}
                                 />
                             ))}
                     </Flex>

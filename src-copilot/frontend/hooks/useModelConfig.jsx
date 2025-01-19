@@ -2,7 +2,8 @@ import {convertUIToolsToDummyServerTools} from "../../backend/utils/convertUIToo
 import {ToolRegistry} from "../tools-core/registry/ToolRegistry.js";
 import {useSystemMessage} from "./useSystemMessage.jsx";
 
-export function useModelConfig(runtime) {
+export function useModelConfig() {
+    const runtime = AssistantUI.useAssistantRuntime();
     React.useEffect(() => {
         let removeLastRegisteredModelConfigProvider = () => {};
         runtime.thread.subscribe(() => {

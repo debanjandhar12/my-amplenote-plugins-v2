@@ -6,13 +6,14 @@ import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessag
 import {getLLMModel} from "../../backend/getLLMModel.js";
 import {generateText} from "../../backend/generateText.js";
 import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
+import {toCoreMessages} from "@assistant-ui/react";
+import {truncate} from "lodash-es";
 
-export const ModifyNoteContent = () => {
+export const EditNoteContent = () => {
     return createGenericCUDTool({
-        toolName: "ModifyNoteContent",
-        description: "Do not this tool unless user has specifically asked to insert or edit note content.\n"+
-            "This tool should never be called for replying to questions related to note content."+
-            " For instance, DO NOT call this tool if user is asking to summarize note. User doesn't want to modify note content.",
+        toolName: "EditNoteContent",
+        description: "Prefer this over UpdateUserNotes when only editing content is required. Do not this tool unless user has specifically asked to modify / edit note content.\n"+
+            " For instance, DO NOT call this tool if user is asking to summarize note content. Summarization doesn't mean editing note content.",
         parameters: {
             type: "object",
             properties: {
@@ -22,12 +23,12 @@ export const ModifyNoteContent = () => {
                     minLength: 36,
                     maxLength: 42
                 },
-                contentModificationInstruction: {
+                editInstruction: {
                     type: "string",
-                    description: "Detailed instruction on how to modify content. This will be used by another llm to modify content."
+                    description: "Very short instruction on how to modify content."
                 }
             },
-            required: ["noteUUID", "contentModificationInstruction"]
+            required: ["noteUUID"]
         },
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
@@ -35,21 +36,33 @@ export const ModifyNoteContent = () => {
             const { Spinner } = window.RadixUI;
             return <ToolCardMessage text={`Generating content...`} icon={<Spinner />} />
         },
-        onInit: async ({setFormState, formData, setFormData, args}) => {
+        onInit: async ({setFormState, formData, setFormData, args, thread}) => {
             const noteUUID = args.noteUUID;
-            const contentModificationInstruction = args.contentModificationInstruction;
+            const editInstruction = args.editInstruction;
             const currentContent = await appConnector.getNoteContentByUUID(noteUUID);
+            const previousConversationJSON = JSON.stringify(toCoreMessages(thread.messages));
+            const previousConversationString = previousConversationJSON.length > 16000 ?
+                previousConversationJSON.substring(previousConversationJSON.length - 16000)
+                : previousConversationJSON;
             const model = await getLLMModel(appSettings);
             let newContent = currentContent;
             try {
                 if (currentContent.trim() === '') {
                     newContent = (await generateText(model,
-                        "You are a AI content generator tool. You can use markdown." +
-                        "Generate content for note based on following instruction:\n" +
-                        contentModificationInstruction)).text;
+                        "<|im_start|>\n" +
+                        "Previous conversation history for reference:\n" +
+                        previousConversationString +
+                        "<|im_end|>\n" +
+                        "<|im_start|>\n" +
+                        "You are a AI content generator tool. You can use markdown. DO NOT reply anything other than the generated text on provided topic. Instructions:" + "\n" +
+                        editInstruction)).text;
                 } else {
                     newContent = (await generateText(model,
                 "<|im_start|>\n" +
+                        "Previous conversation history for reference:\n" +
+                        previousConversationString +
+                        "<|im_end|>\n" +
+                        "<|im_start|>\n" +
                         "You are a AI content editor tool. You take markdown content as input and return modified content." +
                         "Rules you should to follow for modification:\n" +
                         "- You MUST write the entire content including both modified and unmodified bits.\n" +
@@ -64,7 +77,7 @@ export const ModifyNoteContent = () => {
                         "<|im_end|>\n" +
                         "<|im_start|>\n" +
                         "Instruction:\n" +
-                        contentModificationInstruction +
+                        editInstruction +
                         "Input:\n" +
                         currentContent +
                         "\n<|im_end|>"
@@ -77,11 +90,11 @@ export const ModifyNoteContent = () => {
                 console.error(e);
                 throw "Failed to generate content";
             }
-            setFormData({...formData, noteUUID, contentModificationInstruction, newContent, currentContent});
+            setFormData({...formData, noteUUID, editInstruction, newContent, currentContent});
             setFormState('waitingForUserInput');
         },
         renderWaitingForUserInput: ({args, formData, setFormData, status, setFormState}) => {
-            const [noteSelectionArr, setNoteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID] = useNoteSelector({args, setFormData, formData});
+            const [noteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID] = useNoteSelector({args, setFormData, formData});
             const { Text, ScrollArea } = window.RadixUI;
             const StringDiff = window.StringDiff;
             return (
@@ -147,6 +160,11 @@ export const ModifyNoteContent = () => {
                 icon={<FileTextIcon />}
                 toolName={toolName}
                 input={args} />
+        },
+        onCanceled: ({addResult, args, formData, cancelFurtherLLMReply}) => {
+            addResult("Tool invocation canceled by user. No operation was performed.\n"+
+                `Input (canceled): ${JSON.stringify({noteUUID: args.noteUUID, suggestedContent: formData.newContent})}`);
+            cancelFurtherLLMReply();
         }
     });
 }

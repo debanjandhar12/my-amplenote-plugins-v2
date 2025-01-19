@@ -1,11 +1,11 @@
 import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
 import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
-import {Pinecone} from "../../pinecone/Pinecone.js";
 import {createGenericReadTool} from "../tools-core/base/createGenericReadTool.jsx";
 import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
 import {uniqBy} from "lodash-es";
-import {processPineconeSearchResults} from "../tools-core/utils/processPineconeResults.js";
+import {processLocalVecDBResults} from "../tools-core/utils/processLocalVecDBResults.js";
+import {stripYAMLAndMarkdownFormatting} from "../../markdown/stripYAMLAndMarkdownFormatting.js";
 
 export const SearchNotesByTitleTagsContent = () => {
     return createGenericReadTool({
@@ -54,16 +54,16 @@ export const SearchNotesByTitleTagsContent = () => {
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         renderInit: ({args, formData}) => {
-            const {isPineconeSearchPossible, pineconeError} = formData;
+            const {localVecDBSearchError} = formData;
             const {Flex, Text, Spinner} = window.RadixUI;
             const {ExclamationTriangleIcon} = window.RadixIcons;
-            if (isPineconeSearchPossible && pineconeError) {
+            if (localVecDBSearchError) {
                 return <ToolCardContainer>
                     <Flex direction="column" gap="2">
                         <Flex style={{ alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'rgba(0, 0, 0, 0.05)', borderRadius: '4px' }}>
                             <ExclamationTriangleIcon />
                             <Text style={{ color: 'crimson' }}>
-                                Pinecone search failed: {errorToString(formData.pineconeError)}
+                                LocalVecDB search failed: {errorToString(formData.localVecDBSearchError)}
                             </Text>
                         </Flex>
                         <Flex style={{ alignItems: 'center', gap: '8px' }}>
@@ -74,32 +74,27 @@ export const SearchNotesByTitleTagsContent = () => {
                         </Flex>
                     </Flex>
                 </ToolCardContainer>
-            } else if (isPineconeSearchPossible) {
-                return <ToolCardMessage text={`Searching user notes using pinecone...`}
-                                        icon={<Spinner />} />
             }
-            return <ToolCardMessage text={`Searching user notes using amplenote built-in search...`}
+            return <ToolCardMessage text={`Searching user notes using LocalVecDB...`}
                                     icon={<Spinner />} />
         },
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
-            let isPineconeSearchPossible = args.noteContent && args.isArchived === undefined &&
-                args.isSharedByMe === undefined && args.isSharedWithMe === undefined;
-            setFormData({...formData, isPineconeSearchPossible});
-            let pineconeError = null;
+            let localVecDBSearchError = null;
 
-            // Perform pinecone search
+            // Perform LocalVecDB-decrypted search
             let searchResults0 = [];
             try {
-                if (isPineconeSearchPossible) {
-                    const pinecone = new Pinecone();
-                    // TODO: pass signal
-                    const pineconeResults = await pinecone.search(args.noteContent, appSettings, args.limitSearchResults);
-                    searchResults0.push(...await processPineconeSearchResults(pineconeResults, 0.80));
-                }
+                // TODO: pass signal
+                args.limitSearchResults = args.limitSearchResults || 10;
+                const results = await appConnector.searchInLocalVecDB(args.noteContent, {
+                        limit: Math.floor((args.limitSearchResults*3)/2),
+                        isArchived: args.isArchived, isSharedByMe: args.isSharedByMe,
+                        isSharedWithMe: args.isSharedWithMe });
+                searchResults0.push(...await processLocalVecDBResults(results, 0.40));
             } catch (e) {
-                pineconeError = e;
-                console.error(pineconeError);
-                setFormData({...formData, isPineconeSearchPossible, pineconeError});
+                localVecDBSearchError = e;
+                setFormData({...formData, localVecDBSearchError: localVecDBSearchError});
+                console.error(localVecDBSearchError);
             }
 
             // Perform amplenote search
@@ -109,6 +104,7 @@ export const SearchNotesByTitleTagsContent = () => {
             if (args.isSharedWithMe === true) groups.push('shareReceived');
             // TODO: Handle false explicitly set by llm but we have
             //  no group for unarchived, unshared, unshareReceived currently
+            // TODO 2: None of below are full text search. Need to add full text search support.
             const searchResults1 = args.noteTitle ? [await appConnector.findNote({
                 name: args.noteTitle
             })] : [];
@@ -116,41 +112,58 @@ export const SearchNotesByTitleTagsContent = () => {
                 query: args.noteTitle,
                 ...(groups.length > 0 && { group: groups.join(',') })
             }) : [];
-            const searchResults3 = (!args || args.noteContent) ? await appConnector.filterNotes({
-                query: args?.noteContent || '',
+            const searchResults3 = args.noteContent ? await appConnector.filterNotes({
+                query: args.noteContent,
                 ...(groups.length > 0 && { group: groups.join(',') })
             }) : [];
             const searchResults4 = args.tags ? await appConnector.filterNotes({
                 tag: args.tags.join(','),
                 ...(groups.length > 0 && { group: groups.join(',') })
             }) : [];
+            const searchResults5 = !args.noteTitle && !args.noteContent && groups.length > 0
+                ? await appConnector.filterNotes({
+                group: groups.join(',')
+            }) : [];
+
+            // Add matched part using fuzzy search for amplenote built-in search results
+            const amplenoteSearchResults = [...searchResults1, ...searchResults2, ...searchResults3, ...searchResults4, ...searchResults5];
+            for (const result of amplenoteSearchResults) {
+                if (args.noteContent.trim() === '') continue;
+                const matchedParts = await appConnector.getMatchedPartWithFuzzySearch(result.noteUUID || result.uuid, args.noteContent.trim());
+                if (matchedParts.length > 0) {
+                    result.noteContentPart = matchedParts[0];
+                }
+            }
 
             // Count occurrences of each UUID across all search methods and sort by count
             const uuidCounts = {};
-            const allSearchResults = [...searchResults0, ...searchResults1,
-                ...searchResults2, ...searchResults3, ...searchResults4].filter(x => x && (x.uuid || x.noteUUID));
+            const allSearchResults = [...searchResults0, ...amplenoteSearchResults].filter(x => x && (x.uuid || x.noteUUID));
+
             // Filter by group is always strict if specified
             const allSearchResultsFilteredByGroup = await Promise.all(allSearchResults.filter(async result => {
+                let satisfiesGroup = true;
                 if (groups.includes("archived")) {
                     const isArchived = await appConnector.filterNotes({
                         group: "archived",
                         query: result.uuid
                     });
-                    return isArchived && isArchived.length > 0;
-                } else if (groups.includes("shared")) {
+                    satisfiesGroup = satisfiesGroup && isArchived && isArchived.length > 0;
+                }
+                if (groups.includes("shared")) {
                     const isShared = await appConnector.filterNotes({
                         group: "shared",
                         query: result.uuid
                     });
-                    return isShared && isShared.length > 0;
-                } else if (groups.includes("shareReceived")) {
+                    satisfiesGroup =  satisfiesGroup && isShared && isShared.length > 0;
+                }
+                if (groups.includes("shareReceived")) {
                     const isShareReceived = await appConnector.filterNotes({
                         group: "shareReceived",
                         query: result.uuid
                     });
-                    return isShareReceived && isShareReceived.length > 0;
+                    satisfiesGroup = satisfiesGroup && isShareReceived && isShareReceived.length > 0;
                 }
-                return true;
+                return satisfiesGroup;
             }));
             allSearchResultsFilteredByGroup.forEach(result => {
                 uuidCounts[result.uuid] = (uuidCounts[result.uuid] || 0) + 1;
@@ -168,9 +181,9 @@ export const SearchNotesByTitleTagsContent = () => {
                 .map(note => ({
                     uuid: note.uuid || note.noteUUID,
                     title: note.name || note.title || note.noteTitle,
-                    tags: note.tags && typeof note.tags === 'string' ?
+                    tags: args.tags && note.tags && typeof note.tags === 'string' ?
                         note.tags.split(',') : note.tags,
-                    ...(note.content && { content: note.content })
+                    ...(note.noteContentPart && { noteContentPart: stripYAMLAndMarkdownFormatting(note.noteContentPart) })
                 }));
 
             // Apply strict filtering if enabled
@@ -205,7 +218,7 @@ export const SearchNotesByTitleTagsContent = () => {
             }
 
             setFormData({...formData, searchResults: searchResultsMapped,
-                isPineconeSearchPossible, pineconeError});
+                localVecDBSearchError});
             setFormState('completed');
         },
         onCompleted: ({addResult, formData}) => {
@@ -215,7 +228,7 @@ export const SearchNotesByTitleTagsContent = () => {
         renderCompleted: ({formData, toolName, args}) => {
             const {Flex, Text} = window.RadixUI;
             const {MagnifyingGlassIcon, ExclamationTriangleIcon} = window.RadixIcons;
-            if (formData.isPineconeSearchPossible && formData.pineconeError) {
+            if (formData.localVecDBSearchError) {
                 return <ToolCardResultMessage
                     result={JSON.stringify(formData.searchResults)}
                     toolName={toolName}
@@ -224,7 +237,7 @@ export const SearchNotesByTitleTagsContent = () => {
                         <Flex style={{ alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'rgba(0, 0, 0, 0.05)', borderRadius: '4px' }}>
                             <ExclamationTriangleIcon />
                             <Text style={{ color: 'crimson' }}>
-                                Pinecone search failed: {errorToString(formData.pineconeError)}
+                                LocalVecDB search failed: {errorToString(formData.localVecDBSearchError)}
                             </Text>
                         </Flex>
                         <Flex style={{ alignItems: 'center', gap: '8px' }}>
@@ -236,15 +249,11 @@ export const SearchNotesByTitleTagsContent = () => {
                     </Flex>
                 </ToolCardResultMessage>
             }
-            let text = `Search completed! ${formData.searchResults.length} results fetched.`;
-            if (formData.isPineconeSearchPossible && !formData.pineconeError) {
-                text = `Search completed using pinecone! ${formData.searchResults.length} results fetched.`;
-            }
             return <ToolCardResultMessage
                 result={JSON.stringify(formData.searchResults)}
                 icon={<MagnifyingGlassIcon/>}
                 toolName={toolName}
-                text={text}
+                text={`Search completed! ${formData.searchResults.length} results fetched.`}
                 input={args}/>;
         }
     });
