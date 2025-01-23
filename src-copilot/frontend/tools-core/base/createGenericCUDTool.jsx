@@ -3,6 +3,7 @@ import {useGenericToolFormState} from "../../hooks/useGenericToolFormState.jsx";
 import {errorToString} from "../utils/errorToString.js";
 import {useGenericToolParameters} from "../../hooks/useGenericToolParameters.jsx";
 import {ToolCardErrorMessage} from "../../components/tools-ui/ToolCardErrorMessage.jsx";
+import {ToolCardCanceledMessage} from "../../components/tools-ui/ToolCardCanceledMessage.jsx";
 
 /**
  * A generic function to create tools that allow user to perform create, update, or delete (cud) operations.
@@ -32,9 +33,9 @@ export const createGenericCUDTool = ({
                                                      const { Spinner } = window.RadixUI;
                                                      return <ToolCardMessage text={`Processing...`} icon={<Spinner />} />
                                                  },
-                                                 renderCanceled = ({toolName}) => {
-                                                    const { MinusCircledIcon } = window.RadixIcons;
-                                                    return <ToolCardMessage text={`${toolName} tool invocation canceled.`} icon={<MinusCircledIcon />} />
+                                                 renderCanceled = ({args}) => {
+                                                     return <ToolCardCanceledMessage text={`${toolName} tool invocation canceled.`} 
+                                                        toolName={toolName} input={args} />
                                                  },
                                                  renderCompleted = () => {},
                                                  renderError = ({formError, toolName, args}) => {

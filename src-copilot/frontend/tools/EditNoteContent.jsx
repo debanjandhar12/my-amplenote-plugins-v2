@@ -8,6 +8,7 @@ import {generateText} from "../../backend/generateText.js";
 import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
 import {toCoreMessages} from "@assistant-ui/react";
 import {truncate} from "lodash-es";
+import {ToolCardCanceledMessage} from "../components/tools-ui/ToolCardCanceledMessage.jsx";
 
 export const EditNoteContent = () => {
     return createGenericCUDTool({
@@ -160,6 +161,10 @@ export const EditNoteContent = () => {
                 icon={<FileTextIcon />}
                 toolName={toolName}
                 input={args} />
+        },
+        renderCanceled: ({formData, toolName, args}) => {
+            return <ToolCardCanceledMessage text={`${toolName} tool invocation canceled.`}
+                toolName={toolName} input={{note: args.noteUUID, newContent: formData.newContent}} />
         },
         onCanceled: ({addResult, args, formData, cancelFurtherLLMReply}) => {
             addResult("Tool invocation canceled by user. No operation was performed.\n"+

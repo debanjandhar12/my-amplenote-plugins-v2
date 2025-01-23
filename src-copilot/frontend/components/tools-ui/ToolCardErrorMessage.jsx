@@ -23,7 +23,7 @@ export const ToolCardErrorMessage = ({ icon, text, toolName, input }) => {
             <Flex justify="between" align="center">
                 <Flex align="center" gap="2">
                     {resolvedIcon && resolvedIcon}
-                    {Text && <Text style={{ color: 'var(--red-9)' }}>{text}</Text>}
+                    {text && <Text style={{ color: 'var(--red-9)' }}>{text}</Text>}
                 </Flex>
                 <Button onClick={toggleCollapse} size="1" variant="soft">
                     <ChevronDownIcon style={{ transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }} />
