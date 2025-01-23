@@ -5,7 +5,7 @@ export async function getEmbeddingConfig(app) {
     if (app && app.settings &&
         app.settings[PINECONE_API_KEY_SETTING] && app.settings[PINECONE_API_KEY_SETTING].trim() !== '') {
         return {
-            provider: "LocalVecDB",
+            provider: "pinecone",
             apiKey: app.settings[PINECONE_API_KEY_SETTING],
             model: "multilingual-e5-large",
             maxConcurrency: 64
