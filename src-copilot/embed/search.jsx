@@ -2,7 +2,10 @@ import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../com
 import {EMBED_COMMANDS_MOCK} from "../test/chat/chat.testdata.js";
 import {overwriteWithAmplenoteStyle} from "../frontend/overwriteWithAmplenoteStyle.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
-import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
+import dynamicImportESM, {
+    dynamicImportCSS,
+    dynamicImportGithubBundle
+} from "../../common-utils/dynamic-import-esm.js";
 import {SearchApp} from "../frontend/SearchApp.jsx";
 import {parse} from "../markdown/markdown-parser.js";
 
@@ -51,7 +54,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         showEmbedLoader();
         overwriteWithAmplenoteStyle();
         const cssLoaded = dynamicImportCSS("@radix-ui/themes/styles.css");
-        const [React, ReactDOM, RadixUI, RadixIcons] = await dynamicImportMultipleESM(["react", "react-dom/client", "@radix-ui/themes", "@radix-ui/react-icons"]);
+        const [React, ReactDOM, RadixUI, RadixIcons] = await dynamicImportGithubBundle('reactRadixBundle.js');
         window.React = React;
         window.ReactDOM = ReactDOM;
         window.RadixUI = RadixUI;

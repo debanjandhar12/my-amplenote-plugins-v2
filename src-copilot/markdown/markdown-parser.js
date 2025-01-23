@@ -1,9 +1,9 @@
-import {dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
+import {dynamicImportGithubBundle} from "../../common-utils/dynamic-import-esm.js";
 
 let remarkGfm, unified, remarkFrontmatter, remarkParse;
 export async function parse(markdownText) {
     if (!remarkGfm || !unified || !remarkFrontmatter || !remarkParse) {
-        [remarkGfm, unified, remarkFrontmatter, remarkParse] = await dynamicImportMultipleESM(["remark-gfm", "unified", "remark-frontmatter", "remark-parse"]);
+        [remarkGfm, unified, remarkFrontmatter, remarkParse] = await dynamicImportGithubBundle('remarkBundle.js');
         unified = unified.unified;
         remarkGfm = remarkGfm.default;
         remarkFrontmatter = remarkFrontmatter.default;
