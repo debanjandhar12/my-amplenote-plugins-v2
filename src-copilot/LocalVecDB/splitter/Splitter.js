@@ -1,8 +1,8 @@
-import { parse } from '../markdown/markdown-parser.js';
+import { parse } from '../../markdown/markdown-parser.js';
 import { visit } from "unist-util-visit";
 import { toString as mdastToString } from "mdast-util-to-string";
 import {isArray, truncate} from "lodash-es";
-import {getExtendedNoteHandleProperties} from "./getExtendedNoteHandleProperties.js";
+import {getExtendedNoteHandleProperties} from "../utils/getExtendedNoteHandleProperties.js";
 
 export class Splitter {
     constructor(maxTokens) {

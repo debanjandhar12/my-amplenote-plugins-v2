@@ -1,5 +1,5 @@
 import {IndexedDBManager} from "./IndexedDBManager.js";
-import {Splitter} from "./Splitter.js";
+import {Splitter} from "./splitter/Splitter.js";
 import {LOCAL_VEC_DB_MAX_TOKENS} from "../constants.js";
 import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
 import {chunk} from "lodash-es";

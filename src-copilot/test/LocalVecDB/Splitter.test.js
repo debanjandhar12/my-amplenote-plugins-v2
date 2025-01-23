@@ -1,4 +1,4 @@
-import { Splitter } from '../../LocalVecDB/Splitter.js';
+import { Splitter } from '../../LocalVecDB/splitter/Splitter.js';
 import {mockApp, mockNote} from "../../../common-utils/test-helpers.js";
 
 describe('Splitter', () => {

@@ -1,4 +1,4 @@
-import {Splitter} from "../LocalVecDB/Splitter.js";
+import {Splitter} from "../LocalVecDB/splitter/Splitter.js";
 import {LOCAL_VEC_DB_MAX_TOKENS} from "../constants.js";
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 
