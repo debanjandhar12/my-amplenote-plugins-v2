@@ -17,7 +17,7 @@ export async function getEmbeddingConfig(app) {
         if (adapter === null && navigator.gpu)
             adapter = await navigator.gpu.requestAdapter() || false;
     } catch (e) {}
-    const webGpuAvailable = adapter !== false;
+    const webGpuAvailable = adapter !== false && adapter !== null;
     return {
         provider: "local",
         model: "xenova/bge-small-en-v1.5",
