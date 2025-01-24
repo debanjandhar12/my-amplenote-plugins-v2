@@ -43,7 +43,7 @@ export const dynamicImportMultipleESM = async (pkgs) => {
     const { build } = await dynamicImportESM("build");
     const buildObj = {dependencies, source: buildStr};
     const buildResObj = await build(buildObj);
-    const bundleUrl = new URL(buildResObj.bundleUrl.replace('https://esm.sh/', 'https://legacy.esm.sh/v135/'));
+    const bundleUrl = new URL(buildResObj.bundleUrl.replace('https://legacy.esm.sh/', 'https://legacy.esm.sh/v135/').replace('https://esm.sh/', 'https://legacy.esm.sh/v135/'));
     if (process.env.NODE_ENV === 'development') {
         bundleUrl.searchParams.set('dev', true);
     }

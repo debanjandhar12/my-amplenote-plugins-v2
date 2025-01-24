@@ -85,12 +85,15 @@ export const SearchNotesByTitleTagsContent = () => {
             let searchResults0 = [];
             try {
                 // TODO: pass signal
-                args.limitSearchResults = args.limitSearchResults || 10;
-                const results = await appConnector.searchInLocalVecDB(args.noteContent, {
-                        limit: Math.floor((args.limitSearchResults*3)/2),
+                if (args.noteContent && args.noteContent.trim() !== '') {
+                    args.limitSearchResults = args.limitSearchResults || 10;
+                    const results = await appConnector.searchInLocalVecDB(args.noteContent, {
+                        limit: Math.floor((args.limitSearchResults * 3) / 2),
                         isArchived: args.isArchived, isSharedByMe: args.isSharedByMe,
-                        isSharedWithMe: args.isSharedWithMe });
-                searchResults0.push(...await processLocalVecDBResults(results, 0.40));
+                        isSharedWithMe: args.isSharedWithMe
+                    });
+                    searchResults0.push(...await processLocalVecDBResults(results, 0.40));
+                }
             } catch (e) {
                 localVecDBSearchError = e;
                 setFormData({...formData, localVecDBSearchError: localVecDBSearchError});
@@ -128,7 +131,7 @@ export const SearchNotesByTitleTagsContent = () => {
             // Add matched part using fuzzy search for amplenote built-in search results
             const amplenoteSearchResults = [...searchResults1, ...searchResults2, ...searchResults3, ...searchResults4, ...searchResults5];
             for (const result of amplenoteSearchResults) {
-                if (args.noteContent.trim() === '') continue;
+                if (!args.noteContent || args.noteContent.trim() === '') continue;
                 const matchedParts = await appConnector.getMatchedPartWithFuzzySearch(result.noteUUID || result.uuid, args.noteContent.trim());
                 if (matchedParts.length > 0) {
                     result.noteContentPart = await stripYAMLAndMarkdownFormatting(matchedParts[0]);

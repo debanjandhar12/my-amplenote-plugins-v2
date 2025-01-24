@@ -311,7 +311,7 @@ const plugin = {
     isEmbedOpen: async function (app) {
         // For this to work, the embed must send heartbeat signals to the plugin
         return window.lastHeartbeatFromChatEmbed
-            && window.lastHeartbeatFromChatEmbed > Date.now() - 1000;
+            && window.lastHeartbeatFromChatEmbed > Date.now() - 600;
     },
     onEmbedCall : createOnEmbedCallHandler({
         ...COMMON_EMBED_COMMANDS,
