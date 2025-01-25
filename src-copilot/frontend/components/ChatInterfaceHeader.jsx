@@ -45,21 +45,26 @@ export const ChatInterfaceHeader = () => {
 const ChatInterfaceMenu = () => {
     const threadMessages = AssistantUI.useThread((t) => t.messages);
     const threadMessagesLength = AssistantUI.useThread((t) => t.messages?.length || 0);
-    const threadId = AssistantUI.useThread((t) => t.threadId);
+    const threadId = AssistantUI.useThreadListItem().id;
     const [exportNoteExists, setExportNoteExists] = React.useState(false);
-    const exportNoteName = `Copilot chat - ${threadId}`;
+    const [exportNoteName, setExportNoteName] = React.useState(`Copilot chat - ${threadId}`);
 
     // -- Init --
+    React.useEffect(() => {
+        setExportNoteName(`Copilot chat - ${threadId}`);
+    }, [threadId]);
     React.useEffect(() => {
         (async () => {
             try {
                 let note = await window.appConnector.findNote({name: exportNoteName});
                 if (note) {
                     setExportNoteExists(true);
+                } else {
+                    setExportNoteExists(false);
                 }
             } catch (e) {}
         })();
-    }, [threadId]);
+    }, [exportNoteName]);
 
     // -- Actions --
     const handleExportAsNote = React.useCallback(async () => {
@@ -104,13 +109,13 @@ const ChatInterfaceMenu = () => {
         setExportNoteExists(true);
         await appConnector.replaceNoteContent({uuid: note.uuid}, noteContent);
         await appConnector.navigate(`https://www.amplenote.com/notes/${note.uuid}`);
-        await appConnector.alert(`Chat exported to note: ${noteName}`);
-    }, [threadMessages, threadId, setExportNoteExists]);
+        await appConnector.alert(`Chat exported to note: ${exportNoteName}`);
+    }, [threadMessages, threadId, setExportNoteExists, exportNoteName]);
     const handleExportAsJSON = React.useCallback(async () => {
         const jsonContent = "data:text/json;charset=utf-8,"
             + encodeURIComponent(JSON.stringify(threadMessages, null, 2));
         await appConnector.saveFile({data: jsonContent, name: threadId + '.json'});
-    }, [threadMessages, threadId]);
+    }, [threadMessages, threadId, exportNoteName]);
 
     const {Flex, Text, Box, Popover, DropdownMenu, Button } = window.RadixUI;
     const {DropdownMenuIcon, CodeIcon, Share2Icon, FilePlusIcon, CounterClockwiseClockIcon} = window.RadixIcons;
