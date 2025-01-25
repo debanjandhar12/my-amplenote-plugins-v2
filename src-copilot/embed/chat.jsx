@@ -1,4 +1,8 @@
-import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
+import dynamicImportESM, {
+    dynamicImportCSS,
+    dynamicImportGithubBundle,
+    dynamicImportMultipleESM
+} from "../../common-utils/dynamic-import-esm.js";
 import {getLLMModel} from "../backend/getLLMModel.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK} from "../test/chat/chat.testdata.js";
@@ -61,10 +65,11 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
                 dynamicImportCSS("@assistant-ui/react-markdown/dist/styles/markdown.css")]);
         const [React, ReactDOM, AssistantUI, AssistantUIUtilsDangerousInBrowserAdapter, AssistantUIUtilssplitLocalRuntimeOptions,
             RadixUI, AssistantUIMarkdown, RadixIcons, StringDiffModule]
-            = await dynamicImportMultipleESM(["react", "react-dom/client", "@assistant-ui/react",
-                "@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.js",
-                "@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.js", "@radix-ui/themes",
-                "@assistant-ui/react-markdown", "@radix-ui/react-icons", "react-string-diff"]);
+            // = await dynamicImportMultipleESM(["react", "react-dom/client", "@assistant-ui/react",
+            //     "@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.ts",
+            //     "@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.tsx", "@radix-ui/themes",
+            //     "@assistant-ui/react-markdown", "@radix-ui/react-icons", "react-string-diff"]);
+            = await dynamicImportGithubBundle('assistantUIBundle.js', 'main');
         window.AssistantUIMarkdown = AssistantUIMarkdown;
         window.AssistantUIMarkdownComponent = makeCustomMarkdownText();
         window.React = React;

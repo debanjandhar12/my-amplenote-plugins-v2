@@ -1,6 +1,38 @@
 import pkgJSON from "../package.json";
 
+/**
+ * Import packages from __importBundles__ folder in GitHub repo.
+ * This is a workaround for dynamicImportMultipleESM which helped avoid multiple
+ * copies of the same package in the bundle.
+ */
+export const dynamicImportGithubBundle = async (fileName, commitHash = 'experiment') => {
+    if (process.env.NODE_ENV === 'test') {
+        try {
+            return require('/__importBundles__/' + fileName);
+        } catch (e) {
+            console.warn(`Failed to require github bundle from local: ${e.message}`);
+        }
+        try {
+            return await import('/__importBundles__/' + fileName);
+        } catch (e) {
+            console.warn(`Failed to import github bundle from local: ${e.message}`);
+        }
+    }
+
+    const url = new URL(`https://esm.sh/gh/${pkgJSON.repository.replace('https://github.com/', '')}@${commitHash}/__importBundles__/${fileName}`);
+    if (process.env.NODE_ENV === 'development') {
+        url.searchParams.set('dev', true);
+    }
+    url.searchParams.set('bundle-deps', true);
+    // Need in format: pkgName@version,pkgName2@version2,pkgName3@version3
+    const allDeps = Object.keys(pkgJSON.dependencies).map(dep => `${dep}@${pkgJSON.dependencies[dep]}`);
+    url.searchParams.set('deps', allDeps.join(','));
+    console.log('Loading bundle from:', url.toString());
+    return [];
+}
+
 /***
+ * @deprecated
  * Dynamically imports multiple ESM modules from a CDN.
  * @template T
  * @param {string[]} pkgs - The package names to import.
@@ -43,7 +75,7 @@ export const dynamicImportMultipleESM = async (pkgs) => {
     const { build } = await dynamicImportESM("build");
     const buildObj = {dependencies, source: buildStr};
     const buildResObj = await build(buildObj);
-    const bundleUrl = new URL(buildResObj.bundleUrl.replace('https://esm.sh/', 'https://legacy.esm.sh/v135/'));
+    const bundleUrl = new URL(buildResObj.bundleUrl.replace('https://legacy.esm.sh/', 'https://legacy.esm.sh/v135/').replace('https://esm.sh/', 'https://legacy.esm.sh/v135/'));
     if (process.env.NODE_ENV === 'development') {
         bundleUrl.searchParams.set('dev', true);
     }
@@ -71,12 +103,12 @@ const dynamicImportESM = async (pkg, pkgVersion = null) => {
         }
     }
 
-    const cdnList = ['https://legacy.esm.sh/', 'https://esm.run/'];
+    const cdnList = ['https://esm.sh/', 'https://legacy.esm.sh/', 'https://esm.run/'];
     const resolvedVersion = resolvePackageVersion(pkg, pkgVersion);
     let importCompleted = false;
     const importPromises = cdnList.map(async cdn => {
         const url = buildCDNUrl(cdn, pkg, resolvedVersion);
-        if(cdn !== 'https://legacy.esm.sh/') {
+        if(cdn !== 'https://esm.sh/') {
             // wait 0.6 sec as we want esm.sh to be the first to resolve preferably
             await new Promise(resolve => setTimeout(resolve, 600));
         }
@@ -132,11 +164,14 @@ function buildCDNUrl(cdn, pkg, version) {
     const versionString = version !== 'latest' ? `@${version}` : '';
     const folderString = getPackageFolderString(pkg);
     const url = new URL(`${cdn}${basePkg}${versionString}${folderString}`);
-    if (cdn !== 'https://legacy.esm.sh/' && (basePkg.includes('react')
-        || basePkg.includes('radix') || basePkg.includes('build'))) {
+    if (cdn !== 'https://esm.sh/' && (basePkg.includes('react')
+        || basePkg.includes('radix'))) {
         throw new Error(`React based packages is not supported in ${cdn}`);
     }
-    if (cdn === 'https://legacy.esm.sh/') {
+    if (cdn !== 'https://legacy.esm.sh/' && basePkg.includes('build')) {
+        throw new Error(`Build API package is not supported in ${cdn}`);
+    }
+    if (cdn === 'https://esm.sh/') {
         if (process.env.NODE_ENV === 'development') {
             url.searchParams.set('dev', true);
         }
@@ -157,7 +192,7 @@ function buildCDNUrl(cdn, pkg, version) {
  */
 export const dynamicImportCSS = async (pkg, pkgVersion = null) => {
     const resolvedVersion = resolvePackageVersion(pkg, pkgVersion);
-    const url = buildCDNUrl('https://legacy.esm.sh/', pkg, resolvedVersion);
+    const url = buildCDNUrl('https://esm.sh/', pkg, resolvedVersion);
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = url;
