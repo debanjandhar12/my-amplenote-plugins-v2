@@ -1,19 +1,21 @@
 import pkgJSON from "../package.json";
+import path from "path";
 
 /**
  * Import packages from __importBundles__ folder in GitHub repo.
  * This is a workaround for dynamicImportMultipleESM which helped avoid multiple
  * copies of the same package in the bundle.
+ * Note: When adding new packages, make sure to update the commit hash.
  */
-export const dynamicImportGithubBundle = async (fileName, commitHash = 'f8a2384') => {
+export const dynamicImportGithubBundle = async (fileName, commitHash = 'dfaddf7') => {
     if (process.env.NODE_ENV === 'test') {
         try {
-            return require('/__importBundles__/' + fileName);
+            return (require(path.resolve(__dirname, '../__importBundles__', fileName))).default;
         } catch (e) {
             console.warn(`Failed to require github bundle from local: ${e.message}`);
         }
         try {
-            return await import('/__importBundles__/' + fileName);
+            return (await import(path.resolve(__dirname, '../__importBundles__', fileName))).default;
         } catch (e) {
             console.warn(`Failed to import github bundle from local: ${e.message}`);
         }
@@ -35,7 +37,7 @@ export const dynamicImportGithubBundle = async (fileName, commitHash = 'f8a2384'
 }
 
 /***
- * @deprecated
+ * @deprecated - Esm.sh marked this api as deprecated. Since then, its working but unstable.
  * Dynamically imports multiple ESM modules from a CDN.
  * @template T
  * @param {string[]} pkgs - The package names to import.
