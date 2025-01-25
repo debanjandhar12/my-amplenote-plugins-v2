@@ -69,7 +69,8 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
             //     "@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.ts",
             //     "@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.tsx", "@radix-ui/themes",
             //     "@assistant-ui/react-markdown", "@radix-ui/react-icons", "react-string-diff"]);
-            = await dynamicImportGithubBundle('assistantUIBundle.js', 'main');
+            = await dynamicImportGithubBundle('assistantUIBundle.js', ["react", "react-dom/client", "@assistant-ui/react",
+                 "@assistant-ui/react-markdown", "@radix-ui/themes", "@radix-ui/react-icons", "react-string-diff"]);
         window.AssistantUIMarkdown = AssistantUIMarkdown;
         window.AssistantUIMarkdownComponent = makeCustomMarkdownText();
         window.React = React;

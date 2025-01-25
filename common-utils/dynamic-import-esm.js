@@ -5,7 +5,7 @@ import pkgJSON from "../package.json";
  * This is a workaround for dynamicImportMultipleESM which helped avoid multiple
  * copies of the same package in the bundle.
  */
-export const dynamicImportGithubBundle = async (fileName, commitHash = 'experiment') => {
+export const dynamicImportGithubBundle = async (fileName, deps, commitHash = '3515311') => {
     if (process.env.NODE_ENV === 'test') {
         try {
             return require('/__importBundles__/' + fileName);
@@ -21,14 +21,13 @@ export const dynamicImportGithubBundle = async (fileName, commitHash = 'experime
 
     const url = new URL(`https://esm.sh/gh/${pkgJSON.repository.replace('https://github.com/', '')}@${commitHash}/__importBundles__/${fileName}`);
     if (process.env.NODE_ENV === 'development') {
-        url.searchParams.set('dev', true);
+        // url.searchParams.set('dev', false);
     }
-    url.searchParams.set('bundle-deps', true);
+    url.searchParams.set('bundle', true);
     // Need in format: pkgName@version,pkgName2@version2,pkgName3@version3
-    const allDeps = Object.keys(pkgJSON.dependencies).map(dep => `${dep}@${pkgJSON.dependencies[dep]}`);
-    url.searchParams.set('deps', allDeps.join(','));
-    console.log('Loading bundle from:', url.toString());
-    return [];
+    const depsString = deps.map(dep => `${dep}@${pkgJSON.dependencies[dep]}`).join(',');
+    url.searchParams.set('deps', depsString);
+    return await import(url.toString());
 }
 
 /***
