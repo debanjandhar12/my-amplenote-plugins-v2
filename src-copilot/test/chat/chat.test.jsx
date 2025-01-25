@@ -71,6 +71,9 @@ describe('chat embed', () => {
         const page = getPage();
         await page.setContent(htmlWithMocks);
         await waitForCustomEvent(page, 'appLoaded');
+        await page.evaluate(() => {
+            window.scrollTo(0, document.body.scrollHeight);
+        });
         await expect(page.locator('.aui-composer-input')).toBeVisible();
     }, 20000);
 });

@@ -27,7 +27,9 @@ window.appConnector = new Proxy({}, {
             return target[prop];
         }
         return async function(...args) {
-            window.dispatchEvent(new CustomEvent('callAmplenotePlugin', {detail: [prop, ...args]}));
+            if (!['receiveMessageFromPlugin', 'ping'].includes(prop)) {
+                window.dispatchEvent(new CustomEvent('callAmplenotePlugin', {detail: [prop, ...args]}));
+            }
             return await window.callAmplenotePlugin(prop, ...args);
         };
     }
