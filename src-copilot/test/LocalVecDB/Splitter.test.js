@@ -10,6 +10,7 @@ describe('Splitter', () => {
         const result = await splitter.splitNote(app, mockedNote, true);
         expect(result.length).toBe(0);
     });
+
     test('should correctly split content based on headers', async () => {
         const splitter = new Splitter(100);
         const content = `# Header 1\n` +
@@ -23,6 +24,7 @@ describe('Splitter', () => {
         const result = await splitter.splitNote(app, mockedNote);
         expect(result.length).toBe(3);
     });
+
     test('should correctly combine content and have correct anchor', async () => {
         const splitter = new Splitter(100);
         const content = `# Header 1\n` +
@@ -71,6 +73,21 @@ describe('Splitter', () => {
         // Word world should not be repeated simply because it is wrapped in bold
         // This bug was encounted when async was used with unist-util-visit
         expect(result[0].metadata.noteContentPart.match(/World/g).length).toBe(1);
+    });
+
+    test('works correctly on images', async () => {
+        const splitter = new Splitter(100);
+        const content = "![](https://test.com/test.png)";
+        const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
+        const app = mockApp(mockedNote);
+        app.getNoteImages = jest.fn().mockResolvedValue([{
+            text: "Test\nPassed",
+            src: "https://test.com/test.png",
+        }]);
+        const result = await splitter.splitNote(app, mockedNote, true);
+        console.log(result);
+        expect(result[0].metadata.noteContentPart).toContain("Passed");
+        expect(result.length).toBe(1);
     });
 
     test('should not throw when position is not available', async () => {

@@ -15,8 +15,11 @@ export const stripYAMLAndMarkdownFormatting = async (markdownText) => {
             return 'skip';
         }
         if (node.type === 'text') {
-            textContent += node.value;
+            textContent += node.value + ' ';
+        }
+        if (node.type === 'image') {
+            textContent += `![](${node.url})` + ' ';
         }
     });
-    return textContent;
+    return textContent.trim();
 }

@@ -10,6 +10,7 @@ export class Splitter {
         this.splitRecordList = [];
         this.noteContent = '';
         this.noteProperties = {};
+        this.noteImages = [];
     }
 
     _addSplitRecord(note, headers, isFirstSplit = false) {
@@ -50,6 +51,7 @@ export class Splitter {
     async _collectNoteInfo(app, note) {
         this.noteContent = await app.getNoteContent({ uuid: note.uuid });
         this.noteProperties = await getExtendedNoteHandleProperties(app, note);
+        this.noteImages = await app.getNoteImages({ uuid: note.uuid });
     }
 
     _rebalanceChunks() {
@@ -95,6 +97,24 @@ export class Splitter {
         }
     }
 
+    _processTokens(nodeTokens, note, headers) {
+        if (nodeTokens.length > this.maxTokens * 1000) {
+            return 'skip';
+        }
+
+        while (nodeTokens.length > 0) {
+            const remainingSpace = this.maxTokens - this.splitRecordList[this.splitRecordList.length - 1].tempData.addedTokenCount;
+            if (remainingSpace === 0) {
+                this._addSplitRecord(note, headers);
+            }
+            const addedTokenCount = nodeTokens.slice(0, remainingSpace).length;
+            this.splitRecordList[this.splitRecordList.length - 1].metadata.noteContentPart += nodeTokens.slice(0, remainingSpace).join('');
+            nodeTokens = nodeTokens.slice(remainingSpace);
+            this.splitRecordList[this.splitRecordList.length - 1].tempData.addedTokenCount += addedTokenCount;
+        }
+        return 'skip';
+    }
+
     async splitNote(app, note, rebalanceChunks = false) {
         if (note && note.vault) return [];
         if (note && note.uuid && note.uuid.startsWith("local-")) return [];
@@ -125,29 +145,23 @@ export class Splitter {
                 console.log('Skipping code block due to length', node);
                 return 'skip';
             }
+            else if (node.type === 'image' && node.position) {
+                const imageObjFromAmplenote = this.noteImages.find((image) => image.src.trim() === node.url.trim());
+                let alt = "";
+                if (imageObjFromAmplenote && imageObjFromAmplenote.text) {
+                    alt = imageObjFromAmplenote.text.replaceAll('\n', ' ');
+                }
+                const nodeValue = `![${alt.substring(0, 4000)}](${node.url})`;
+                let nodeTokens = this.tokenize(nodeValue);
+                return this._processTokens(nodeTokens, note, headers);
+            }
             else {
                 const nodeValue = node.position ?
                     this.noteContent.substring(node.position.start.offset, node.position.end.offset)
                     : mdastToString(node);
 
                 let nodeTokens = this.tokenize(nodeValue);
-                if (nodeTokens.length > this.maxTokens * 1000) {
-                    console.log('Skipping else node due to length', node);
-                    return 'skip';
-                }
-
-                while (nodeTokens.length > 0) {
-                    const remainingSpace = this.maxTokens - this.splitRecordList[this.splitRecordList.length - 1].tempData.addedTokenCount;
-                    if (remainingSpace === 0) {
-                        this._addSplitRecord(note, headers);
-                    }
-                    const addedTokenCount = nodeTokens.slice(0, remainingSpace).length;
-                    this.splitRecordList[this.splitRecordList.length - 1].metadata.noteContentPart += nodeTokens.slice(0, remainingSpace).join('');
-                    nodeTokens = nodeTokens.slice(remainingSpace);
-                    this.splitRecordList[this.splitRecordList.length - 1].tempData.addedTokenCount += addedTokenCount;
-                }
-
-                return 'skip';
+                return this._processTokens(nodeTokens, note, headers);
             }
         });
 

@@ -41,6 +41,7 @@ export const mockApp = seedNote => {
   app.notes.filter = jest.fn().mockResolvedValue([]);
   app.notes.create= jest.fn();
   app.filterNotes = jest.fn().mockResolvedValue([]);
+  app.getNoteImages = jest.fn().mockResolvedValue([]);
   app.settings = {};
   app._noteRegistry = {};
 
@@ -144,8 +145,11 @@ export const mockNote = (content, name, uuid, tags) => {
       text: match[1],
     }));
   }
+
   return note;
 }
+
+// --------------------------------------------------------------------------------------
 
 function _replaceNoteContent(note, newContent, sectionObject = null) {
   if (sectionObject) {
