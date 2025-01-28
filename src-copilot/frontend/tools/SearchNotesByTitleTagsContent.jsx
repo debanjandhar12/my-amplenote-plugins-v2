@@ -5,7 +5,7 @@ import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
 import {uniqBy} from "lodash-es";
 import {processLocalVecDBResults} from "../tools-core/utils/processLocalVecDBResults.js";
-import {stripYAMLAndMarkdownFormatting} from "../../markdown/stripYAMLAndMarkdownFormatting.js";
+import {stripYAMLFromMarkdown} from "../../markdown/stripYAMLFromMarkdown.js";
 
 export const SearchNotesByTitleTagsContent = () => {
     return createGenericReadTool({
@@ -134,7 +134,7 @@ export const SearchNotesByTitleTagsContent = () => {
                 if (!args.noteContent || args.noteContent.trim() === '') continue;
                 const matchedParts = await appConnector.getMatchedPartWithFuzzySearch(result.noteUUID || result.uuid, args.noteContent.trim());
                 if (matchedParts.length > 0) {
-                    result.noteContentPart = await stripYAMLAndMarkdownFormatting(matchedParts[0]);
+                    result.noteContentPart = await stripYAMLFromMarkdown(matchedParts[0]);
                 }
             }
 

@@ -326,14 +326,14 @@ const NoteCard = ({ title, noteContentPart, noteUUID , headingAnchor }) => {
     };
 
     return (
-        <Card style={{padding: '16px'}} asChild>
+        <Card style={{padding: '16px', minHeight: '120px', maxHeight: '160px', maxWidth: '100%'}} asChild>
             <a href="#" onClick={handleClick}>
                 <Flex direction="column" gap="2">
-                    <h3 style={{margin: '0 0 8px 0', fontSize: '18px'}}>
+                    <h3 style={{margin: '0 0 6px 0', fontSize: '18px'}}>
                         {title || 'Untitled Note'}
                     </h3>
-                    <p style={{margin: 0, color: '#666', fontSize: '14px'}}>
-                        {truncate(noteContentPart, {length: 150})}
+                    <p style={{margin: 0, color: '#666', fontSize: '14px', whiteSpace: 'pre-wrap'}}>
+                        {noteContentPart}
                     </p>
                 </Flex>
             </a>

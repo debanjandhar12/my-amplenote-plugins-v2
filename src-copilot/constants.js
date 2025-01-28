@@ -11,6 +11,6 @@ export const USER_PROMPT_LIST_SETTING = "User Prompt List (DO NOT CHANGE MANUALL
 export const PINECONE_API_KEY_SETTING = "Pinecone API Key (Optional)";
 
 // Vector DB Configs
-export const INDEX_VERSION = 6;
+export const INDEX_VERSION = 7;
 export const LOCAL_VEC_DB_MAX_TOKENS = 507;
 export const LOCAL_VEC_EMBEDDING_DIMENSION = 384;

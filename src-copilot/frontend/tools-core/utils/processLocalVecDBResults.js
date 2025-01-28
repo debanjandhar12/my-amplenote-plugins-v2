@@ -1,4 +1,4 @@
-import {stripYAMLAndMarkdownFormatting} from "../../../markdown/stripYAMLAndMarkdownFormatting.js";
+import {stripYAMLFromMarkdown} from "../../../markdown/stripYAMLFromMarkdown.js";
 
 export const processLocalVecDBResults = async (results, thresholdScore = 0.35) => {
     const filteredResults = results
@@ -18,7 +18,7 @@ export const processLocalVecDBResults = async (results, thresholdScore = 0.35) =
     return Promise.all(
         uniqueResults.map(async (result) => ({
             noteTitle: result.metadata.noteTitle,
-            noteContentPart: await stripYAMLAndMarkdownFormatting(result.metadata.noteContentPart),
+            noteContentPart: await stripYAMLFromMarkdown(result.metadata.noteContentPart),
             noteUUID: result.metadata.noteUUID,
             tags: result.metadata.noteTags ? result.metadata.noteTags : [],
             headingAnchor: result.metadata.headingAnchor
