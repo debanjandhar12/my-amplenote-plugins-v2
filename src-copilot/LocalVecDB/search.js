@@ -3,7 +3,7 @@ import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
 import {getSyncState} from "./getSyncState.js";
 
 // Based on: https://github.com/babycommando/entity-db/blob/main/src/index.js
-export const search = async (app, queryText, {limit = 32,
+export const search = async (app, queryText, {limit = 96,
     isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null}) => {
     if (await getSyncState(app) === 'Not synced')
         throw new Error('No syncing has been performed, or the last sync is outdated. Please sync your notes with LocalVecDB.');

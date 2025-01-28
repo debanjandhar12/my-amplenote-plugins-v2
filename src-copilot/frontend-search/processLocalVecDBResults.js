@@ -1,4 +1,4 @@
-import {stripYAMLFromMarkdown} from "../../../markdown/stripYAMLFromMarkdown.js";
+import {stripYAMLFromMarkdown} from "../markdown/stripYAMLFromMarkdown.js";
 
 export const processLocalVecDBResults = async (results, thresholdScore = 0.35) => {
     const filteredResults = results

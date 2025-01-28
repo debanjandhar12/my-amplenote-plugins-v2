@@ -1,5 +1,6 @@
 import {debounce, truncate} from "lodash-es";
-import {processLocalVecDBResults} from "./tools-core/utils/processLocalVecDBResults.js";
+import {processLocalVecDBResults} from "./processLocalVecDBResults.js";
+import {EndlessScroll} from "./components/EndlessScroll.jsx";
 
 // Custom hook for search functionality
 const useSearch = () => {
@@ -28,23 +29,23 @@ const useSearch = () => {
         updateSyncStatus();
     }, []);
 
-        // Fetch search and sync messages on Init
-        React.useEffect(() => {
-            const fetchInitMessages = async () => {
-                // Check for search text updates
-                const searchTextMsg = await window.appConnector.receiveMessageFromPlugin('searchForTextInSearchInterface');
-                if (searchTextMsg !== null) {
-                    setSearchText(searchTextMsg);
-                }
-    
-                // Check for sync start command
-                const startSync = await window.appConnector.receiveMessageFromPlugin('startSyncToLocalVecDBInSearchInterface');
-                if (startSync === true) {
-                    handleSync();
-                }
+    // Fetch search and sync messages on Init
+    React.useEffect(() => {
+        const fetchInitMessages = async () => {
+            // Check for search text updates
+            const searchTextMsg = await window.appConnector.receiveMessageFromPlugin('searchForTextInSearchInterface');
+            if (searchTextMsg !== null) {
+                setSearchText(searchTextMsg);
             }
-            fetchInitMessages();
-        }, []);    
+
+            // Check for sync start command
+            const startSync = await window.appConnector.receiveMessageFromPlugin('startSyncToLocalVecDBInSearchInterface');
+            if (startSync === true) {
+                handleSync();
+            }
+        }
+        fetchInitMessages();
+    }, []);
 
     // Search functionality
     const performSearch = async (query, searchOpts = {}) => {
@@ -231,9 +232,9 @@ const FilterRow = ({ label, isEnabled, value, onChange }) => {
                 />
                 <IconButton
                     title={
-                    value == null? '' :
-                        value === true ? 'Included' : 'Excluded'}
-                    variant="soft" 
+                        value == null? '' :
+                            value === true ? 'Included' : 'Excluded'}
+                    variant="soft"
                     size="1"
                     disabled={!isEnabled}
                     onClick={handleIconClick}
@@ -326,10 +327,10 @@ const NoteCard = ({ title, noteContentPart, noteUUID , headingAnchor }) => {
     };
 
     return (
-        <Card style={{padding: '16px', minHeight: '120px', maxHeight: '160px', maxWidth: '100%'}} asChild>
+        <Card style={{padding: '12px', marginBottom: '4px', minHeight: '120px', maxHeight: '160px', maxWidth: '100%'}} asChild>
             <a href="#" onClick={handleClick}>
                 <Flex direction="column" gap="2">
-                    <h3 style={{margin: '0 0 6px 0', fontSize: '18px'}}>
+                    <h3 style={{margin: '0', fontSize: '18px'}}>
                         {title || 'Untitled Note'}
                     </h3>
                     <p style={{margin: 0, color: '#666', fontSize: '14px', whiteSpace: 'pre-wrap'}}>
@@ -357,7 +358,7 @@ export const SearchApp = () => {
         syncStatus
     } = useSearch();
 
-    const {Theme, ScrollArea, Flex, TextField} = window.RadixUI;
+    const {Theme, Flex, TextField} = window.RadixUI;
     const {MagnifyingGlassIcon, Cross2Icon} = window.RadixIcons;
 
     return (
@@ -402,32 +403,30 @@ export const SearchApp = () => {
                         syncStatus={syncStatus}
                     />
                 </Flex>
-
-                <ScrollArea style={{ flex: 1 }}>
-                    <Flex direction="column" gap="3">
-                        <SearchStatus
-                            isLoading={isLoading}
-                            error={error}
-                            isSyncing={isSyncing}
-                            syncProgressText={syncProgressText}
-                            syncError={syncError}
-                            searchText={searchText}
-                            searchResults={searchResults}
-                        />
-                        {!isLoading && !isSyncing && !error && !syncError &&
-                            searchResults.map((result, index) => (
-                                <NoteCard
-                                    key={index}
-                                    title={result.noteTitle}
-                                    noteContentPart={result.noteContentPart}
-                                    noteUUID={result.noteUUID}
-                                    headingAnchor={result.headingAnchor}
-                                />
-                            ))}
-                    </Flex>
-                </ScrollArea>
+                <SearchStatus
+                    isLoading={isLoading}
+                    error={error}
+                    isSyncing={isSyncing}
+                    syncProgressText={syncProgressText}
+                    syncError={syncError}
+                    searchText={searchText}
+                    searchResults={searchResults}
+                />
+                {!isLoading && !isSyncing && !error && !syncError && searchResults && searchResults.length > 0 &&
+                    <EndlessScroll
+                        iterationCnt={6}
+                        itemContent={(index) => (
+                            <NoteCard
+                                title={searchResults[index].noteTitle}
+                                noteContentPart={searchResults[index].noteContentPart}
+                                noteUUID={searchResults[index].noteUUID}
+                                headingAnchor={searchResults[index].headingAnchor}
+                            />
+                        )}
+                        data={searchResults}
+                    />
+                }
             </Flex>
         </Theme>
     );
 };
-

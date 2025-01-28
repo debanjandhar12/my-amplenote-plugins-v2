@@ -6,12 +6,12 @@ import {getLLMModel} from "../backend/getLLMModel.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK} from "../test/chat/chat.testdata.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
-import {overwriteWithAmplenoteStyle} from "../frontend/overwriteWithAmplenoteStyle.js";
-import {ChatApp} from "../frontend/ChatApp.jsx";
+import {overwriteWithAmplenoteStyle} from "../frontend-chat/overwriteWithAmplenoteStyle.js";
+import {ChatApp} from "../frontend-chat/ChatApp.jsx";
 import {parse} from "../markdown/markdown-parser.js";
-import {ToolRegistry} from "../frontend/tools-core/registry/ToolRegistry.js";
-import {ToolCategoryRegistry} from "../frontend/tools-core/registry/ToolCategoryRegistry.js";
-import {makeCustomMarkdownText} from "../frontend/components/makeCustomMarkdownText.jsx";
+import {ToolRegistry} from "../frontend-chat/tools-core/registry/ToolRegistry.js";
+import {ToolCategoryRegistry} from "../frontend-chat/tools-core/registry/ToolCategoryRegistry.js";
+import {makeCustomMarkdownText} from "../frontend-chat/components/makeCustomMarkdownText.jsx";
 
 if(process.env.NODE_ENV === 'development') {
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);

@@ -4,7 +4,7 @@ import {createGenericReadTool} from "../tools-core/base/createGenericReadTool.js
 import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
 import {uniqBy} from "lodash-es";
-import {processLocalVecDBResults} from "../tools-core/utils/processLocalVecDBResults.js";
+import {processLocalVecDBResults} from "../../frontend-search/processLocalVecDBResults.js";
 import {stripYAMLFromMarkdown} from "../../markdown/stripYAMLFromMarkdown.js";
 
 export const SearchNotesByTitleTagsContent = () => {

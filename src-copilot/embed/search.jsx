@@ -1,12 +1,12 @@
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK} from "../test/chat/chat.testdata.js";
-import {overwriteWithAmplenoteStyle} from "../frontend/overwriteWithAmplenoteStyle.js";
+import {overwriteWithAmplenoteStyle} from "../frontend-chat/overwriteWithAmplenoteStyle.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import dynamicImportESM, {
     dynamicImportCSS,
-    dynamicImportGithubBundle
+    dynamicImportGithubBundle, dynamicImportMultipleESM
 } from "../../common-utils/dynamic-import-esm.js";
-import {SearchApp} from "../frontend/SearchApp.jsx";
+import {SearchApp} from "../frontend-search/SearchApp.jsx";
 import {parse} from "../markdown/markdown-parser.js";
 
 if(process.env.NODE_ENV === 'development') {
@@ -54,11 +54,18 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         showEmbedLoader();
         overwriteWithAmplenoteStyle();
         const cssLoaded = dynamicImportCSS("@radix-ui/themes/styles.css");
-        const [React, ReactDOM, RadixUI, RadixIcons] = await dynamicImportGithubBundle('reactRadixBundle.js');
+        // const [React, ReactDOM, RadixUI, RadixIcons] = await dynamicImportGithubBundle('reactRadixBundle.js');
+        // window.React = React;
+        // window.ReactDOM = ReactDOM;
+        // window.RadixUI = RadixUI;
+        // window.RadixIcons = RadixIcons;
+        // window.ReactVirtuoso = await dynamicImportESM("react-virtuoso");
+        const [React, ReactDOM, RadixUI, RadixIcons, ReactVirtuoso] = await dynamicImportMultipleESM(["react", "react-dom/client", "@radix-ui/themes", "@radix-ui/react-icons", "react-virtuoso"]);
         window.React = React;
         window.ReactDOM = ReactDOM;
         window.RadixUI = RadixUI;
         window.RadixIcons = RadixIcons;
+        window.ReactVirtuoso = ReactVirtuoso;
         window.appSettings = await appConnector.getSettings();
         parse(''); // Load unified js in background
         hideEmbedLoader();
