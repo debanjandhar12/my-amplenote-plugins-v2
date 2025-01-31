@@ -125,11 +125,11 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts, syncStatus }
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-                <IconButton variant="ghost" style={{ padding: '8px' }}>
+                <IconButton variant="ghost" style={{ padding: '8px' }} className={'search-menu-button'}>
                     <DotsHorizontalIcon />
                 </IconButton>
             </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
+            <DropdownMenu.Content className={'search-menu-content'}>
                 <Text style={{ fontSize: '14px', padding: '4px' }} color={'gray'}>
                     DB Status: <Text color={getSyncStatusColor(syncStatus)}>{syncStatus}</Text>
                 </Text>
@@ -210,6 +210,7 @@ export const SearchApp = () => {
                             fontSize: '16px',
                             flex: 1
                         }}
+                        className="search-input"
                         autoFocus={true}
                     >
                         <TextField.Slot style={{ paddingLeft: '2px' }}>

@@ -8,7 +8,7 @@ export const NoteCard = ({title, noteContentPart, noteUUID, headingAnchor}) => {
     return (
         <Card style={{padding: '12px', marginBottom: '4px', minHeight: '120px', maxHeight: '160px', maxWidth: '100%'}}
               asChild>
-            <a href="#" onClick={handleClick}>
+            <a href="#" onClick={handleClick} className={'note-card'}>
                 <Flex direction="column" gap="2">
                     <h3 style={{margin: '0', fontSize: '18px'}}>
                         {title || 'Untitled Note'}

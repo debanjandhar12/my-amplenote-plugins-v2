@@ -27,7 +27,7 @@ window.appConnector = new Proxy({}, {
             return target[prop];
         }
         return async function(...args) {
-            if (!['receiveMessageFromPlugin', 'ping'].includes(prop)) {
+            if (!['getUserCurrentNoteData', 'getUserDailyJotNote', 'receiveMessageFromPlugin', 'ping'].includes(prop)) {
                 window.dispatchEvent(new CustomEvent('callAmplenotePlugin', {detail: [prop, ...args]}));
             }
             return await window.callAmplenotePlugin(prop, ...args);
@@ -95,6 +95,8 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.document.body.innerHTML = '<div class="error" style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
         console.error(e);
     } finally {
+        // Wait for few seconds and then call appLoaded event
+        await new Promise(resolve => setTimeout(resolve, 1600));
         window.dispatchEvent(new CustomEvent('appLoaded'));
     }
 })();

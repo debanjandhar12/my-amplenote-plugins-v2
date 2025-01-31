@@ -73,6 +73,8 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.document.body.innerHTML = '<div style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
         console.error(e);
     } finally {
+        // Wait for few seconds and then call appLoaded event
+        await new Promise(resolve => setTimeout(resolve, 1600));
         window.dispatchEvent(new CustomEvent('appLoaded'));
     }
 })();
