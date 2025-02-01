@@ -1,7 +1,6 @@
 import {PINECONE_API_KEY_SETTING} from "../../constants.js";
 
-let adapter = null;
-export async function getEmbeddingConfig(app) {
+export async function getEmbeddingConfig(app, navigator = window.navigator) {
     if (app && app.settings &&
         app.settings[PINECONE_API_KEY_SETTING] && app.settings[PINECONE_API_KEY_SETTING].trim() !== '') {
         return {
@@ -11,13 +10,15 @@ export async function getEmbeddingConfig(app) {
             maxConcurrency: 64
         }
     }
-
-    // Use local models using huggingface transformers
+    // -- Use local models using huggingface transformers --
+    // When gpuAdapter is null or undefined, it means we didn't try to initialize it yet
+    // When false, it means we tried to initialize it but failed.
+    // When true, it means we successfully initialized it.
     try {
-        if (adapter === null && navigator.gpu)
-            adapter = await navigator.gpu.requestAdapter() || false;
+        if (window.gpuAdapter == null && navigator.gpu)
+            window.gpuAdapter = await navigator.gpu.requestAdapter() || false;
     } catch (e) {}
-    const webGpuAvailable = adapter !== false && adapter !== null;
+    const webGpuAvailable = window.gpuAdapter !== false && window.gpuAdapter !== null;
     return {
         provider: "local",
         model: "xenova/bge-small-en-v1.5",
