@@ -1,6 +1,6 @@
 import {CUSTOM_LLM_INSTRUCTION_SETTING, LLM_MODEL_SETTING} from "../../constants.js";
 
-export function useSystemMessage(currentMessages, toolsToAdd) {
+export function getSystemMessage(currentMessages, toolsToAdd) {
     const messagesContainImageAttachments = currentMessages.some(message => 
         message.attachments && message.attachments.length > 0 && 
         message.attachments.some(attachment => attachment.type === 'image')

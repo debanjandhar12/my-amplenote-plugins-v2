@@ -1,4 +1,4 @@
-export class CurrentNoteAttachmentAdapter {
+export class AmplenoteAttachmentAdapter {
     accept = "text/amplenote-note,text/amplenote-selection,text/amplenote-task";
 
     async add(state) {

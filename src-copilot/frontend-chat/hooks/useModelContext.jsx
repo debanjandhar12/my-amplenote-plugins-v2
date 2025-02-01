@@ -1,9 +1,10 @@
 import {convertUIToolsToDummyServerTools} from "../../backend/utils/convertUIToolsToDummyServerTools.js";
 import {ToolRegistry} from "../tools-core/registry/ToolRegistry.js";
-import {useSystemMessage} from "./useSystemMessage.jsx";
+import {getSystemMessage} from "./getSystemMessage.jsx";
 
 export function useModelContext() {
     const runtime = AssistantUI.useAssistantRuntime();
+
     React.useEffect(() => {
         let removeLastRegisteredModelContextProvider = () => {};
         runtime.thread.subscribe(() => {
@@ -17,7 +18,7 @@ export function useModelContext() {
             }));
             removeLastRegisteredModelContextProvider = runtime.registerModelContextProvider({
                 getModelContext: () => {
-                    const systemMsg = useSystemMessage(currentMessages, toolsToAdd);
+                    const systemMsg = getSystemMessage(currentMessages, toolsToAdd);
                     return {
                         tools: convertUIToolsToDummyServerTools([...toolsToAdd]),
                         system: systemMsg
