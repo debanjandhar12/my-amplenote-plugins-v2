@@ -56,12 +56,6 @@ export const useSearch = () => {
     // Debounced search handler
     const debouncedSearch = React.useMemo(
         () => debounce(async () => {
-            if (!searchText.trim()) {
-                setSearchResults([]);
-                setError(null);
-                return;
-            }
-
             setIsLoading(true);
             setError(null);
 
@@ -99,7 +93,13 @@ export const useSearch = () => {
     );
 
     const handleSearch = React.useCallback(() => {
-        debouncedSearch();
+        if (searchText.trim() === '') {
+            setSearchResults([]);
+            setError(null);
+        } else {
+            setIsLoading(true);
+            debouncedSearch();
+        }
     }, [debouncedSearch, searchText, searchOpts]);
 
     // Sync functionality
