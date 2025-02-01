@@ -1,13 +1,14 @@
-export const useChatSuggestions = (thread, count = 2) => {
+export const useChatSuggestions = (count = 2) => {
     const [suggestions, setSuggestions] = React.useState([]);
-
+    const threadListItemRuntime = AssistantUI.useThreadListItemRuntime();
+    const threadId = threadListItemRuntime.getState().id;
     React.useEffect(() => {
         try {
             setSuggestions(getRandomSuggestions(count));
         } catch (e) {
             console.error(e);
         }
-    }, [thread]);
+    }, [threadId]);
 
     return suggestions;
 }

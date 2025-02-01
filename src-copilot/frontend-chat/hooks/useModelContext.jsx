@@ -2,22 +2,21 @@ import {convertUIToolsToDummyServerTools} from "../../backend/utils/convertUIToo
 import {ToolRegistry} from "../tools-core/registry/ToolRegistry.js";
 import {useSystemMessage} from "./useSystemMessage.jsx";
 
-export function useModelConfig() {
+export function useModelContext() {
     const runtime = AssistantUI.useAssistantRuntime();
     React.useEffect(() => {
-        let removeLastRegisteredModelConfigProvider = () => {};
+        let removeLastRegisteredModelContextProvider = () => {};
         runtime.thread.subscribe(() => {
             const currentMessages = (runtime.thread.getState()).messages;
             const lastUserMessage = [...currentMessages].reverse().find(message => message.role === 'user');
             const allUserMessages = [...currentMessages].filter(message => message.role === 'user');
-            removeLastRegisteredModelConfigProvider();
+            removeLastRegisteredModelContextProvider();
             const toolsToAdd = ToolRegistry.getAllTools().filter(tool => tool.unstable_tool.triggerCondition({
                 lastUserMessage,
                 allUserMessages
             }));
-
-            removeLastRegisteredModelConfigProvider = runtime.registerModelConfigProvider({
-                getModelConfig: () => {
+            removeLastRegisteredModelContextProvider = runtime.registerModelContextProvider({
+                getModelContext: () => {
                     const systemMsg = useSystemMessage(currentMessages, toolsToAdd);
                     return {
                         tools: convertUIToolsToDummyServerTools([...toolsToAdd]),
@@ -27,8 +26,7 @@ export function useModelConfig() {
             });
         });
         return () => {
-            removeLastRegisteredModelConfigProvider();
+            removeLastRegisteredModelContextProvider();
         };
     }, [runtime]);
-    return runtime.thread.getModelConfig();
 }

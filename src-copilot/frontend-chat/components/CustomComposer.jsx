@@ -49,6 +49,7 @@ export const CustomComposer = () => {
     )
 }
 
-const useAllowAttachments = (ensureCapability = false) => {
-    return AssistantUI.useThread((t) => t.capabilities.attachments);
+const useAllowAttachments = () => {
+    const threadRuntime = AssistantUI.useThreadRuntime();
+    return threadRuntime.getState().capabilities.attachments;
 }

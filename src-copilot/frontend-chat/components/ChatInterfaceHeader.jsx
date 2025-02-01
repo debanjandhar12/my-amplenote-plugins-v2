@@ -7,7 +7,6 @@ import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.
 export const ChatInterfaceHeader = () => {
     // Fetch runtime and other assistant-ui contexts
     const runtime = AssistantUI.useAssistantRuntime();
-    const threadMessagesLength = AssistantUI.useThread((m) => (m?.messages?.length || 0));
 
     // New chat button functionality
     const onClickNewChat = React.useCallback(() => runtime.switchToNewThread(), [runtime]);
@@ -43,9 +42,13 @@ export const ChatInterfaceHeader = () => {
 }
 
 const ChatInterfaceMenu = () => {
-    const threadMessages = AssistantUI.useThread((t) => t.messages);
-    const threadMessagesLength = AssistantUI.useThread((t) => t.messages?.length || 0);
-    const threadId = AssistantUI.useThreadListItem().id;
+    const threadRuntime = AssistantUI.useThreadRuntime();
+    let [threadMessages, setThreadMessages] = React.useState([]);
+    threadRuntime.subscribe(() => {
+        setThreadMessages(threadRuntime.getState().messages || []);
+    });
+    const threadMessagesLength = threadMessages?.length;
+    const threadId = AssistantUI.useThreadListItemRuntime().getState().id;
     const [exportNoteExists, setExportNoteExists] = React.useState(false);
     const [exportNoteName, setExportNoteName] = React.useState(`Copilot chat - ${threadId}`);
 

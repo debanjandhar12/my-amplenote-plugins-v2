@@ -41,7 +41,7 @@ export const useAmplenoteAttachments = () => {
             }
             else if (attachment.type === 'note') {
                 const noteUUID = attachment.noteUUID;
-                const noteName = attachment.noteTitle;
+                const noteName = attachment.noteTitle || "Untitled Note";
                 const noteContent = attachment.noteContent;
                 const file = new File([
                 `@notes\n` +

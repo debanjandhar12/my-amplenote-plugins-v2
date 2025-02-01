@@ -25,7 +25,7 @@ export const dynamicImportGithubBundle = async (fileName, commitHash = 'dfaddf7'
     if (process.env.NODE_ENV === 'development') {
         url.searchParams.set('dev', true);
     }
-    url.searchParams.set('bundle', true);
+    // url.searchParams.set('bundle', true); <- uncommenting this breaks pkg versioning
     const depsString = Object.keys(pkgJSON.dependencies).map(dep => `${dep}@${pkgJSON.dependencies[dep]}`).join(',');
     url.searchParams.set('deps', depsString);
     const module = (await import(url.toString()));

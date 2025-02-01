@@ -2,7 +2,7 @@ import {useChatSuggestions} from "./hooks/useChatSuggestions.jsx";
 import {CustomComposer} from "./components/CustomComposer.jsx";
 import {ChatInterfaceHeader} from "./components/ChatInterfaceHeader.jsx";
 import {useAssistantAvatar} from "./hooks/useAssistantAvatar.jsx";
-import {useModelConfig} from "./hooks/useModelConfig.jsx";
+import {useModelContext} from "./hooks/useModelContext.jsx";
 import {UserMessage} from "./components/UserMessage.jsx";
 import {ToolRegistry} from "./tools-core/registry/ToolRegistry.js";
 import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
@@ -10,9 +10,8 @@ import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
 export const ChatInterface = () => {
     // Fetch runtime and other assistant-ui contexts
     const runtime = AssistantUI.useAssistantRuntime();
-    const thread = AssistantUI.useThread();
     const assistantAvatar = useAssistantAvatar();
-    const suggestions = useChatSuggestions(thread);
+    const suggestions = useChatSuggestions();
 
     // Send heartbeat signals to plugin
     React.useEffect(() => {
@@ -42,7 +41,7 @@ export const ChatInterface = () => {
             unsubscribe();
         }
     }, [runtime]);
-    useModelConfig();
+    useModelContext();
 
     const { Thread } = window.AssistantUI;
     return (
