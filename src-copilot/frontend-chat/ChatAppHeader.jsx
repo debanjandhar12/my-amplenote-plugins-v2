@@ -1,10 +1,10 @@
-import {USER_PROMPT_LIST_SETTING} from "../../constants.js";
-import {getChatAppContext} from "../context/ChatAppContext.jsx";
+import {USER_PROMPT_LIST_SETTING} from "../constants.js";
+import {getChatAppContext} from "./context/ChatAppContext.jsx";
 import {capitalize} from "lodash-es";
-import {replaceParagraphTextInMarkdown} from "../../markdown/replaceParagraphTextInMarkdown.jsx";
-import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
+import {replaceParagraphTextInMarkdown} from "../markdown/replaceParagraphTextInMarkdown.jsx";
+import {ToolCategoryRegistry} from "./tools-core/registry/ToolCategoryRegistry.js";
 
-export const ChatInterfaceHeader = () => {
+export const ChatAppHeader = () => {
     // Fetch runtime and other assistant-ui contexts
     const runtime = AssistantUI.useAssistantRuntime();
 
