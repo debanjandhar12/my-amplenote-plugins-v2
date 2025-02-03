@@ -1,6 +1,6 @@
 import {convertUIToolsToDummyServerTools} from "../../backend/utils/convertUIToolsToDummyServerTools.js";
 import {ToolRegistry} from "../tools-core/registry/ToolRegistry.js";
-import {getSystemMessage} from "./getSystemMessage.jsx";
+import {getSystemMessage} from "../helpers/getSystemMessage.js";
 
 export function useModelContext() {
     const runtime = AssistantUI.useAssistantRuntime();

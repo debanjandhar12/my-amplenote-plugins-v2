@@ -80,7 +80,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.StringDiff = StringDiffModule.StringDiff;
         window.dayjs = (await dynamicImportESM("dayjs")).default;
         window.Tribute = (await dynamicImportESM("tributejs")).default;
-        parse(''); // Load unified js in background
+        await parse(''); // Load unified js bundle
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
         hideEmbedLoader();

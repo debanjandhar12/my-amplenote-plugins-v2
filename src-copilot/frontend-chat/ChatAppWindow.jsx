@@ -6,7 +6,7 @@ import {useModelContext} from "./hooks/useModelContext.jsx";
 import {UserMessage} from "./components/UserMessage.jsx";
 import {ToolRegistry} from "./tools-core/registry/ToolRegistry.js";
 import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
-import {useCustomChatHistory} from "./components/CustomAssistantRuntimeProvider.jsx";
+import {useCustomChatHistoryManager} from "./components/RemoteAssistantRuntimeProvider.jsx";
 import {useUserDataPolling} from "./hooks/useUserDataPolling.jsx";
 import {useIntervalPingPlugin} from "./hooks/useIntervalPingPlugin.jsx";
 
@@ -16,7 +16,7 @@ export const ChatAppWindow = () => {
 
     useModelContext();
     useAmplenoteAttachments();
-    useCustomChatHistory();
+    useCustomChatHistoryManager();
     useUserDataPolling();
     useIntervalPingPlugin();
 

@@ -1,6 +1,6 @@
 import {ChatAppWindow} from "./ChatAppWindow.jsx";
 import {ChatAppContextProvider} from "./context/ChatAppContext.jsx";
-import {CustomAssistantRuntimeProvider} from "./components/CustomAssistantRuntimeProvider.jsx";
+import {RemoteAssistantRuntimeProvider} from "./components/RemoteAssistantRuntimeProvider.jsx";
 
 export const ChatApp = () => {
     const {Theme} = window.RadixUI;
@@ -8,9 +8,9 @@ export const ChatApp = () => {
     return (
         <ChatAppContextProvider>
             <Theme appearance="dark" accentColor="blue">
-                <CustomAssistantRuntimeProvider>
+                <RemoteAssistantRuntimeProvider>
                     <ChatAppWindow />
-                </CustomAssistantRuntimeProvider>
+                </RemoteAssistantRuntimeProvider>
             </Theme>
         </ChatAppContextProvider>
     )

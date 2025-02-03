@@ -1,4 +1,4 @@
-export const useDangerousInBrowserRuntimeMod = (
+export const useCustomDangerousInBrowserRuntime = (
     options
 ) => {
   const { localRuntimeOptions, otherOptions } = AssistantUIUtils.splitLocalRuntimeOptions(options);

@@ -358,7 +358,7 @@ const plugin = {
             }
         },
         "getLocalVecDBSyncState": async function (app) {
-            return await getSyncState(app);
+            return await new LocalVecDB().getSyncState(app);
         },
         "syncNotesWithLocalVecDB": async function (app) {
             await new LocalVecDB().syncNotes(app, plugin.sendMessageToEmbed);

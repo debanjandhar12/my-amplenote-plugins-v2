@@ -1,11 +1,11 @@
-import {INDEX_VERSION} from "../constants.js";
+import {LOCAL_VEC_DB_INDEX_VERSION} from "../constants.js";
 import {openDB} from "idb";
 
 export class IndexedDBManager {
     async init() {
         if (this.db) return;
         try {
-            this.db = await openDB('LocalVecDB', INDEX_VERSION, {
+            this.db = await openDB('LocalVecDB', LOCAL_VEC_DB_INDEX_VERSION, {
                 async upgrade(db, oldVersion, newVersion, transaction) {
                     if (oldVersion !== newVersion) {
                         await new IndexedDBManager().resetDB(db);
