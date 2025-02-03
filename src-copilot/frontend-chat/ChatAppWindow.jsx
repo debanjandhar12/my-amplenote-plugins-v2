@@ -9,10 +9,12 @@ import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
 import {useCustomChatHistoryManager} from "./components/RemoteAssistantRuntimeProvider.jsx";
 import {useUserDataPolling} from "./hooks/useUserDataPolling.jsx";
 import {useIntervalPingPlugin} from "./hooks/useIntervalPingPlugin.jsx";
+import {getChatAppContext} from "./context/ChatAppContext.jsx";
 
 export const ChatAppWindow = () => {
     const assistantAvatar = useAssistantAvatar();
     const suggestions = useChatSuggestions();
+    const {chatHistoryLoaded} = React.useContext(getChatAppContext());
 
     useModelContext();
     useAmplenoteAttachments();
@@ -24,18 +26,20 @@ export const ChatAppWindow = () => {
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>
             <ChatAppHeader />
-            <Thread
-                welcome={{
-                    suggestions: suggestions,
-                }}
-                assistantMessage={{ components: { Text: AssistantUIMarkdownComponent } }}
-                assistantAvatar={assistantAvatar}
-                tools={ToolRegistry.getAllTools()}
-                components={{
-                    Composer: CustomComposer,
-                    UserMessage: UserMessage
-                }}
-            />
+            {
+                chatHistoryLoaded && <Thread
+                    welcome={{
+                        suggestions: suggestions,
+                    }}
+                    assistantMessage={{ components: { Text: AssistantUIMarkdownComponent } }}
+                    assistantAvatar={assistantAvatar}
+                    tools={ToolRegistry.getAllTools()}
+                    components={{
+                        Composer: CustomComposer,
+                        UserMessage: UserMessage
+                    }}
+                />
+            }
         </div>
     )
 }

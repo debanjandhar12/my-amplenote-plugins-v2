@@ -6,10 +6,12 @@ export const RemoteAssistantRuntimeProvider = ({ children }) => {
     const innerRuntimeHook = React.useCallback(useInnerRuntime, []);
     const copilotChatHistoryDB = React.useMemo(() => new CopilotChatHistoryDB(), []);
     const callbacksRef = React.useRef(new Set());
+    const {setRemoteThreadLoaded} = React.useContext(getChatAppContext());
     const runtime = AssistantUI.unstable_useRemoteThreadListRuntime({
         runtimeHook: innerRuntimeHook,
         list: async () => {
             const remoteThreads = await copilotChatHistoryDB.getAllThreads();
+            setRemoteThreadLoaded(true);
             return {
                 threads: remoteThreads
             };
@@ -54,16 +56,19 @@ export const useCustomChatHistoryManager = () => {
     const threadRuntime = AssistantUI.useThreadRuntime();
     const threadListItemRuntime = AssistantUI.useThreadListItemRuntime();
     const copilotChatHistoryDB = new CopilotChatHistoryDB();
+    const {remoteThreadLoaded, setChatHistoryLoaded} = React.useContext(getChatAppContext());
 
     React.useEffect(() => {
+        if (!remoteThreadLoaded) return;
         (async () => {
-            await new Promise(resolve => setTimeout(resolve, 1));
             const lastThread = await copilotChatHistoryDB.getLastOpenedThread();
             if (lastThread) {
                 await assistantRuntime.threads.switchToThread(lastThread.remoteId);
+            } else {
+                setChatHistoryLoaded(true);
             }
         })();
-    }, [assistantRuntime]);
+    }, [assistantRuntime, remoteThreadLoaded]);
 
     threadRuntime.unstable_on("run-end", async () => {
         try {
@@ -84,6 +89,7 @@ export const useCustomChatHistoryManager = () => {
             if (remoteThread && remoteThread.messages) {
                 threadRuntime.import(remoteThread.messages);
             }
+            setChatHistoryLoaded(true);
         } catch (e) {
             console.error('Error loading thread from CopilotChatHistoryDB:', e);
         }
