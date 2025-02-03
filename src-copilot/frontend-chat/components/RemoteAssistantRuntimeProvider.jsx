@@ -75,6 +75,8 @@ export const useCustomChatHistoryManager = () => {
         try {
             const remoteThread = await copilotChatHistoryDB.getThread(threadListItemRuntime.getState().remoteId);
             if (remoteThread) {
+                const exportMessages = threadRuntime.export();
+                if (exportMessages.messages.length < 1) return;
                 remoteThread.messages = threadRuntime.export();
                 remoteThread.updated = new Date().toISOString();
                 await copilotChatHistoryDB.putThread(remoteThread);
@@ -84,6 +86,11 @@ export const useCustomChatHistoryManager = () => {
         }
     }
     threadRuntime.subscribe(async () => {
+        if (threadRuntime.getState().isRunning) { // Prevent update when switching threads
+            await updateRemoteThreadMessages();
+        }
+    });
+    threadRuntime.unstable_on("run-start", async () => {
         await updateRemoteThreadMessages();
     });
     threadRuntime.unstable_on("run-end", async () => {
