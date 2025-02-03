@@ -61,7 +61,7 @@ export const useCustomChatHistoryManager = () => {
     React.useEffect(() => {
         if (!remoteThreadLoaded) return;
         (async () => {
-            const lastThread = await copilotChatHistoryDB.getLastOpenedThread();
+            const lastThread = await copilotChatHistoryDB.getLastUpdatedThread();
             if (lastThread) {
                 await assistantRuntime.threads.switchToThread(lastThread.remoteId);
             } else {
@@ -70,7 +70,8 @@ export const useCustomChatHistoryManager = () => {
         })();
     }, [assistantRuntime, remoteThreadLoaded]);
 
-    threadRuntime.unstable_on("run-end", async () => {
+    // TODO: hook after tool result
+    const updateRemoteThreadMessages = async () => {
         try {
             const remoteThread = await copilotChatHistoryDB.getThread(threadListItemRuntime.getState().remoteId);
             if (remoteThread) {
@@ -81,6 +82,12 @@ export const useCustomChatHistoryManager = () => {
         } catch (e) {
             console.error('Error persisting thread to CopilotChatHistoryDB:', e);
         }
+    }
+    threadRuntime.subscribe(async () => {
+        await updateRemoteThreadMessages();
+    });
+    threadRuntime.unstable_on("run-end", async () => {
+        await updateRemoteThreadMessages();
     });
     threadListItemRuntime.subscribe(async () => {
         try {

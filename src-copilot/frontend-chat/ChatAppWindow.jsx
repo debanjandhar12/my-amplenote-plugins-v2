@@ -27,18 +27,19 @@ export const ChatAppWindow = () => {
         <div style={{display: 'flex', flexDirection: 'column'}}>
             <ChatAppHeader />
             {
-                chatHistoryLoaded && <Thread
-                    welcome={{
-                        suggestions: suggestions,
-                    }}
-                    assistantMessage={{ components: { Text: AssistantUIMarkdownComponent } }}
-                    assistantAvatar={assistantAvatar}
-                    tools={ToolRegistry.getAllTools()}
-                    components={{
-                        Composer: CustomComposer,
-                        UserMessage: UserMessage
-                    }}
-                />
+                chatHistoryLoaded &&
+                    <Thread
+                        welcome={{
+                            suggestions: suggestions,
+                        }}
+                        assistantMessage={{ components: { Text: AssistantUIMarkdownComponent } }}
+                        assistantAvatar={assistantAvatar}
+                        tools={ToolRegistry.getAllTools()}
+                        components={{
+                            Composer: CustomComposer,
+                            UserMessage: UserMessage
+                        }}
+                    />
             }
         </div>
     )

@@ -17,13 +17,14 @@ export class CopilotChatHistoryDB {
         const tx = this.db.transaction('threads');
         const store = tx.objectStore('threads');
         const allThreads = await store.getAll();
-        return allThreads.sort((a, b) => b.created - a.created);
+        return allThreads.sort((a, b) => new Date(b.created) - new Date(a.created));
     }
 
     async deleteThread(threadId) {
         await this.init();
         const tx = this.db.transaction('threads', 'readwrite');
         const store = tx.objectStore('threads');
+        if (!threadId) return false;
         try {
             await store.delete(threadId);
             await tx.done;
@@ -38,6 +39,7 @@ export class CopilotChatHistoryDB {
         await this.init();
         const tx = this.db.transaction('threads');
         const store = tx.objectStore('threads');
+        if (!threadId) return null;
         const thread = await store.get(threadId);
         if (!thread) return null;
         return thread;
@@ -59,14 +61,17 @@ export class CopilotChatHistoryDB {
         await tx.done;
     }
 
-    async getLastOpenedThread() {
+    async getLastUpdatedThread() {
         const threads = await this.getAllThreads();
-        return threads[0] || null;
+        return threads.sort((a, b) => new Date(b.updated) - new Date(a.updated))[0] || null;
     }
 
     _validateThread(thread) {
         if (!thread.remoteId || !thread.name || !thread.created || !thread.updated || !thread.status) {
             throw new Error('Invalid thread object');
+        }
+        if (!Date.parse(thread.created) || !Date.parse(thread.updated)) {
+            throw new Error('Invalid date format for created or updated');
         }
         return true;
     }
