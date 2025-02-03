@@ -51,6 +51,7 @@ const ChatInterfaceMenu = () => {
     const threadId = AssistantUI.useThreadListItemRuntime().getState().id;
     const [exportNoteExists, setExportNoteExists] = React.useState(false);
     const [exportNoteName, setExportNoteName] = React.useState(`Copilot chat - ${threadId}`);
+    const { setIsChatHistoryOverlayOpen } = React.useContext(getChatAppContext());
 
     // -- Init --
     React.useEffect(() => {
@@ -131,7 +132,7 @@ const ChatInterfaceMenu = () => {
                     </Button>
                 </DropdownMenu.Trigger>
                 <DropdownMenu.Content>
-                    <DropdownMenu.Item disabled title="Coming soon">
+                    <DropdownMenu.Item onClick={() => setIsChatHistoryOverlayOpen(true)}>
                         <CounterClockwiseClockIcon /> Chat History
                     </DropdownMenu.Item>
                     <DropdownMenu.Sub>

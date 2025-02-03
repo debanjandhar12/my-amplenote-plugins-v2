@@ -10,11 +10,13 @@ export const ChatAppContextProvider = ({ children }) => {
     const [threadNewMsgComposerRef, setThreadNewMsgComposerRef] = React.useState(null);
     const [remoteThreadLoaded, setRemoteThreadLoaded] = React.useState(false);
     const [chatHistoryLoaded, setChatHistoryLoaded] = React.useState(false);
+    const [isChatHistoryOverlayOpen, setIsChatHistoryOverlayOpen] = React.useState(false);
 
     return (
         <ChatAppContext.Provider value={{ threadNewMsgComposerRef, setThreadNewMsgComposerRef,
             remoteThreadLoaded, setRemoteThreadLoaded,
-            chatHistoryLoaded, setChatHistoryLoaded }}>
+            chatHistoryLoaded, setChatHistoryLoaded,
+            isChatHistoryOverlayOpen, setIsChatHistoryOverlayOpen }}>
             {children}
         </ChatAppContext.Provider>
     );

@@ -10,11 +10,12 @@ import {useCustomChatHistoryManager} from "./components/RemoteAssistantRuntimePr
 import {useUserDataPolling} from "./hooks/useUserDataPolling.jsx";
 import {useIntervalPingPlugin} from "./hooks/useIntervalPingPlugin.jsx";
 import {getChatAppContext} from "./context/ChatAppContext.jsx";
+import {ChatHistory} from "./ChatHistory.jsx";
 
 export const ChatAppWindow = () => {
     const assistantAvatar = useAssistantAvatar();
     const suggestions = useChatSuggestions();
-    const {chatHistoryLoaded} = React.useContext(getChatAppContext());
+    const { chatHistoryLoaded, isChatHistoryOverlayOpen } = React.useContext(getChatAppContext());
 
     useModelContext();
     useAmplenoteAttachments();
@@ -25,6 +26,10 @@ export const ChatAppWindow = () => {
     const { Thread } = window.AssistantUI;
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>
+            {
+                chatHistoryLoaded && isChatHistoryOverlayOpen &&
+                <ChatHistory />
+            }
             <ChatAppHeader />
             {
                 chatHistoryLoaded &&
