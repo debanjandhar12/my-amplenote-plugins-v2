@@ -17,7 +17,7 @@ export class CopilotChatHistoryDB {
         const tx = this.db.transaction('threads');
         const store = tx.objectStore('threads');
         const allThreads = await store.getAll();
-        return allThreads.sort((a, b) => new Date(b.created) - new Date(a.created));
+        return allThreads.sort((a, b) => new Date(b.updated) - new Date(a.updated));
     }
 
     async deleteThread(threadId) {
@@ -63,6 +63,7 @@ export class CopilotChatHistoryDB {
 
     async getLastUpdatedThread() {
         const threads = await this.getAllThreads();
+        console.log('getLastUpdatedThread', threads);
         return threads.sort((a, b) => new Date(b.updated) - new Date(a.updated))[0] || null;
     }
 
