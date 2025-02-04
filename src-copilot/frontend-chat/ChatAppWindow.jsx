@@ -6,11 +6,11 @@ import {useModelContext} from "./hooks/useModelContext.jsx";
 import {UserMessage} from "./components/UserMessage.jsx";
 import {ToolRegistry} from "./tools-core/registry/ToolRegistry.js";
 import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
-import {useCustomChatHistoryManager} from "./components/RemoteAssistantRuntimeProvider.jsx";
 import {useUserDataPolling} from "./hooks/useUserDataPolling.jsx";
 import {useIntervalPingPlugin} from "./hooks/useIntervalPingPlugin.jsx";
 import {getChatAppContext} from "./context/ChatAppContext.jsx";
 import {ChatHistory} from "./ChatHistory.jsx";
+import {useCustomChatHistoryManager} from "./hooks/useCustomChatHistoryManager.jsx";
 
 export const ChatAppWindow = () => {
     const assistantAvatar = useAssistantAvatar();
