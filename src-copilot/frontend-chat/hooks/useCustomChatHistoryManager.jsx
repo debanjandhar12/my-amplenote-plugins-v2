@@ -1,5 +1,6 @@
 import {CopilotChatHistoryDB} from "../helpers/CopilotChatHistoryDB.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
+import {isEqual} from "lodash-es";
 
 export const useCustomChatHistoryManager = () => {
     const assistantRuntime = AssistantUI.useAssistantRuntime();
@@ -20,14 +21,20 @@ export const useCustomChatHistoryManager = () => {
         })();
     }, [assistantRuntime, remoteThreadLoaded]);
 
-    // TODO: hook after tool result
+    // Update CopilotChatHistoryDB when new messages state is modified
     const updateRemoteThreadMessages = async () => {
         try {
             const remoteThread = await copilotChatHistoryDB.getThread(threadListItemRuntime.getState().remoteId);
             if (remoteThread) {
                 const exportMessages = threadRuntime.export();
+                // Do not update when no message or during thread switching
                 if (exportMessages.messages.length < 1) return;
-                remoteThread.messages = threadRuntime.export();
+                if(remoteThread.messages &&
+                    exportMessages.messages[0].message.id !== remoteThread.messages.messages[0].message.id) {
+                    return;
+                }
+                if (isEqual(remoteThread.messages, exportMessages)) return;
+                remoteThread.messages = exportMessages;
                 remoteThread.updated = new Date().toISOString();
                 await copilotChatHistoryDB.putThread(remoteThread);
             }
@@ -35,15 +42,11 @@ export const useCustomChatHistoryManager = () => {
             console.error('Error persisting thread to CopilotChatHistoryDB:', e);
         }
     }
-    // TODO: Currently we do not update CopilotChatHistoryDB for intermediate results. This is due to current limitations
-    // with regards to tool invocations (cannot store formData, formError, formState)
-    threadRuntime.unstable_on("run-start", async () => {
+    threadRuntime.subscribe(async () => {
         await updateRemoteThreadMessages();
     });
-    // This does not get called when tool is done running
-    threadRuntime.unstable_on("run-end", async () => {
-        await updateRemoteThreadMessages();
-    });
+
+    // Load messages from CopilotChatHistoryDB when thread is switched
     threadListItemRuntime.subscribe(async () => {
         try {
             if (!threadListItemRuntime.getState().remoteId) return;
