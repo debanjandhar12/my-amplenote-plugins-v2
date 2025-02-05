@@ -1,5 +1,8 @@
+import {truncate} from "lodash-es";
+
 export const NoteCard = ({title, noteContentPart, noteUUID, headingAnchor}) => {
-    const {Card, Flex} = window.RadixUI;
+    const {Card, Flex, Text} = window.RadixUI;
+    const {FileTextIcon} = window.RadixIcons;
     const handleClick = (e) => {
         e.preventDefault();
         window.appConnector.navigate(`https://www.amplenote.com/notes/${noteUUID}` + (headingAnchor ? `#${encodeURIComponent(headingAnchor)}` : ''));
@@ -10,9 +13,10 @@ export const NoteCard = ({title, noteContentPart, noteUUID, headingAnchor}) => {
               asChild>
             <a href="#" onClick={handleClick} className={'note-card'}>
                 <Flex direction="column" gap="2">
-                    <h3 style={{margin: '0', fontSize: '18px'}}>
-                        {title || 'Untitled Note'}
-                    </h3>
+                    <Text size="4" weight="bold" trim="both" style={{ marginBottom: '4px' }} truncate>
+                        <FileTextIcon style={{ marginRight: '4px' }} />
+                        {title?.trim() || 'Untitled Note'}
+                    </Text>
                     <p style={{margin: 0, color: '#666', fontSize: '14px', whiteSpace: 'pre-wrap'}}>
                         {noteContentPart}
                     </p>

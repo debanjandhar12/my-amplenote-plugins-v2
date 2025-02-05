@@ -1,17 +1,19 @@
-export function ThreadCard({ thread, onDelete, onClick, isDisabled }) {
-  const { Card, Flex, Text, IconButton, Separator } = window.RadixUI;
-  const { TrashIcon, Pencil1Icon, PlusIcon } = window.RadixIcons;
+import {truncate} from "lodash-es";
+
+export function ThreadCard({ thread, onDelete, onClick, isCurrentThread }) {
+  const { Card, Flex, Text, IconButton, Separator, Code } = window.RadixUI;
+  const { TrashIcon, Pencil1Icon, PlusIcon, ChatBubbleIcon } = window.RadixIcons;
   const firstMessage = getThreadFirstMessage(thread);
 
   const handleClick = (e) => {
     e.preventDefault();
-    if (isDisabled) return;
+    if (isCurrentThread) return;
     onClick?.(thread.id);
   };
 
   const handleDelete = (e) => {
     e.preventDefault();
-    if (isDisabled) return;
+    if (isCurrentThread) return;
     onDelete?.(thread.id);
   };
 
@@ -25,16 +27,17 @@ export function ThreadCard({ thread, onDelete, onClick, isDisabled }) {
         maxWidth: '100%',
         display: 'flex',
         flexDirection: 'column',
-        cursor: isDisabled ? 'not-allowed' : 'pointer'
+        cursor: isCurrentThread ? 'not-allowed' : 'pointer'
       }}
-      disabled={isDisabled}
+      disabled={isCurrentThread}
       asChild
     >
       <a href="#" onClick={handleClick} className={'thread-card'}>
         <Flex direction="column" gap="2" style={{ flex: 1 }}>
           <Flex justify="between" align="center" style={{ marginBottom: '4px' }}>
-            <Text size="4" weight="bold" trim="both" style={{ flex: 1, marginRight: '12px' }}>
-              {thread.title || 'Untitled Thread'}
+            <Text size="4" weight="bold" trim="both" style={{ flex: 1, marginRight: '12px' }} color={isCurrentThread ? 'green' : false} truncate>
+              <ChatBubbleIcon style={{ marginRight: '4px' }} />
+              {thread.title?.trim() || 'Untitled Thread'}
             </Text>
             
             <Flex gap="3" align="center">
@@ -47,15 +50,19 @@ export function ThreadCard({ thread, onDelete, onClick, isDisabled }) {
                 <Pencil1Icon width={14} height={14} style={{ marginRight: '2px' }} />
                 {new Date(thread.updated).toLocaleDateString()} {new Date(thread.updated).toLocaleTimeString()}
               </Text>
-              <IconButton 
-                onClick={handleDelete} 
-                variant="solid" 
-                size="1" 
-                color="red"
-                disabled={isDisabled}
-              >
-                <TrashIcon width={14} height={14} />
-              </IconButton>
+              {isCurrentThread ?
+                  <Code size="1" color="green" variant="solid">
+                    CURRENT
+                  </Code>
+                  :
+                  <IconButton
+                      onClick={handleDelete}
+                      variant="solid"
+                      size="1"
+                      color="red">
+                    <TrashIcon width={14} height={14} />
+                  </IconButton>
+              }
             </Flex>
           </Flex>
 

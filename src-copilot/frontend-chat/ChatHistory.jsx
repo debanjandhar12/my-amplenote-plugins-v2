@@ -101,7 +101,7 @@ export function ChatHistory() {
                 <ThreadCard
                     key={thread.remoteId}
                     thread={thread}
-                    isDisabled={thread.remoteId === assistantRuntime.threads.mainItem.getState().remoteId}
+                    isCurrentThread={thread.remoteId === assistantRuntime.threads.mainItem.getState().remoteId}
                     onClick={() => handleSwitchToThread(thread.remoteId)}
                     onDelete={() => handleDeleteThread(thread.remoteId)}
                 />
