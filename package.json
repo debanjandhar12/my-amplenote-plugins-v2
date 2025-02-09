@@ -47,7 +47,8 @@
     "ollama-ai-provider": "1.2.0",
     "easy-web-worker": "7.0.1",
     "fuse.js": "7.0.0",
-    "my-ample-plugin-external": "1.0.10"
+    "react-virtuoso": "4.12.5",
+    "my-ample-plugin-external": "1.0.11"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

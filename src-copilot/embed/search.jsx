@@ -54,7 +54,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         showEmbedLoader();
         overwriteWithAmplenoteStyle();
         const cssLoaded = dynamicImportCSS("@radix-ui/themes/styles.css");
-        const [React, ReactDOM, RadixUI, RadixIcons, ReactVirtuoso] = await dynamicImportExternalPluginBundle('reactRadixBundle.js');
+        const [React, ReactDOM, RadixUI, RadixIcons, ReactVirtuoso] = await dynamicImportExternalPluginBundle('searchUIBundle.js');
         // const [React, ReactDOM, RadixUI, RadixIcons, ReactVirtuoso] = await dynamicImportMultipleESM(["react", "react-dom/client", "@radix-ui/themes", "@radix-ui/react-icons", "react-virtuoso"]);
         window.React = React;
         window.ReactDOM = ReactDOM;
