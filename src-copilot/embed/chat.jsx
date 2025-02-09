@@ -1,6 +1,6 @@
 import dynamicImportESM, {
     dynamicImportCSS,
-    dynamicImportGithubBundle
+    dynamicImportExternalPluginBundle, dynamicImportMultipleESM
 } from "../../common-utils/dynamic-import-esm.js";
 import {getLLMModel} from "../backend/getLLMModel.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
@@ -66,7 +66,10 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
                 dynamicImportCSS("@assistant-ui/react-markdown/dist/styles/markdown.css")]);
         const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown,
             RadixIcons, StringDiffModule]
-            = await dynamicImportGithubBundle('assistantUIBundle.js');
+            = await dynamicImportExternalPluginBundle('assistantUIBundle.js');
+        // const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown,
+        //     RadixIcons, StringDiffModule]
+        //     = await dynamicImportMultipleESM(["react", "react-dom/client", "@assistant-ui/react", "@radix-ui/themes", "@assistant-ui/react-markdown", "@radix-ui/react-icons", "react-string-diff"]);
         window.AssistantUIMarkdown = AssistantUIMarkdown;
         window.AssistantUIMarkdownComponent = makeCustomMarkdownText();
         window.React = React;

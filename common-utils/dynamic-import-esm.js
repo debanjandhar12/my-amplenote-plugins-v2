@@ -7,30 +7,37 @@ import path from "path";
  * copies of the same package in the bundle.
  * Note: When adding new packages, make sure to update the commit hash.
  */
-export const dynamicImportGithubBundle = async (fileName, commitHash = 'dfaddf7') => {
+export const dynamicImportExternalPluginBundle = async (fileName) => {
     if (process.env.NODE_ENV === 'test') {
         try {
-            return (require(path.resolve(__dirname, '../__importBundles__', fileName))).default;
+            return (require(path.resolve(__dirname, '../_myAmplePluginExternal/bundles', fileName))).default;
         } catch (e) {
             console.warn(`Failed to require github bundle from local: ${e.message}`);
         }
         try {
-            return (await import(path.resolve(__dirname, '../__importBundles__', fileName))).default;
+            return (await import(path.resolve(__dirname, '../_myAmplePluginExternal/bundles', fileName))).default;
         } catch (e) {
             console.warn(`Failed to import github bundle from local: ${e.message}`);
         }
     }
 
-    const url = new URL(`https://esm.sh/gh/${pkgJSON.repository.replace('https://github.com/', '')}@${commitHash}/__importBundles__/${fileName}`);
+    const url = new URL(`https://esm.sh/my-ample-plugin-external@${pkgJSON.dependencies['my-ample-plugin-external']}/bundles/${fileName}`);
     if (process.env.NODE_ENV === 'development') {
         url.searchParams.set('dev', true);
     }
-    // url.searchParams.set('bundle', true); <- uncommenting this breaks pkg versioning
-    const depsString = Object.keys(pkgJSON.dependencies).map(dep => `${dep}@${pkgJSON.dependencies[dep]}`).join(',');
-    url.searchParams.set('deps', depsString);
+    url.searchParams.set('bundle', true);
     const module = (await import(url.toString()));
+    // Check if module.versions props are same as pkgJSON.dependencies
+    if (Object.keys(module.versions).length !== module.default.length) {
+        throw new Error(`Failed to import module: ${fileName}. Expected module count mismatch (expected: ${module.default.length}, actual: ${Object.keys(module.versions).length}). Possibly due to my-ample-plugin-external version mismatch.`);
+    }
+    for (const [key, value] of Object.entries(module.versions)) {
+        if (value !== pkgJSON.dependencies[key]) {
+            throw new Error(`Failed to import module: ${fileName}. Version mismatch for ${key} (expected: ${pkgJSON.dependencies[key]}, actual: ${value})`);
+        }
+    }
     if (module.default) {
-        console.log(`Imported module: ${fileName} from ${url.toString()}`, pkgJSON.dependencies);
+        console.log(`Imported module: ${fileName} from ${url.toString()}`, module.versions);
         return module.default;
     }
     throw new Error(`Failed to import module: ${fileName}`);
