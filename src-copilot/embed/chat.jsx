@@ -65,7 +65,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
                 dynamicImportCSS("@radix-ui/themes/styles.css"),
                 dynamicImportCSS("@assistant-ui/react-markdown/dist/styles/markdown.css")]);
         const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown,
-            RadixIcons, StringDiffModule]
+            RadixIcons, StringDiffModule, dayjs, tributejs]
             = await dynamicImportExternalPluginBundle('assistantUIBundle.js');
         // const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown,
         //     RadixIcons, StringDiffModule]
@@ -81,8 +81,8 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.AssistantUIUtils.splitLocalRuntimeOptions = (await dynamicImportESM("@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.tsx")).splitLocalRuntimeOptions;
         window.RadixIcons = RadixIcons;
         window.StringDiff = StringDiffModule.StringDiff;
-        window.dayjs = (await dynamicImportESM("dayjs")).default;
-        window.Tribute = (await dynamicImportESM("tributejs")).default;
+        window.dayjs = dayjs.default;
+        window.Tribute = tributejs.default;
         await parse(''); // Load unified js bundle
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);

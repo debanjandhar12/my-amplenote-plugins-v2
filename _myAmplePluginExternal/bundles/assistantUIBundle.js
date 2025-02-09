@@ -5,6 +5,8 @@ import * as pkg4 from "@radix-ui/themes";
 import * as pkg5 from "@assistant-ui/react-markdown";
 import * as pkg6 from "@radix-ui/react-icons";
 import * as pkg7 from "react-string-diff";
+import * as pkg8 from "dayjs";
+import * as pkg9 from "tributejs";
 import * as pkgJson from "../package.json";
 
 export const versions = {
@@ -15,6 +17,8 @@ export const versions = {
     "@assistant-ui/react-markdown": pkgJson.dependencies["@assistant-ui/react-markdown"],
     "@radix-ui/react-icons": pkgJson.dependencies["@radix-ui/react-icons"],
     "react-string-diff": pkgJson.dependencies["react-string-diff"],
+    "dayjs": pkgJson.dependencies["dayjs"],
+    "tributejs": pkgJson.dependencies["tributejs"],
 }
 
-export default [pkg1, pkg2, pkg3, pkg4, pkg5, pkg6, pkg7];
+export default [pkg1, pkg2, pkg3, pkg4, pkg5, pkg6, pkg7, pkg8, pkg9];
