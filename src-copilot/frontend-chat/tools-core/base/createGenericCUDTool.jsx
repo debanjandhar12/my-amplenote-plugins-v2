@@ -48,9 +48,9 @@ export const createGenericCUDTool = ({
         description,
         parameters,
         triggerCondition,
-        render: ({ args, status, result, addResult }) => {
+        render: ({ args, status, result, addResult, toolCallId }) => {
             const allParameters = useGenericToolParameters({
-                toolName, description, parameters,
+                toolName, toolCallId, description, parameters,
                 args, status, result, addResult});
 
             const [formState, setFormState, formRender] = useGenericToolFormState({
@@ -78,7 +78,7 @@ export const createGenericCUDTool = ({
                     eventHandler: onError,
                     renderer: renderError
                 }
-            }, 'init', allParameters);
+            }, allParameters);
 
             return formRender ? React.createElement(formRender, {...allParameters, formState, setFormState}) : null;
         }

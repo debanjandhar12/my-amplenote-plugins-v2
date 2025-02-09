@@ -29,9 +29,9 @@ export const createGenericReadTool = ({
         description,
         parameters,
         triggerCondition,
-        render: ({args, result, addResult, status}) => {
+        render: ({args, result, addResult, status, toolCallId}) => {
             const allParameters = useGenericToolParameters({
-                toolName, description, parameters,
+                toolName, toolCallId, description, parameters,
                 args, status, result, addResult});
 
             const [formState, setFormState, formRender] = useGenericToolFormState({
@@ -47,7 +47,7 @@ export const createGenericReadTool = ({
                     eventHandler: onError,
                     renderer: renderError
                 }
-            }, 'init', allParameters);
+            }, allParameters);
 
             return formRender ? React.createElement(formRender, {...allParameters, formState, setFormState}) : null;
         }
