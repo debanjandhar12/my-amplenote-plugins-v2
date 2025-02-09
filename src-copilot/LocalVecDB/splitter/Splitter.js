@@ -143,7 +143,7 @@ export class Splitter {
                 return 'continue';
             }
             else if (node.type === 'code' && node.position &&
-                node.position.end.offset - node.position.start.offset > this.maxTokens) {
+                node.position.end.offset - node.position.start.offset > this.maxTokens * 3) {
                 console.log('Skipping code block due to length', node);
                 return 'skip';
             }
