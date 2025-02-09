@@ -54,7 +54,9 @@ export class Splitter {
         this.noteImages = await app.getNoteImages({ uuid: note.uuid });
     }
 
-    _rebalanceChunks() {
+    _rebalanceChunks(rebalanceChunksThreshold) {
+        if (rebalanceChunksThreshold < 0 || rebalanceChunksThreshold > 1) throw new Error('rebalanceChunksThreshold must be between 0 and 1');
+
         const rebalancedChunks = [];
         let currentChunk = null;
 
@@ -64,8 +66,8 @@ export class Splitter {
                 continue;
             }
 
-            // If combining would exceed maxTokens, store current and start new
-            if (currentChunk.tempData.addedTokenCount + chunk.tempData.addedTokenCount > this.maxTokens) {
+            // If combining would exceed rebalanceChunksThreshold * maxTokens, store current and start new
+            if (currentChunk.tempData.addedTokenCount + chunk.tempData.addedTokenCount > (rebalanceChunksThreshold * this.maxTokens)) {
                 rebalancedChunks.push(currentChunk);
                 currentChunk = {...chunk};
                 continue;
@@ -115,7 +117,7 @@ export class Splitter {
         return 'skip';
     }
 
-    async splitNote(app, note, rebalanceChunks = false) {
+    async splitNote(app, note, rebalanceChunksThreshold = 0.7) {
         if (note && note.vault) return [];
         if (note && note.uuid && note.uuid.startsWith("local-")) return [];
         this.splitRecordList = [];
@@ -166,9 +168,7 @@ export class Splitter {
         });
 
         // Step 3: Rebalance chunks if requested
-        if (rebalanceChunks) {
-            this._rebalanceChunks();
-        }
+        this._rebalanceChunks(rebalanceChunksThreshold);
 
         // Step 4: Enrich with front-matter and delete tempData
         this._enrichChunks();

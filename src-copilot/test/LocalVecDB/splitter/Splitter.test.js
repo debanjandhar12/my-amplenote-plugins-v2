@@ -1,5 +1,5 @@
-import { Splitter } from '../../LocalVecDB/splitter/Splitter.js';
-import {mockApp, mockNote} from "../../../common-utils/test-helpers.js";
+import { Splitter } from '../../../LocalVecDB/splitter/Splitter.js';
+import {mockApp, mockNote} from "../../../../common-utils/test-helpers.js";
 
 describe('Splitter', () => {
     test('empty input should not throw error', async () => {
@@ -7,7 +7,7 @@ describe('Splitter', () => {
         const content = '';
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
         const app = mockApp(mockedNote);
-        const result = await splitter.splitNote(app, mockedNote, true);
+        const result = await splitter.splitNote(app, mockedNote, 0);
         expect(result.length).toBe(0);
     });
 
@@ -21,7 +21,7 @@ describe('Splitter', () => {
         `Content under header 2 under header 2`;
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
         const app = mockApp(mockedNote);
-        const result = await splitter.splitNote(app, mockedNote);
+        const result = await splitter.splitNote(app, mockedNote, 0);
         expect(result.length).toBe(3);
     });
 
@@ -35,7 +35,7 @@ describe('Splitter', () => {
             `Content under header 2 under header 2`;
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid', ['test']);
         const app = mockApp(mockedNote);
-        const result = await splitter.splitNote(app, mockedNote, true);
+        const result = await splitter.splitNote(app, mockedNote, 1);
         expect(result.length).toBe(1);
         expect(result[0].metadata.noteTags).toStrictEqual(['test']);
         expect(result[0].metadata.noteContentPart).toContain('tags: test');
@@ -47,7 +47,7 @@ describe('Splitter', () => {
         const content = (`Apple `).repeat(200);  // 400 tokens
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
         const app = mockApp(mockedNote);
-        const result = await splitter.splitNote(app, mockedNote, true);
+        const result = await splitter.splitNote(app, mockedNote);
         expect(result.length).toBe(4);
     });
 
@@ -59,7 +59,7 @@ describe('Splitter', () => {
         "\`\`\`";
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
         const app = mockApp(mockedNote);
-        const result = await splitter.splitNote(app, mockedNote, true);
+        const result = await splitter.splitNote(app, mockedNote);
         expect(result.length).toBe(1);
     });
 
@@ -68,7 +68,7 @@ describe('Splitter', () => {
         const content = `Hello **World**`;
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
         const app = mockApp(mockedNote);
-        const result = await splitter.splitNote(app, mockedNote, true);
+        const result = await splitter.splitNote(app, mockedNote);
         expect(result.length).toBe(1);
         // Word world should not be repeated simply because it is wrapped in bold
         // This bug was encounted when async was used with unist-util-visit
@@ -84,7 +84,7 @@ describe('Splitter', () => {
             text: "Test\nPassed",
             src: "https://test.com/test.png",
         }]);
-        const result = await splitter.splitNote(app, mockedNote, true);
+        const result = await splitter.splitNote(app, mockedNote);
         console.log(result);
         expect(result[0].metadata.noteContentPart).toContain("Passed");
         expect(result.length).toBe(1);
@@ -98,7 +98,7 @@ describe('Splitter', () => {
         "    This has no position after remark";
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
         const app = mockApp(mockedNote);
-        const result = await splitter.splitNote(app, mockedNote, true);
+        const result = await splitter.splitNote(app, mockedNote);
         expect(result.length).toBe(1);
     });
 
@@ -107,7 +107,7 @@ describe('Splitter', () => {
         const content = "This is a new line\nThis is another new line.";
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
        const app = mockApp(mockedNote);
-       const result = await splitter.splitNote(app, mockedNote, true);
+       const result = await splitter.splitNote(app, mockedNote);
        expect(result.length).toBe(1);
        expect(result[0].metadata.noteContentPart.includes("\nThis is another new line."))
            .toBe(true);
@@ -118,7 +118,7 @@ describe('Splitter', () => {
         const content = "AppleXXX".repeat(200);
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
         const app = mockApp(mockedNote);
-        const result = await splitter.splitNote(app, mockedNote, true);
+        const result = await splitter.splitNote(app, mockedNote);
         expect(result.length).toBe(2);
     });
 });

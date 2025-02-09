@@ -58,7 +58,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
     const records = [];
     for (const note of targetNotes) {
         const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
-        const splitResultForNote = await splitter.splitNote(app, note, true);
+        const splitResultForNote = await splitter.splitNote(app, note);
         records.push(...splitResultForNote);
     }
 
