@@ -1,12 +1,14 @@
 import {ThreadCard} from './components/ThreadCard.jsx';
 import {CopilotChatHistoryDB} from "./helpers/CopilotChatHistoryDB.js";
 import {getChatAppContext} from "./context/ChatAppContext.jsx";
+import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 
-export function ChatHistory() {
+export function ChatHistoryOverlay() {
   const assistantRuntime = AssistantUI.useAssistantRuntime();
   const chatHistoryDB = new CopilotChatHistoryDB();
   const [allRemoteThreads, setAllRemoteThreads] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [filteredThreads, setFilteredThreads] = React.useState([]);
   const { setIsChatHistoryOverlayOpen } = React.useContext(getChatAppContext());
 
   React.useEffect(() => {
@@ -20,16 +22,15 @@ export function ChatHistory() {
     })();
   }, []);
 
-  const filteredThreads = React.useMemo(() => {
-    if (!searchTerm || searchTerm.trim() === '') return allRemoteThreads;
-    return allRemoteThreads.filter(thread => {
-      return thread.messages.some(message =>
-        message.message.content.some(content =>
-          content.type === 'text' && 
-          content.text.toLowerCase().includes(searchTerm)
-        )
-      );
-    });
+  React.useEffect(() => {
+    const searchThreads = async () => {
+      if (!searchTerm || searchTerm.trim() === '') return setFilteredThreads(allRemoteThreads);
+      const fuse = window.fusejs || (await dynamicImportESM("fuse.js")).default;
+      window.fusejs = fuse;
+      const fuseObj = new fuse(allRemoteThreads, { keys: ['messages.messages.message.content.text'], threshold: 0.4 });
+      setFilteredThreads(fuseObj.search(searchTerm, { limit: 10 }).map(result => result.item))
+    }
+    searchThreads();
   }, [allRemoteThreads, searchTerm]);
 
   const handleDeleteThread = async (threadId) => {
@@ -89,6 +90,19 @@ export function ChatHistory() {
               <TextField.Slot style={{ paddingLeft: '2px' }}>
                 <MagnifyingGlassIcon height="16" width="16" />
               </TextField.Slot>
+              {searchTerm && (
+                            <TextField.Slot style={{ paddingRight: '0px' }}>
+                                <Cross2Icon
+                                    height="16"
+                                    width="16"
+                                    style={{
+                                        cursor: 'pointer',
+                                        opacity: 0.7,
+                                    }}
+                                    onClick={() => setSearchTerm('')}
+                                />
+                    </TextField.Slot>
+                  )}
           </TextField.Root>
         </Flex>
         <Box style={{

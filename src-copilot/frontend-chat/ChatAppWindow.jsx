@@ -9,7 +9,7 @@ import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
 import {useUserDataPolling} from "./hooks/useUserDataPolling.jsx";
 import {useIntervalPingPlugin} from "./hooks/useIntervalPingPlugin.jsx";
 import {getChatAppContext} from "./context/ChatAppContext.jsx";
-import {ChatHistory} from "./ChatHistory.jsx";
+import {ChatHistoryOverlay} from "./ChatHistoryOverlay.jsx";
 import {useCustomChatHistoryManager} from "./hooks/useCustomChatHistoryManager.jsx";
 
 export const ChatAppWindow = () => {
@@ -28,7 +28,7 @@ export const ChatAppWindow = () => {
         <div style={{display: 'flex', flexDirection: 'column'}}>
             {
                 chatHistoryLoaded && isChatHistoryOverlayOpen &&
-                <ChatHistory />
+                <ChatHistoryOverlay />
             }
             <ChatAppHeader />
             {
