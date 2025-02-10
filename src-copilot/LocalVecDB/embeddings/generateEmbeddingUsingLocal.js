@@ -44,7 +44,7 @@ const generateEmbeddingWorkerSource = ({ onMessage }) => {
             }
         }
         const output = await embeddingPipe(inputText, {
-            pooling: 'mean',
+            pooling: 'cls',
             normalize: true,
         });
         release();
