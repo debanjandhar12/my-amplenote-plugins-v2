@@ -21,7 +21,7 @@ export async function getEmbeddingConfig(app, navigator = window.navigator) {
     const webGpuAvailable = window.gpuAdapter !== false && window.gpuAdapter !== null;
     return {
         provider: "local",
-        model: "xenova/bge-small-en-v1.5",
+        model: "Snowflake/snowflake-arctic-embed-s",
         maxConcurrency: Math.max(navigator.hardwareConcurrency - 1, 1),
         webGpuAvailable
     }

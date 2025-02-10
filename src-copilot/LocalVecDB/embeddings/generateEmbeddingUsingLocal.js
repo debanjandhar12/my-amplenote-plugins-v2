@@ -33,12 +33,12 @@ const generateEmbeddingWorkerSource = ({ onMessage }) => {
         if (!embeddingPipe) {
             if (opts.webGpuAvailable) {
                 embeddingPipe = await pipeline('feature-extraction', opts.model, {
-                    dtype: 'q8',
+                    dtype: 'fp16',
                     device: 'webgpu'
                 });
             } else {
                 embeddingPipe = await pipeline('feature-extraction', opts.model, {
-                    dtype: 'q8',
+                    dtype: 'fp16',
                     device: 'wasm'
                 });
             }

@@ -16,7 +16,7 @@ describe('getEmbeddingConfig', () => {
             }
         });
         expect(config.provider).toBe('local');
-        expect(config.model).toBe('xenova/bge-small-en-v1.5');
+        expect(config.model).toBe('Snowflake/snowflake-arctic-embed-s');
         expect(config.webGpuAvailable).toBe(false);
         expect(config.maxConcurrency).toBe(3); // hardwareConcurrency - 1
     });
@@ -35,7 +35,7 @@ describe('getEmbeddingConfig', () => {
             }
         });
         expect(config.provider).toBe('local');
-        expect(config.model).toBe('xenova/bge-small-en-v1.5');
+        expect(config.model).toBe('Snowflake/snowflake-arctic-embed-s');
         expect(config.webGpuAvailable).toBe(true);
         expect(config.maxConcurrency).toBe(3); // hardwareConcurrency - 1
     });
