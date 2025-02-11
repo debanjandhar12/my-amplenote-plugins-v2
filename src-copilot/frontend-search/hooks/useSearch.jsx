@@ -122,7 +122,7 @@ export const useSearch = () => {
             }
         } catch (error) {
             console.error('Sync error:', error);
-            setSyncError(error.message || 'Failed to sync notes');
+            setSyncError('Failed to sync notes: ' + (error.message || error));
         } finally {
             setIsSyncing(false);
             updateSyncStatus();

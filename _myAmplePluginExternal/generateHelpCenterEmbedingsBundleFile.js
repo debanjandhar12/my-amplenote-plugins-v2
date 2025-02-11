@@ -7,6 +7,9 @@ import {generateEmbeddingUsingPinecone} from "../src-copilot/LocalVecDB/embeddin
 const { readFileSync, writeFileSync } = require('fs');
 const { join } = require('path');
 const { JSDOM } = require("jsdom");
+import {fetch} from "cross-fetch";
+import {TransformStream} from 'stream/web';
+import {compressSync, decompressSync} from "fflate";
 
 /**
  * This script is used to generate embeddings and store in bundles folder as json files.
@@ -23,8 +26,8 @@ const { JSDOM } = require("jsdom");
 const CONFIG = {
     TEST_TIMEOUT: 600000,
     OUTPUT_PATH: {
-        LOCAL: '/bundles/localHelpCenterEmbeddings.json',
-        PINECONE: '/bundles/pineconeHelpCenterEmbeddings.json'
+        LOCAL: '/bundles/localHelpCenterEmbeddings.json.gz',
+        PINECONE: '/bundles/pineconeHelpCenterEmbeddings.json.gz'
     },
     HELP_CENTER_URLS: [
         'https://www.amplenote.com/help/developing_amplenote_plugins'
@@ -39,7 +42,9 @@ const CONFIG = {
 
 async function loadExistingRecords(filePath) {
     try {
-        const content = readFileSync(join(__dirname, filePath));
+        const compressedContent = readFileSync(join(__dirname, filePath));
+        const decompressed = decompressSync(compressedContent);
+        const content = new TextDecoder().decode(decompressed);
         return JSON.parse(content);
     } catch (e) {
         console.log(`No existing records found at ${filePath}`);
@@ -49,7 +54,9 @@ async function loadExistingRecords(filePath) {
 
 async function saveRecords(records, filePath) {
     try {
-        writeFileSync(join(__dirname, filePath), JSON.stringify(records, null, 1));
+        const content = JSON.stringify(records);
+        const compressed = compressSync(new TextEncoder().encode(content));
+        writeFileSync(join(__dirname, filePath), compressed);
     } catch (e) {
         console.error(`Failed to save records to ${filePath}:`, e);
         throw e;
@@ -151,7 +158,6 @@ async function generateHelpCenterEmbeddings() {
         const [content, title] = await getMarkdownFromAmpleNoteUrl(url);
         const mockedNote = mockNote(content, title, url);
         const app = mockApp(mockedNote);
-        app.settings[PINECONE_API_KEY_SETTING] = process.env.PINECONE_API_KEY;
         const splitRecords = await splitter.splitNote(app, mockedNote);
 
         // Generate local embeddings
@@ -160,6 +166,7 @@ async function generateHelpCenterEmbeddings() {
         await saveRecords(allRecordsLocal, CONFIG.OUTPUT_PATH.LOCAL);
 
         // Generate Pinecone embeddings
+        app.settings[PINECONE_API_KEY_SETTING] = process.env.PINECONE_API_KEY;
         const pineconeRecords = await generateEmbeddings(app, [...splitRecords], oldAllRecordsPinecone, generateEmbeddingUsingPinecone);
         allRecordsPinecone.push(...pineconeRecords);
         await saveRecords(allRecordsPinecone, CONFIG.OUTPUT_PATH.PINECONE);
@@ -167,7 +174,8 @@ async function generateHelpCenterEmbeddings() {
 }
 
 test('Generate Help Center Embeddings', async () => {
-    window = {};
+    window.fetch = fetch;
+    window.TransformStream = TransformStream;
     await generateHelpCenterEmbeddings();
     console.log('Done! Please execute "node ./_myAmplePluginExternal/publish.js" to publish to npm');
 }, CONFIG.TEST_TIMEOUT);
