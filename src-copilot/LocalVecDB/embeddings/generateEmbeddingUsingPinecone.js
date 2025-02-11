@@ -18,7 +18,7 @@ export async function generateEmbeddingUsingPinecone(app, textArray, inputType) 
 
 async function attemptEmbedding(embeddingConfig, textArray, inputType) {
     try {
-        const result = await pineconeClient.inference.embed(
+        const result = await window.pineconeClient.inference.embed(
             embeddingConfig.model,
             textArray,
             {inputType, truncate: 'END'}

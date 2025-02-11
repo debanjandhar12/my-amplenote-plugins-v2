@@ -1,13 +1,11 @@
 import {Splitter} from "../src-copilot/LocalVecDB/splitter/Splitter";
 import {mockApp, mockNote} from "../common-utils/test-helpers";
-import {fetch} from "cross-fetch";
 import {getCorsBypassUrl} from "../common-utils/cors-helpers";
-import {LOCAL_VEC_DB_MAX_TOKENS} from "../src-copilot/constants";
+import {LOCAL_VEC_DB_MAX_TOKENS, PINECONE_API_KEY_SETTING} from "../src-copilot/constants";
 import {generateEmbeddingUsingOllama} from "../src-copilot/LocalVecDB/embeddings/generateEmbeddingUsingOllama";
 import {generateEmbeddingUsingPinecone} from "../src-copilot/LocalVecDB/embeddings/generateEmbeddingUsingPinecone";
 const { readFileSync, writeFileSync } = require('fs');
 const { join } = require('path');
-const { TransformStream } = require('stream/web');
 const { JSDOM } = require("jsdom");
 
 /**
@@ -15,14 +13,48 @@ const { JSDOM } = require("jsdom");
  * Once generated, the bundles can be published to npm.
  * This can then be imported in plugin and be used to search help center.
  * Usage:
+ * manually set PINECONE_API_KEY in .env file
  * sudo service ollama stop (for linux)
  * OLLAMA_ORIGINS=https://plugins.amplenote.com ollama serve
  * ollama pull snowflake-arctic-embed:33m-s-fp16
  * npx jest --runTestsByPath ./_myAmplePluginExternal/generateHelpCenterEmbedingsBundleFile.js --passWithNoTests --testMatch "**"
  */
-const helpCenterUrls = [
-    'https://www.amplenote.com/help/developing_amplenote_plugins'
-]
+
+const CONFIG = {
+    TEST_TIMEOUT: 600000,
+    OUTPUT_PATH: {
+        LOCAL: '/bundles/localHelpCenterEmbeddings.json',
+        PINECONE: '/bundles/pineconeHelpCenterEmbeddings.json'
+    },
+    HELP_CENTER_URLS: [
+        'https://www.amplenote.com/help/developing_amplenote_plugins'
+    ],
+    HTTP_HEADERS: {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Connection": "keep-alive"
+    }
+};
+
+async function loadExistingRecords(filePath) {
+    try {
+        const content = readFileSync(join(__dirname, filePath));
+        return JSON.parse(content);
+    } catch (e) {
+        console.log(`No existing records found at ${filePath}`);
+        return [];
+    }
+}
+
+async function saveRecords(records, filePath) {
+    try {
+        writeFileSync(join(__dirname, filePath), JSON.stringify(records, null, 1));
+    } catch (e) {
+        console.error(`Failed to save records to ${filePath}:`, e);
+        throw e;
+    }
+}
 
 async function getMarkdownFromAmpleNoteUrl(url) {
     const response = await fetch(getCorsBypassUrl(url), {
@@ -85,71 +117,57 @@ async function getMarkdownFromAmpleNoteUrl(url) {
     return [markdown, title];
 }
 
+async function generateEmbeddings(app, records, oldRecords, embedGenerator) {
+    // Reuse existing embeddings
+    for (const record of records) {
+        const oldRecord = oldRecords.find(old => old.metadata.noteContentPart === record.metadata.noteContentPart);
+        record.values = oldRecord ? oldRecord.values : null;
+    }
+
+    // Generate new embeddings for remaining records
+    const remainingRecords = records.filter(record => !record.values);
+    if (remainingRecords.length > 0) {
+        const embeddings = await embedGenerator(
+            app,
+            remainingRecords.map(r => r.metadata.noteContentPart),
+            'passage'
+        );
+        embeddings.forEach((embedding, index) => {
+            remainingRecords[index].values = embedding;
+        });
+    }
+
+    return records;
+}
+
 async function generateHelpCenterEmbeddings() {
-    const oldAllRecordsLocal = [];
-    const oldAllRecordsPinecone = [];
-    try {
-        oldAllRecordsLocal.push(...JSON.parse(readFileSync(join(__dirname, '/bundles/localHelpCenterEmbeddings.json'))));
-    } catch (e) {}
-    try {
-        oldAllRecordsPinecone.push(...JSON.parse(readFileSync(join(__dirname, '/bundles/pineconeHelpCenterEmbeddings.json'))));
-    } catch (e) {}
+    const oldAllRecordsLocal = await loadExistingRecords(CONFIG.OUTPUT_PATH.LOCAL);
+    const oldAllRecordsPinecone = await loadExistingRecords(CONFIG.OUTPUT_PATH.PINECONE);
+
     const allRecordsLocal = [], allRecordsPinecone = [];
-    for (const url of helpCenterUrls) {
+
+    for (const url of CONFIG.HELP_CENTER_URLS) {
         const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
         const [content, title] = await getMarkdownFromAmpleNoteUrl(url);
         const mockedNote = mockNote(content, title, url);
         const app = mockApp(mockedNote);
+        app.settings[PINECONE_API_KEY_SETTING] = process.env.PINECONE_API_KEY;
         const splitRecords = await splitter.splitNote(app, mockedNote);
 
-        // -- Generate embeddings for local model --
-        // Use old embeddings if available
-        for (const splitRecord of splitRecords) {
-            const oldRecord = oldAllRecordsLocal.find(oldRecord => oldRecord.metadata.noteContentPart === splitRecord.metadata.noteContentPart);
-            if (oldRecord) {
-                splitRecord.values = oldRecord.values;
-            }
-            else splitRecord.values = null;
-        }
+        // Generate local embeddings
+        const localRecords = await generateEmbeddings(app, [...splitRecords], oldAllRecordsLocal, generateEmbeddingUsingOllama);
+        allRecordsLocal.push(...localRecords);
+        await saveRecords(allRecordsLocal, CONFIG.OUTPUT_PATH.LOCAL);
 
-        // Generate embeddings for rest of the records
-        const remainingRecords = splitRecords.filter(splitRecord => !splitRecord.values);
-        const embeddingArr = await generateEmbeddingUsingOllama(app, remainingRecords.map(splitRecord => splitRecord.metadata.noteContentPart), 'passage');
-        embeddingArr.forEach((embedding, index) => {
-            remainingRecords[index].values = embedding;
-        });
-
-        // Push and write to file
-        allRecordsLocal.push(...splitRecords);
-        writeFileSync(join(__dirname, '/bundles/localHelpCenterEmbeddings.json'), JSON.stringify(allRecordsLocal, null, 1));
-
-        // -- Generate embeddings for pinecone model --
-        // Use old embeddings if available
-        for (const splitRecord of splitRecords) {
-            const oldRecord = oldAllRecordsPinecone.find(oldRecord => oldRecord.metadata.noteContentPart === splitRecord.metadata.noteContentPart);
-            if (oldRecord) {
-                splitRecord.values = oldRecord.values;
-            }
-            else splitRecord.values = null;
-        }
-
-        // Generate embeddings for rest of the records
-        const remainingRecords2 = splitRecords.filter(splitRecord => !splitRecord.values);
-        const embeddingArr2 = await generateEmbeddingUsingPinecone(app, remainingRecords2.map(splitRecord => splitRecord.metadata.noteContentPart), 'passage');
-        embeddingArr2.forEach((embedding, index) => {
-            remainingRecords2[index].values = embedding;
-        });
-
-        // Push and write to file
-        allRecordsPinecone.push(...splitRecords);
-        writeFileSync(join(__dirname, '/bundles/pineconeHelpCenterEmbeddings.json'), JSON.stringify(allRecordsPinecone, null, 1));
+        // Generate Pinecone embeddings
+        const pineconeRecords = await generateEmbeddings(app, [...splitRecords], oldAllRecordsPinecone, generateEmbeddingUsingPinecone);
+        allRecordsPinecone.push(...pineconeRecords);
+        await saveRecords(allRecordsPinecone, CONFIG.OUTPUT_PATH.PINECONE);
     }
 }
 
-
-test('', async () => {
-    window.TransformStream = TransformStream;
-    window.fetch = fetch;
+test('Generate Help Center Embeddings', async () => {
+    window = {};
     await generateHelpCenterEmbeddings();
     console.log('Done! Please execute "node ./_myAmplePluginExternal/publish.js" to publish to npm');
-}, 600000);
+}, CONFIG.TEST_TIMEOUT);
