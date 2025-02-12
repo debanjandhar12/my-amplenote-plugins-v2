@@ -24,13 +24,12 @@ import {compressSync, decompressSync} from "fflate";
  */
 
 const CONFIG = {
-    TEST_TIMEOUT: 600000,
+    TEST_TIMEOUT: 6000000,
     OUTPUT_PATH: {
         LOCAL: '/bundles/localHelpCenterEmbeddings.json.gz',
         PINECONE: '/bundles/pineconeHelpCenterEmbeddings.json.gz'
     },
     HELP_CENTER_URLS: [
-        'https://www.amplenote.com/help/developing_amplenote_plugins'
     ],
     HTTP_HEADERS: {
         'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
@@ -61,6 +60,30 @@ async function saveRecords(records, filePath) {
         console.error(`Failed to save records to ${filePath}:`, e);
         throw e;
     }
+}
+
+async function getAllHelpCenterLinks() {
+    const response = await fetch(getCorsBypassUrl('https://www.amplenote.com/help'), {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Connection": "keep-alive"
+        }
+    });
+    const html = await response.text();
+    const dom = new JSDOM(html);
+    const links = dom.window.document.querySelectorAll('.help-page-link');
+    const uniqueLinks = new Set();
+    for (const link of links) {
+        const href = link.getAttribute('href');
+        if (href.startsWith('/')) {
+            uniqueLinks.add(`https://www.amplenote.com${href}`);
+        } else {
+            uniqueLinks.add(href);
+        }
+    }
+    return Array.from(uniqueLinks);
 }
 
 async function getMarkdownFromAmpleNoteUrl(url) {
@@ -153,7 +176,7 @@ async function generateHelpCenterEmbeddings() {
 
     const allRecordsLocal = [], allRecordsPinecone = [];
 
-    for (const url of CONFIG.HELP_CENTER_URLS) {
+    for (const [i, url] of CONFIG.HELP_CENTER_URLS.entries()) {
         const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
         const [content, title] = await getMarkdownFromAmpleNoteUrl(url);
         const mockedNote = mockNote(content, title, url);
@@ -170,12 +193,19 @@ async function generateHelpCenterEmbeddings() {
         const pineconeRecords = await generateEmbeddings(app, [...splitRecords], oldAllRecordsPinecone, generateEmbeddingUsingPinecone);
         allRecordsPinecone.push(...pineconeRecords);
         await saveRecords(allRecordsPinecone, CONFIG.OUTPUT_PATH.PINECONE);
+
+        console.log('Progress:', i + 1, '/', CONFIG.HELP_CENTER_URLS.length);
     }
 }
 
 test('Generate Help Center Embeddings', async () => {
     window.fetch = fetch;
     window.TransformStream = TransformStream;
+    CONFIG.HELP_CENTER_URLS = [
+        // 'https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi',
+        // 'https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb',
+        ...(await getAllHelpCenterLinks())
+    ];
     await generateHelpCenterEmbeddings();
     console.log('Done! Please execute "node ./_myAmplePluginExternal/publish.js" to publish to npm');
 }, CONFIG.TEST_TIMEOUT);

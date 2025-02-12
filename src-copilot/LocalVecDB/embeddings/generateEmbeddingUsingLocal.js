@@ -6,6 +6,17 @@ export async function generateEmbeddingUsingLocal(text, inputType) {
     const inputText = inputType === 'query' ? "Represent this sentence for searching relevant passages: " + text
         : text;
     const embeddingConfig = await getEmbeddingConfig();
+    if (!window.Worker) {
+        return new Promise((resolve, reject) => {
+            generateEmbeddingWorkerSource({onMessage: async (onMessageHandler) => {
+                    onMessageHandler({
+                        payload: {inputText, model: embeddingConfig.model},
+                        reject,
+                        resolve
+                    });
+                }});
+        });
+    }
     if (!generateEmbeddingWorker) {
         generateEmbeddingWorker = await createEasyWebWorker(generateEmbeddingWorkerSource, {
             keepAlive: false,
