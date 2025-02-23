@@ -115,7 +115,7 @@ async function getMarkdownFromAmpleNoteUrl(url) {
         else {
             for (const imageViewNode of node.querySelectorAll('.image-view')) {
                 const imageSrc = imageViewNode.querySelector('img')?.getAttribute('src');
-                imageViewNode.outerHTML = `![${imageViewNode.querySelector('img')?.getAttribute('alt') || ''}](${imageSrc}) `;
+                imageViewNode.outerHTML = `![${imageViewNode.querySelector('img')?.getAttribute('alt')?.trim() || ''}](${imageSrc}) `;
             }
             for (const boldNode of node.querySelectorAll('b')) {
                 boldNode.outerHTML = `**${boldNode.textContent}**`;

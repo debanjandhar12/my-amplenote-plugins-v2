@@ -18,15 +18,21 @@ export async function generateEmbeddingUsingOllama(app, textArray, inputType) {
 
     let embeddings = [];
     for (let i = 0; i < textArrayMod.length; i++) {
-        try {
-            embeddings.push((await embeddingModel.doEmbed({
-                values: [textArrayMod[i]]
-            })).embeddings);
-        } catch (e) {
-            textArrayMod[i] = textArrayMod[i].substring(0, 512*2);
-            embeddings.push((await embeddingModel.doEmbed({
-                values: [textArrayMod[i]]
-            })).embeddings);
+        const originalText = textArrayMod[i];
+        for (let attempts = 1; true; attempts++) {
+            try {
+                embeddings.push((await embeddingModel.doEmbed({
+                    values: [textArrayMod[i]]
+                })).embeddings);
+                break;
+            } catch (e) {
+                if (attempts === 6) throw e;
+                if (attempts > 3) {
+                    console.log('Failed to embed text, retrying...', originalText);
+                }
+                const currentLength = textArrayMod[i].length;
+                textArrayMod[i] = textArrayMod[i].substring(0, Math.floor(currentLength * 0.75));
+            }
         }
     }
     return embeddings;
