@@ -6,7 +6,6 @@ import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.
  * This returns Markdown text component with following changes:
  * 1. Support for syntax highlighting
  * 2. Support for displaying tool category mentions
- * 3. Support for displaying toolplan codeblocks
  * TODO - Make this a generic component
  */
 export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
@@ -93,15 +92,7 @@ export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
                 </a>
             },
             CodeHeader: ({ ...args }) => {
-                if (args.language === 'toolplan') {
-                    return null;
-                }
                 return <AssistantUIMarkdown.CodeHeader {...args} />;
-            },
-            by_language: {
-                toolplan: {
-                    SyntaxHighlighter: ToolPlanComponent
-                },
             },
             ...overrideComponents
         },
@@ -134,22 +125,6 @@ const rehypeCompressTextNodes = () => {
             node.children = compressedChildren;
         });
     };
-};
-
-const ToolPlanComponent = ({ code }) => {
-    const { Text, Box, Flex, Tooltip } = window.RadixUI;
-    return (
-        <Box className="aui-toolplan" style={{ border: '1px solid var(--gray-6)', padding: '4px 6px', marginBottom: '2px', opacity: 0.8, display: 'inline-block' }}>
-            <Text size="1" style={{ color: 'var(--gray-11)' }}>
-                Thinking execution plan...
-            </Text>
-            <Tooltip content={code}>
-                <Text size="1" style={{ color: 'var(--gray-11)', cursor: 'help' }}>
-                    ⓘ
-                </Text>
-            </Tooltip>
-        </Box>
-    )
 };
 
 export const ToolCategoryMentionComponent = ({ children, description }) => {

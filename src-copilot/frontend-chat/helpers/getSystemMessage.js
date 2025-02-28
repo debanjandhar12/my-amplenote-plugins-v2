@@ -33,13 +33,7 @@ export function getSystemMessage(currentMessages, toolsToAdd) {
         let toolUsageMessage = "NEVER call multiple tools in parallel as tool result needs to be awaited.";
         if (lastMessage && (lastMessage.role === 'user' ||
             (lastMessage.role === 'assistant' && lastMessage.content.length <= 1))) {
-            if (!appSettings[LLM_MODEL_SETTING].includes('gpt')) {
-                toolUsageMessage = "To interact with Amplenote, call tools. Before tool call, think and write short step-by-step plan for your future self inside toolplan code block ensuring to fetch required parameters first. Example plan to add tag in note title: \n```toolplan\n1. Search note by title to get noteUUID since we don't have it. 2. Fetch note tag detail if not present in search result. 3. Update note tags.\n```"
-                    + " " + "Then after writing plan, make function call to execute the first tool. The toolplan code block will only be visible to you and not to user. Do not talk to user about parameters and tool calls directly."
-                    + " " + toolUsageMessage;
-            } else {
-                toolUsageMessage += "To interact with Amplenote, call tools. If tools are required, think a step-by-step plan ensuring to fetch required parameters first.";
-            }
+            toolUsageMessage += "To interact with Amplenote, call tools. If tools are required, think a step-by-step plan ensuring to fetch required parameters first.";
         }
         else {
             toolUsageMessage += "To interact with Amplenote, call tools." + " " + toolUsageMessage;
