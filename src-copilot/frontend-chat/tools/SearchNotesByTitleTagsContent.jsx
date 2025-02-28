@@ -4,8 +4,9 @@ import {createGenericReadTool} from "../tools-core/base/createGenericReadTool.js
 import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
 import {uniqBy} from "lodash-es";
-import {processLocalVecDBResults} from "../../frontend-search/processLocalVecDBResults.js";
+import {processLocalVecDBResults} from "../../frontend-search/hooks/processLocalVecDBResults.js";
 import {stripYAMLFromMarkdown} from "../../markdown/stripYAMLFromMarkdown.js";
+import {processAndMergeLocalVecDBResults} from "../helpers/processAndMergeLocalVecDBResults.js";
 
 export const SearchNotesByTitleTagsContent = () => {
     return createGenericReadTool({
@@ -92,7 +93,7 @@ export const SearchNotesByTitleTagsContent = () => {
                         isArchived: args.isArchived, isSharedByMe: args.isSharedByMe,
                         isSharedWithMe: args.isSharedWithMe
                     });
-                    searchResults0.push(...await processLocalVecDBResults(results, 0.40));
+                    searchResults0.push(...await processAndMergeLocalVecDBResults(results));
                 }
             } catch (e) {
                 localVecDBSearchError = e;

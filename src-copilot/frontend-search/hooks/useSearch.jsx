@@ -1,4 +1,4 @@
-import {processLocalVecDBResults} from "../processLocalVecDBResults.js";
+import {processLocalVecDBResults} from "./processLocalVecDBResults.js";
 import {debounce} from "lodash-es";
 
 // Custom hook for search functionality

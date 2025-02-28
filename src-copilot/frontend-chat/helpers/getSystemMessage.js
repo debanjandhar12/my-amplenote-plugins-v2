@@ -47,10 +47,13 @@ export function getSystemMessage(currentMessages, toolsToAdd) {
             const lastLastContentContainsSearchNote = lastLastMessage && lastLastMessage.content.some(obj => obj.toolName === 'SearchNotesByTitleTagsContent');
             
             if (lastContentContainsWebSearch || lastLastContentContainsWebSearch) {
-                resultInstruction = "If the user is asking specifically to search web, cite source links in markdown at end.";
+                resultInstruction = "If the user is asking a question, provide comprehensive answer using information from search results.\n" +
+                    "If the user is asking specifically to search web, cite source links in markdown at end.";
             }
             if (lastContentContainsSearchNote || lastLastContentContainsSearchNote) {
-                resultInstruction = "If the user is asking specifically to search information inside note, cite source note links in markdown at end." +
+                resultInstruction =
+                    "If the user is asking a question, provide comprehensive answer using information from search results.\n" +
+                    "If the user is asking specifically to search information inside note, cite source note links in markdown at end." +
                     " To link to a note, use syntax: [Page Title](https://www.amplenote.com/notes/{noteUUID}).";
             }
         }
