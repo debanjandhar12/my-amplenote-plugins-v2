@@ -23,11 +23,11 @@ export async function generateEmbeddingUsingOllama(app, textArray, inputType) {
             try {
                 embeddings.push((await embeddingModel.doEmbed({
                     values: [textArrayMod[i]]
-                })).embeddings);
+                })).embeddings[0]);
                 break;
             } catch (e) {
                 if (attempts === 6) throw e;
-                if (attempts > 3) {
+                if (attempts >= 3) {
                     console.log('Failed to embed text, retrying...', originalText);
                 }
                 const currentLength = textArrayMod[i].length;

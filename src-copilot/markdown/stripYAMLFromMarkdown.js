@@ -8,7 +8,7 @@ import { toString as mdastToString } from "mdast-util-to-string";
  * @returns {Promise<string>}
  */
 export const stripYAMLFromMarkdown = async (markdownText) => {
-    const root = await parse(markdownText);
+    const root = await parse(markdownText, {yaml: true});
 
     let textContent = '';
     visit(root, (node) => {

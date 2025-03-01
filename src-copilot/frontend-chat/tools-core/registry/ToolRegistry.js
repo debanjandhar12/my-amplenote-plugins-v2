@@ -10,6 +10,7 @@ import {WebBrowser} from "../../tools/WebBrowser.jsx";
 import {WebSearch} from "../../tools/WebSearch.jsx";
 import {FetchUserTasks} from "../../tools/FetchUserTasks.jsx";
 import {InsertTasksToNote} from "../../tools/InsertTasksToNote.jsx";
+import {SearchHelpCenter} from "../../tools/SearchHelpCenter.jsx";
 
 export class ToolRegistry {
     static tools = [];
@@ -20,7 +21,8 @@ export class ToolRegistry {
             UpdateUserNotes(), UpdateUserTasks(),
             EditNoteContent(),
             // DeleteTasks(), // No api support for deleting task yet
-            DeleteUserNotes()];
+            DeleteUserNotes(),
+            SearchHelpCenter()];
     }
 
     static getTool(toolName) {

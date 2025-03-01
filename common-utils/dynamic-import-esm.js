@@ -2,12 +2,12 @@ import pkgJSON from "../package.json";
 import path from "path";
 
 /**
- * Import packages from __importBundles__ folder in GitHub repo.
+ * Import js packages from __importBundles__ folder in GitHub repo.
  * This is a workaround for dynamicImportMultipleESM which helped avoid multiple
  * copies of the same package in the bundle.
  * Note: When adding new packages, make sure to update the commit hash.
  */
-export const dynamicImportExternalPluginBundle = async (fileName) => {
+export const dynamicImportExternalPluginBundle = async (fileName, { isESM = true } = {}) => {
     if (process.env.NODE_ENV === 'test') {
         try {
             return (require(path.resolve(__dirname, '../_myAmplePluginExternal/bundles', fileName))).default;
@@ -22,6 +22,9 @@ export const dynamicImportExternalPluginBundle = async (fileName) => {
     }
 
     const url = new URL(`https://esm.sh/my-ample-plugin-external@${pkgJSON.dependencies['my-ample-plugin-external']}/bundles/${fileName}`);
+    if (!isESM) {
+        return fetch(url.toString()).then(res => res.arrayBuffer()).then(buffer => new Uint8Array(buffer));
+    }
     if (process.env.NODE_ENV === 'development') {
         url.searchParams.set('dev', true);
     }

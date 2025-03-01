@@ -363,8 +363,12 @@ const plugin = {
         "syncNotesWithLocalVecDB": async function (app) {
             await new LocalVecDB().syncNotes(app, plugin.sendMessageToEmbed);
         },
-        "searchInLocalVecDB": async function (app, queryText, opts) {
-            return await new LocalVecDB().search(app, queryText, opts);
+        "searchNotesInLocalVecDB": async function (app, queryText, opts) {
+            return await new LocalVecDB().searchNotes(app, queryText, opts);
+        },
+        "searchHelpCenter": async function (app, queryText, opts) {
+            await new LocalVecDB().loadHelpCenterEmbeddings(app);
+            return await new LocalVecDB().searchHelpCenter(app, queryText, opts);
         },
         "getMatchedPartWithFuzzySearch": async function (app, noteUUID, searchText, limit) {
             return await getMatchedPartWithFuzzySearch(app, noteUUID, searchText, limit);

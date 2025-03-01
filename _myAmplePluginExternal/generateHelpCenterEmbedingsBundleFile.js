@@ -10,6 +10,7 @@ const { JSDOM } = require("jsdom");
 import {fetch} from "cross-fetch";
 import {TransformStream} from 'stream/web';
 import {compressSync, decompressSync} from "fflate";
+import {cloneDeep} from "lodash-es";
 
 /**
  * This script is used to generate embeddings and store in bundles folder as json files.
@@ -19,7 +20,7 @@ import {compressSync, decompressSync} from "fflate";
  * manually set PINECONE_API_KEY in .env file
  * sudo service ollama stop (for linux)
  * OLLAMA_ORIGINS=https://plugins.amplenote.com ollama serve
- * ollama pull snowflake-arctic-embed:33m-s-fp16
+ * ollama pull snowflake-arctic-embed:33m-s-fp16 (first time only)
  * npx jest --runTestsByPath ./_myAmplePluginExternal/generateHelpCenterEmbedingsBundleFile.js --passWithNoTests --testMatch "**"
  */
 
@@ -184,13 +185,13 @@ async function generateHelpCenterEmbeddings() {
         const splitRecords = await splitter.splitNote(app, mockedNote);
 
         // Generate local embeddings
-        const localRecords = await generateEmbeddings(app, [...splitRecords], oldAllRecordsLocal, generateEmbeddingUsingOllama);
+        const localRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsLocal, generateEmbeddingUsingOllama);
         allRecordsLocal.push(...localRecords);
         await saveRecords(allRecordsLocal, CONFIG.OUTPUT_PATH.LOCAL);
 
         // Generate Pinecone embeddings
         app.settings[PINECONE_API_KEY_SETTING] = process.env.PINECONE_API_KEY;
-        const pineconeRecords = await generateEmbeddings(app, [...splitRecords], oldAllRecordsPinecone, generateEmbeddingUsingPinecone);
+        const pineconeRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsPinecone, generateEmbeddingUsingPinecone);
         allRecordsPinecone.push(...pineconeRecords);
         await saveRecords(allRecordsPinecone, CONFIG.OUTPUT_PATH.PINECONE);
 

@@ -43,18 +43,27 @@ export function getSystemMessage(currentMessages, toolsToAdd) {
         if (lastMessage || lastLastMessage) {
             const lastContentContainsWebSearch = lastMessage && lastMessage.content.some(obj => obj.toolName === 'WebSearch');
             const lastContentContainsSearchNote = lastMessage && lastMessage.content.some(obj => obj.toolName === 'SearchNotesByTitleTagsContent');
+            const lastContentContainsSearchHelpCenter = lastMessage && lastMessage.content.some(obj => obj.toolName === 'SearchHelpCenter');
             const lastLastContentContainsWebSearch = lastLastMessage && lastLastMessage.content.some(obj => obj.toolName === 'WebSearch');
             const lastLastContentContainsSearchNote = lastLastMessage && lastLastMessage.content.some(obj => obj.toolName === 'SearchNotesByTitleTagsContent');
+            const lastLastContentContainsSearchHelpCenter = lastLastMessage && lastLastMessage.content.some(obj => obj.toolName === 'SearchHelpCenter');
             
             if (lastContentContainsWebSearch || lastLastContentContainsWebSearch) {
                 resultInstruction = "If the user is asking a question, provide comprehensive answer using information from search results.\n" +
-                    "If the user is asking specifically to search web, cite source links in markdown at end.";
+                    "Additionally, cite source links in markdown at end.";
             }
             if (lastContentContainsSearchNote || lastLastContentContainsSearchNote) {
                 resultInstruction =
                     "If the user is asking a question, provide comprehensive answer using information from search results.\n" +
-                    "If the user is asking specifically to search information inside note, cite source note links in markdown at end." +
+                    "Additionally, cite source note links in markdown at end." +
                     " To link to a note, use syntax: [Page Title](https://www.amplenote.com/notes/{noteUUID}).";
+            }
+            if (lastContentContainsSearchHelpCenter || lastLastContentContainsSearchHelpCenter) {
+                resultInstruction =
+                    "If the user is asking a question, provide comprehensive answer using information from search results.\n" +
+                    "Use markdown image syntax to include images in your answer when relevant.\n" +
+                    "Additionally, cite source note links in markdown at end.\n" +
+                    "To link to a note, use syntax: [Page Title](https://www.amplenote.com/help/{noteUUID}).";
             }
         }
         return resultInstruction.trim() !== '' ? toolUsageMessage + " " + resultInstruction : toolUsageMessage;

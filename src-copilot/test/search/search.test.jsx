@@ -38,7 +38,7 @@ describe('search embed', () => {
 
         const commandMocksWithSearch = {
             ...commandMocks,
-            searchInLocalVecDB: async () =>  [
+            searchNotesInLocalVecDB: async () =>  [
                 {
                     metadata: {
                         noteUUID: "note1",

@@ -22,6 +22,12 @@ export class ToolCategoryRegistry {
             ToolRegistry.getToolsByCategory("web")
                 .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
         });
+        ToolCategoryRegistry.categories.push({
+            name: "help",
+            description: "<b>Enables tools for the help center:</b><br />" +
+            ToolRegistry.getToolsByCategory("help")
+                .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
+        });
     }
 
     static getCategory(categoryName) {

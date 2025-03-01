@@ -188,3 +188,6 @@ export class Splitter {
         });
     }
 }
+
+// TODO: Images with uuids such as https://images.amplenote.com/4872eeba-7596-11e8-bf60-c6c7cb6d06a5/17d64c1a-af4e-4213-86a1-028350fa1978
+// consume a lot of tokens. Need to find a way to remove them when generating embeddings.

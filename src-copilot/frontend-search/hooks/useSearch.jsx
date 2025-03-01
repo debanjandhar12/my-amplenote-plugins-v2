@@ -49,7 +49,7 @@ export const useSearch = () => {
 
     // Search functionality
     const performSearch = async (query, searchOpts = {}) => {
-        const results = await window.appConnector.searchInLocalVecDB(query, searchOpts);
+        const results = await window.appConnector.searchNotesInLocalVecDB(query, searchOpts);
         return await processLocalVecDBResults(results);
     };
 

@@ -4,7 +4,6 @@ import {createGenericReadTool} from "../tools-core/base/createGenericReadTool.js
 import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
 import {uniqBy} from "lodash-es";
-import {processLocalVecDBResults} from "../../frontend-search/hooks/processLocalVecDBResults.js";
 import {stripYAMLFromMarkdown} from "../../markdown/stripYAMLFromMarkdown.js";
 import {processAndMergeLocalVecDBResults} from "../helpers/processAndMergeLocalVecDBResults.js";
 
@@ -88,7 +87,7 @@ export const SearchNotesByTitleTagsContent = () => {
                 // TODO: pass signal
                 if (args.noteContent && args.noteContent.trim() !== '') {
                     args.limitSearchResults = args.limitSearchResults || 10;
-                    const results = await appConnector.searchInLocalVecDB(args.noteContent, {
+                    const results = await appConnector.searchNotesInLocalVecDB(args.noteContent, {
                         limit: Math.floor((args.limitSearchResults * 3) / 2),
                         isArchived: args.isArchived, isSharedByMe: args.isSharedByMe,
                         isSharedWithMe: args.isSharedWithMe

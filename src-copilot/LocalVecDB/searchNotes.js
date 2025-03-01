@@ -1,9 +1,10 @@
 import {IndexedDBManager} from "./IndexedDBManager.js";
 import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
 import {getSyncState} from "./getSyncState.js";
+import {getCosineSimilarity} from "./utils/getCosineSimilarity.js";
 
 // Based on: https://github.com/babycommando/entity-db/blob/main/src/index.js
-export const search = async (app, queryText, {limit = 256,
+export const searchNotes = async (app, queryText, {limit = 256,
     isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null}) => {
     if (await getSyncState(app) === 'Not synced')
         throw new Error('No syncing has been performed, or the last sync is outdated. Please sync your notes with LocalVecDB.');
@@ -25,7 +26,7 @@ export const search = async (app, queryText, {limit = 256,
 
         // Calculate cosine similarity for each vector and sort by similarity
         const similarities = filteredEmbeddings.map((entry) => {
-            const score = cosineSimilarity(queryVector, entry.values);
+            const score = getCosineSimilarity(queryVector, entry.values);
             return { ...entry, score };
         });
 
@@ -34,14 +35,4 @@ export const search = async (app, queryText, {limit = 256,
     } catch (e) {
         throw new Error(`Error querying vectors: ${e}`);
     }
-}
-
-const cosineSimilarity = (vecA, vecB) => {
-    if (vecA.length !== vecB.length) {
-        throw new Error("Cannot calculated cosine similarity as vector are of different size");
-    }
-    const dotProduct = vecA.reduce((sum, val, index) => sum + val * vecB[index],0);
-    const magnitudeA = Math.sqrt(vecA.reduce((sum, val) => sum + val * val, 0));
-    const magnitudeB = Math.sqrt(vecB.reduce((sum, val) => sum + val * val, 0));
-    return dotProduct / (magnitudeA * magnitudeB);
 }
