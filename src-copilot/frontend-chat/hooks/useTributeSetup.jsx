@@ -1,5 +1,5 @@
 export const useTributeSetup = (textareaRef, toolCategoryNames) => {
-    const threadRuntime = AssistantUI.useThreadRuntime();
+    const composerRuntime = AssistantUI.useComposerRuntime();
 
     React.useEffect(() => {
         if (!textareaRef.current) return;
@@ -44,11 +44,13 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
         tribute.attach(textareaRef.current);
         const tributeOnReplace = (event) => {
             const currentValue = textareaRef.current.value;
-            threadRuntime.composer.setText(currentValue);
+            composerRuntime.setText(currentValue);
         }
         textareaRef.current
             .addEventListener("tribute-replaced", tributeOnReplace);
+
         return () => {  // cleanup
+            if (!textareaRef.current) return;
             tribute.detach(textareaRef.current);
             textareaRef.current
                 .removeEventListener("tribute-replaced", tributeOnReplace);

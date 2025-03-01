@@ -11,6 +11,7 @@ import {useIntervalPingPlugin} from "./hooks/useIntervalPingPlugin.jsx";
 import {getChatAppContext} from "./context/ChatAppContext.jsx";
 import {ChatHistoryOverlay} from "./ChatHistoryOverlay.jsx";
 import {useCustomChatHistoryManager} from "./hooks/useCustomChatHistoryManager.jsx";
+import {CustomEditComposer} from "./components/CustomEditComposer.jsx";
 
 export const ChatAppWindow = () => {
     const assistantAvatar = useAssistantAvatar();
@@ -42,7 +43,8 @@ export const ChatAppWindow = () => {
                         tools={ToolRegistry.getAllTools()}
                         components={{
                             Composer: CustomComposer,
-                            UserMessage: UserMessage
+                            UserMessage: UserMessage,
+                            EditComposer: CustomEditComposer,
                         }}
                     />
             }
