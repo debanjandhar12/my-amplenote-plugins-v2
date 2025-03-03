@@ -54,9 +54,11 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
     });
 
     // -- Split notes which are updated or created and add to records --
-    sendMessageToEmbed(app, 'syncNotesProgress', 'Scanning notes to sync...');
     const records = [];
-    for (const note of targetNotes) {
+    for (const [index, note] of targetNotes.entries()) {
+        if (index % 10 === 0) {
+            sendMessageToEmbed(app, 'syncNotesProgress', `Scanning notes to sync: ${index}/${targetNotes.length}`);
+        }
         const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
         const splitResultForNote = await splitter.splitNote(app, note);
         records.push(...splitResultForNote);
