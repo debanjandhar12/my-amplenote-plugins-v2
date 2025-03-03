@@ -33,6 +33,10 @@ const allSuggestions = [
     {
         prompt: "@notes Analyze & add appropriate tags to current note",
         displayCondition: () => window.userData.currentNoteUUID !== null,
+    },
+    {
+        prompt: "@help What are task domains?",
+        displayCondition: () => true,
     }
 ];
 

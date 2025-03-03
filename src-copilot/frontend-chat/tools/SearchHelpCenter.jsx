@@ -40,7 +40,7 @@ export const SearchHelpCenter = () => {
             const { QuestionMarkCircledIcon } = window.RadixIcons;
             return <ToolCardResultMessage
                 result={JSON.stringify(formData.searchResults)}
-                text={`Help Center search completed!`}
+                text={`Help Center search completed! Found ${formData.searchResults.length} pages.`}
                 icon={<QuestionMarkCircledIcon />}
                 toolName={toolName}
                 input={args} />
