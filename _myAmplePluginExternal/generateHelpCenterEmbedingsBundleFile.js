@@ -96,16 +96,23 @@ async function getMarkdownFromAmpleNoteUrl(url) {
             "Connection": "keep-alive"
         }
     });
+    if (!response.ok) {
+        throw new Error(`Failed to fetch help center link - ${url}: ${response.status} ${response.statusText}`);
+    }
     const html = await response.text();
     const dom = new JSDOM(html);
     const title = dom.window.document.querySelector('.note-name')?.textContent ||
-        dom.window.document.querySelector('.help-page-title')?.textContent;
+        dom.window.document.querySelector('.help-page-title')?.textContent ||
+        dom.window.document.querySelector('.blog-title')?.textContent;
     if (!title) {
         throw new Error(`Failed to get title for ${url}.\nHTML:\n${html}`);
     }
     let markdown = '';
     dom.window.document.querySelectorAll('.material-icons').forEach(icon => icon.remove());
-    for (const node of dom.window.document.querySelectorAll('.html-content .ProseMirror > *')) {
+    const htmlContentNodes = Array.from(dom.window.document.querySelectorAll('.html-content .ProseMirror > *'));
+    const blogContentNodes = Array.from(dom.window.document.querySelectorAll('.blog-content .ProseMirror > * > *'));
+    const nodes = [...htmlContentNodes, ...blogContentNodes];
+    for (const node of nodes) {
         if (node.tagName.toLowerCase().startsWith('h')) {
             const level = parseInt(node.tagName.substring(1));
             markdown += `${'#'.repeat(level)} ${node.textContent}\n`;
@@ -203,8 +210,9 @@ test('Generate Help Center Embeddings', async () => {
     window.fetch = fetch;
     window.TransformStream = TransformStream;
     CONFIG.HELP_CENTER_URLS = [
-        // 'https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi',
-        // 'https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb',
+        'https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi',
+        'https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb',
+        'https://public.amplenote.com/16oi13jtaNMoSxqjQMKgBdUE',
         ...(await getAllHelpCenterLinks())
     ];
     await generateHelpCenterEmbeddings();

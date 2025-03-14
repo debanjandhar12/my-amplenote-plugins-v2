@@ -44,6 +44,7 @@ Q) [How do I speed up LocalVecDB indexing?](https://public.amplenote.com/jKhhLtH
 - 27/12/2024: Beta v0.1.0 release
 - 27/12/2024: Beta v0.1.1 release
 - 10/01/2024: Beta v0.2.0 release
+- 03/03/2025: Beta v0.3.0 release
 
 [^1]: [Chat ui with support for tool calling and custom prompts]()
     
