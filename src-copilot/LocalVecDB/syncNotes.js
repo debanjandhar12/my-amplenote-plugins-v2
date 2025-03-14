@@ -4,6 +4,7 @@ import {LOCAL_VEC_DB_MAX_TOKENS} from "../constants.js";
 import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
 import {chunk} from "lodash-es";
 import {getEmbeddingConfig} from "./embeddings/getEmbeddingConfig.js";
+import 'scheduler-polyfill';
 
 export const syncNotes = async (app, sendMessageToEmbed) => {
     const performanceStartTime = performance.now();
@@ -55,14 +56,17 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
 
     // -- Split notes which are updated or created and add to records --
     const records = [];
-    for (const [index, note] of targetNotes.entries()) {
-        if (index % 10 === 0) {
-            sendMessageToEmbed(app, 'syncNotesProgress', `Scanning notes to sync: ${index}/${targetNotes.length}`);
+    await scheduler.postTask(async () => {
+        for (const [index, note] of targetNotes.entries()) {
+            if (index % 10 === 0) {
+                sendMessageToEmbed(app, 'syncNotesProgress', `Scanning notes to sync: ${index}/${targetNotes.length}`);
+            }
+            const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
+            const splitResultForNote = await splitter.splitNote(app, note);
+            records.push(...splitResultForNote);
+            console.log('records:', records.length);
         }
-        const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
-        const splitResultForNote = await splitter.splitNote(app, note);
-        records.push(...splitResultForNote);
-    }
+    }, {priority: 'user-visible'});
 
     // -- Delete existing records with target noteUUIDs --
     await indexedDBManager.deleteNoteEmbeddingByNoteUUIDList(records.map(record => record.metadata.noteUUID));

@@ -107,12 +107,17 @@ export const useSearch = () => {
         setIsSyncing(true);
         setSyncError(null);
         setSyncProgressText(null);
-        while (await window.appConnector.receiveMessageFromPlugin('syncNotesProgress') != null) {
-        } // Clear any previous progress messages
+        while (await window.appConnector.receiveMessageFromPlugin('syncNotesProgress') != null) { // Clear any previous progress messages
+        }
         const syncProgressListenerIntervalId = setInterval(async () => {
-            const syncProgressText = await window.appConnector.receiveMessageFromPlugin('syncNotesProgress');
-            if (!syncProgressText) return;
-            setSyncProgressText(syncProgressText);
+            let lastSyncProgressText = null;
+            while (true) {
+                let syncProgressText = await window.appConnector.receiveMessageFromPlugin('syncNotesProgress');
+                if (syncProgressText === null) break;
+                lastSyncProgressText = syncProgressText;
+            }
+            if (!lastSyncProgressText) return;
+            setSyncProgressText(lastSyncProgressText);
         }, 1000);
         try {
             await window.appConnector.syncNotesWithLocalVecDB();

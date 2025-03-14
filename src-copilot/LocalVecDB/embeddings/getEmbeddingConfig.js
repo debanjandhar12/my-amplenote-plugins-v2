@@ -18,7 +18,7 @@ export async function getEmbeddingConfig(app, navigator = window.navigator) {
         if (window.gpuAdapter == null && navigator.gpu)
             window.gpuAdapter = await navigator.gpu.requestAdapter() || false;
     } catch (e) {}
-    const webGpuAvailable = window.gpuAdapter !== false && window.gpuAdapter !== null;
+    const webGpuAvailable = window.gpuAdapter !== false && window.gpuAdapter !== null && window.gpuAdapter !== undefined;
     return {
         provider: "local",
         model: "Snowflake/snowflake-arctic-embed-s",
