@@ -13,7 +13,7 @@ const SearchStatus = ({ isLoading, error, isSyncing, syncError, syncProgressText
                 {
                     syncProgressText &&
                     <Box style={{ marginTop: '4px', backgroundColor: '#0369a1', color: 'white', borderRadius: '4px', padding: '10px' }}>
-                        <Text size="1">{syncProgressText}</Text>
+                        <Text size="1" dangerouslySetInnerHTML={{ __html: syncProgressText }} />
                     </Box>
                 }
             </Box>

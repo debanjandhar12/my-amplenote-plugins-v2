@@ -22,7 +22,7 @@ export async function getEmbeddingConfig(app, navigator = window.navigator) {
     return {
         provider: "local",
         model: "Snowflake/snowflake-arctic-embed-s",
-        maxConcurrency: Math.max(navigator?.hardwareConcurrency - 1, 1),
+        maxConcurrency: Math.max(navigator?.hardwareConcurrency - 2, 1),
         webGpuAvailable
     }
 }

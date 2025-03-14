@@ -2,6 +2,17 @@ import {createEasyWebWorker} from "easy-web-worker";
 import {getEmbeddingConfig} from "./getEmbeddingConfig.js";
 
 let generateEmbeddingWorker;
+export async function initLocalEmbeddingWorker() {
+    if (!window.Worker) return;
+    if (!generateEmbeddingWorker) {
+        const embeddingConfig = await getEmbeddingConfig();
+        generateEmbeddingWorker = await createEasyWebWorker(generateEmbeddingWorkerSource, {
+            keepAlive: false,
+            maxWorkers: embeddingConfig.maxConcurrency,
+            terminationDelay: 30000});
+    }
+}
+
 export async function generateEmbeddingUsingLocal(text, inputType) {
     const inputText = inputType === 'query' ? "Represent this sentence for searching relevant passages: " + text
         : text;
@@ -18,10 +29,7 @@ export async function generateEmbeddingUsingLocal(text, inputType) {
         });
     }
     if (!generateEmbeddingWorker) {
-        generateEmbeddingWorker = await createEasyWebWorker(generateEmbeddingWorkerSource, {
-            keepAlive: false,
-            maxWorkers: embeddingConfig.maxConcurrency,
-            terminationDelay: 30000});
+        await initLocalEmbeddingWorker();
     }
     return await generateEmbeddingWorker.send({inputText, model: embeddingConfig.model, webGpuAvailable: embeddingConfig.webGpuAvailable});
 }

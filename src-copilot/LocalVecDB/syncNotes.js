@@ -64,7 +64,6 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
             const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
             const splitResultForNote = await splitter.splitNote(app, note);
             records.push(...splitResultForNote);
-            console.log('records:', records.length);
         }
     }, {priority: 'user-visible'});
 
@@ -86,8 +85,9 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         ).size;
         const totalNotes = new Set(records.map(record => record.metadata.noteUUID)).size;
         sendMessageToEmbed(app, 'syncNotesProgress',
-            `Using ${embeddingConfig.provider} embedding${embeddingConfig.provider==='local' ? 
-                ` with ${embeddingConfig.webGpuAvailable ? 'gpu' : 'cpu'}`:''}: ${totalNotes-remainingNotes} / ${totalNotes}`);
+            `Using ${embeddingConfig.provider} embedding${embeddingConfig.provider === 'local' ? 
+                ` with ${embeddingConfig.webGpuAvailable ? 'gpu' : 'cpu'}`:''}: ${totalNotes-remainingNotes} / ${totalNotes}`
+            + (embeddingConfig.provider === 'local' ? `<br /><small style="opacity: 0.8;">(Note: This is experimental. Use pinecone api key for better performance)</small>` : ''));
         // 2. Generate embeddings and add to records
         const embeddings = await getEmbeddingFromText(app,
             recordChunk.map(record => record.metadata.noteContentPart));
