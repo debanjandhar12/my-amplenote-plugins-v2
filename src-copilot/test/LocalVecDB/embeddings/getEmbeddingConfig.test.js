@@ -18,7 +18,7 @@ describe('getEmbeddingConfig', () => {
         expect(config.provider).toBe('local');
         expect(config.model).toBe('Snowflake/snowflake-arctic-embed-s');
         expect(config.webGpuAvailable).toBe(false);
-        expect(config.maxConcurrency).toBe(3); // hardwareConcurrency - 1
+        expect(config.maxConcurrency).toBe(2); // hardwareConcurrency / 2
     });
 
     test('provides webgpu model when webgpu is available and no pinecone key', async () => {
@@ -31,13 +31,18 @@ describe('getEmbeddingConfig', () => {
         const config = await getEmbeddingConfig(app, {
             hardwareConcurrency: 4,
             gpu: {
-                requestAdapter: async () => ({ type: 'mock-adapter' })
+                requestAdapter: async () => ({
+                    type: 'mock-adapter',
+                    features: {
+                        has: () => true,
+                    }
+                })
             }
         });
         expect(config.provider).toBe('local');
         expect(config.model).toBe('Snowflake/snowflake-arctic-embed-s');
         expect(config.webGpuAvailable).toBe(true);
-        expect(config.maxConcurrency).toBe(3); // hardwareConcurrency - 1
+        expect(config.maxConcurrency).toBe(2); // hardwareConcurrency / 2
     });
 
     test('provides pinecone model when api key is available', async () => {

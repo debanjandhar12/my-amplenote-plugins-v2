@@ -1,5 +1,6 @@
 import {chromium, expect as playwrightExpect} from '@playwright/test';
 import type { Page, Locator } from '@playwright/test';
+import express from "express";
 
 // === Utility helpers for playwright tests environment ===
 export function createPlaywrightHooks(headless = true) {
@@ -16,6 +17,14 @@ export function createPlaywrightHooks(headless = true) {
 
     beforeEach(async () => {
         page = await context.newPage();
+        const app = express();
+        app.get('/', (req, res) => {
+            res.send('<!DOCTYPE html><html><body></body></html>');
+        });
+        const server = app.listen(0);
+        const port = server.address().port;
+        await page.goto(`http://localhost:${port}`);
+        server.close();
     });
 
     afterEach(async () => {
