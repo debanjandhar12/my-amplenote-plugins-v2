@@ -45,7 +45,7 @@
     "@ai-sdk/openai": "1.1.15",
     "@ai-sdk/google": "1.1.17",
     "ollama-ai-provider": "1.2.0",
-    "easy-web-worker": "7.0.1",
+    "easy-web-worker": "7.0.2",
     "fuse.js": "7.0.0",
     "react-virtuoso": "4.12.5",
     "async-mutex": "0.5.0",

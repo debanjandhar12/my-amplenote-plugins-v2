@@ -10,6 +10,7 @@ export async function initLocalEmbeddingWorker() {
             keepAlive: false,
             maxWorkers: embeddingConfig.maxConcurrency,
             terminationDelay: 30000});
+        await generateEmbeddingUsingLocal('test', 'query');
     }
 }
 
@@ -47,7 +48,7 @@ const generateEmbeddingWorkerSource = ({ onMessage }) => {
         if (!pipeline) {
             // We cannot use dynamicImportEsm inside workers yet.
             // This is ok for now as connection to jsdelivr is mandatory for huggingface to load models anyway.
-            pipeline = (await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.2.4/+esm')).pipeline;
+            pipeline = (await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.0/+esm')).pipeline;
         }
         if (!embeddingPipe) {
             if (opts.webGpuAvailable) {
