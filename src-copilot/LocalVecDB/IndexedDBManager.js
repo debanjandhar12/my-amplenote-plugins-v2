@@ -1,11 +1,11 @@
-import {INDEX_VERSION} from "../constants.js";
+import {LOCAL_VEC_DB_INDEX_VERSION} from "../constants.js";
 import {openDB} from "idb";
 
 export class IndexedDBManager {
     async init() {
         if (this.db) return;
         try {
-            this.db = await openDB('LocalVecDB', INDEX_VERSION, {
+            this.db = await openDB('LocalVecDB', LOCAL_VEC_DB_INDEX_VERSION, {
                 async upgrade(db, oldVersion, newVersion, transaction) {
                     if (oldVersion !== newVersion) {
                         await new IndexedDBManager().resetDB(db);
@@ -17,6 +17,39 @@ export class IndexedDBManager {
         }
     }
 
+    /**
+     * Reset the database to its initial state.
+     * @param db - Pass the database object if you are doing a version upgrade. Else, don't pass anything.
+     * @returns {Promise<void>}
+     */
+    async resetDB(db) {
+        if (db) { // Version upgrade
+            // Delete all existing object stores
+            for (const storeName of db.objectStoreNames) {
+                db.deleteObjectStore(storeName);
+            }
+            // Create new object stores
+            const notesObjectStore = db.createObjectStore('notes', {keyPath: 'id', autoIncrement: false});
+            notesObjectStore.createIndex('metadata.noteUUID', 'metadata.noteUUID', {unique: false});
+            const helpCenterObjectStore = db.createObjectStore('helpCenter', {keyPath: 'id', autoIncrement: false});
+            helpCenterObjectStore.createIndex('metadata.noteUUID', 'metadata.noteUUID', {unique: false});
+            db.createObjectStore('config', {keyPath: 'key'});
+        } else { // Reset DB called without version upgrade
+            await this.init();
+            // Truncate all object stores
+            const tx = this.db.transaction(this.db.objectStoreNames, 'readwrite');
+            for (const storeName of this.db.objectStoreNames) {
+                const objectStore = tx.objectStore(storeName);
+                await objectStore.clear();
+            }
+            await tx.done;
+        }
+        console.log('LocalVecDB resetDB');
+    }
+
+    // --------------------------------------------
+    // -------------- NOTE EMBEDDINGS --------------
+    // --------------------------------------------
     async getAllNotesEmbeddings() {
         await this.init();
         const tx = this.db.transaction('notes');
@@ -76,6 +109,40 @@ export class IndexedDBManager {
         await tx.done;
     }
 
+    // --------------------------------------------
+    // -------------- HELP CENTER EMBEDDING ----------------------
+    // --------------------------------------------
+    async getAllHelpCenterEmbeddings() {
+        await this.init();
+        const tx = this.db.transaction('helpCenter');
+        const helpCenterObjectStore = tx.objectStore('helpCenter');
+        return helpCenterObjectStore.getAll();
+    }
+
+    async putMultipleHelpCenterEmbeddings(helpCenterEmbeddingObjArr) {
+        await this.init();
+        const tx = this.db.transaction('helpCenter', 'readwrite');
+        const helpCenterObjectStore = tx.objectStore('helpCenter');
+        for (const helpCenterEmbeddingObj of helpCenterEmbeddingObjArr) {
+            if (!helpCenterEmbeddingObj.id) {
+                throw new Error('Each note embedding object must have an "id" property.');
+            }
+            await helpCenterObjectStore.put(helpCenterEmbeddingObj);
+        }
+        await tx.done;
+    }
+
+    async clearHelpCenterEmbeddings() {
+        await this.init();
+        const tx = this.db.transaction('helpCenter', 'readwrite');
+        const helpCenterObjectStore = tx.objectStore('helpCenter');
+        await helpCenterObjectStore.clear();
+        await tx.done;
+    }
+
+    // --------------------------------------------
+    // -------------- CONFIG ----------------------
+    // --------------------------------------------
     async getConfigValue(key) {
         await this.init();
         const tx = this.db.transaction('config');
@@ -91,33 +158,5 @@ export class IndexedDBManager {
         const configObjectStore = tx.objectStore('config');
         await configObjectStore.put({key, value});
         await tx.done;
-    }
-
-    /**
-     * Reset the database to its initial state.
-     * @param db - Pass the database object if you are doing a version upgrade. Else, don't pass anything.
-     * @returns {Promise<void>}
-     */
-    async resetDB(db) {
-        if (db) { // Version upgrade
-            // Delete all existing object stores
-            for (const storeName of db.objectStoreNames) {
-                db.deleteObjectStore(storeName);
-            }
-            // Create new object stores
-            const notesObjectStore = db.createObjectStore('notes', {keyPath: 'id', autoIncrement: false});
-            notesObjectStore.createIndex('metadata.noteUUID', 'metadata.noteUUID', {unique: false});
-            db.createObjectStore('config', {keyPath: 'key'});
-        } else { // Reset DB called without version upgrade
-            await this.init();
-            // Truncate all object stores
-            const tx = this.db.transaction(this.db.objectStoreNames, 'readwrite');
-            for (const storeName of this.db.objectStoreNames) {
-                const objectStore = tx.objectStore(storeName);
-                await objectStore.clear();
-            }
-            await tx.done;
-        }
-        console.log('LocalVecDB resetDB');
     }
 }

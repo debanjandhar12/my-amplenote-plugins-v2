@@ -1,9 +1,10 @@
 import {IndexedDBManager} from "./IndexedDBManager.js";
-import {Splitter} from "./Splitter.js";
+import {Splitter} from "./splitter/Splitter.js";
 import {LOCAL_VEC_DB_MAX_TOKENS} from "../constants.js";
 import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
 import {chunk} from "lodash-es";
 import {getEmbeddingConfig} from "./embeddings/getEmbeddingConfig.js";
+import 'scheduler-polyfill';
 
 export const syncNotes = async (app, sendMessageToEmbed) => {
     const performanceStartTime = performance.now();
@@ -55,11 +56,16 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
 
     // -- Split notes which are updated or created and add to records --
     const records = [];
-    for (const note of targetNotes) {
-        const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
-        const splitResultForNote = await splitter.splitNote(app, note, true);
-        records.push(...splitResultForNote);
-    }
+    await scheduler.postTask(async () => {
+        for (const [index, note] of targetNotes.entries()) {
+            if (index % 10 === 0) {
+                sendMessageToEmbed(app, 'syncNotesProgress', `Scanning notes to sync: ${index}/${targetNotes.length}`);
+            }
+            const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
+            const splitResultForNote = await splitter.splitNote(app, note);
+            records.push(...splitResultForNote);
+        }
+    }, {priority: 'user-visible'});
 
     // -- Delete existing records with target noteUUIDs --
     await indexedDBManager.deleteNoteEmbeddingByNoteUUIDList(records.map(record => record.metadata.noteUUID));
@@ -79,8 +85,9 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         ).size;
         const totalNotes = new Set(records.map(record => record.metadata.noteUUID)).size;
         sendMessageToEmbed(app, 'syncNotesProgress',
-            `Using ${embeddingConfig.provider} embedding${embeddingConfig.provider==='local' ? 
-                ` with ${embeddingConfig.webGpuAvailable ? 'gpu' : 'cpu'}`:''}: ${totalNotes-remainingNotes} / ${totalNotes}`);
+            `Using ${embeddingConfig.provider} embedding${embeddingConfig.provider === 'local' ? 
+                ` with ${embeddingConfig.webGpuAvailable ? 'gpu' : 'cpu'}`:''}: ${totalNotes-remainingNotes} / ${totalNotes}`
+            + (embeddingConfig.provider === 'local' ? `<br /><small style="opacity: 0.8;">(Note: This is experimental. Use pinecone api key for better performance)</small>` : ''));
         // 2. Generate embeddings and add to records
         const embeddings = await getEmbeddingFromText(app,
             recordChunk.map(record => record.metadata.noteContentPart));

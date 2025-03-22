@@ -8,7 +8,7 @@ export async function getImageModel(appSettings) {
     if (apiUrl.includes('api.openai.com')) {
         return createOpenAI({
             apiKey: appSettings[LLM_API_KEY_SETTING]
-        }).image('dall-e-2');
+        }).image('dall-e-2', {maxImagesPerCall: 1});
     }
     return false;
 }

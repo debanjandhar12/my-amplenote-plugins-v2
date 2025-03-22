@@ -1,9 +1,12 @@
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK} from "../test/chat/chat.testdata.js";
-import {overwriteWithAmplenoteStyle} from "../frontend/overwriteWithAmplenoteStyle.js";
+import {overwriteWithAmplenoteStyle} from "../frontend-chat/overwriteWithAmplenoteStyle.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
-import dynamicImportESM, {dynamicImportCSS, dynamicImportMultipleESM} from "../../common-utils/dynamic-import-esm.js";
-import {SearchApp} from "../frontend/SearchApp.jsx";
+import dynamicImportESM, {
+    dynamicImportCSS,
+    dynamicImportExternalPluginBundle
+} from "../../common-utils/dynamic-import-esm.js";
+import {SearchApp} from "../frontend-search/SearchApp.jsx";
 import {parse} from "../markdown/markdown-parser.js";
 
 if(process.env.NODE_ENV === 'development') {
@@ -51,11 +54,13 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         showEmbedLoader();
         overwriteWithAmplenoteStyle();
         const cssLoaded = dynamicImportCSS("@radix-ui/themes/styles.css");
-        const [React, ReactDOM, RadixUI, RadixIcons] = await dynamicImportMultipleESM(["react", "react-dom/client", "@radix-ui/themes", "@radix-ui/react-icons"]);
+        const [React, ReactDOM, RadixUI, RadixIcons, ReactVirtuoso] = await dynamicImportExternalPluginBundle('searchUIBundle.js');
+        // const [React, ReactDOM, RadixUI, RadixIcons, ReactVirtuoso] = await dynamicImportMultipleESM(["react", "react-dom/client", "@radix-ui/themes", "@radix-ui/react-icons", "react-virtuoso"]);
         window.React = React;
         window.ReactDOM = ReactDOM;
         window.RadixUI = RadixUI;
         window.RadixIcons = RadixIcons;
+        window.ReactVirtuoso = ReactVirtuoso;
         window.appSettings = await appConnector.getSettings();
         parse(''); // Load unified js in background
         hideEmbedLoader();
@@ -68,6 +73,8 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.document.body.innerHTML = '<div style="color: red; font-size: 20px; padding: 20px;">Error during init: ' + e.message + '</div>';
         console.error(e);
     } finally {
+        // Wait for few seconds and then call appLoaded event
+        await new Promise(resolve => setTimeout(resolve, 1600));
         window.dispatchEvent(new CustomEvent('appLoaded'));
     }
 })();
