@@ -1,15 +1,16 @@
 import {IndexedDBManager} from "./IndexedDBManager.js";
 import {Splitter} from "./splitter/Splitter.js";
 import {LOCAL_VEC_DB_MAX_TOKENS} from "../constants.js";
-import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
 import {chunk} from "lodash-es";
-import {getEmbeddingConfig} from "./embeddings/getEmbeddingConfig.js";
+import {getEmbeddingProviderName} from "./embeddings/getEmbeddingProviderName.js";
 import 'scheduler-polyfill';
+import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 
 export const syncNotes = async (app, sendMessageToEmbed) => {
     const performanceStartTime = performance.now();
     const indexedDBManager = new IndexedDBManager();
-    const embeddingConfig = await getEmbeddingConfig(app);
+    const embeddingProviderName = getEmbeddingProviderName(app);
+    const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
     let lastSyncTime = await indexedDBManager.getConfigValue('lastSyncTime')
         || new Date(0).toISOString();
     const lastPluginUUID = await indexedDBManager.getConfigValue('lastPluginUUID');
@@ -20,7 +21,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         await indexedDBManager.resetDB();
         lastSyncTime = new Date(0).toISOString();
     }
-    if (lastEmbeddingModel !== embeddingConfig.model) {
+    if (lastEmbeddingModel !== embeddingGenerator.MODEL_NAME) {
         await indexedDBManager.resetDB();
         lastSyncTime = new Date(0).toISOString();
     }
@@ -70,12 +71,21 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         }
     }, {priority: 'user-visible'});
 
+    // Ask confirmation from user about cost
+    const cost = await embeddingGenerator.getEmbeddingCost(app, records.length);
+    if (cost > 0) {
+        const confirm = await app.prompt(`The operation will cost $${cost}. Do you want to continue?`, {
+            inputs: []
+        });
+        if (!confirm) return false;
+    }
+
     // -- Delete existing records with target noteUUIDs --
     await indexedDBManager.deleteNoteEmbeddingByNoteUUIDList(records.map(record => record.metadata.noteUUID));
 
     // -- Create embeddings for split records and add to database --
     // Chunk the records into smaller chunks (required for LocalVecDB embedding interference)
-    const chunkSize = embeddingConfig.maxConcurrency;
+    const chunkSize = embeddingGenerator.MAX_CONCURRENCY;
     const recordsChunks = chunk(records, chunkSize);
     for (const recordChunk of recordsChunks) {
         // 1. Send progress to UI
@@ -88,12 +98,12 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         ).size;
         const totalNotes = new Set(records.map(record => record.metadata.noteUUID)).size;
         sendMessageToEmbed(app, 'syncNotesProgress',
-            `Using ${embeddingConfig.provider} embedding${embeddingConfig.provider === 'local' ? 
-                ` with ${embeddingConfig.webGpuAvailable ? 'gpu' : 'cpu'}`:''}: ${totalNotes-remainingNotes} / ${totalNotes}`
-            + (embeddingConfig.provider === 'local' ? `<br /><small style="opacity: 0.8;">(Note: This is experimental. Use pinecone api key for better performance)</small>` : ''));
+            `Using ${embeddingProviderName} embedding${embeddingProviderName === 'local' ? 
+                ` with ${embeddingProviderName.webGpuAvailable ? 'gpu' : 'cpu'}`:''}: ${totalNotes-remainingNotes} / ${totalNotes}`
+            + (embeddingProviderName === 'local' ? `<br /><small style="opacity: 0.8;">(Note: Setup embedding api url and key in settings for better performance)</small>` : ''));
         // 2. Generate embeddings and add to records
-        const embeddings = await getEmbeddingFromText(app,
-            recordChunk.map(record => record.metadata.noteContentPart));
+        const embeddings = await embeddingGenerator.generateEmbedding(app,
+            recordChunk.map(record => record.metadata.noteContentPart), 'passage');
         embeddings.forEach((embedding, index) => {
             recordChunk[index].values = embedding;
         });
@@ -107,14 +117,16 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
             await indexedDBManager.setConfigValue('lastSyncTime', parsedUpdatedAt.toISOString());
         } catch (e) {}
         await indexedDBManager.setConfigValue('lastPluginUUID', app.context.pluginUUID);
-        await indexedDBManager.setConfigValue('lastEmbeddingModel', embeddingConfig.model);
+        await indexedDBManager.setConfigValue('lastEmbeddingModel', embeddingGenerator.MODEL_NAME);
     }
 
     await indexedDBManager.setConfigValue('lastSyncTime', new Date().toISOString());
     await indexedDBManager.setConfigValue('lastPluginUUID', app.context.pluginUUID);
-    await indexedDBManager.setConfigValue('lastEmbeddingModel', embeddingConfig.model);
+    await indexedDBManager.setConfigValue('lastEmbeddingModel', embeddingGenerator.MODEL_NAME);
     await indexedDBManager.closeDB();
 
     console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', records.length);
+    app.alert("Sync completed!");
     return true;
 }
+

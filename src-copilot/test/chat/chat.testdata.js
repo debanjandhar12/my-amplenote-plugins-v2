@@ -62,13 +62,13 @@ export const EMBED_COMMANDS_MOCK = {
 export const getLLMProviderSettings = (provider) => {
     if (provider === 'groq') {
         return {
-            [LLM_API_KEY_SETTING]: process.env.GROQ_LLM_API_KEY,
+            [LLM_API_KEY_SETTING]: process.env.GROQ_API_KEY,
             [LLM_API_URL_SETTING]: "https://api.groq.com/openai/v1/chat/completions",
             [LLM_MODEL_SETTING]: "llama-3.2-90b-vision-preview"
         }
     } else if (provider === 'openai') {
         return {
-            [LLM_API_KEY_SETTING]: process.env.OPENAI_LLM_API_KEY,
+            [LLM_API_KEY_SETTING]: process.env.OPENAI_API_KEY,
             [LLM_API_URL_SETTING]: "https://api.openai.com/v1/chat/completions",
             [LLM_MODEL_SETTING]: "gpt-4o-mini"
         }

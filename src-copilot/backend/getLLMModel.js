@@ -41,12 +41,19 @@ export async function getLLMModel(appSettings) {
             headers: { 'anthropic-dangerous-direct-browser-access': 'true' }
         }).languageModel(model);
     }
-    else if (apiUrl.includes('openai') || apiUrl.includes('fireworks')) {
+    else if (apiUrl.includes('openai')) {
         const {createOpenAI} = await dynamicImportESM("@ai-sdk/openai");
         return createOpenAI({
             apiKey: apiKey,
             basePath: apiUrl    // Default: https://api.openai.com/v1
         }).languageModel(model); // {parallelToolCalls: false} causing issues with generateText
+    }
+    else if (apiUrl.includes('fireworks')) {
+        const {createFireworks} = await dynamicImportESM("@ai-sdk/fireworks");
+        return createFireworks({
+            apiKey: apiKey,
+            basePath: apiUrl
+        }).languageModel(model.startsWith('accounts/fireworks/models/') ? model : `accounts/fireworks/models/${model}`);
     }
     else throw new Error('It is likely that incorrect LLM API URL is provided. Please check plugin settings.');
 }

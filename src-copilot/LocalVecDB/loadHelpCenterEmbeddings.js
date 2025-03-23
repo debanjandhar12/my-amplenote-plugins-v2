@@ -1,9 +1,9 @@
 import dynamicImportESM, {dynamicImportExternalPluginBundle} from "../../common-utils/dynamic-import-esm.js";
-import {getEmbeddingConfig} from "./embeddings/getEmbeddingConfig.js";
+import {getEmbeddingProviderName} from "./embeddings/getEmbeddingProviderName.js";
 import {IndexedDBManager} from "./IndexedDBManager.js";
 
 export const loadHelpCenterEmbeddings = async (app) => {
-    const embeddingConfig = await getEmbeddingConfig(app);
+    const embeddingConfig = getEmbeddingProviderName(app);
     const indexedDBManager = new IndexedDBManager();
     const allHelpCenterEmbeddings = await indexedDBManager.getAllHelpCenterEmbeddings();
     const lastLoadHelpCenterEmbeddingProvider = await indexedDBManager.getConfigValue('lastLoadHelpCenterEmbeddingProvider');
@@ -16,11 +16,14 @@ export const loadHelpCenterEmbeddings = async (app) => {
     }
 
     let jsonFileName;
-    if (embeddingConfig.provider === 'local') {
+    if (embeddingConfig.provider === 'local' || embeddingConfig.provider === 'ollama') {
         jsonFileName = 'localHelpCenterEmbeddings.json.gz';
     }
-    else if (embeddingConfig.provider === 'pinecone') {
-        jsonFileName = 'pineconeHelpCenterEmbeddings.json.gz';
+    else if (embeddingConfig.provider === 'openai') {
+        jsonFileName = 'openaiHelpCenterEmbeddings.json.gz';
+    }
+    else if (embeddingConfig.provider === 'fireworks') {
+        jsonFileName = 'fireworksHelpCenterEmbeddings.json.gz';
     }
     else throw new Error(`Embedding provider ${embeddingConfig.provider} not supported`);
 

@@ -44,6 +44,7 @@
     "@ai-sdk/anthropic": "1.1.13",
     "@ai-sdk/openai": "1.1.15",
     "@ai-sdk/google": "1.1.17",
+    "@ai-sdk/fireworks": "0.2.0",
     "ollama-ai-provider": "1.2.0",
     "easy-web-worker": "7.0.2",
     "fuse.js": "7.0.0",
@@ -75,7 +76,9 @@
     "@testing-library/jest-dom": "^6.5.0",
     "esbuild-plugin-external-global": "^1.0.1",
     "@huggingface/transformers": "3.2.4",
-    "idb": "^8.0.1"
+    "node-fetch": "^3.3.2",
+    "idb": "^8.0.1",
+    "p-retry": "^6.2.1"
   },
   "scripts": {
     "test": "jest --testPathPattern=src-copilot",
