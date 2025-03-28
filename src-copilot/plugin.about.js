@@ -10,7 +10,7 @@ import {
 export default {
     name: 'Ample Copilot',
     description: 'Next-gen AI plugin with chat ui and natural language searching.',
-    settings: [LLM_API_KEY_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING, LLM_MAX_TOKENS_SETTING,
+    settings: [LLM_API_URL_SETTING, LLM_API_KEY_SETTING, LLM_MODEL_SETTING, LLM_MAX_TOKENS_SETTING,
         CUSTOM_LLM_INSTRUCTION_SETTING, CUSTOM_LLM_AVATAR_SETTING,
         EMBEDDING_API_URL_SETTING, EMBEDDING_API_KEY_SETTING, USER_PROMPT_LIST_SETTING],
     version: '0.2.0',

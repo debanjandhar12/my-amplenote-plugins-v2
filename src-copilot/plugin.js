@@ -88,8 +88,16 @@ const plugin = {
             run: async function (app) {
                 try {
                     const imageModel = await getImageModel(app.settings);
-                    const prompt = await app.prompt("Enter image generation instructions:");
-                    const response = await generateImage(imageModel, prompt);
+                    const [prompt, size] = await app.prompt("", {
+                        inputs: [
+                            { label: "Image generation instructions:", type: "text", value: "" },
+                            { label: "Image size:", type: "select", options: [
+                                    { label: "512x512", value: "512" },
+                                    { label: "1024x1024", value: "1024" }
+                                ], value: "512" }
+                        ]
+                    });
+                    const response = await generateImage(imageModel, prompt, size);
                     console.log('response', response);
                     if (response.image) {
                         const imgUrl = await app.attachNoteMedia({uuid: app.context.noteUUID}, 'data:image/webp;base64,' +response.image.base64);
