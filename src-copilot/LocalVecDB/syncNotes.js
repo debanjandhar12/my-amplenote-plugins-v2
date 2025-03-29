@@ -99,7 +99,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         ).size;
         const totalNotes = new Set(records.map(record => record.metadata.noteUUID)).size;
         const embedMessage = `Using ${embeddingProviderName} embedding${embeddingProviderName === 'local' ? 
-            ` with ${(await embeddingProviderName.isWebGpuAvailable()) ? 'gpu' : 'cpu'}` : ''}: ${totalNotes - remainingNotes} / ${totalNotes}`;
+            ` with ${(await embeddingGenerator.isWebGpuAvailable()) ? 'gpu' : 'cpu'}` : ''}: ${totalNotes - remainingNotes} / ${totalNotes}`;
         const localWarning = embeddingProviderName === 'local' ?
             `<br /><small style="opacity: 0.8;">(💡 Enter embedding api url and key in plugin settings for faster sync)</small>` : '';
         sendMessageToEmbed(app, 'syncNotesProgress', embedMessage + localWarning);

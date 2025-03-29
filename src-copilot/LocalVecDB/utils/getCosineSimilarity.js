@@ -5,5 +5,9 @@ export const getCosineSimilarity = (vecA, vecB) => {
     const dotProduct = vecA.reduce((sum, val, index) => sum + val * vecB[index], 0);
     const magnitudeA = Math.sqrt(vecA.reduce((sum, val) => sum + val * val, 0));
     const magnitudeB = Math.sqrt(vecB.reduce((sum, val) => sum + val * val, 0));
-    return dotProduct / (magnitudeA * magnitudeB);
+    const denominator = magnitudeA * magnitudeB;
+    if (denominator === 0) {
+        return 0;
+    }
+    return dotProduct / denominator;
 }

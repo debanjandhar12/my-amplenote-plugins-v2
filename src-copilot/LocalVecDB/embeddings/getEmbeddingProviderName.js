@@ -13,7 +13,7 @@ export function getEmbeddingProviderName(app) {
     else if (embedApiUrl.includes('fireworks')) {
         return "fireworks";
     }
-    else if (embedApiUrl.includes('api.pinecone.io')) {
+    else if (embedApiUrl.includes('pinecone')) {
         return "pinecone";
     }
     else if (embedApiUrl.trim() === '' || embedApiUrl.trim() === 'local') {

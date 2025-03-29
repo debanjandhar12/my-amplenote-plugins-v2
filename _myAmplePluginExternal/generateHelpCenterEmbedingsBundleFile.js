@@ -9,7 +9,6 @@ import {fetch} from "cross-fetch";
 import {TransformStream} from 'stream/web';
 import {compressSync, decompressSync} from "fflate";
 import {cloneDeep} from "lodash-es";
-import {LocalEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/LocalEmbeddingGenerator";
 import {OpenAIEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/OpenAIEmbeddingGenerator";
 import {FireworksEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/FireworksEmbeddingGenerator";
 import {OllamaEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/OllamaEmbeddingGenerator";

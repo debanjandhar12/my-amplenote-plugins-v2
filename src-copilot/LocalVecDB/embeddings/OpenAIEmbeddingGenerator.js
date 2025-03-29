@@ -20,7 +20,7 @@ export class OpenAIEmbeddingGenerator extends EmbeddingGeneratorBase {
         const { embeddings } = await embedMany({
             model: createOpenAI({
                 apiKey: app.settings[EMBEDDING_API_KEY_SETTING]
-            }).embedding(this.MODEL_NAME, {dimensions: 512}),
+            }).embedding(this.MODEL_NAME),
             values: textArray,
         });
         return embeddings;
