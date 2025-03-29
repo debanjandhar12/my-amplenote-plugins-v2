@@ -1,6 +1,6 @@
 {
   "name": "my-ample-plugin-external",
-  "version": "1.0.14",
+  "version": "1.0.16",
   "description": "This npm package contains files used by my plugins for amplenote",
   "dependencies": {
     "@debanjandhar12/markmap-lib": "0.17.0-mod.3",

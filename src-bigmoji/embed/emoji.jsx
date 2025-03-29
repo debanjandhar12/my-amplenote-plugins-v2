@@ -1,11 +1,11 @@
-import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
+import {dynamicImportExternalPluginBundle} from "../../common-utils/dynamic-import-esm.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMOJI_DATA_MOCK} from "../test/embed/emoji.testdata.js";
 import {EMBED_COMMANDS_MOCK} from "../test/embed/emoji.testdata.js";
 import {EmojiPickerPage} from "./pages/EmojiPickerPage.jsx";
 import {useCustomStyles} from "./hooks/useCustomStyles.jsx";
 import {EmojiSizePage} from "./pages/EmojiSizePage.jsx";
-import {getURLFromEmojiObj} from "./utils/getURLFromEmojiCode.jsx";
+import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 
 if(process.env.NODE_ENV === 'development') {
     window.emojiData = window.emojiData || EMOJI_DATA_MOCK;
@@ -47,20 +47,24 @@ window.addEventListener('resize', function() {
 });
 
 (async () => {
-    window.React = await dynamicImportESM("react");
-    window.ReactDOM = await dynamicImportESM("react-dom/client");
-    window.Picker = (await dynamicImportESM("@emoji-mart/react")).default;
-    if (!React || !ReactDOM) {
+    showEmbedLoader();
+    const [React, ReactDOM, Picker, EmojiData] = await dynamicImportExternalPluginBundle('bigmojiUIBundle.js');
+    hideEmbedLoader();
+    window.React = React;
+    window.ReactDOM = ReactDOM;
+    window.Picker = Picker.default;
+    window.EmojiData = EmojiData.default;
+    if (!window.React || !window.ReactDOM) {
         throw new Error("Failed to load React or ReactDOM");
     }
     if(document.querySelector('.app-container'))
-        ReactDOM.createRoot(document.querySelector('.app-container')).render(React.createElement(App));
+        window.ReactDOM.createRoot(document.querySelector('.app-container')).render(React.createElement(App));
 })();
 
 const showCloseWindowPage = () => {
     document.body.style.backgroundColor = '#192025';
     document.body.innerHTML = '<span style="color: aliceblue">Please close this window.</span>';
-    ReactDOM.unmountComponentAtNode(document.querySelector('.app-container'));
+    window.ReactDOM.unmountComponentAtNode(document.querySelector('.app-container'));
 }
 
 export const App = () => {

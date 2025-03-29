@@ -53,7 +53,7 @@
     "@huggingface/transformers": "3.2.4",
     "fflate": "0.8.2",
     "scheduler-polyfill": "^1.3.0",
-    "my-ample-plugin-external": "1.0.14"
+    "my-ample-plugin-external": "1.0.16"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
@@ -81,9 +81,9 @@
     "p-retry": "^6.2.1"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-copilot",
-    "test:watch": "jest --testPathPattern=src-copilot --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-copilot",
-    "build:dev": "node esbuild.js $(pwd)/src-copilot --watch --server"
+    "test": "jest --testPathPattern=src-bigmoji",
+    "test:watch": "jest --testPathPattern=src-bigmoji --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-bigmoji",
+    "build:dev": "node esbuild.js $(pwd)/src-bigmoji --watch --server"
   }
 }

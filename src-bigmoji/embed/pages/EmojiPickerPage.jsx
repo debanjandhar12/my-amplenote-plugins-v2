@@ -1,18 +1,10 @@
-import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
-
 // TODO: https://github.com/missive/emoji-mart/issues/884
 export const EmojiPickerPage = ({onSelectEmoji, onAddCustomEmoji, initialSearch}) => {
     // - Initialize emoji data -
     const [data, setData] = React.useState(null);
+    setTimeout(() => setData(window.EmojiData), 1);
     const [customEmojis, setCustomEmojis] = React.useState([]);
     const pickerRef = React.useRef();
-
-    window.React.useEffect(() => {
-        const fetchData = async () => {
-            await setData((await dynamicImportESM("@emoji-mart/data")).default);
-        };
-        fetchData();
-    }, []);
 
     // - Custom Emoji handling and default search value -
     const fetchCustomEmojis = async () => {
@@ -64,8 +56,8 @@ export const EmojiPickerPage = ({onSelectEmoji, onAddCustomEmoji, initialSearch}
     window.React.useEffect(() => {
         addCustomEmojiInsertButton();
         setDefaultSearchValue();
-        setTimeout(addCustomEmojiInsertButton, 1000);
-        setTimeout(setDefaultSearchValue, 1000);
+        setTimeout(addCustomEmojiInsertButton, 320);
+        setTimeout(setDefaultSearchValue, 320);
     }, [data, pickerRef]);
 
     return (

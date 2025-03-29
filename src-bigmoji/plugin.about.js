@@ -24,5 +24,6 @@ Demo video: [https://vimeo.com/1028142650](https://vimeo.com/1028142650)
 ### Changelog
 13/10/2024 - Initial release
 10/11/2024 - UI improvements, unicode emoji support
+29/03/2025 - Bug fixes
 `.trim()
 };
