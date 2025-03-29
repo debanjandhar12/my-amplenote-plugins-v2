@@ -1,7 +1,7 @@
 import {Splitter} from "../src-copilot/LocalVecDB/splitter/Splitter";
 import {mockApp, mockNote} from "../common-utils/test-helpers";
 import {getCorsBypassUrl} from "../common-utils/cors-helpers";
-import {EMBEDDING_API_KEY_SETTING, LOCAL_VEC_DB_MAX_TOKENS} from "../src-copilot/constants";
+import {EMBEDDING_API_KEY_SETTING, EMBEDDING_API_URL_SETTING, LOCAL_VEC_DB_MAX_TOKENS} from "../src-copilot/constants";
 const { readFileSync, writeFileSync } = require('fs');
 const { join } = require('path');
 const { JSDOM } = require("jsdom");
@@ -20,7 +20,7 @@ import {PineconeEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/P
  * Once generated, the bundles can be published to npm.
  * This can then be imported in plugin and be used to search help center.
  * Usage:
- * manually set PINECONE_API_KEY in .env file
+ * manually set PINECONE_API_KEY, OPENAI_API_KEY, FIREWORKS_API_KEY in .env file
  * sudo service ollama stop (for linux)
  * OLLAMA_ORIGINS=https://plugins.amplenote.com ollama serve
  * ollama pull snowflake-arctic-embed:33m-s-fp16 (first time only)
@@ -203,7 +203,9 @@ async function generateHelpCenterEmbeddings() {
         const splitRecords = await splitter.splitNote(app, mockedNote);
 
         // Generate local embeddings
+        app.settings[EMBEDDING_API_URL_SETTING] = "http://localhost:11434/api";
         const localRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsLocal, ollamaEmbeddingGenerator);
+        app.settings[EMBEDDING_API_URL_SETTING] = null;
         allRecordsLocal.push(...localRecords);
         await saveRecords(allRecordsLocal, CONFIG.OUTPUT_PATH.LOCAL);
 

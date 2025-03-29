@@ -25,4 +25,14 @@ describe('Pinecone Embedding', () => {
         expect(Array.isArray(result[0])).toBe(true);
         expect(Array.isArray(result[1])).toBe(true);
     });
+
+    test('throws error with invalid API key', async () => {
+        const embeddingGenerator = new PineconeEmbeddingGenerator();
+        const app = mockApp();
+        app.settings[EMBEDDING_API_KEY_SETTING] = "invalid_api_key";
+
+        await expect(async () => {
+            await embeddingGenerator.generateEmbedding(app, "Hi", 'query');
+        }).rejects.toThrow();
+    });
 });

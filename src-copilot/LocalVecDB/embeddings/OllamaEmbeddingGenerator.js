@@ -1,6 +1,7 @@
 import {EmbeddingGeneratorBase} from "./EmbeddingGeneratorBase.js";
 import {getEmbeddingProviderName} from "./getEmbeddingProviderName.js";
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
+import {EMBEDDING_API_URL_SETTING} from "../../constants.js";
 
 export class OllamaEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
@@ -14,7 +15,7 @@ export class OllamaEmbeddingGenerator extends EmbeddingGeneratorBase {
         const {createOllama} = await dynamicImportESM("ollama-ai-provider");
 
         const embeddingModel = createOllama({
-            basePath: 'http://localhost:11434/api',
+            basePath: app.settings[EMBEDDING_API_URL_SETTING],
         }).embedding('snowflake-arctic-embed:33m-s-fp16', {truncate: true});
 
         let embeddings = [];

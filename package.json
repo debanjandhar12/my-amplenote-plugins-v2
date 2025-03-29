@@ -39,12 +39,12 @@
     "@assistant-ui/react": "0.7.65",
     "@radix-ui/react-icons": "1.3.2",
     "tributejs": "5.1.3",
-    "ai": "4.1.50",
-    "@ai-sdk/groq": "1.1.11",
-    "@ai-sdk/anthropic": "1.1.13",
-    "@ai-sdk/openai": "1.1.15",
-    "@ai-sdk/google": "1.1.17",
-    "@ai-sdk/fireworks": "0.2.0",
+    "ai": "4.2.8",
+    "@ai-sdk/groq": "1.2.1",
+    "@ai-sdk/anthropic": "1.2.2",
+    "@ai-sdk/openai": "1.3.4",
+    "@ai-sdk/google": "1.2.3",
+    "@ai-sdk/fireworks": "0.2.2",
     "ollama-ai-provider": "1.2.0",
     "easy-web-worker": "7.0.2",
     "fuse.js": "7.0.0",
@@ -53,7 +53,7 @@
     "@huggingface/transformers": "3.2.4",
     "fflate": "0.8.2",
     "scheduler-polyfill": "^1.3.0",
-    "my-ample-plugin-external": "1.0.13"
+    "my-ample-plugin-external": "1.0.14"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
