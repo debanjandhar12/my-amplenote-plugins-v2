@@ -72,9 +72,10 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
     }, {priority: 'user-visible'});
 
     // Ask confirmation from user about cost
+    await new Promise(resolve => setTimeout(resolve, 120));
     const cost = await embeddingGenerator.getEmbeddingCost(app, records.length);
     if (cost > 0) {
-        const confirm = await app.prompt(`The operation will cost $${cost}. Do you want to continue?`, {
+        const confirm = await app.prompt(`The sync operation will cost $${cost} approximately. Do you want to continue?`, {
             inputs: []
         });
         if (!confirm) return false;
@@ -97,10 +98,11 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
             )
         ).size;
         const totalNotes = new Set(records.map(record => record.metadata.noteUUID)).size;
-        sendMessageToEmbed(app, 'syncNotesProgress',
-            `Using ${embeddingProviderName} embedding${embeddingProviderName === 'local' ? 
-                ` with ${embeddingProviderName.webGpuAvailable ? 'gpu' : 'cpu'}`:''}: ${totalNotes-remainingNotes} / ${totalNotes}`
-            + (embeddingProviderName === 'local' ? `<br /><small style="opacity: 0.8;">(Note: Setup embedding api url and key in settings for better performance)</small>` : ''));
+        const embedMessage = `Using ${embeddingProviderName} embedding${embeddingProviderName === 'local' ? 
+            ` with ${(await embeddingProviderName.isWebGpuAvailable()) ? 'gpu' : 'cpu'}` : ''}: ${totalNotes - remainingNotes} / ${totalNotes}`;
+        const localWarning = embeddingProviderName === 'local' ?
+            `<br /><small style="opacity: 0.8;">(💡 Enter embedding api url and key in plugin settings for faster sync)</small>` : '';
+        sendMessageToEmbed(app, 'syncNotesProgress', embedMessage + localWarning);
         // 2. Generate embeddings and add to records
         const embeddings = await embeddingGenerator.generateEmbedding(app,
             recordChunk.map(record => record.metadata.noteContentPart), 'passage');

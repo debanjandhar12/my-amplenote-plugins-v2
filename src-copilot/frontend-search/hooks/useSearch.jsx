@@ -88,7 +88,7 @@ export const useSearch = () => {
             } finally {
                 setIsLoading(false);
             }
-        }, 320),
+        }, 800),
         [searchText, searchOpts]
     );
 

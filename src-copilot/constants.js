@@ -12,7 +12,7 @@ export const EMBEDDING_API_URL_SETTING = "Embedding API URL (Optional)";
 export const EMBEDDING_API_KEY_SETTING = "Embedding API Key (Optional)";
 
 // Vector DB Configs
-export const LOCAL_VEC_DB_INDEX_VERSION = 9;
+export const LOCAL_VEC_DB_INDEX_VERSION = 10;
 export const LOCAL_VEC_DB_MAX_TOKENS = 507;
 
 // Chat History DB Configs
