@@ -9,7 +9,14 @@ export async function getImageModel(appSettings) {
         return createOpenAI({
             apiKey: appSettings[LLM_API_KEY_SETTING]
         }).image('dall-e-2', {maxImagesPerCall: 1});
-    } else if (apiUrl.includes('fireworks')) {
+    } else if (apiUrl.includes('googleapis')) {
+        const {createGoogleGenerativeAI} = await dynamicImportESM("@ai-sdk/google");
+        // Currently, not supported by ai sdk
+        return createGoogleGenerativeAI({
+            apiKey: appSettings[LLM_API_KEY_SETTING]
+        }).imageModel('imagen-3.0-generate-002', {maxImagesPerCall: 1});
+    }
+    else if (apiUrl.includes('fireworks')) {
         const {createFireworks} = await dynamicImportESM("@ai-sdk/fireworks");
         return createFireworks({
             apiKey: appSettings[LLM_API_KEY_SETTING]

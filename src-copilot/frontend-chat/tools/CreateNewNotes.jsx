@@ -14,13 +14,12 @@ export const CreateNewNotes = () => {
             properties: {
                 notes: {
                     type: "array",
-                    minItems: 1,
+                    minItems: "1",
                     items: {
                         type: "object",
                         properties: {
                             noteName: {
-                                type: "string",
-                                minLength: 1
+                                type: "string"
                             },
                             noteTags: {
                                 type: "array",

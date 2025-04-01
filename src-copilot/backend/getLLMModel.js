@@ -31,7 +31,7 @@ export async function getLLMModel(appSettings) {
         return createGoogleGenerativeAI({
             apiKey: apiKey,
             basePath: apiUrl // Default: https://generativelanguage.googleapis.com/v1beta
-        }).languageModel(model, {structuredOutputs: false});
+        }).languageModel(model);
     }
     else if (apiUrl.includes('anthropic')) {
         const {createAnthropic} = await dynamicImportESM("@ai-sdk/anthropic");

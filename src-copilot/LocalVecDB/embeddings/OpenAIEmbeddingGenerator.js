@@ -1,6 +1,6 @@
 import {EmbeddingGeneratorBase} from "./EmbeddingGeneratorBase.js";
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
-import {EMBEDDING_API_KEY_SETTING, LLM_API_KEY_SETTING} from "../../constants.js";
+import {EMBEDDING_API_KEY_SETTING} from "../../constants.js";
 
 let createOpenAI, embedMany;
 export class OpenAIEmbeddingGenerator extends EmbeddingGeneratorBase {

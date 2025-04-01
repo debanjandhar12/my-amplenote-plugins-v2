@@ -12,8 +12,7 @@ export const SearchHelpCenter = () => {
             properties: {
                 query: {
                     type: "string",
-                    description: "Search string",
-                    minLength: 1
+                    description: "Search string"
                 }
             },
             required: ["query"]

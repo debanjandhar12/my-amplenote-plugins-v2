@@ -21,6 +21,9 @@ export const loadHelpCenterEmbeddings = async (app) => {
     else if (embeddingProviderName === 'openai') {
         jsonFileName = 'openaiHelpCenterEmbeddings.json.gz';
     }
+    else if (embeddingProviderName === 'google') {
+        jsonFileName = 'googleHelpCenterEmbeddings.json.gz';
+    }
     else if (embeddingProviderName === 'fireworks') {
         jsonFileName = 'fireworksHelpCenterEmbeddings.json.gz';
     }

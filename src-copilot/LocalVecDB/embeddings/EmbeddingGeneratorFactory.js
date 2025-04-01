@@ -4,6 +4,7 @@ import {LocalEmbeddingGenerator} from "./LocalEmbeddingGenerator.js";
 import {FireworksEmbeddingGenerator} from "./FireworksEmbeddingGenerator.js";
 import {OllamaEmbeddingGenerator} from "./OllamaEmbeddingGenerator.js";
 import {PineconeEmbeddingGenerator} from "./PineconeEmbeddingGenerator.js";
+import {GoogleEmbeddingGenerator} from "./GoogleEmbeddingGenerator.js";
 
 export class EmbeddingGeneratorFactory {
     static async create(app) {
@@ -17,6 +18,8 @@ export class EmbeddingGeneratorFactory {
                 return new OllamaEmbeddingGenerator();
             case 'pinecone':
                 return new PineconeEmbeddingGenerator();
+            case 'google':
+                return new GoogleEmbeddingGenerator();
             case 'local':
                 return new LocalEmbeddingGenerator();
         }

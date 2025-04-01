@@ -8,7 +8,7 @@ describe('chat embed', () => {
     const {getPage} = createPlaywrightHooks();
 
     describe('works with provider:', () => {
-        ['groq', 'openai'].forEach(provider => {
+        ['groq', 'openai', 'google', 'fireworks'].forEach(provider => {
             it(provider, async () => {
                 const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_SETTINGS = ${JSON.stringify(getLLMProviderSettings(provider))};
                 window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({

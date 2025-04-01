@@ -14,15 +14,13 @@ export const DeleteUserNotes = () => {
             properties: {
                 notes: {
                     type: "array",
-                    minItems: 1,
+                    minItems: "1",
                     items: {
                         type: "object",
                         properties: {
                             noteUUID: {
                                 type: "string",
-                                description: "UUID of the note to delete",
-                                minLength: 36,
-                                maxLength: 42
+                                description: "36 digit UUID of the note to delete"
                             }
                         },
                         required: ["noteUUID"]

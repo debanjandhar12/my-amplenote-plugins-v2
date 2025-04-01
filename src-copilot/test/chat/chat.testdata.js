@@ -53,7 +53,7 @@ export const EMBED_COMMANDS_MOCK = {
     "getSettings": async () => {
         await dynamicImportEnv();
         return {
-            ...getLLMProviderSettings('groq'),
+            ...getLLMProviderSettings('google'),
             [USER_PROMPT_LIST_SETTING]: JSON.stringify([{uuid:'a', message: "Test A", usageCount:0},{uuid: 'b', message: "Test B", usageCount:0}]),
         }
     }
@@ -71,6 +71,13 @@ export const getLLMProviderSettings = (provider) => {
             [LLM_API_KEY_SETTING]: process.env.OPENAI_API_KEY,
             [LLM_API_URL_SETTING]: "https://api.openai.com/v1/chat/completions",
             [LLM_MODEL_SETTING]: "gpt-4o-mini"
+        }
+    }
+    else if (provider === 'google') {
+        return {
+            [LLM_API_KEY_SETTING]: process.env.GOOGLE_API_KEY,
+            [LLM_API_URL_SETTING]: "https://generativelanguage.googleapis.com/v1beta",
+            [LLM_MODEL_SETTING]: "gemini-2.0-flash"
         }
     }
 }

@@ -20,9 +20,7 @@ export const EditNoteContent = () => {
             properties: {
                 noteUUID: {
                     type: "string",
-                    description: "UUID of note",
-                    minLength: 36,
-                    maxLength: 42
+                    description: "36 digit UUID of note"
                 },
                 editInstruction: {
                     type: "string",

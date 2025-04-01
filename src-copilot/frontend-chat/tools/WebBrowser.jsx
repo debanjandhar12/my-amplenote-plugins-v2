@@ -10,8 +10,7 @@ export const WebBrowser = () => {
             type: "object",
             properties: {
                 url: {
-                    type: "string",
-                    minLength: 1
+                    type: "string"
                 }
             },
             required: ["url"]

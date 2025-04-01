@@ -15,13 +15,12 @@ export const InsertTasksToNote = () => {
             properties: {
                 tasks: {
                     type: "array",
-                    minItems: 1,
+                    minItems: "1",
                     items: {
                         type: "object",
                         properties: {
                             taskContent: {
                                 type: "string",
-                                minLength: 1,
                                 description: "Short description of task"
                             },
                             taskStartAt: {
@@ -42,8 +41,7 @@ export const InsertTasksToNote = () => {
                 },
                 noteUUID: {
                     type: "string",
-                    description: "The UUID of the note to insert the task into.",
-                    minLength: 10
+                    description: "36 digit UUID of note to insert the task into."
                 }
             },
             required: ["tasks", "noteUUID"]

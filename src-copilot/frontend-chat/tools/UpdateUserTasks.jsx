@@ -14,14 +14,13 @@ export const UpdateUserTasks = () => {
             properties: {
                 tasks: {
                     type: "array",
-                    minItems: 1,
+                    minItems: "1",
                     items: {
                         type: "object",
                         properties: {
                             taskUUID: {
                                 type: "string",
-                                description: "UUID of the task to update",
-                                minLength: 10
+                                description: "UUID of the task to update"
                             },
                             taskContent: {
                                 type: "string",

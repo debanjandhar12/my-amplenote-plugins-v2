@@ -14,7 +14,7 @@ export const DeleteTasks = () => {
             properties: {
                 tasks: {
                     type: "array",
-                    minItems: 1,
+                    minItems: "1",
                     items: {
                         type: "object",
                         properties: {

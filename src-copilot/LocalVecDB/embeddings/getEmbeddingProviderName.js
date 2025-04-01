@@ -7,6 +7,9 @@ export function getEmbeddingProviderName(app) {
     if (embedApiUrl.includes('api.openai.com')) {
         return "openai";
     }
+    else if (embedApiUrl.includes('googleapis')) {
+        return "google";
+    }
     else if (embedApiUrl.includes('localhost')) {
         return "ollama";
     }
