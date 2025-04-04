@@ -6,7 +6,10 @@ export class CopilotChatHistoryDB {
         if (this.db) return;
         this.db = await openDB('CopilotChatHistoryDB', COPILOT_CHAT_HISTORY_DB_INDEX_VERSION, {
             upgrade(db, oldVersion) {
-                // Clear existing data on version change
+                // Clear existing data on version change and create new object store
+                if (db.objectStoreNames.contains('threads')) {
+                    db.deleteObjectStore('threads');
+                }
                 db.createObjectStore('threads', {keyPath: 'remoteId'});
             }
         });
