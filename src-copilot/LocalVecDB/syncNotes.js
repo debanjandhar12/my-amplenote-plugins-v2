@@ -59,7 +59,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
     const records = [];
     await scheduler.postTask(async () => {
         for (const [index, note] of targetNotes.entries()) {
-            if (index % 10 === 0) {
+            if (index % 20 === 0 || index === targetNotes.length - 1) {
                 sendMessageToEmbed(app, 'syncNotesProgress', `Scanning notes to sync: ${index}/${targetNotes.length}`);
             }
             if (index !== 0 && index % 100 === 0) {
