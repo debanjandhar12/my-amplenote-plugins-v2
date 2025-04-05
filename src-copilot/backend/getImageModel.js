@@ -1,5 +1,6 @@
 import {LLM_API_KEY_SETTING, LLM_API_URL_SETTING} from "../constants.js";
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
+import {createGoogleImageModel} from "./utils/GoogleImageModel.js";
 
 export async function getImageModel(appSettings) {
     let apiUrl = appSettings[LLM_API_URL_SETTING];
@@ -10,11 +11,18 @@ export async function getImageModel(appSettings) {
             apiKey: appSettings[LLM_API_KEY_SETTING]
         }).image('dall-e-2', {maxImagesPerCall: 1});
     } else if (apiUrl.includes('googleapis')) {
-        const {createGoogleGenerativeAI} = await dynamicImportESM("@ai-sdk/google");
         // Currently, not supported by ai sdk
-        return createGoogleGenerativeAI({
-            apiKey: appSettings[LLM_API_KEY_SETTING]
-        }).imageModel('imagen-3.0-generate-002', {maxImagesPerCall: 1});
+        // const {createGoogleGenerativeAI} = await dynamicImportESM("@ai-sdk/google");
+        // return createGoogleGenerativeAI({
+        //     apiKey: appSettings[LLM_API_KEY_SETTING]
+        // }).imageModel('imagen-3.0-generate-002', {maxImagesPerCall: 1});
+
+        // Using custom implementation since Google AI SDK doesn't support image models natively
+        return createGoogleImageModel(
+            appSettings[LLM_API_KEY_SETTING], 
+            'imagen-3.0-generate-002', 
+            1
+        );
     }
     else if (apiUrl.includes('fireworks')) {
         const {createFireworks} = await dynamicImportESM("@ai-sdk/fireworks");
