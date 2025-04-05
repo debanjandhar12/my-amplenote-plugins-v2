@@ -7,11 +7,18 @@ import {LLM_API_URL_SETTING} from "./constants.js";
 import {getImageModel} from "./backend/getImageModel.js";
 import {generateImage} from "./backend/generateImage.js";
 import {LocalVecDB} from "./LocalVecDB/LocalVecDB.js";
-import {getSyncState} from "./LocalVecDB/getSyncState.js";
 import {getMatchedPartWithFuzzySearch} from "./utils/getMatchedPartWithFuzzySearch.jsx";
+import {validatePluginSettings} from "./validatePluginSettings.js";
 
 const plugin = {
     currentNoteUUID: null,
+    validateSettings: async function (app) {
+        try {
+            return await validatePluginSettings(app);
+        } catch (e) {
+            console.error(e);
+        }
+    },
     insertText: {
         "Continue": async function (app) {
             try {
