@@ -61,6 +61,9 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
             if (index % 10 === 0) {
                 sendMessageToEmbed(app, 'syncNotesProgress', `Scanning notes to sync: ${index}/${targetNotes.length}`);
             }
+            if (index !== 0 && index % 100 === 0) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
             const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
             const splitResultForNote = await splitter.splitNote(app, note);
             records.push(...splitResultForNote);
