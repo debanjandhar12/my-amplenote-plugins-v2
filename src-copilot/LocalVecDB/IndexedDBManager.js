@@ -10,10 +10,28 @@ export class IndexedDBManager {
                     if (oldVersion !== newVersion) {
                         await new IndexedDBManager().resetDB(db);
                     }
+                },
+                blocking() {
+                    console.warn('This connection is blocking another connection');
+                    // Close the database to allow the other connection to proceed
+                    if (this.db) this.db.close();
                 }
             });
         } catch (e) {
             console.error('IndexedDBManager init error:', e);
+            throw e;
+        }
+    }
+
+    /**
+     * Closes the database connection.
+     * This should be called when the database is no longer needed to free up resources.
+     * @returns {Promise<void>}
+     */
+    async closeDB() {
+        if (this.db) {
+            this.db.close();
+            this.db = null;
         }
     }
 

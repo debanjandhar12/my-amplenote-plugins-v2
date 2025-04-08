@@ -7,12 +7,14 @@ export const getSyncState = async (app) => {
     const lastPluginUUID = await indexedDBManager.getConfigValue('lastPluginUUID');
     const lastEmbeddingModel = await indexedDBManager.getConfigValue('lastEmbeddingModel');
     if (lastPluginUUID !== app.context.pluginUUID || lastEmbeddingModel !== embeddingConfig.model) {
+        await indexedDBManager.closeDB();
         return 'Not synced';
     }
 
     const uniqueNoteUUIDs = await indexedDBManager.getUniqueNoteUUIDsInNoteEmbeddings();
     const uniqueNoteUUIDsCount = uniqueNoteUUIDs.size;
     if (uniqueNoteUUIDsCount === 0) {
+        await indexedDBManager.closeDB();
         return 'Not synced';
     }
     const allNotes = await app.filterNotes({});
@@ -31,6 +33,7 @@ export const getSyncState = async (app) => {
                 return true;
             }
         });
+    await indexedDBManager.closeDB();
     if (targetNotes.length >= (allNotes.length/4)) {
         return 'Not synced';
     }

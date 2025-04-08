@@ -11,9 +11,9 @@ export const searchNotes = async (app, queryText, {limit = 256,
 
     if (!queryText || !queryText.trim()) return [];
 
+    const indexedDBManager = new IndexedDBManager();
     try {
         // Get embeddings for the query text
-        const indexedDBManager = new IndexedDBManager();
         const queryVector = (await getEmbeddingFromText(app, queryText, "query"))[0];
         const allEmbeddings = await indexedDBManager.getAllNotesEmbeddings();
         const filteredEmbeddings = allEmbeddings.filter(entry => {
@@ -31,6 +31,8 @@ export const searchNotes = async (app, queryText, {limit = 256,
         });
 
         similarities.sort((a, b) => b.score - a.score); // Sort by similarity (descending)
+
+        await indexedDBManager.closeDB();
         return similarities.slice(0, limit); // Return the top N results based on limit
     } catch (e) {
         throw new Error(`Error querying vectors: ${e}`);

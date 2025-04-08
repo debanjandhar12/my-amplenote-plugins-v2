@@ -11,6 +11,7 @@ export const loadHelpCenterEmbeddings = async (app) => {
     if (lastLoadHelpCenterEmbeddingProvider &&
         lastLoadHelpCenterEmbeddingProvider === embeddingConfig.provider &&
         allHelpCenterEmbeddings.length > 0) {
+        await indexedDBManager.closeDB();
         return;
     }
 
@@ -30,4 +31,6 @@ export const loadHelpCenterEmbeddings = async (app) => {
     await indexedDBManager.clearHelpCenterEmbeddings();
     await indexedDBManager.putMultipleHelpCenterEmbeddings(helpCenterEmbeddings);
     await indexedDBManager.setConfigValue('lastLoadHelpCenterEmbeddingProvider', embeddingConfig.provider);
+
+    await indexedDBManager.closeDB();
 }

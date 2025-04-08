@@ -110,7 +110,8 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
     await indexedDBManager.setConfigValue('lastSyncTime', new Date().toISOString());
     await indexedDBManager.setConfigValue('lastPluginUUID', app.context.pluginUUID);
     await indexedDBManager.setConfigValue('lastEmbeddingModel', embeddingConfig.model);
+    await indexedDBManager.closeDB();
+
     console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', records.length);
     return true;
 }
-
