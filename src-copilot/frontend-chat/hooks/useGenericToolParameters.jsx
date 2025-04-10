@@ -41,7 +41,8 @@ export const useGenericToolParameters = ({ toolName, toolCallId, description, pa
         formError, 
         setFormError,
         formData, 
-        setFormData, 
+        setFormData,
+        threadRuntime,
         cancelFurtherLLMReply,
         signal: abortControllerRef.current.signal
     };

@@ -7,8 +7,8 @@ import {getLLMModel} from "../../backend/getLLMModel.js";
 import {generateText} from "../../backend/generateText.js";
 import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
 import {toCoreMessages} from "@assistant-ui/react";
-import {truncate} from "lodash-es";
 import {ToolCardCanceledMessage} from "../components/tools-ui/ToolCardCanceledMessage.jsx";
+import {ExpandableScrollArea} from "../components/tools-ui/ExpandableScrollArea.jsx";
 
 export const EditNoteContent = () => {
     return createGenericCUDTool({
@@ -35,11 +35,11 @@ export const EditNoteContent = () => {
             const { Spinner } = window.RadixUI;
             return <ToolCardMessage text={`Generating content...`} icon={<Spinner />} />
         },
-        onInit: async ({setFormState, formData, setFormData, args, thread}) => {
+        onInit: async ({setFormState, formData, setFormData, args, threadRuntime}) => {
             const noteUUID = args.noteUUID;
             const editInstruction = args.editInstruction;
             const currentContent = await appConnector.getNoteContentByUUID(noteUUID);
-            const previousConversationJSON = JSON.stringify(toCoreMessages(thread.messages));
+            const previousConversationJSON = JSON.stringify(toCoreMessages(threadRuntime.getState().messages));
             const previousConversationString = previousConversationJSON.length > 16000 ?
                 previousConversationJSON.substring(previousConversationJSON.length - 16000)
                 : previousConversationJSON;
@@ -94,31 +94,39 @@ export const EditNoteContent = () => {
         },
         renderWaitingForUserInput: ({args, formData, setFormData, status, setFormState}) => {
             const [noteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID] = useNoteSelector({args, setFormData, formData});
-            const { Text, ScrollArea } = window.RadixUI;
+            const { Text } = window.RadixUI;
             const StringDiff = window.StringDiff;
             return (
                 <ToolCardContainer>
                     <Text>Update note content:</Text>
-                    <ScrollArea
-                        style={{ background: "var(--gray-a2)", width: "100%", borderRadius: "8px",
-                            minHeight: "100px", maxHeight: "100px", marginTop: "10px",
-                            border: "1px solid #ccc", padding: "5px",
-                            whiteSpace: "pre-wrap" }}>
-                                <StringDiff
-                                    method={'diffWords'}
-                                    styles={{
-                                        added: {
-                                            backgroundColor: '#0bbf7d',
-                                        },
-                                        removed: {
-                                            backgroundColor: '#ff6b6b',
-                                        }
-                                    }}
-                                    oldValue={formData.currentContent}
-                                    newValue={formData.newContent}
-                                    showDiff={true}
-                                />
-                    </ScrollArea>
+                    <ExpandableScrollArea
+                        style={{
+                            background: "var(--gray-a2)",
+                            width: "100%",
+                            borderRadius: "8px",
+                            minHeight: "100px",
+                            maxHeight: "100px",
+                            marginTop: "10px",
+                            border: "1px solid #ccc",
+                            padding: "5px",
+                            whiteSpace: "pre-wrap"
+                        }}
+                    >
+                        <StringDiff
+                            method={'diffWords'}
+                            styles={{
+                                added: {
+                                    backgroundColor: '#0bbf7d',
+                                },
+                                removed: {
+                                    backgroundColor: '#ff6b6b',
+                                }
+                            }}
+                            oldValue={formData.currentContent}
+                            newValue={formData.newContent}
+                            showDiff={true}
+                        />
+                    </ExpandableScrollArea>
                     <ToolFooter
                         submitButtonText="Update Content"
                         cancelButtonText="Cancel"

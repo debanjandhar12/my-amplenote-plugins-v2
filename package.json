@@ -53,7 +53,7 @@
     "@huggingface/transformers": "3.2.4",
     "fflate": "0.8.2",
     "scheduler-polyfill": "^1.3.0",
-    "my-ample-plugin-external": "1.0.17"
+    "my-ample-plugin-external": "1.0.18"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
