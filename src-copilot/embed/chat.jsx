@@ -65,7 +65,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
                 dynamicImportCSS("@radix-ui/themes/styles.css"),
                 dynamicImportCSS("@assistant-ui/react-markdown/dist/styles/markdown.css")]);
         const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown,
-            RadixIcons, StringDiffModule, dayjs, tributejs]
+            RadixIcons, StringDiffModule, dayjs, tributejs, ReactErrorBoundary]
             = await dynamicImportExternalPluginBundle('assistantUIBundle.js');
         // const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown,
         //     RadixIcons, StringDiffModule]
@@ -83,6 +83,8 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.StringDiff = StringDiffModule.StringDiff;
         window.dayjs = dayjs.default;
         window.Tribute = tributejs.default;
+        window.ReactErrorBoundary = ReactErrorBoundary;
+        console.log('Loaded ReactErrorBoundary', ReactErrorBoundary);
         await parse(''); // Load unified js bundle
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);

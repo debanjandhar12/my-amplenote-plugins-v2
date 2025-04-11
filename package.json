@@ -52,8 +52,10 @@
     "async-mutex": "0.5.0",
     "@huggingface/transformers": "3.2.4",
     "fflate": "0.8.2",
+    "dayjs": "1.11.13",
+    "react-error-boundary": "5.0.0",
     "scheduler-polyfill": "^1.3.0",
-    "my-ample-plugin-external": "1.0.19"
+    "my-ample-plugin-external": "1.0.21"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
