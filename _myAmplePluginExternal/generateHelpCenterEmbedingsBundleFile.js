@@ -248,6 +248,8 @@ test('Generate Help Center Embeddings', async () => {
         'https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi',
         'https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb',
         'https://public.amplenote.com/16oi13jtaNMoSxqjQMKgBdUE',
+        'https://public.amplenote.com/SZnCDvp9yU7CbCzkn7RJowcV',
+        'https://public.amplenote.com/WykvBZZSXReMcVFRrjrhk4mS',
         ...(await getAllHelpCenterLinks())
     ];
     await generateHelpCenterEmbeddings();
