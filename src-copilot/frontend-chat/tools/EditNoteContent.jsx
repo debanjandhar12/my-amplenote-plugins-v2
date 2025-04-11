@@ -93,7 +93,7 @@ export const EditNoteContent = () => {
             setFormState('waitingForUserInput');
         },
         renderWaitingForUserInput: ({args, formData, setFormData, status, setFormState}) => {
-            const [noteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID] = useNoteSelector({args, setFormData, formData});
+            const [noteSelectionArr, setNoteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID] = useNoteSelector({args, setFormData, formData});
             const { Text } = window.RadixUI;
             const StringDiff = window.StringDiff;
             return (
@@ -146,24 +146,16 @@ export const EditNoteContent = () => {
             await appConnector.replaceNoteContent({uuid: selectedNoteUUID}, formData.newContent);
             setFormState("completed");
         },
-        onCompleted: async ({formData, addResult}) => {
+        onCompleted: async ({formData, addResult, setFormData}) => {
             const noteTitle = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
+            setFormData({...formData, noteTitle});
             addResult({resultSummary: `${noteTitle} note content updated.`, newContent: formData.newContent});
         },
         renderCompleted: ({formData, toolName, args}) => {
-            const [noteTitle, setNoteTitle] = React.useState(null);
-            React.useEffect(() => {
-                const fetchNoteTitle = async () => {
-                    const title = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
-                    setNoteTitle(title);
-                };
-                fetchNoteTitle();
-            }, [formData.currentNoteSelectionUUID]);
-
             const { FileTextIcon } = window.RadixIcons;
             return <ToolCardResultMessage
                 result={formData.newContent}
-                text={`${noteTitle} note content updated.`}
+                text={`${formData.noteTitle} note content updated.`}
                 icon={<FileTextIcon />}
                 toolName={toolName}
                 input={args} />

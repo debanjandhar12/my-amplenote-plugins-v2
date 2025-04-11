@@ -112,11 +112,12 @@ export const InsertTasksToNote = () => {
             setFormData({...formData, successfulInsertedItems, failedItems, lastError});
             setFormState("completed");
         },
-        onCompleted: async ({formData, addResult}) => {
+        onCompleted: async ({formData, addResult, setFormData}) => {
             const {successfulInsertedItems, failedItems} = formData;
             const lastError = formData.lastError;
             const selectedNoteUUID = formData.currentNoteSelectionUUID;
             const selectedNoteTitle = await appConnector.getNoteTitleByUUID(selectedNoteUUID);
+            setFormData({...formData, selectedNoteTitle});
             if (failedItems.length === 0) {
                 addResult({resultSummary: `${successfulInsertedItems.length} tasks inserted successfully into note ${selectedNoteTitle} (uuid: ${selectedNoteUUID}).`,
                     resultDetails: successfulInsertedItems});
@@ -128,19 +129,10 @@ export const InsertTasksToNote = () => {
             }
         },
         renderCompleted: ({formData, args, toolName}) => {
-            const [noteTitle, setNoteTitle] = React.useState(null);
-            React.useEffect(() => {
-                const fetchNoteTitle = async () => {
-                    const title = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
-                    setNoteTitle(title);
-                };
-                fetchNoteTitle();
-            }, [formData.currentNoteSelectionUUID]);
-
             const { CheckboxIcon } = window.RadixIcons;
             return <ToolCardResultMessage
                 result={JSON.stringify(formData.successfulInsertedItems)}
-                text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${noteTitle}.` +
+                text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${formData.selectedNoteTitle}.` +
                     (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to insert.` : "")}
                 icon={<CheckboxIcon />}
                 toolName={toolName}

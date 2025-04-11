@@ -1,8 +1,11 @@
 import {getCorsBypassUrl} from "../../../common-utils/cors-helpers.js";
+import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
 export const useAmplenoteAttachments = () => {
     const threadRuntime = AssistantUI.useThreadRuntime();
     const composer = AssistantUI.useComposer();
+    const {chatHistoryLoaded} = React.useContext(getChatAppContext());
+
     React.useEffect(() => {
         const processAttachments = async () => {
             const attachment = await window.appConnector.receiveMessageFromPlugin('attachments');
@@ -80,8 +83,8 @@ export const useAmplenoteAttachments = () => {
                 await addAttachmentIfNotExists(file);
             }
         }
-        processAttachments();
+        if (chatHistoryLoaded) processAttachments();
         const intervalId = setInterval(processAttachments, 300);
         return () => clearInterval(intervalId);
-    }, [composer]);
+    }, [composer, chatHistoryLoaded]);
 }

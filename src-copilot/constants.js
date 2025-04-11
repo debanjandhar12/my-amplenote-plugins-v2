@@ -16,4 +16,4 @@ export const LOCAL_VEC_DB_INDEX_VERSION = 11;
 export const LOCAL_VEC_DB_MAX_TOKENS = 507;
 
 // Chat History DB Configs
-export const COPILOT_CHAT_HISTORY_DB_INDEX_VERSION = 3;
+export const COPILOT_CHAT_HISTORY_DB_INDEX_VERSION = 4;
