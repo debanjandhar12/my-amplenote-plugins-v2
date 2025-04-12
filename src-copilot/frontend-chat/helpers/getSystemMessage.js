@@ -36,6 +36,8 @@ export function getSystemMessage(currentMessages, toolsToAdd) {
             toolUsageMessage += "To interact with Amplenote, call tools. If tools are required, think a step-by-step plan ensuring to fetch required parameters first.";
             toolUsageMessage += window.appSettings[LLM_API_URL_SETTING].includes('googleapis') ?
                 'When calling tools, make reasonable assumptions for missing parameters as after tool call user confirmations will be required. DO NOT ask for confirmation separately.' : '';
+            toolUsageMessage += window.appSettings[LLM_API_URL_SETTING].includes('googleapis') && notesWordMentioned ?
+                'When using SearchNotesByTitleTagsContent, search by content unless specifically mentioned otherwise.' : '';
         }
         else {
             toolUsageMessage += "To interact with Amplenote, call tools." + " " + toolUsageMessage;
