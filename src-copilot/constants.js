@@ -10,6 +10,7 @@ export const CUSTOM_LLM_AVATAR_SETTING = "Custom LLM Avatar (Optional)";
 export const USER_PROMPT_LIST_SETTING = "User Prompt List (DO NOT CHANGE MANUALLY)";
 export const EMBEDDING_API_URL_SETTING = "Embedding API URL (Optional)";
 export const EMBEDDING_API_KEY_SETTING = "Embedding API Key (Optional)";
+export const PINECONE_API_KEY_SETTING = "Pinecone API Key (Optional)";
 
 // Vector DB Configs
 export const LOCAL_VEC_DB_INDEX_VERSION = 12;
