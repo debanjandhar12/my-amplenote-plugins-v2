@@ -1,0 +1,58 @@
+<html lang="en">
+    <head>
+        <title>Speech to Text</title>
+        <link href="https://cdn.jsdelivr.net/npm/@radix-ui/themes@3.1.6/styles.min.css" rel="stylesheet">
+        <style>
+            /* Voice processing animation styles */
+            .voice-processing-animation {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 40px;
+                width: 40px;
+                margin: 0 auto;
+            }
+            
+            .voice-wave {
+                background: #0ea5e9;
+                height: 100%;
+                width: 5px;
+                margin: 0 3px;
+                border-radius: 20px;
+                animation: wave 1s ease-in-out infinite;
+            }
+            
+            .voice-wave:nth-child(2) {
+                animation-delay: 0.1s;
+            }
+            
+            .voice-wave:nth-child(3) {
+                animation-delay: 0.2s;
+            }
+            
+            .voice-wave:nth-child(4) {
+                animation-delay: 0.3s;
+            }
+            
+            .voice-wave:nth-child(5) {
+                animation-delay: 0.4s;
+            }
+            
+            @keyframes wave {
+                0% {
+                    transform: scaleY(0.2);
+                }
+                50% {
+                    transform: scaleY(1);
+                }
+                100% {
+                    transform: scaleY(0.2);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app-container"></div>
+        <script src="./speechtotext.jsx"></script>
+    </body>
+</html>

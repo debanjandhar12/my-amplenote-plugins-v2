@@ -1,5 +1,6 @@
 import chatHTML from 'inline:./embed/chat.html';
 import searchHTML from 'inline:./embed/search.html';
+import speechtotextHTML from 'inline:./embed/speechtotext.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {generateText} from "./backend/generateText.js";
 import {getLLMModel} from "./backend/getLLMModel.js";
@@ -59,11 +60,29 @@ const plugin = {
                     }
                     await app.context.replaceSelection(responseText);
                 }
-                else
+                else {
+                    await app.context.replaceSelection('');
                     throw new Error('LLM response is empty');
+                }
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
+            }
+        },
+        "Speech to Text": async function (app) {
+            console.log('Speech to Text', app.context);
+            await app.context.replaceSelection(`Loading...`);
+            app.openSidebarEmbed(1, {openSpeechToText: true});
+            while (!(await plugin.isEmbedOpen(app))) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            console.log('Speech to Text app opened');
+            let i = 0, finalText = '';
+            while (await plugin.isEmbedOpen(app)) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+                await app.context.replaceSelection(`Hello`);
+                console.log('Speech to Text app is processing');
+                i++;
             }
         },
         "Generate text": async function (app) {
@@ -329,7 +348,10 @@ const plugin = {
             return chatHTML;
         } else if (args.openSearch) {
             return searchHTML;
+        } else if (args.openSpeechToText) {
+            return speechtotextHTML;
         }
+        return null;
     },
     sendMessageToEmbed: async function (app, channel, message) {
         if (!window.messageQueue) {
