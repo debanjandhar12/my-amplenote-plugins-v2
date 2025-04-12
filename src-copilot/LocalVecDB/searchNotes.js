@@ -1,7 +1,7 @@
 import {IndexedDBManager} from "./IndexedDBManager.js";
-import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
 import {getSyncState} from "./getSyncState.js";
 import {getCosineSimilarity} from "./utils/getCosineSimilarity.js";
+import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 
 // Based on: https://github.com/babycommando/entity-db/blob/main/src/index.js
 export const searchNotes = async (app, queryText, {limit = 256,
@@ -14,7 +14,8 @@ export const searchNotes = async (app, queryText, {limit = 256,
     const indexedDBManager = new IndexedDBManager();
     try {
         // Get embeddings for the query text
-        const queryVector = (await getEmbeddingFromText(app, queryText, "query"))[0];
+        const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
+        const queryVector = (await embeddingGenerator.generateEmbedding(app, queryText, "query"))[0];
         const allEmbeddings = await indexedDBManager.getAllNotesEmbeddings();
         const filteredEmbeddings = allEmbeddings.filter(entry => {
             if (isArchived !== null && !entry.metadata.isArchived === isArchived) return false;

@@ -9,7 +9,7 @@ export const ChatAppHeader = () => {
     const runtime = AssistantUI.useAssistantRuntime();
 
     // New chat button functionality
-    const onClickNewChat = React.useCallback(() => runtime.switchToNewThread(), [runtime]);
+    const onClickNewChat = React.useCallback(() => runtime.threads.switchToNewThread(), [runtime]);
 
     const {Box, Tooltip, Button, Popover} = window.RadixUI;
     const {PlusIcon, MagicWandIcon} = window.RadixIcons;

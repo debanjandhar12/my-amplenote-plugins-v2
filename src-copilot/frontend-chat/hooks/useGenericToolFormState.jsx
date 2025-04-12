@@ -1,8 +1,19 @@
 import {set,get} from "lodash-es";
+import {errorToString} from "../tools-core/utils/errorToString.js";
+import {ToolCardErrorMessage} from "../components/tools-ui/ToolCardErrorMessage.jsx";
 
 export const useGenericToolFormState = (states, params = {}) => {
     const [formState, setFormState] = React.useState();
-    const render = states[formState]?.renderer || (() => null);
+    const render = (props) => {
+        const { ErrorBoundary } = window.ReactErrorBoundary;
+        const originalRender = states[formState]?.renderer || (() => null);
+        return (
+            <ErrorBoundary fallbackRender={(e) => <ToolCardErrorMessage toolName={params.toolName} input={params.args}
+                text={"Unhandled Error occurred: " + errorToString(e)} color="red" />}>
+                {originalRender ? React.createElement(originalRender, props) : null}
+            </ErrorBoundary>
+        );
+    };
     const toolCallId = params.toolCallId;
     const message = AssistantUI.useMessage();
 

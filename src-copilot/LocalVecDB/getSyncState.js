@@ -1,12 +1,12 @@
-import {getEmbeddingConfig} from "./embeddings/getEmbeddingConfig.js";
 import {IndexedDBManager} from "./IndexedDBManager.js";
+import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 
 export const getSyncState = async (app) => {
     const indexedDBManager = new IndexedDBManager();
-    const embeddingConfig = await getEmbeddingConfig(app);
     const lastPluginUUID = await indexedDBManager.getConfigValue('lastPluginUUID');
     const lastEmbeddingModel = await indexedDBManager.getConfigValue('lastEmbeddingModel');
-    if (lastPluginUUID !== app.context.pluginUUID || lastEmbeddingModel !== embeddingConfig.model) {
+    const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
+    if (lastPluginUUID !== app.context.pluginUUID || lastEmbeddingModel !== embeddingGenerator.MODEL_NAME) {
         await indexedDBManager.closeDB();
         return 'Not synced';
     }

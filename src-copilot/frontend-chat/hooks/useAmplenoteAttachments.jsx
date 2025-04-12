@@ -1,8 +1,12 @@
 import {getCorsBypassUrl} from "../../../common-utils/cors-helpers.js";
+import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
 export const useAmplenoteAttachments = () => {
     const threadRuntime = AssistantUI.useThreadRuntime();
     const composer = AssistantUI.useComposer();
+    const assistantRuntime = AssistantUI.useAssistantRuntime();
+    const {chatHistoryLoaded} = React.useContext(getChatAppContext());
+
     React.useEffect(() => {
         const processAttachments = async () => {
             const attachment = await window.appConnector.receiveMessageFromPlugin('attachments');
@@ -79,9 +83,19 @@ export const useAmplenoteAttachments = () => {
                 ], taskUUID, {type: "text/amplenote-task"});
                 await addAttachmentIfNotExists(file);
             }
+            // This is not attachment, but a command from plugin.js to create a new chat
+            else if (attachment.type === 'new-chat') {
+                const message = attachment.message || [];
+                await assistantRuntime.threads.switchToNewThread();
+                await threadRuntime.import({messages: message});
+                const composerText = message.composerText;
+                if (composerText) {
+                    await composer.setText(composerText);
+                }
+            }
         }
-        processAttachments();
+        if (chatHistoryLoaded) processAttachments();
         const intervalId = setInterval(processAttachments, 300);
         return () => clearInterval(intervalId);
-    }, [composer]);
+    }, [composer, chatHistoryLoaded]);
 }

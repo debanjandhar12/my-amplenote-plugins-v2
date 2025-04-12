@@ -88,7 +88,7 @@ export const useSearch = () => {
             } finally {
                 setIsLoading(false);
             }
-        }, 320),
+        }, 800),
         [searchText, searchOpts]
     );
 
@@ -121,7 +121,6 @@ export const useSearch = () => {
         }, 1000);
         try {
             await window.appConnector.syncNotesWithLocalVecDB();
-            window.appConnector.alert("Sync completed!");
             if (searchText.trim()) {
                 await handleSearch();
             }

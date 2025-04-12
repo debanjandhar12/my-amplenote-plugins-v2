@@ -7,8 +7,8 @@ import {getLLMModel} from "../../backend/getLLMModel.js";
 import {generateText} from "../../backend/generateText.js";
 import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
 import {toCoreMessages} from "@assistant-ui/react";
-import {truncate} from "lodash-es";
 import {ToolCardCanceledMessage} from "../components/tools-ui/ToolCardCanceledMessage.jsx";
+import {ExpandableScrollArea} from "../components/tools-ui/ExpandableScrollArea.jsx";
 
 export const EditNoteContent = () => {
     return createGenericCUDTool({
@@ -20,9 +20,7 @@ export const EditNoteContent = () => {
             properties: {
                 noteUUID: {
                     type: "string",
-                    description: "UUID of note",
-                    minLength: 36,
-                    maxLength: 42
+                    description: "36 digit UUID of note"
                 },
                 editInstruction: {
                     type: "string",
@@ -37,11 +35,11 @@ export const EditNoteContent = () => {
             const { Spinner } = window.RadixUI;
             return <ToolCardMessage text={`Generating content...`} icon={<Spinner />} />
         },
-        onInit: async ({setFormState, formData, setFormData, args, thread}) => {
+        onInit: async ({setFormState, formData, setFormData, args, threadRuntime}) => {
             const noteUUID = args.noteUUID;
             const editInstruction = args.editInstruction;
             const currentContent = await appConnector.getNoteContentByUUID(noteUUID);
-            const previousConversationJSON = JSON.stringify(toCoreMessages(thread.messages));
+            const previousConversationJSON = JSON.stringify(toCoreMessages(threadRuntime.getState().messages));
             const previousConversationString = previousConversationJSON.length > 16000 ?
                 previousConversationJSON.substring(previousConversationJSON.length - 16000)
                 : previousConversationJSON;
@@ -95,32 +93,40 @@ export const EditNoteContent = () => {
             setFormState('waitingForUserInput');
         },
         renderWaitingForUserInput: ({args, formData, setFormData, status, setFormState}) => {
-            const [noteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID] = useNoteSelector({args, setFormData, formData});
-            const { Text, ScrollArea } = window.RadixUI;
+            const [noteSelectionArr, setNoteSelectionArr, currentNoteSelectionUUID, setCurrentNoteSelectionUUID] = useNoteSelector({args, setFormData, formData});
+            const { Text } = window.RadixUI;
             const StringDiff = window.StringDiff;
             return (
                 <ToolCardContainer>
                     <Text>Update note content:</Text>
-                    <ScrollArea
-                        style={{ background: "var(--gray-a2)", width: "100%", borderRadius: "8px",
-                            minHeight: "100px", maxHeight: "100px", marginTop: "10px",
-                            border: "1px solid #ccc", padding: "5px",
-                            whiteSpace: "pre-wrap" }}>
-                                <StringDiff
-                                    method={'diffWords'}
-                                    styles={{
-                                        added: {
-                                            backgroundColor: '#0bbf7d',
-                                        },
-                                        removed: {
-                                            backgroundColor: '#ff6b6b',
-                                        }
-                                    }}
-                                    oldValue={formData.currentContent}
-                                    newValue={formData.newContent}
-                                    showDiff={true}
-                                />
-                    </ScrollArea>
+                    <ExpandableScrollArea
+                        style={{
+                            background: "var(--gray-a2)",
+                            width: "100%",
+                            borderRadius: "8px",
+                            minHeight: "100px",
+                            maxHeight: "100px",
+                            marginTop: "10px",
+                            border: "1px solid #ccc",
+                            padding: "5px",
+                            whiteSpace: "pre-wrap"
+                        }}
+                    >
+                        <StringDiff
+                            method={'diffWords'}
+                            styles={{
+                                added: {
+                                    backgroundColor: '#0bbf7d',
+                                },
+                                removed: {
+                                    backgroundColor: '#ff6b6b',
+                                }
+                            }}
+                            oldValue={formData.currentContent}
+                            newValue={formData.newContent}
+                            showDiff={true}
+                        />
+                    </ExpandableScrollArea>
                     <ToolFooter
                         submitButtonText="Update Content"
                         cancelButtonText="Cancel"
@@ -140,24 +146,16 @@ export const EditNoteContent = () => {
             await appConnector.replaceNoteContent({uuid: selectedNoteUUID}, formData.newContent);
             setFormState("completed");
         },
-        onCompleted: async ({formData, addResult}) => {
+        onCompleted: async ({formData, addResult, setFormData}) => {
             const noteTitle = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
+            setFormData({...formData, noteTitle});
             addResult({resultSummary: `${noteTitle} note content updated.`, newContent: formData.newContent});
         },
         renderCompleted: ({formData, toolName, args}) => {
-            const [noteTitle, setNoteTitle] = React.useState(null);
-            React.useEffect(() => {
-                const fetchNoteTitle = async () => {
-                    const title = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
-                    setNoteTitle(title);
-                };
-                fetchNoteTitle();
-            }, [formData.currentNoteSelectionUUID]);
-
             const { FileTextIcon } = window.RadixIcons;
             return <ToolCardResultMessage
                 result={formData.newContent}
-                text={`${noteTitle} note content updated.`}
+                text={`${formData.noteTitle} note content updated.`}
                 icon={<FileTextIcon />}
                 toolName={toolName}
                 input={args} />

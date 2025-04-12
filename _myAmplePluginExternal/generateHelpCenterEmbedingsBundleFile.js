@@ -1,9 +1,7 @@
 import {Splitter} from "../src-copilot/LocalVecDB/splitter/Splitter";
 import {mockApp, mockNote} from "../common-utils/test-helpers";
 import {getCorsBypassUrl} from "../common-utils/cors-helpers";
-import {LOCAL_VEC_DB_MAX_TOKENS, PINECONE_API_KEY_SETTING} from "../src-copilot/constants";
-import {generateEmbeddingUsingOllama} from "../src-copilot/LocalVecDB/embeddings/generateEmbeddingUsingOllama";
-import {generateEmbeddingUsingPinecone} from "../src-copilot/LocalVecDB/embeddings/generateEmbeddingUsingPinecone";
+import {EMBEDDING_API_KEY_SETTING, EMBEDDING_API_URL_SETTING, LOCAL_VEC_DB_MAX_TOKENS} from "../src-copilot/constants";
 const { readFileSync, writeFileSync } = require('fs');
 const { join } = require('path');
 const { JSDOM } = require("jsdom");
@@ -11,13 +9,18 @@ import {fetch} from "cross-fetch";
 import {TransformStream} from 'stream/web';
 import {compressSync, decompressSync} from "fflate";
 import {cloneDeep} from "lodash-es";
+import {OpenAIEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/OpenAIEmbeddingGenerator";
+import {FireworksEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/FireworksEmbeddingGenerator";
+import {OllamaEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/OllamaEmbeddingGenerator";
+import {PineconeEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/PineconeEmbeddingGenerator";
+import {GoogleEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/GoogleEmbeddingGenerator";
 
 /**
  * This script is used to generate embeddings and store in bundles folder as json files.
  * Once generated, the bundles can be published to npm.
  * This can then be imported in plugin and be used to search help center.
  * Usage:
- * manually set PINECONE_API_KEY in .env file
+ * manually set PINECONE_API_KEY, OPENAI_API_KEY, FIREWORKS_API_KEY in .env file
  * sudo service ollama stop (for linux)
  * OLLAMA_ORIGINS=https://plugins.amplenote.com ollama serve
  * ollama pull snowflake-arctic-embed:33m-s-fp16 (first time only)
@@ -28,7 +31,10 @@ const CONFIG = {
     TEST_TIMEOUT: 6000000,
     OUTPUT_PATH: {
         LOCAL: '/bundles/localHelpCenterEmbeddings.json.gz',
-        PINECONE: '/bundles/pineconeHelpCenterEmbeddings.json.gz'
+        PINECONE: '/bundles/pineconeHelpCenterEmbeddings.json.gz',
+        OPENAI: '/bundles/openaiHelpCenterEmbeddings.json.gz',
+        FIREWORKS: '/bundles/fireworksHelpCenterEmbeddings.json.gz',
+        GOOGLE: '/bundles/googleHelpCenterEmbeddings.json.gz',
     },
     HELP_CENTER_URLS: [
     ],
@@ -165,7 +171,7 @@ async function generateEmbeddings(app, records, oldRecords, embedGenerator) {
     // Generate new embeddings for remaining records
     const remainingRecords = records.filter(record => !record.values);
     if (remainingRecords.length > 0) {
-        const embeddings = await embedGenerator(
+        const embeddings = await embedGenerator.generateEmbedding(
             app,
             remainingRecords.map(r => r.metadata.noteContentPart),
             'passage'
@@ -181,9 +187,18 @@ async function generateEmbeddings(app, records, oldRecords, embedGenerator) {
 async function generateHelpCenterEmbeddings() {
     const oldAllRecordsLocal = await loadExistingRecords(CONFIG.OUTPUT_PATH.LOCAL);
     const oldAllRecordsPinecone = await loadExistingRecords(CONFIG.OUTPUT_PATH.PINECONE);
+    const oldAllRecordsOpenAI = await loadExistingRecords(CONFIG.OUTPUT_PATH.OPENAI);
+    const oldAllRecordsGoogle = await loadExistingRecords(CONFIG.OUTPUT_PATH.GOOGLE);
+    const oldAllRecordsFireworks = await loadExistingRecords(CONFIG.OUTPUT_PATH.FIREWORKS);
 
-    const allRecordsLocal = [], allRecordsPinecone = [];
+    const allRecordsLocal = [], allRecordsPinecone = [],
+        allRecordsOpenAI = [], allRecordsFireworks = [], allRecordsGoogle = [];
 
+    const ollamaEmbeddingGenerator = new OllamaEmbeddingGenerator();
+    const openaiEmbeddingGenerator = new OpenAIEmbeddingGenerator();
+    const googleEmbeddingGenerator = new GoogleEmbeddingGenerator();
+    const pineconeEmbeddingGenerator = new PineconeEmbeddingGenerator();
+    const fireworksEmbeddingGenerator = new FireworksEmbeddingGenerator();
     for (const [i, url] of CONFIG.HELP_CENTER_URLS.entries()) {
         const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
         const [content, title] = await getMarkdownFromAmpleNoteUrl(url);
@@ -192,15 +207,35 @@ async function generateHelpCenterEmbeddings() {
         const splitRecords = await splitter.splitNote(app, mockedNote);
 
         // Generate local embeddings
-        const localRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsLocal, generateEmbeddingUsingOllama);
+        app.settings[EMBEDDING_API_URL_SETTING] = "http://localhost:11434/api";
+        const localRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsLocal, ollamaEmbeddingGenerator);
+        app.settings[EMBEDDING_API_URL_SETTING] = null;
         allRecordsLocal.push(...localRecords);
         await saveRecords(allRecordsLocal, CONFIG.OUTPUT_PATH.LOCAL);
 
         // Generate Pinecone embeddings
-        app.settings[PINECONE_API_KEY_SETTING] = process.env.PINECONE_API_KEY;
-        const pineconeRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsPinecone, generateEmbeddingUsingPinecone);
+        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.PINECONE_API_KEY;
+        const pineconeRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsPinecone, pineconeEmbeddingGenerator);
         allRecordsPinecone.push(...pineconeRecords);
         await saveRecords(allRecordsPinecone, CONFIG.OUTPUT_PATH.PINECONE);
+
+        // Generate OpenAI embeddings
+        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.OPENAI_API_KEY;
+        const openaiRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsOpenAI, openaiEmbeddingGenerator);
+        allRecordsOpenAI.push(...openaiRecords);
+        await saveRecords(allRecordsOpenAI, CONFIG.OUTPUT_PATH.OPENAI);
+
+        // Generate Google embeddings
+        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.GOOGLE_API_KEY;
+        const googleRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsGoogle, googleEmbeddingGenerator);
+        allRecordsGoogle.push(...googleRecords);
+        await saveRecords(allRecordsGoogle, CONFIG.OUTPUT_PATH.GOOGLE);
+
+        // Generate Fireworks embeddings
+        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.FIREWORKS_API_KEY;
+        const fireworksRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsFireworks, fireworksEmbeddingGenerator);
+        allRecordsFireworks.push(...fireworksRecords);
+        await saveRecords(allRecordsFireworks, CONFIG.OUTPUT_PATH.FIREWORKS);
 
         console.log('Progress:', i + 1, '/', CONFIG.HELP_CENTER_URLS.length);
     }
@@ -213,6 +248,8 @@ test('Generate Help Center Embeddings', async () => {
         'https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi',
         'https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb',
         'https://public.amplenote.com/16oi13jtaNMoSxqjQMKgBdUE',
+        'https://public.amplenote.com/SZnCDvp9yU7CbCzkn7RJowcV',
+        'https://public.amplenote.com/WykvBZZSXReMcVFRrjrhk4mS',
         ...(await getAllHelpCenterLinks())
     ];
     await generateHelpCenterEmbeddings();

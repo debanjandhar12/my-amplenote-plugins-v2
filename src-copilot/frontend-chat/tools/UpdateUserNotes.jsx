@@ -4,6 +4,7 @@ import {ItemSelectionTable} from "../components/tools-ui/ItemSelectionTable.jsx"
 import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
 import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
+import {LLM_API_URL_SETTING} from "../../constants.js";
 
 export const UpdateUserNotes = () => {
     return createGenericCUDTool({
@@ -14,15 +15,13 @@ export const UpdateUserNotes = () => {
             properties: {
                 notes: {
                     type: "array",
-                    minItems: 1,
+                    minItems: window.appSettings[LLM_API_URL_SETTING].includes('googleapis') ? "1" : 1,
                     items: {
                         type: "object",
                         properties: {
                             noteUUID: {
                                 type: "string",
-                                description: "UUID of the note to update",
-                                minLength: 36,
-                                maxLength: 36
+                                description: "36 digit UUID of the note to update"
                             },
                             noteTitle: {
                                 type: "string",

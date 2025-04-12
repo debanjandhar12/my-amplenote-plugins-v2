@@ -7,11 +7,18 @@ import {LLM_API_URL_SETTING} from "./constants.js";
 import {getImageModel} from "./backend/getImageModel.js";
 import {generateImage} from "./backend/generateImage.js";
 import {LocalVecDB} from "./LocalVecDB/LocalVecDB.js";
-import {getSyncState} from "./LocalVecDB/getSyncState.js";
 import {getMatchedPartWithFuzzySearch} from "./utils/getMatchedPartWithFuzzySearch.jsx";
+import {validatePluginSettings} from "./validatePluginSettings.js";
 
 const plugin = {
     currentNoteUUID: null,
+    validateSettings: async function (app) {
+        try {
+            return await validatePluginSettings(app);
+        } catch (e) {
+            console.error(e);
+        }
+    },
     insertText: {
         "Continue": async function (app) {
             try {
@@ -88,8 +95,16 @@ const plugin = {
             run: async function (app) {
                 try {
                     const imageModel = await getImageModel(app.settings);
-                    const prompt = await app.prompt("Enter image generation instructions:");
-                    const response = await generateImage(imageModel, prompt);
+                    const [prompt, size] = await app.prompt("", {
+                        inputs: [
+                            { label: "Image generation instructions:", type: "text", value: "" },
+                            { label: "Image size:", type: "select", options: [
+                                    { label: "512x512", value: "512" },
+                                    { label: "1024x1024", value: "1024" }
+                                ], value: "512" }
+                        ]
+                    });
+                    const response = await generateImage(imageModel, prompt, size);
                     console.log('response', response);
                     if (response.image) {
                         const imgUrl = await app.attachNoteMedia({uuid: app.context.noteUUID}, 'data:image/webp;base64,' +response.image.base64);
@@ -172,20 +187,29 @@ const plugin = {
                     {type: 'selection', noteUUID: app?.context?.noteUUID, selectionContent: selectionContent});
             }
         },
-        "More options": async function (app, selectionContent) {
+        "Refine selection": async function (app, selectionContent) {
             try {
-                const action = await app.prompt("Enter prompt type:", {
+                let promptPrefix = await app.prompt("", {
                     inputs: [
-                        { label: "", type: "select", options: [
-                                { label: "Rephrase", value: "Rephrase" },
-                                { label: "Fix grammar", value: "Fix grammar in" },
-                                { label: "Summarize", value: "Summarize" },
-                                { label: "Explain", value: "Explain" },
-                            ], value: "Rephrase" }
+                        { label: "Enter prompt type:", type: "select", options: [
+                                { icon: "summarize", label: "Rephrase", value: "Rephrase the following selected text:" },
+                                { icon: "unfold_more", label: "Shorten", value: "Shorten the following selected text:" },
+                                { icon: "unfold_less", label: "Elaborate", value: "Elaborate the following selected text:" },
+                                { icon: "work", label: "More formal", value: "Make the following selected text more formal:" },
+                                { icon: "beach_access", label: "More casual", value: "Make the following selected text more casual:" },
+                                { icon: "healing", label: "Fix grammar", value: "Rectify grammar and spelling in the following selected text:" },
+                                { icon: "edit", label: "Custom", value: "Custom" }
+                            ], value: "Rephrase the following selected text:" }
                     ]
                 });
-                if (!action) return;
-                const prompt = `${action} the following text:\n` + selectionContent;
+                if (!promptPrefix) return;
+                if (promptPrefix === "Custom") {
+                    promptPrefix = await app.prompt("Enter custom prompt:");
+                    promptPrefix += "\nSelected text";
+                    if (!promptPrefix) return;
+                }
+                const prompt = `Only respond with the text that should replace the selection. Do not reply anything other than the edited text.
+                ${promptPrefix}:\n` + selectionContent;
                 const response = await generateText(await getLLMModel(app.settings), prompt);
                 if (response.text) {
                     const shouldReplace = await app.alert(response.text, {
@@ -224,6 +248,8 @@ const plugin = {
                 const note = await app.findNote({uuid: noteUUID});
                 const noteContent = await app.getNoteContent({uuid: noteUUID});
                 await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'new-chat', message: []});
+                await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'note', noteUUID: noteUUID, noteTitle: note.name, noteContent: noteContent});
             }
         },
@@ -256,6 +282,8 @@ const plugin = {
             run: async function (app, taskObj) {
                 await app.openSidebarEmbed(1, {openChat: true});
                 await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'new-chat', message: []});
+                await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'task', taskUUID: taskObj.uuid});
             }
         },
@@ -280,6 +308,8 @@ const plugin = {
             },
             run: async function (app, image) {
                 await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'new-chat', message: []});
                 await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'image', src: image.src});
             }

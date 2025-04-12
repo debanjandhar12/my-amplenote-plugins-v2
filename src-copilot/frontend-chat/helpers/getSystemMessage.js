@@ -1,4 +1,4 @@
-import {CUSTOM_LLM_INSTRUCTION_SETTING, LLM_MODEL_SETTING} from "../../constants.js";
+import {CUSTOM_LLM_INSTRUCTION_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING} from "../../constants.js";
 
 export function getSystemMessage(currentMessages, toolsToAdd) {
     const messagesContainImageAttachments = currentMessages.some(message => 
@@ -27,13 +27,17 @@ export function getSystemMessage(currentMessages, toolsToAdd) {
         }
 
         if (toolsToAdd.length === 0) {
-            return `To interact with Amplenote, call tools. If tools are very much required but cannot be called, ask the user to type @tool_name to enable them. If tool prepended with @ is typed by user, it is already enabled. Only "@tasks", "@notes" and "@web-search" are possible.`;
+            return `To interact with Amplenote, call tools. If tools are very much required but cannot be called, ask the user to type @tool_name to enable them. If tool prepended with @ is typed by user, it is already enabled. Only "@tasks", "@notes", "@help" and "@web" are possible.`;
         }
 
         let toolUsageMessage = "NEVER call multiple tools in parallel as tool result needs to be awaited.";
         if (lastMessage && (lastMessage.role === 'user' ||
             (lastMessage.role === 'assistant' && lastMessage.content.length <= 1))) {
             toolUsageMessage += "To interact with Amplenote, call tools. If tools are required, think a step-by-step plan ensuring to fetch required parameters first.";
+            toolUsageMessage += window.appSettings[LLM_API_URL_SETTING].includes('googleapis') ?
+                'When calling tools, make reasonable assumptions for missing parameters as after tool call user confirmations will be required. DO NOT ask for confirmation separately.' : '';
+            toolUsageMessage += window.appSettings[LLM_API_URL_SETTING].includes('googleapis') && notesWordMentioned ?
+                'When using SearchNotesByTitleTagsContent, search by content unless specifically mentioned otherwise.' : '';
         }
         else {
             toolUsageMessage += "To interact with Amplenote, call tools." + " " + toolUsageMessage;
@@ -84,7 +88,7 @@ export function getSystemMessage(currentMessages, toolsToAdd) {
     ].filter(Boolean).join('\n').trim();
 
     const systemMsg = `
-    You are an AI assistant named Ample Copilot inside Amplenote, a note-taking app. You help users improve productivity and provide accurate information.
+    You are Ample Copilot, an ai assistant inside a note-taking app called Amplenote. You help users improve productivity and provide accurate information.
     ${getToolUsageMessage()}
     
     ${terminology ? `Terminology:-\n${terminology}` : ''}

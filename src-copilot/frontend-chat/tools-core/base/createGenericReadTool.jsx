@@ -49,7 +49,7 @@ export const createGenericReadTool = ({
                 }
             }, allParameters);
 
-            return formRender ? React.createElement(formRender, {...allParameters, formState, setFormState}) : null;
+            return formRender ? formRender({...allParameters, formState, setFormState}) : null;
         }
     });
 };

@@ -1,5 +1,6 @@
 import * as pkg1 from "react";
 import * as pkg2 from "react-dom/client";
+import { createPortal, flushSync, unmountComponentAtNode } from "react-dom";
 import * as pkg3 from "@assistant-ui/react";
 import * as pkg4 from "@radix-ui/themes";
 import * as pkg5 from "@assistant-ui/react-markdown";
@@ -7,7 +8,15 @@ import * as pkg6 from "@radix-ui/react-icons";
 import * as pkg7 from "react-string-diff";
 import * as pkg8 from "dayjs";
 import * as pkg9 from "tributejs";
+import * as pkg10 from "react-error-boundary";
 import * as pkgJson from "../package.json";
+
+const modifiedPkg2 = {
+    ...pkg2,
+    createPortal,
+    flushSync,
+    unmountComponentAtNode
+};
 
 export const versions = {
     "react": pkgJson.dependencies["react"],
@@ -19,6 +28,7 @@ export const versions = {
     "react-string-diff": pkgJson.dependencies["react-string-diff"],
     "dayjs": pkgJson.dependencies["dayjs"],
     "tributejs": pkgJson.dependencies["tributejs"],
+    "react-error-boundary": pkgJson.dependencies["react-error-boundary"],
 }
 
-export default [pkg1, pkg2, pkg3, pkg4, pkg5, pkg6, pkg7, pkg8, pkg9];
+export default [pkg1, modifiedPkg2, pkg3, pkg4, pkg5, pkg6, pkg7, pkg8, pkg9, pkg10];

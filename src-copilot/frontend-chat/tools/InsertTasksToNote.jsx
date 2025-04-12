@@ -5,6 +5,7 @@ import {ItemSelectionTable} from "../components/tools-ui/ItemSelectionTable.jsx"
 import {useNoteSelector} from "../hooks/useNoteSelector.jsx";
 import {ToolFooter} from "../components/tools-ui/ToolFooter.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
+import {LLM_API_URL_SETTING} from "../../constants.js";
 
 export const InsertTasksToNote = () => {
     return createGenericCUDTool({
@@ -15,13 +16,12 @@ export const InsertTasksToNote = () => {
             properties: {
                 tasks: {
                     type: "array",
-                    minItems: 1,
+                    minItems: window.appSettings[LLM_API_URL_SETTING].includes('googleapis') ? "1" : 1,
                     items: {
                         type: "object",
                         properties: {
                             taskContent: {
                                 type: "string",
-                                minLength: 1,
                                 description: "Short description of task"
                             },
                             taskStartAt: {
@@ -42,8 +42,7 @@ export const InsertTasksToNote = () => {
                 },
                 noteUUID: {
                     type: "string",
-                    description: "The UUID of the note to insert the task into.",
-                    minLength: 10
+                    description: "36 digit UUID of note to insert the task into."
                 }
             },
             required: ["tasks", "noteUUID"]
@@ -114,11 +113,12 @@ export const InsertTasksToNote = () => {
             setFormData({...formData, successfulInsertedItems, failedItems, lastError});
             setFormState("completed");
         },
-        onCompleted: async ({formData, addResult}) => {
+        onCompleted: async ({formData, addResult, setFormData}) => {
             const {successfulInsertedItems, failedItems} = formData;
             const lastError = formData.lastError;
             const selectedNoteUUID = formData.currentNoteSelectionUUID;
             const selectedNoteTitle = await appConnector.getNoteTitleByUUID(selectedNoteUUID);
+            setFormData({...formData, selectedNoteTitle});
             if (failedItems.length === 0) {
                 addResult({resultSummary: `${successfulInsertedItems.length} tasks inserted successfully into note ${selectedNoteTitle} (uuid: ${selectedNoteUUID}).`,
                     resultDetails: successfulInsertedItems});
@@ -130,19 +130,10 @@ export const InsertTasksToNote = () => {
             }
         },
         renderCompleted: ({formData, args, toolName}) => {
-            const [noteTitle, setNoteTitle] = React.useState(null);
-            React.useEffect(() => {
-                const fetchNoteTitle = async () => {
-                    const title = await appConnector.getNoteTitleByUUID(formData.currentNoteSelectionUUID);
-                    setNoteTitle(title);
-                };
-                fetchNoteTitle();
-            }, [formData.currentNoteSelectionUUID]);
-
             const { CheckboxIcon } = window.RadixIcons;
             return <ToolCardResultMessage
                 result={JSON.stringify(formData.successfulInsertedItems)}
-                text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${noteTitle}.` +
+                text={`${formData.successfulInsertedItems.length} tasks inserted successfully into note ${formData.selectedNoteTitle}.` +
                     (formData.failedItems.length > 0 ? `\n${formData.failedItems.length} tasks failed to insert.` : "")}
                 icon={<CheckboxIcon />}
                 toolName={toolName}

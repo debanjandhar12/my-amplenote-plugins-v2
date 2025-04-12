@@ -4,6 +4,7 @@ import {ToolFooter} from "../components/tools-ui/ToolFooter.jsx";
 import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
 import {createGenericCUDTool} from "../tools-core/base/createGenericCUDTool.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
+import {LLM_API_URL_SETTING} from "../../constants.js";
 
 export const DeleteUserNotes = () => {
     return createGenericCUDTool({
@@ -14,15 +15,13 @@ export const DeleteUserNotes = () => {
             properties: {
                 notes: {
                     type: "array",
-                    minItems: 1,
+                    minItems: window.appSettings[LLM_API_URL_SETTING].includes('googleapis') ? "1" : 1,
                     items: {
                         type: "object",
                         properties: {
                             noteUUID: {
                                 type: "string",
-                                description: "UUID of the note to delete",
-                                minLength: 36,
-                                maxLength: 42
+                                description: "36 digit UUID of the note to delete"
                             }
                         },
                         required: ["noteUUID"]

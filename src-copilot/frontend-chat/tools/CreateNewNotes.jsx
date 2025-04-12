@@ -4,6 +4,7 @@ import {ItemSelectionTable} from "../components/tools-ui/ItemSelectionTable.jsx"
 import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {createGenericCUDTool} from "../tools-core/base/createGenericCUDTool.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
+import {LLM_API_URL_SETTING} from "../../constants.js";
 
 export const CreateNewNotes = () => {
     return createGenericCUDTool({
@@ -14,13 +15,12 @@ export const CreateNewNotes = () => {
             properties: {
                 notes: {
                     type: "array",
-                    minItems: 1,
+                    minItems: window.appSettings[LLM_API_URL_SETTING].includes('googleapis') ? "1" : 1,
                     items: {
                         type: "object",
                         properties: {
                             noteName: {
-                                type: "string",
-                                minLength: 1
+                                type: "string"
                             },
                             noteTags: {
                                 type: "array",

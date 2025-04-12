@@ -1,6 +1,6 @@
 import {IndexedDBManager} from "./IndexedDBManager.js";
-import {getEmbeddingFromText} from "./embeddings/EmbeddingManager.js";
 import {getCosineSimilarity} from "./utils/getCosineSimilarity.js";
+import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 
 export const searchHelpCenter = async (app, queryText, {limit = 256}) => {
     if (!queryText || !queryText.trim()) return [];
@@ -8,7 +8,8 @@ export const searchHelpCenter = async (app, queryText, {limit = 256}) => {
     const indexedDBManager = new IndexedDBManager();
     try {
         // Get embeddings for the query text
-        const queryVector = (await getEmbeddingFromText(app, queryText, "query"))[0];
+        const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
+        const queryVector = (await embeddingGenerator.generateEmbedding(app, queryText, "query"))[0];
         const allEmbeddings = await indexedDBManager.getAllHelpCenterEmbeddings();
 
         // Calculate cosine similarity for each vector and sort by similarity
@@ -25,3 +26,4 @@ export const searchHelpCenter = async (app, queryText, {limit = 256}) => {
         throw new Error(`Error querying vectors: ${e}`);
     }
 }
+

@@ -80,7 +80,7 @@ export const createGenericCUDTool = ({
                 }
             }, allParameters);
 
-            return formRender ? React.createElement(formRender, {...allParameters, formState, setFormState}) : null;
+            return formRender ? formRender({...allParameters, formState, setFormState}) : null;
         }
     });
 }
