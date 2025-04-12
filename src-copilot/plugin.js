@@ -248,6 +248,8 @@ const plugin = {
                 const note = await app.findNote({uuid: noteUUID});
                 const noteContent = await app.getNoteContent({uuid: noteUUID});
                 await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'new-chat', message: []});
+                await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'note', noteUUID: noteUUID, noteTitle: note.name, noteContent: noteContent});
             }
         },
@@ -280,6 +282,8 @@ const plugin = {
             run: async function (app, taskObj) {
                 await app.openSidebarEmbed(1, {openChat: true});
                 await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'new-chat', message: []});
+                await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'task', taskUUID: taskObj.uuid});
             }
         },
@@ -304,6 +308,8 @@ const plugin = {
             },
             run: async function (app, image) {
                 await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'new-chat', message: []});
                 await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'image', src: image.src});
             }
