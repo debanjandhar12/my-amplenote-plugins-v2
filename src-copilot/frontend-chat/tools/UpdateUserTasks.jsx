@@ -4,6 +4,7 @@ import {errorToString} from "../tools-core/utils/errorToString.js";
 import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {ItemSelectionTable} from "../components/tools-ui/ItemSelectionTable.jsx";
 import {ToolFooter} from "../components/tools-ui/ToolFooter.jsx";
+import {LLM_API_URL_SETTING} from "../../constants.js";
 
 export const UpdateUserTasks = () => {
     return createGenericCUDTool({
@@ -14,7 +15,7 @@ export const UpdateUserTasks = () => {
             properties: {
                 tasks: {
                     type: "array",
-                    minItems: "1",
+                    minItems: window.appSettings[LLM_API_URL_SETTING].includes('googleapis') ? "1" : 1,
                     items: {
                         type: "object",
                         properties: {

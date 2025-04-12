@@ -5,6 +5,7 @@ import {ItemSelectionTable} from "../components/tools-ui/ItemSelectionTable.jsx"
 import {useNoteSelector} from "../hooks/useNoteSelector.jsx";
 import {ToolFooter} from "../components/tools-ui/ToolFooter.jsx";
 import {errorToString} from "../tools-core/utils/errorToString.js";
+import {LLM_API_URL_SETTING} from "../../constants.js";
 
 export const InsertTasksToNote = () => {
     return createGenericCUDTool({
@@ -15,7 +16,7 @@ export const InsertTasksToNote = () => {
             properties: {
                 tasks: {
                     type: "array",
-                    minItems: "1",
+                    minItems: window.appSettings[LLM_API_URL_SETTING].includes('googleapis') ? "1" : 1,
                     items: {
                         type: "object",
                         properties: {
