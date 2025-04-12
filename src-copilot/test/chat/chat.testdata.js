@@ -5,7 +5,6 @@ import {
     LLM_MODEL_SETTING,
 } from "../../constants.js";
 import {dynamicImportEnv} from "../../../common-utils/dynamic-import-env.js";
-import {LocalVecDB} from "../../LocalVecDB/LocalVecDB.js";
 
 export const EMBED_COMMANDS_MOCK = {
     "filterNotes": async (...args) => {
