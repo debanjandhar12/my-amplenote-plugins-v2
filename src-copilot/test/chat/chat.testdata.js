@@ -62,13 +62,13 @@ export const getLLMProviderSettings = (provider) => {
     if (provider === 'groq') {
         return {
             [LLM_API_KEY_SETTING]: process.env.GROQ_API_KEY,
-            [LLM_API_URL_SETTING]: "https://api.groq.com/openai/v1/chat/completions",
+            [LLM_API_URL_SETTING]: "https://api.groq.com/openai/v1",
             [LLM_MODEL_SETTING]: "llama-3.2-90b-vision-preview"
         }
     } else if (provider === 'openai') {
         return {
             [LLM_API_KEY_SETTING]: process.env.OPENAI_API_KEY,
-            [LLM_API_URL_SETTING]: "https://api.openai.com/v1/chat/completions",
+            [LLM_API_URL_SETTING]: "https://api.openai.com/v1",
             [LLM_MODEL_SETTING]: "gpt-4o-mini"
         }
     }
@@ -78,5 +78,12 @@ export const getLLMProviderSettings = (provider) => {
             [LLM_API_URL_SETTING]: "https://generativelanguage.googleapis.com/v1beta",
             [LLM_MODEL_SETTING]: "gemini-2.0-flash"
         }
+    } else if (provider === 'fireworks') {
+        return {
+            [LLM_API_KEY_SETTING]: process.env.FIREWORKS_API_KEY,
+            [LLM_API_URL_SETTING]: "https://api.fireworks.ai/inference/v1",
+            [LLM_MODEL_SETTING]: "deepseek-v3"
+        }
     }
+    throw new Error(`Dummy setting data for provider not found: ${provider}`);
 }

@@ -34,9 +34,8 @@ describe('chat embed', () => {
 
         it('when wrong api key is provided', async () => {
             const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_SETTINGS = ${JSON.stringify({
-                [LLM_API_KEY_SETTING]: "wrong-api-key",
-                [LLM_API_URL_SETTING]: "https://api.groq.com/openai/v1/chat/completions",
-                [LLM_MODEL_SETTING]: "mixtral-8x7b-32768"
+                ...getLLMProviderSettings('groq'),
+                [LLM_API_KEY_SETTING]: "wrong-api-key"
             })};
             window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({...EMBED_COMMANDS_MOCK,
                 getSettings: async () => {
