@@ -75,6 +75,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
     await new Promise(resolve => setTimeout(resolve, 120));
     const cost = await embeddingGenerator.getEmbeddingCost(app, records.length);
     if (cost > 0) {
+        sendMessageToEmbed(app, 'syncNotesProgress', `Waiting for user confirmation...`);
         const confirm = await app.prompt(`The sync operation will cost $${cost} approximately. Do you want to continue?`, {
             inputs: []
         });

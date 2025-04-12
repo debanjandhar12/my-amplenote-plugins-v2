@@ -1,4 +1,3 @@
-import {getEmbeddingConfig} from "./embeddings/getEmbeddingConfig.js";
 import {IndexedDBManager} from "./IndexedDBManager.js";
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 
