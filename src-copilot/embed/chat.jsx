@@ -88,8 +88,6 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         await parse(''); // Load unified js bundle
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
-        await ToolRegistry.registerAllTools();
-        ToolCategoryRegistry.registerAllCategory();
         hideEmbedLoader();
         if (!React || !window.ReactDOM) {
             throw new Error("Failed to load React or ReactDOM");

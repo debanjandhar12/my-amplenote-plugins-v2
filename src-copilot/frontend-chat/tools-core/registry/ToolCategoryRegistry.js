@@ -3,7 +3,9 @@ import {ToolRegistry} from "./ToolRegistry.js";
 export class ToolCategoryRegistry {
     static categories = [];
 
-    static registerAllCategory() {
+    static updateAllCategory() {
+        ToolCategoryRegistry.categories = [];   // Clear existing categories
+
         ToolCategoryRegistry.categories.push({
             name: "tasks",
             description: "<b>Enables tools for amplenote tasks:</b><br />" +

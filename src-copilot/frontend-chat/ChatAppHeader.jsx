@@ -51,7 +51,7 @@ const ChatInterfaceMenu = () => {
     const threadId = AssistantUI.useThreadListItemRuntime().getState().id;
     const [exportNoteExists, setExportNoteExists] = React.useState(false);
     const [exportNoteName, setExportNoteName] = React.useState(`Copilot chat - ${threadId}`);
-    const { setIsChatHistoryOverlayOpen } = React.useContext(getChatAppContext());
+    const { setIsChatHistoryOverlayOpen, toolCategoryNames } = React.useContext(getChatAppContext());
 
     // -- Init --
     React.useEffect(() => {
@@ -81,7 +81,7 @@ const ChatInterfaceMenu = () => {
                 if (contentPart.type === 'text') {
                     // Replace tool category mentions with code
                     let tempText = contentPart.text;
-                    for (const categoryName of ToolCategoryRegistry.getAllCategoriesNames()) {
+                    for (const categoryName of toolCategoryNames) {
                         const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
                         tempText = await replaceParagraphTextInMarkdown(tempText, (oldVal) => {
                             return oldVal.replaceAll('@' + categoryName, '`@' + toolCategory.name + '`');
@@ -106,7 +106,7 @@ const ChatInterfaceMenu = () => {
         await appConnector.replaceNoteContent({uuid: note.uuid}, noteContent);
         await appConnector.navigate(`https://www.amplenote.com/notes/${note.uuid}`);
         await appConnector.alert(`Chat exported to note: ${exportNoteName}`);
-    }, [threadMessages, threadId, setExportNoteExists, exportNoteName]);
+    }, [threadMessages, threadId, setExportNoteExists, exportNoteName, toolCategoryNames]);
     const handleExportAsJSON = React.useCallback(async () => {
         const jsonContent = "data:text/json;charset=utf-8,"
             + encodeURIComponent(JSON.stringify(threadMessages, null, 2));

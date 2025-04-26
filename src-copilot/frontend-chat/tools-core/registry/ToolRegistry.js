@@ -16,16 +16,20 @@ import {getAllMCPTools} from "../mcp/getAllMCPTools.jsx";
 export class ToolRegistry {
     static tools = [];
 
-    static async registerAllTools() {
-        ToolRegistry.tools = [InsertTasksToNote(), FetchUserTasks(), WebSearch(), WebBrowser(),
+    static async registerInbuiltTools() {
+        ToolRegistry.tools = [...ToolRegistry.tools,
+            InsertTasksToNote(), FetchUserTasks(), WebSearch(), WebBrowser(),
             CreateNewNotes(), FetchNoteDetailByNoteUUID(), SearchNotesByTitleTagsContent(),
             UpdateUserNotes(), UpdateUserTasks(),
             EditNoteContent(),
             // DeleteTasks(), // No api support for deleting task yet
             DeleteUserNotes(),
             SearchHelpCenter()];
-        ToolRegistry.tools = [...ToolRegistry.tools, ...(await getAllMCPTools())];
-        console.log('tools', ToolRegistry.tools);
+    }
+    
+    static async registerMCPTools() {
+        const mcpTools = await getAllMCPTools();
+        ToolRegistry.tools = [...ToolRegistry.tools, ...mcpTools];
     }
 
     static getTool(toolName) {

@@ -55,5 +55,5 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
             textareaRef.current
                 .removeEventListener("tribute-replaced", tributeOnReplace);
         };
-    }, [textareaRef]);
+    }, [textareaRef, toolCategoryNames]);
 }

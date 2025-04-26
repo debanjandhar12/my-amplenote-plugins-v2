@@ -4,7 +4,6 @@ import {ChatAppHeader} from "./ChatAppHeader.jsx";
 import {useAssistantAvatar} from "./hooks/useAssistantAvatar.jsx";
 import {useModelContext} from "./hooks/useModelContext.jsx";
 import {UserMessage} from "./components/UserMessage.jsx";
-import {ToolRegistry} from "./tools-core/registry/ToolRegistry.js";
 import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
 import {useUserDataPolling} from "./hooks/useUserDataPolling.jsx";
 import {useIntervalPingPlugin} from "./hooks/useIntervalPingPlugin.jsx";
@@ -16,7 +15,7 @@ import {CustomEditComposer} from "./components/CustomEditComposer.jsx";
 export const ChatAppWindow = () => {
     const assistantAvatar = useAssistantAvatar();
     const suggestions = useChatSuggestions();
-    const { chatHistoryLoaded, isChatHistoryOverlayOpen } = React.useContext(getChatAppContext());
+    const { chatHistoryLoaded, isChatHistoryOverlayOpen, tools } = React.useContext(getChatAppContext());
 
     useModelContext();
     useAmplenoteAttachments();
@@ -40,7 +39,7 @@ export const ChatAppWindow = () => {
                         }}
                         assistantMessage={{ components: { Text: AssistantUIMarkdownComponent } }}
                         assistantAvatar={assistantAvatar}
-                        tools={ToolRegistry.getAllTools()}
+                        tools={tools}
                         components={{
                             Composer: CustomComposer,
                             UserMessage: UserMessage,

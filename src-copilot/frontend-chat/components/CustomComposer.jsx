@@ -8,7 +8,12 @@ export const CustomComposer = () => {
     const allowAttachments = useAllowAttachments();
     const threadRuntime = AssistantUI.useThreadRuntime();
     const textareaRef = React.useRef(null);
-    useTributeSetup(textareaRef, ToolCategoryRegistry.getAllCategoriesNames());    // setup tribute for autocomplete in composer.input
+
+    // Consume registry status from context
+    const { toolCategoryNames } = React.useContext(getChatAppContext());
+
+    // Pass the state to the hook
+    useTributeSetup(textareaRef, toolCategoryNames);
 
     // Fix: Enter not working in amplenote
     React.useEffect(() => {

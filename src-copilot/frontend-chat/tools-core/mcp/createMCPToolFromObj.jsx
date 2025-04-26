@@ -20,7 +20,7 @@ export function createMCPToolFromObj(mcpServerUrl, toolName, toolObj) {
             return (
                 <ToolCardContainer>
                     <Text>The following action will be performed using MCP Server:</Text>
-                    <ScrollArea scrollbars="horizontal" style={{ paddingBottom: '6px' }}>
+                    <ScrollArea scrollbars="horizontal" style={{ paddingTop: '6px', paddingBottom: '6px' }}>
                         <Text size="1" style={{ color: 'var(--gray-11)', marginBottom: '4px', display: 'block' }}>MCP Server:</Text>
                         <Text>{mcpServerUrl}</Text>
                         <Separator size="4" style={{ margin: '8px 0' }} />
