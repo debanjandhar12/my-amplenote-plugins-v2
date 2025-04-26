@@ -70,19 +70,28 @@ const plugin = {
             }
         },
         "Speech to Text": async function (app) {
-            console.log('Speech to Text', app.context);
-            await app.context.replaceSelection(`Loading...`);
-            app.openSidebarEmbed(1, {openSpeechToText: true});
-            while (!(await plugin.isEmbedOpen(app))) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-            console.log('Speech to Text app opened');
-            let i = 0, finalText = '';
-            while (await plugin.isEmbedOpen(app)) {
-                await new Promise(resolve => setTimeout(resolve, 200));
-                await app.context.replaceSelection(`Hello`);
-                console.log('Speech to Text app is processing');
-                i++;
+            try {
+                console.log('Speech to Text', app.context);
+                await app.context.replaceSelection(`Loading...`);
+                app.openSidebarEmbed(1, {openSpeechToText: true});
+                while (!(await plugin.isEmbedOpen(app))) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                // TODO: Send done initialation to embed
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                let mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+                mediaRecorder.start();
+                let i = 0, finalText = '';
+                while (await plugin.isEmbedOpen(app)) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    await app.context.replaceSelection(finalText.trim() == '' ? 'Say something...' : finalText.trim());
+                    console.log('Speech to Text app is processing');
+                    i++;
+                }
+                mediaRecorder.stop();
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
             }
         },
         "Generate text": async function (app) {
