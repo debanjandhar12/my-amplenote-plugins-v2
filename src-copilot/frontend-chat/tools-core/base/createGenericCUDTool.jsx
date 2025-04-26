@@ -13,7 +13,9 @@ export const createGenericCUDTool = ({
                                                  description,
                                                  parameters,
                                                  triggerCondition,
-                                                 onInit = ({setFormState}) => {},
+                                                 onInit = ({setFormState}) => {
+                                                    setFormState('waitingForUserInput');
+                                                 },
                                                  onCompleted = () => {},
                                                  onSubmitted = () => {},
                                                  onCanceled = ({addResult, args, cancelFurtherLLMReply}) => {

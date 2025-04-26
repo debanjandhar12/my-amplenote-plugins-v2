@@ -11,11 +11,12 @@ import {WebSearch} from "../../tools/WebSearch.jsx";
 import {FetchUserTasks} from "../../tools/FetchUserTasks.jsx";
 import {InsertTasksToNote} from "../../tools/InsertTasksToNote.jsx";
 import {SearchHelpCenter} from "../../tools/SearchHelpCenter.jsx";
+import {getAllMCPTools} from "../mcp/getAllMCPTools.jsx";
 
 export class ToolRegistry {
     static tools = [];
 
-    static registerAllTools() {
+    static async registerAllTools() {
         ToolRegistry.tools = [InsertTasksToNote(), FetchUserTasks(), WebSearch(), WebBrowser(),
             CreateNewNotes(), FetchNoteDetailByNoteUUID(), SearchNotesByTitleTagsContent(),
             UpdateUserNotes(), UpdateUserTasks(),
@@ -23,6 +24,8 @@ export class ToolRegistry {
             // DeleteTasks(), // No api support for deleting task yet
             DeleteUserNotes(),
             SearchHelpCenter()];
+        ToolRegistry.tools = [...ToolRegistry.tools, ...(await getAllMCPTools())];
+        console.log('tools', ToolRegistry.tools);
     }
 
     static getTool(toolName) {

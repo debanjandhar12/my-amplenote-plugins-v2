@@ -28,6 +28,12 @@ export class ToolCategoryRegistry {
             ToolRegistry.getToolsByCategory("help")
                 .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
         });
+        ToolCategoryRegistry.categories.push({
+            name: "mcp",
+            description: "<b>Enables tools for the help center:</b><br />" +
+                ToolRegistry.getToolsByCategory("mcp")
+                    .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
+        });
     }
 
     static getCategory(categoryName) {

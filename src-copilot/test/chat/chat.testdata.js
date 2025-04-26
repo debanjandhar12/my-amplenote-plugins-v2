@@ -2,7 +2,7 @@ import {
     USER_PROMPT_LIST_SETTING,
     LLM_API_KEY_SETTING,
     LLM_API_URL_SETTING,
-    LLM_MODEL_SETTING,
+    LLM_MODEL_SETTING, EMBEDDING_SERVER_URL_LIST_SETTING,
 } from "../../constants.js";
 import {dynamicImportEnv} from "../../../common-utils/dynamic-import-env.js";
 
@@ -53,6 +53,7 @@ export const EMBED_COMMANDS_MOCK = {
         await dynamicImportEnv();
         return {
             ...getLLMProviderSettings('google'),
+            [EMBEDDING_SERVER_URL_LIST_SETTING]: process.env.MCP_URL,
             [USER_PROMPT_LIST_SETTING]: JSON.stringify([{uuid:'a', message: "Test A", usageCount:0},{uuid: 'b', message: "Test B", usageCount:0}]),
         }
     }
