@@ -6,12 +6,12 @@ import {ToolCardResultMessage} from "../../components/tools-ui/ToolCardResultMes
 
 export function createMCPToolFromObj(mcpServerUrl, toolName, toolObj) {
     return createGenericCUDTool({
-        toolName: `${toolName}`,
+        toolName: `mcp-${toolName}`,
         description: toolObj.description,
         parameters: {
             type: "object",
-            properties: toolObj.parameters.jsonSchema.properties,
-            required: toolObj.parameters.jsonSchema.required
+            properties: toolObj.parameters?.jsonSchema?.properties,
+            required: toolObj.parameters?.jsonSchema?.required
         },
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@mcp")
             || JSON.stringify(allUserMessages).includes("@all-tools"),

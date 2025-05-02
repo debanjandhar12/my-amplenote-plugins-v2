@@ -1,9 +1,9 @@
-import { EMBEDDING_SERVER_URL_LIST_SETTING } from "../../../constants.js";
+import { MCP_SERVER_URL_LIST_SETTING } from "../../../constants.js";
 import dynamicImportESM from "../../../../common-utils/dynamic-import-esm.js";
 import {createMCPToolFromObj} from "./createMCPToolFromObj.jsx";
 
 export async function getAllMCPTools() {
-    const mcpServerList = window.appSettings[EMBEDDING_SERVER_URL_LIST_SETTING]?.split(',') || [];
+    const mcpServerList = window.appSettings[MCP_SERVER_URL_LIST_SETTING]?.split(',') || [];
     const toolList = [];
     if (mcpServerList.length > 0) {
         const { experimental_createMCPClient } = await dynamicImportESM("ai");

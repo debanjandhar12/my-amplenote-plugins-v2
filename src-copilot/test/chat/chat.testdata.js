@@ -2,7 +2,7 @@ import {
     USER_PROMPT_LIST_SETTING,
     LLM_API_KEY_SETTING,
     LLM_API_URL_SETTING,
-    LLM_MODEL_SETTING, EMBEDDING_SERVER_URL_LIST_SETTING,
+    LLM_MODEL_SETTING, MCP_SERVER_URL_LIST_SETTING,
 } from "../../constants.js";
 import {dynamicImportEnv} from "../../../common-utils/dynamic-import-env.js";
 
@@ -53,7 +53,7 @@ export const EMBED_COMMANDS_MOCK = {
         await dynamicImportEnv();
         return {
             ...getLLMProviderSettings('google'),
-            [EMBEDDING_SERVER_URL_LIST_SETTING]: process.env.MCP_URL,
+            [MCP_SERVER_URL_LIST_SETTING]: process.env.MCP_URL,
             [USER_PROMPT_LIST_SETTING]: JSON.stringify([{uuid:'a', message: "Test A", usageCount:0},{uuid: 'b', message: "Test B", usageCount:0}]),
         }
     }
@@ -84,6 +84,12 @@ export const getLLMProviderSettings = (provider) => {
             [LLM_API_KEY_SETTING]: process.env.FIREWORKS_API_KEY,
             [LLM_API_URL_SETTING]: "https://api.fireworks.ai/inference/v1",
             [LLM_MODEL_SETTING]: "deepseek-v3"
+        }
+    } else if (provider === 'local') {
+        return {
+            [LLM_API_KEY_SETTING]: '',
+            [LLM_API_URL_SETTING]: "http://localhost:11434/api",
+            [LLM_MODEL_SETTING]: "llama3.1"
         }
     }
     throw new Error(`Dummy setting data for provider not found: ${provider}`);
