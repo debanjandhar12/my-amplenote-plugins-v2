@@ -39,11 +39,11 @@
     "@assistant-ui/react": "0.7.65",
     "@radix-ui/react-icons": "1.3.2",
     "tributejs": "5.1.3",
-    "ai": "4.3.10",
+    "ai": "4.3.13",
     "@ai-sdk/groq": "1.2.8",
     "@ai-sdk/anthropic": "1.2.10",
-    "@ai-sdk/openai": "1.3.20",
-    "@ai-sdk/google": "1.2.13",
+    "@ai-sdk/openai": "1.3.21",
+    "@ai-sdk/google": "1.2.14",
     "@ai-sdk/fireworks": "0.2.13",
     "ollama-ai-provider": "1.2.0",
     "easy-web-worker": "7.0.2",
@@ -55,14 +55,15 @@
     "dayjs": "1.11.13",
     "react-error-boundary": "5.0.0",
     "scheduler-polyfill": "^1.3.0",
-    "my-ample-plugin-external": "1.0.21"
+    "my-ample-plugin-external": "1.0.22",
+    "idb": "8.0.2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "cors": "^2.8.5",
     "cross-fetch": "^4.0.0",
     "dotenv": "^16.0.3",
-    "esbuild": "0.25.0",
+    "esbuild": "0.25.3",
     "esbuild-jest2": "0.6.7",
     "esbuild-plugins-node-modules-polyfill": "1.7.0",
     "express": "^5.0.1",
@@ -78,9 +79,8 @@
     "@testing-library/jest-dom": "^6.5.0",
     "esbuild-plugin-external-global": "^1.0.1",
     "@huggingface/transformers": "3.2.4",
-    "node-fetch": "^3.3.2",
-    "idb": "^8.0.1",
-    "p-retry": "^6.2.1"
+    "node-fetch": "4.0.0-beta.4",
+    "p-retry": "6.2.1"
   },
   "scripts": {
     "test": "jest --testPathPattern=src-copilot",

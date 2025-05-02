@@ -20,7 +20,9 @@ export class GoogleEmbeddingGenerator extends EmbeddingGeneratorBase {
         const { embeddings } = await embedMany({
             model: createGoogleGenerativeAI({
                 apiKey: app.settings[EMBEDDING_API_KEY_SETTING]
-            }).textEmbeddingModel(this.MODEL_NAME),
+            }).textEmbeddingModel(this.MODEL_NAME, {
+                taskType: inputType.toLowerCase() === "query" ? 'RETRIEVAL_QUERY' : 'RETRIEVAL_DOCUMENT',
+            }),
             values: textArray,
         });
         return embeddings;

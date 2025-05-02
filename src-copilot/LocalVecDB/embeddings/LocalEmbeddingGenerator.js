@@ -1,6 +1,6 @@
 import {EmbeddingGeneratorBase} from "./EmbeddingGeneratorBase.js";
-import {createEasyWebWorker} from "easy-web-worker";
 import 'scheduler-polyfill';
+import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 
 
 export class LocalEmbeddingGenerator extends EmbeddingGeneratorBase {
@@ -37,6 +37,7 @@ class LocalEmbeddingGeneratorInner {
         if (!window.Worker) return;
         if (!LocalEmbeddingGeneratorInner.generateEmbeddingWorker) {
             const embeddingGenerator = new LocalEmbeddingGenerator();
+            const {createEasyWebWorker} = await dynamicImportESM('easy-web-worker');
             LocalEmbeddingGeneratorInner.generateEmbeddingWorker = await createEasyWebWorker(generateEmbeddingWorkerSource, {
                 keepAlive: false,
                 maxWorkers: embeddingGenerator.MAX_CONCURRENCY,

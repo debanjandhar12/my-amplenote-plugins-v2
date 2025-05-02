@@ -14,8 +14,8 @@ export const EMBEDDING_SERVER_URL_LIST_SETTING = "MCP Server List (Optional)";
 export const PINECONE_API_KEY_SETTING = "Pinecone API Key (Optional)";
 
 // Vector DB Configs
-export const LOCAL_VEC_DB_INDEX_VERSION = 12;
+export const LOCAL_VEC_DB_INDEX_VERSION = 18;
 export const LOCAL_VEC_DB_MAX_TOKENS = 507;
 
 // Chat History DB Configs
-export const COPILOT_CHAT_HISTORY_DB_INDEX_VERSION = 5;
+export const COPILOT_CHAT_HISTORY_DB_INDEX_VERSION = 6;
