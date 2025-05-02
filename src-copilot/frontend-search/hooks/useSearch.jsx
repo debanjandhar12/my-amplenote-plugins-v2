@@ -48,8 +48,8 @@ export const useSearch = () => {
     }, []);
 
     // Search functionality
-    const performSearch = async (query, searchOpts = {}) => {
-        const results = await window.appConnector.searchNotesInLocalVecDB(query, searchOpts);
+    const performSearch = async (query, queryType, searchOpts = {}) => {
+        const results = await window.appConnector.searchNotesInLocalVecDB(query, queryType, searchOpts);
         return await processLocalVecDBResults(results);
     };
 
@@ -74,11 +74,11 @@ export const useSearch = () => {
                         + `title: ${noteTitle || 'Untitled Note'}\n`
                         + `tags: ${noteTags.join(', ')}\n`
                         + '---\n'
-                        + noteContent, searchOpts);
+                        + noteContent, "passage", searchOpts);
                     // Filter out the current note from results
                     results = results.filter(result => result.noteUUID !== noteUUID);
                 } else {
-                    results = await performSearch(searchText, searchOpts);
+                    results = await performSearch(searchText, "query", searchOpts);
                 }
                 setSearchResults(results);
             } catch (error) {

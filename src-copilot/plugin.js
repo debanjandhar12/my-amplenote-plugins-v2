@@ -424,8 +424,8 @@ const plugin = {
         "syncNotesWithLocalVecDB": async function (app) {
             await new LocalVecDB().syncNotes(app, plugin.sendMessageToEmbed);
         },
-        "searchNotesInLocalVecDB": async function (app, queryText, opts) {
-            return await new LocalVecDB().searchNotes(app, queryText, opts);
+        "searchNotesInLocalVecDB": async function (app, queryText, queryTextType, opts) {
+            return await new LocalVecDB().searchNotes(app, queryText, queryTextType, opts);
         },
         "searchHelpCenter": async function (app, queryText, opts) {
             await new LocalVecDB().loadHelpCenterEmbeddings(app);

@@ -87,7 +87,7 @@ export const SearchNotesByTitleTagsContent = () => {
                 // TODO: pass signal
                 if (args.noteContent && args.noteContent.trim() !== '') {
                     args.limitSearchResults = args.limitSearchResults || 10;
-                    const results = await appConnector.searchNotesInLocalVecDB(args.noteContent, {
+                    const results = await appConnector.searchNotesInLocalVecDB(args.noteContent, "query", {
                         limit: Math.floor((args.limitSearchResults * 3) / 2),
                         isArchived: args.isArchived, isSharedByMe: args.isSharedByMe,
                         isSharedWithMe: args.isSharedWithMe
