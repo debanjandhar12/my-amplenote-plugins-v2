@@ -11,6 +11,7 @@ import {getChatAppContext} from "./context/ChatAppContext.jsx";
 import {ChatHistoryOverlay} from "./ChatHistoryOverlay.jsx";
 import {useCustomChatHistoryManager} from "./hooks/useCustomChatHistoryManager.jsx";
 import {CustomEditComposer} from "./components/CustomEditComposer.jsx";
+import {CustomToolFallback} from "./tools/CustomToolFallback.jsx";
 
 export const ChatAppWindow = () => {
     const assistantAvatar = useAssistantAvatar();
@@ -37,7 +38,10 @@ export const ChatAppWindow = () => {
                         welcome={{
                             suggestions: suggestions,
                         }}
-                        assistantMessage={{ components: { Text: AssistantUIMarkdownComponent } }}
+                        assistantMessage={{components: {
+                            Text: AssistantUIMarkdownComponent,
+                            ToolFallback: CustomToolFallback
+                        }}}
                         assistantAvatar={assistantAvatar}
                         tools={tools}
                         components={{
