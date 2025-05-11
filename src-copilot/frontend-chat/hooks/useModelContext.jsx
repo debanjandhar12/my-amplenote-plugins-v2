@@ -1,4 +1,4 @@
-import {convertUIToolsToDummyServerTools} from "../../backend/utils/convertUIToolsToDummyServerTools.js";
+import {convertUIToolsToDummyServerTools} from "../../aisdk-wrappers/utils/convertUIToolsToDummyServerTools.js";
 import {ToolRegistry} from "../tools-core/registry/ToolRegistry.js";
 import {getSystemMessage} from "../helpers/getSystemMessage.js";
 

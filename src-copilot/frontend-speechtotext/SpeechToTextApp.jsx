@@ -1,28 +1,33 @@
 import {useIntervalPingPlugin} from "../frontend-chat/hooks/useIntervalPingPlugin.jsx";
+import {errorToString} from "../frontend-chat/helpers/errorToString.js";
 
 export const SpeechToTextApp = () => {
     const { useState, useEffect } = window.React;
     const [status, setStatus] = useState('initializing'); // 'initializing', 'processing', 'stopped'
+    const [errorObj, setErrorObj] = useState(null);
     const { Theme, Flex, Box, Button, Text, Spinner } = window.RadixUI;
 
     useEffect(() => {
         // Simulate initialization process
-        const initializeApp = async () => {
-            try {
-                // This is a placeholder for the actual initialization code
-                // The user will fill this part later
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate initialization delay
-                setStatus('processing');
-            } catch (error) {
-                console.error('Initialization error:', error);
-                setStatus('error');
+        const waitForAppInitialization = async () => {
+            while(true) {
+                const speechToTextStatus = await window.appConnector.receiveMessageFromPlugin('speechtotext');
+                if (speechToTextStatus === 'ready') {
+                    setStatus('processing');
+                    break;
+                }
+                else if (speechToTextStatus && typeof speechToTextStatus === 'object') {
+                    setStatus('error');
+                    setErrorObj(speechToTextStatus);
+                    break;
+                }
             }
         };
 
-        initializeApp();
+        waitForAppInitialization();
     }, []);
 
-    useIntervalPingPlugin();
+    useIntervalPingPlugin(status === 'initializing' || status === 'processing');
 
     const handleStopClick = () => {
         setStatus('stopped');
@@ -69,8 +74,9 @@ export const SpeechToTextApp = () => {
                 )}
 
                 {status === 'error' && (
-                    <Box style={{ textAlign: 'center', color: '#e11d48' }}>
+                    <Box style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <Text size="3">Error initializing speech recognition</Text>
+                        <Text size="2" color={'red'}>{errorToString(errorObj)}</Text>
                     </Box>
                 )}
             </Flex>

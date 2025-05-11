@@ -2,14 +2,15 @@ import chatHTML from 'inline:./embed/chat.html';
 import searchHTML from 'inline:./embed/search.html';
 import speechtotextHTML from 'inline:./embed/speechtotext.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
-import {generateText} from "./backend/generateText.js";
-import {getLLMModel} from "./backend/getLLMModel.js";
+import {generateText} from "./aisdk-wrappers/generateText.js";
+import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
 import {LLM_API_URL_SETTING} from "./constants.js";
-import {getImageModel} from "./backend/getImageModel.js";
-import {generateImage} from "./backend/generateImage.js";
+import {getImageModel} from "./aisdk-wrappers/getImageModel.js";
+import {generateImage} from "./aisdk-wrappers/generateImage.js";
 import {LocalVecDB} from "./LocalVecDB/LocalVecDB.js";
-import {getMatchedPartWithFuzzySearch} from "./utils/getMatchedPartWithFuzzySearch.jsx";
+import {getMatchedPartWithFuzzySearch} from "./plugin-backend/getMatchedPartWithFuzzySearch.jsx";
 import {validatePluginSettings} from "./validatePluginSettings.js";
+import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
 
 const plugin = {
     currentNoteUUID: null,
@@ -69,31 +70,14 @@ const plugin = {
                 await app.alert(e);
             }
         },
-        // "Speech to Text": async function (app) {
-        //     try {
-        //         console.log('Speech to Text', app.context);
-        //         await app.context.replaceSelection(`Loading...`);
-        //         app.openSidebarEmbed(1, {openSpeechToText: true});
-        //         while (!(await plugin.isEmbedOpen(app))) {
-        //             await new Promise(resolve => setTimeout(resolve, 1000));
-        //         }
-        //         // TODO: Send done initialation to embed
-        //         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        //         let mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        //         mediaRecorder.start();
-        //         let i = 0, finalText = '';
-        //         while (await plugin.isEmbedOpen(app)) {
-        //             await new Promise(resolve => setTimeout(resolve, 200));
-        //             await app.context.replaceSelection(finalText.trim() == '' ? 'Say something...' : finalText.trim());
-        //             console.log('Speech to Text app is processing');
-        //             i++;
-        //         }
-        //         mediaRecorder.stop();
-        //     } catch (e) {
-        //         console.error(e);
-        //         await app.alert(e);
-        //     }
-        // },
+        "Speech to Text": async function (app) {
+            try {
+                await handleSpeechToText(app, plugin);
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        },
         "Generate text": async function (app) {
             try {
                 const instructions = await app.prompt("Enter text generation instructions:");
@@ -376,9 +360,15 @@ const plugin = {
     },
     onEmbedCall : createOnEmbedCallHandler({
         ...COMMON_EMBED_COMMANDS,
+        // Embeds need to send heartbeat signals to the plugin. Used in isEmbedOpen
         "ping": async function (app) {
           window.lastHeartbeatFromChatEmbed = Date.now();
           return true;
+        },
+        // This doesn't actually close the embed, it just sets isEmbedOpen to false
+        "forceEmbedClose": async function (app) {
+            window.lastHeartbeatFromChatEmbed = null;
+            return true;
         },
         "receiveMessageFromPlugin": async function (app, channel) {
             if (window.messageQueue && window.messageQueue[channel] &&

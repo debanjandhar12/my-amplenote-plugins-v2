@@ -1,5 +1,5 @@
 import {set,get} from "lodash-es";
-import {errorToString} from "../tools-core/utils/errorToString.js";
+import {errorToString} from "../helpers/errorToString.js";
 import {ToolCardErrorMessage} from "../components/tools-ui/ToolCardErrorMessage.jsx";
 
 export const useGenericToolFormState = (states, params = {}) => {

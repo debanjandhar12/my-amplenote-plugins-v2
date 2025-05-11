@@ -2,7 +2,7 @@ import dynamicImportESM, {
     dynamicImportCSS,
     dynamicImportExternalPluginBundle, dynamicImportMultipleESM
 } from "../../common-utils/dynamic-import-esm.js";
-import {getLLMModel} from "../backend/getLLMModel.js";
+import {getLLMModel} from "../aisdk-wrappers/getLLMModel.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK} from "../test/chat/chat.testdata.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";

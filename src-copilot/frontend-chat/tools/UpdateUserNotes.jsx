@@ -2,7 +2,7 @@ import {createGenericCUDTool} from "../tools-core/base/createGenericCUDTool.jsx"
 import {ToolFooter} from "../components/tools-ui/ToolFooter.jsx";
 import {ItemSelectionTable} from "../components/tools-ui/ItemSelectionTable.jsx";
 import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
-import {errorToString} from "../tools-core/utils/errorToString.js";
+import {errorToString} from "../helpers/errorToString.js";
 import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
 import {LLM_API_URL_SETTING} from "../../constants.js";
 
