@@ -7,7 +7,7 @@ export const useInnerRuntime = () => {
     const runtime = useCustomDangerousInBrowserRuntime({
         model: window.LLM_MODEL,
         maxSteps: 4,
-        maxTokens: appSettings[LLM_MAX_TOKENS_SETTING] || LLM_MAX_TOKENS_DEFAULT,
+        maxTokens: Number(appSettings[LLM_MAX_TOKENS_SETTING]) || LLM_MAX_TOKENS_DEFAULT,
         adapters: {
             attachments: new AssistantUI.CompositeAttachmentAdapter([
                 new AssistantUI.SimpleImageAttachmentAdapter(),

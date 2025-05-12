@@ -3,13 +3,15 @@ import {
     EMBEDDING_API_KEY_SETTING,
     EMBEDDING_API_URL_SETTING,
     LLM_API_KEY_SETTING,
-    LLM_API_URL_SETTING
+    LLM_API_URL_SETTING, LLM_MAX_TOKENS_SETTING
 } from "./constants.js";
 import {EmbeddingGeneratorFactory} from "./LocalVecDB/embeddings/EmbeddingGeneratorFactory.js";
 
 export async function validatePluginSettings(app) {
     const errors = [];
     const settings = app.settings;
+
+    // LLM related validations
     if (!settings[LLM_API_URL_SETTING]) {
         errors.push('LLM API URL must be provided.');
     }
@@ -33,6 +35,16 @@ export async function validatePluginSettings(app) {
     } catch (e) {
         errors.push(e.message);
     }
+    if (appSettings[LLM_MAX_TOKENS_SETTING] &&appSettings[LLM_MAX_TOKENS_SETTING].trim() !== '') {
+        if (isNaN(appSettings[LLM_MAX_TOKENS_SETTING])) {
+            errors.push('LLM Max Tokens must be a valid number.');
+        }
+        if (Number(appSettings[LLM_MAX_TOKENS_SETTING]) < 4096) {
+            errors.push('LLM Max Tokens must be greater than or equal to 4096.');
+        }
+    }
+
+    // Embeddings related validations
     if (settings[EMBEDDING_API_URL_SETTING].trim()) {
         let isEmbeddingUrlValid = false;
        try {
@@ -55,5 +67,6 @@ export async function validatePluginSettings(app) {
     if (settings[EMBEDDING_API_KEY_SETTING].trim() && !settings[EMBEDDING_API_URL_SETTING].trim()) {
         errors.push('Embedding API URL cannot be empty when Embedding API Key is provided.');
     }
+
     return errors;
 }
