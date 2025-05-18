@@ -32,7 +32,8 @@ const plugin = {
         },
         "Speech to Text": async function (app) {
             try {
-                await handleSpeechToText(app, plugin);
+                // await handleSpeechToText(app, plugin);
+                await app.alert('Speech to Text is under development.');
             } catch (e) {
                 console.error(e);
                 await app.alert(e);

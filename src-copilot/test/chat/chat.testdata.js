@@ -64,7 +64,7 @@ export const getLLMProviderSettings = (provider) => {
         return {
             [LLM_API_KEY_SETTING]: process.env.GROQ_API_KEY,
             [LLM_API_URL_SETTING]: "https://api.groq.com/openai/v1",
-            [LLM_MODEL_SETTING]: "llama-3.2-90b-vision-preview"
+            [LLM_MODEL_SETTING]: "meta-llama/llama-4-scout-17b-16e-instruct"
         }
     } else if (provider === 'openai') {
         return {

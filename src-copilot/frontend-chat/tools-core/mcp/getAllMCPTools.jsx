@@ -8,6 +8,7 @@ export async function getAllMCPTools() {
     if (mcpServerList.length > 0) {
         const { experimental_createMCPClient } = await dynamicImportESM("ai");
         for (const mcpServer of mcpServerList) {
+            if (mcpServer.trim() === '') continue;
             try {
                 const client = await experimental_createMCPClient({
                     transport: {

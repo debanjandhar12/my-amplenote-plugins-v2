@@ -13,6 +13,9 @@ export const MCP_SERVER_URL_LIST_SETTING = "MCP Server List (Optional)";
 // Unused settings
 export const PINECONE_API_KEY_SETTING = "Pinecone API Key (Optional)";
 
+// Version Config
+export const PLUGIN_VERSION = "0.5.0";
+
 // Vector DB Configs
 export const LOCAL_VEC_DB_INDEX_VERSION = 18;
 export const LOCAL_VEC_DB_MAX_TOKENS = 507;
