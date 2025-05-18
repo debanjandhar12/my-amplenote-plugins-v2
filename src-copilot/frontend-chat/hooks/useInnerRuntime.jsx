@@ -9,7 +9,7 @@ export const useInnerRuntime = () => {
         maxSteps: 4,
         ...(
             appSettings[LLM_MAX_TOKENS_SETTING] &&
-            appSettings[LLM_MAX_TOKENS_SETTING].trim() !== '' &&
+            String(appSettings[LLM_MAX_TOKENS_SETTING]).trim() !== '' &&
             Number(appSettings[LLM_MAX_TOKENS_SETTING]) !== 0 &&
             !isNaN(Number(appSettings[LLM_MAX_TOKENS_SETTING])) && {
                 maxTokens: Number(appSettings[LLM_MAX_TOKENS_SETTING])
