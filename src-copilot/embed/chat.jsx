@@ -2,7 +2,7 @@ import dynamicImportESM, {
     dynamicImportCSS,
     dynamicImportExternalPluginBundle, dynamicImportMultipleESM
 } from "../../common-utils/dynamic-import-esm.js";
-import {getLLMModel} from "../backend/getLLMModel.js";
+import {getLLMModel} from "../aisdk-wrappers/getLLMModel.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK} from "../test/chat/chat.testdata.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
@@ -89,8 +89,6 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.appSettings = await appConnector.getSettings();
         window.LLM_MODEL = await getLLMModel(window.appSettings);
         hideEmbedLoader();
-        ToolRegistry.registerAllTools();
-        ToolCategoryRegistry.registerAllCategory();
         if (!React || !window.ReactDOM) {
             throw new Error("Failed to load React or ReactDOM");
         }

@@ -1,14 +1,16 @@
 import chatHTML from 'inline:./embed/chat.html';
 import searchHTML from 'inline:./embed/search.html';
+import speechtotextHTML from 'inline:./embed/speechtotext.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
-import {generateText} from "./backend/generateText.js";
-import {getLLMModel} from "./backend/getLLMModel.js";
-import {LLM_API_URL_SETTING} from "./constants.js";
-import {getImageModel} from "./backend/getImageModel.js";
-import {generateImage} from "./backend/generateImage.js";
+import {generateText} from "./aisdk-wrappers/generateText.js";
+import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
 import {LocalVecDB} from "./LocalVecDB/LocalVecDB.js";
-import {getMatchedPartWithFuzzySearch} from "./utils/getMatchedPartWithFuzzySearch.jsx";
+import {getMatchedPartWithFuzzySearch} from "./plugin-backend/getMatchedPartWithFuzzySearch.jsx";
 import {validatePluginSettings} from "./validatePluginSettings.js";
+import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
+import {handleContinue} from "./plugin-backend/handleContinue.js";
+import {handleRefineSelection} from "./plugin-backend/handleRefineSelection.js";
+import {handleImageGeneration, checkImageGenerationAvailability} from "./plugin-backend/handleImageGeneration.js";
 
 const plugin = {
     currentNoteUUID: null,
@@ -22,45 +24,16 @@ const plugin = {
     insertText: {
         "Continue": async function (app) {
             try {
-                // Get nearby content to caret position
-                const randomUUID = Math.random().toString(36).substring(7);
-                await app.context.replaceSelection(`${randomUUID}`);    // Trick to figure out caret position
-                const noteContent =
-                    `----\nnote-title: ${(await app.notes.find(app.context.noteUUID)).name}\n----\n\n` +
-                    await app.getNoteContent({uuid: app.context.noteUUID});
-                const nearbyContent = noteContent.substring(noteContent.indexOf(randomUUID) - 800, noteContent.indexOf(randomUUID) + 800);
-                // Ask llm to fill
-                await app.context.replaceSelection(`Generating...`);
-                const prompt = "I want you to act as a fill in the mask tool. You take markdown input text and complete it factually. Only reply with words that should replace [MASK]. NEVER repeat input." + "\n" +
-                    "Additional instruction: If the surrounding text is in between a sentence, complete the entire sentence. Otherwise, complete the paragraph. DO NOT repeat the input text." + "\n" +
-                    "Examples:" + "\n" +
-                    "Input:The [MASK] jumps over the lazy dog." + "\n" +
-                    "Output:quick brown fox" + "\n" +
-                    "Input:The quick brown fox jumps[MASK]" + "\n" +
-                    "Output: over the lazy dog." + "\n" +
-                    "Input:On the way, we caught sight of the famous waterfall. [MASK]" + "\n" +
-                    "Output:A rainbow formed in the mist as we stood there. The sight was truly captivating." + "\n" +
-                    "---------------------" + "\n" +
-                    "Input: " + "\n" +
-                    nearbyContent.replaceAll(randomUUID, '[MASK]');
-                const response = await generateText(await getLLMModel(app.settings), prompt);
-                if (response.text) {
-                    let responseText = response.text;
-                    if (responseText.startsWith('Output:') &&
-                        !(nearbyContent.toLowerCase().includes('input')
-                            || nearbyContent.toLowerCase().includes('output'))) {
-                        responseText = responseText.substring(6);   // Remove the "Output:" prefix
-                    }
-                    const lastCharInOriginalContent = nearbyContent.substring(noteContent.indexOf(randomUUID) - 1);
-                    const firstCharInResponse = responseText.substring(0, 1);
-                    if (lastCharInOriginalContent === firstCharInResponse
-                        && firstCharInResponse === ' ') {
-                        responseText = responseText.substring(1);   // Remove the first space
-                    }
-                    await app.context.replaceSelection(responseText);
-                }
-                else
-                    throw new Error('LLM response is empty');
+                await handleContinue(app);
+            } catch (e) {
+                console.error(e);
+                await app.alert(e);
+            }
+        },
+        "Speech to Text": async function (app) {
+            try {
+                // await handleSpeechToText(app, plugin);
+                await app.alert('Speech to Text is under development.');
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -84,35 +57,11 @@ const plugin = {
         },
         "Generate image": {
             check: async function (app, image) {
-                try {
-                    if (app.settings[LLM_API_URL_SETTING].trim() !== '') {
-                        const imageModel = await getImageModel(app.settings);
-                        return !!imageModel;
-                    }
-                } catch (e) { console.error(e); }
-                return false;
+                return await checkImageGenerationAvailability(app);
             },
             run: async function (app) {
                 try {
-                    const imageModel = await getImageModel(app.settings);
-                    const [prompt, size] = await app.prompt("", {
-                        inputs: [
-                            { label: "Image generation instructions:", type: "text", value: "" },
-                            { label: "Image size:", type: "select", options: [
-                                    { label: "512x512", value: "512" },
-                                    { label: "1024x1024", value: "1024" }
-                                ], value: "512" }
-                        ]
-                    });
-                    const response = await generateImage(imageModel, prompt, size);
-                    console.log('response', response);
-                    if (response.image) {
-                        const imgUrl = await app.attachNoteMedia({uuid: app.context.noteUUID}, 'data:image/webp;base64,' +response.image.base64);
-                        await app.context.replaceSelection(`![](${imgUrl})`);
-                    }
-                    else {
-                        throw new Error('LLM response is empty');
-                    }
+                    await handleImageGeneration(app);
                 } catch (e) {
                     console.error(e);
                     await app.alert(e);
@@ -189,41 +138,7 @@ const plugin = {
         },
         "Refine selection": async function (app, selectionContent) {
             try {
-                let promptPrefix = await app.prompt("", {
-                    inputs: [
-                        { label: "Enter prompt type:", type: "select", options: [
-                                { icon: "summarize", label: "Rephrase", value: "Rephrase the following selected text:" },
-                                { icon: "unfold_more", label: "Shorten", value: "Shorten the following selected text:" },
-                                { icon: "unfold_less", label: "Elaborate", value: "Elaborate the following selected text:" },
-                                { icon: "work", label: "More formal", value: "Make the following selected text more formal:" },
-                                { icon: "beach_access", label: "More casual", value: "Make the following selected text more casual:" },
-                                { icon: "healing", label: "Fix grammar", value: "Rectify grammar and spelling in the following selected text:" },
-                                { icon: "edit", label: "Custom", value: "Custom" }
-                            ], value: "Rephrase the following selected text:" }
-                    ]
-                });
-                if (!promptPrefix) return;
-                if (promptPrefix === "Custom") {
-                    promptPrefix = await app.prompt("Enter custom prompt:");
-                    promptPrefix += "\nSelected text";
-                    if (!promptPrefix) return;
-                }
-                const prompt = `Only respond with the text that should replace the selection. Do not reply anything other than the edited text.
-                ${promptPrefix}:\n` + selectionContent;
-                const response = await generateText(await getLLMModel(app.settings), prompt);
-                if (response.text) {
-                    const shouldReplace = await app.alert(response.text, {
-                        preface: "Copilot response:",
-                        actions: [
-                            { label: "Replace", value: "replace", icon: "edit" },
-                        ]
-                    });
-                    if (shouldReplace === "replace") {
-                        await app.replaceNoteContent({uuid: app.context.noteUUID}, response.text);
-                    }
-                } else {
-                    throw new Error('LLM response is empty');
-                }
+                await handleRefineSelection(app, selectionContent);
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -329,7 +244,10 @@ const plugin = {
             return chatHTML;
         } else if (args.openSearch) {
             return searchHTML;
+        } else if (args.openSpeechToText) {
+            return speechtotextHTML;
         }
+        return null;
     },
     sendMessageToEmbed: async function (app, channel, message) {
         if (!window.messageQueue) {
@@ -345,9 +263,15 @@ const plugin = {
     },
     onEmbedCall : createOnEmbedCallHandler({
         ...COMMON_EMBED_COMMANDS,
+        // Embeds need to send heartbeat signals to the plugin. Used in isEmbedOpen
         "ping": async function (app) {
           window.lastHeartbeatFromChatEmbed = Date.now();
           return true;
+        },
+        // This doesn't actually close the embed, it just sets isEmbedOpen to false
+        "forceEmbedClose": async function (app) {
+            window.lastHeartbeatFromChatEmbed = null;
+            return true;
         },
         "receiveMessageFromPlugin": async function (app, channel) {
             if (window.messageQueue && window.messageQueue[channel] &&
@@ -393,8 +317,8 @@ const plugin = {
         "syncNotesWithLocalVecDB": async function (app) {
             await new LocalVecDB().syncNotes(app, plugin.sendMessageToEmbed);
         },
-        "searchNotesInLocalVecDB": async function (app, queryText, opts) {
-            return await new LocalVecDB().searchNotes(app, queryText, opts);
+        "searchNotesInLocalVecDB": async function (app, queryText, queryTextType, opts) {
+            return await new LocalVecDB().searchNotes(app, queryText, queryTextType, opts);
         },
         "searchHelpCenter": async function (app, queryText, opts) {
             await new LocalVecDB().loadHelpCenterEmbeddings(app);

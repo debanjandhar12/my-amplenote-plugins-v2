@@ -4,7 +4,6 @@ import {ChatAppHeader} from "./ChatAppHeader.jsx";
 import {useAssistantAvatar} from "./hooks/useAssistantAvatar.jsx";
 import {useModelContext} from "./hooks/useModelContext.jsx";
 import {UserMessage} from "./components/UserMessage.jsx";
-import {ToolRegistry} from "./tools-core/registry/ToolRegistry.js";
 import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
 import {useUserDataPolling} from "./hooks/useUserDataPolling.jsx";
 import {useIntervalPingPlugin} from "./hooks/useIntervalPingPlugin.jsx";
@@ -12,11 +11,12 @@ import {getChatAppContext} from "./context/ChatAppContext.jsx";
 import {ChatHistoryOverlay} from "./ChatHistoryOverlay.jsx";
 import {useCustomChatHistoryManager} from "./hooks/useCustomChatHistoryManager.jsx";
 import {CustomEditComposer} from "./components/CustomEditComposer.jsx";
+import {CustomToolFallback} from "./tools/CustomToolFallback.jsx";
 
 export const ChatAppWindow = () => {
     const assistantAvatar = useAssistantAvatar();
     const suggestions = useChatSuggestions();
-    const { chatHistoryLoaded, isChatHistoryOverlayOpen } = React.useContext(getChatAppContext());
+    const { chatHistoryLoaded, isChatHistoryOverlayOpen, tools } = React.useContext(getChatAppContext());
 
     useModelContext();
     useAmplenoteAttachments();
@@ -38,9 +38,12 @@ export const ChatAppWindow = () => {
                         welcome={{
                             suggestions: suggestions,
                         }}
-                        assistantMessage={{ components: { Text: AssistantUIMarkdownComponent } }}
+                        assistantMessage={{components: {
+                            Text: AssistantUIMarkdownComponent,
+                            ToolFallback: CustomToolFallback
+                        }}}
                         assistantAvatar={assistantAvatar}
-                        tools={ToolRegistry.getAllTools()}
+                        tools={tools}
                         components={{
                             Composer: CustomComposer,
                             UserMessage: UserMessage,

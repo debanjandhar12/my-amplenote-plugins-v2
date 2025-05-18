@@ -1,6 +1,6 @@
 import { ToolCardMessage } from "../../components/tools-ui/ToolCardMessage.jsx";
 import {useGenericToolFormState} from "../../hooks/useGenericToolFormState.jsx";
-import {errorToString} from "../utils/errorToString.js";
+import {errorToString} from "../../helpers/errorToString.js";
 import {useGenericToolParameters} from "../../hooks/useGenericToolParameters.jsx";
 import {ToolCardErrorMessage} from "../../components/tools-ui/ToolCardErrorMessage.jsx";
 import {ToolCardCanceledMessage} from "../../components/tools-ui/ToolCardCanceledMessage.jsx";
@@ -13,7 +13,9 @@ export const createGenericCUDTool = ({
                                                  description,
                                                  parameters,
                                                  triggerCondition,
-                                                 onInit = ({setFormState}) => {},
+                                                 onInit = ({setFormState}) => {
+                                                    setFormState('waitingForUserInput');
+                                                 },
                                                  onCompleted = () => {},
                                                  onSubmitted = () => {},
                                                  onCanceled = ({addResult, args, cancelFurtherLLMReply}) => {

@@ -1,6 +1,7 @@
 import dynamicImportESM, {dynamicImportCSS} from "../../../common-utils/dynamic-import-esm.js";
 import {visit} from "unist-util-visit";
 import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
+import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
 /**
  * This returns Markdown text component with following changes:
@@ -48,9 +49,10 @@ export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
                 // It may have been better to process it as a rehype plugin and have a custom
                 // component for it, but this is faster to build and works well enough.
                 const processToolCategoryMentionTags = (text) => {
+                    const { toolCategoryNames } = React.useContext(getChatAppContext());
                     const parts = text.split(' ');
                     const result = parts.map((part, i) => {
-                        for (const categoryName of ToolCategoryRegistry.getAllCategoriesNames()) {
+                        for (const categoryName of toolCategoryNames) {
                             const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
                             if (toolCategory && part === `@${toolCategory.name}`) {
                                 return <span key={i}>

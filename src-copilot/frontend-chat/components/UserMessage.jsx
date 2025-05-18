@@ -3,6 +3,7 @@ import {replaceParagraphTextInMarkdown} from "../../markdown/replaceParagraphTex
 import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
 import {ToolCategoryMentionComponent} from "./makeCustomMarkdownText.jsx";
 import {FileAttachmentDisplay} from "./FileAttachmentDisplay.jsx";
+import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
 const UserMessage = () => {
     const { UserMessage, MessagePrimitive, UserActionBar, BranchPicker } = window.AssistantUI;
@@ -39,11 +40,12 @@ const UserMessageContent = (props) => {
 
 const UserMessageText = ({ text }) => {
     const [children, setChildren] = React.useState(null);
+    const { toolCategoryNames } = React.useContext(getChatAppContext());
 
     React.useEffect(() => {
         const processText = async () => {
             let tempText = text;
-            for (const categoryName of ToolCategoryRegistry.getAllCategoriesNames()) {
+            for (const categoryName of toolCategoryNames) {
                 const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
                 tempText = await replaceParagraphTextInMarkdown(tempText, (oldVal) => {
                     return oldVal.replace(new RegExp('@' + categoryName + '(\\s|$)', 'g'), '<toolcategorymention123XG>@' + categoryName + '</toolcategorymention123XG>$1');
@@ -63,7 +65,7 @@ const UserMessageText = ({ text }) => {
         };
 
         processText();
-    }, [text]);
+    }, [text, toolCategoryNames]);
 
     return <div className="aui-md-p">
         {children}

@@ -1,9 +1,15 @@
 import {useTributeSetup} from "../hooks/useTributeSetup.jsx";
 import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
+import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
 export const CustomEditComposer = () => {
     const textareaRef = React.useRef(null);
-    useTributeSetup(textareaRef, ToolCategoryRegistry.getAllCategoriesNames());    // setup tribute for autocomplete in composer.input
+
+    // Consume registry status from context
+    const { toolCategoryNames } = React.useContext(getChatAppContext());
+
+    // Pass the state to the hook
+    useTributeSetup(textareaRef, toolCategoryNames);
 
     return (
         <AssistantUI.EditComposer.Root>

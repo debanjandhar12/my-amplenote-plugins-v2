@@ -1,9 +1,9 @@
-import {getLLMModel} from "./backend/getLLMModel.js";
+import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
 import {
     EMBEDDING_API_KEY_SETTING,
     EMBEDDING_API_URL_SETTING,
     LLM_API_KEY_SETTING,
-    LLM_API_URL_SETTING, LLM_MAX_TOKENS_SETTING
+    LLM_API_URL_SETTING, LLM_MAX_TOKENS_SETTING, MCP_SERVER_URL_LIST_SETTING
 } from "./constants.js";
 import {EmbeddingGeneratorFactory} from "./LocalVecDB/embeddings/EmbeddingGeneratorFactory.js";
 
@@ -66,6 +66,19 @@ export async function validatePluginSettings(app) {
     }
     if (settings[EMBEDDING_API_KEY_SETTING].trim() && !settings[EMBEDDING_API_URL_SETTING].trim()) {
         errors.push('Embedding API URL cannot be empty when Embedding API Key is provided.');
+    }
+
+    // MCP Server List related validations
+    if (settings[MCP_SERVER_URL_LIST_SETTING].trim()) {
+        const urls = settings[MCP_SERVER_URL_LIST_SETTING].split(',');
+        for (let url of urls) {
+            if (url.trim() === '') continue;
+            try {
+                new URL(url);
+            } catch (e) {
+                errors.push(`MCP Server URL provided is not a valid URL: ${url}`);
+            }
+        }
     }
 
     return errors;

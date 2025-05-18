@@ -1,6 +1,6 @@
 import {ToolCardContainer} from "./ToolCardContainer.jsx";
 
-export const ToolCardResultMessage = ({ children, icon, text, result, input, toolName, color = false }) => {
+export const ToolCardResultMessage = ({ children, icon, text, result, input, toolName, color = false, disabled = false }) => {
     const [isCollapsed, setIsCollapsed] = React.useState(true);
     const [resolvedIcon, setResolvedIcon] = React.useState(icon);
 
@@ -28,7 +28,7 @@ export const ToolCardResultMessage = ({ children, icon, text, result, input, too
                     )}
                 </Flex>}
                 {children}
-                <Button onClick={toggleCollapse} size="1" variant="soft">
+                <Button onClick={toggleCollapse} size="1" variant="soft" disabled={disabled}>
                     <ChevronDownIcon style={{ transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }} />
                 </Button>
             </Flex>

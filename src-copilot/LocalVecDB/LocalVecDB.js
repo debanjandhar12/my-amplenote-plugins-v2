@@ -8,8 +8,8 @@ import {getSyncState} from "./getSyncState.js";
 import {loadHelpCenterEmbeddings} from "./loadHelpCenterEmbeddings.js";
 
 export class LocalVecDB {
-    async searchNotes(app, query, opts) {
-        return await searchNotes(app, query, opts);
+    async searchNotes(app, query, queryTextType, opts) {
+        return await searchNotes(app, query, queryTextType, opts);
     }
 
     async syncNotes(app, sendMessageToEmbed) {

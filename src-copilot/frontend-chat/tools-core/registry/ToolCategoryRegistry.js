@@ -3,7 +3,9 @@ import {ToolRegistry} from "./ToolRegistry.js";
 export class ToolCategoryRegistry {
     static categories = [];
 
-    static registerAllCategory() {
+    static updateAllCategory() {
+        ToolCategoryRegistry.categories = [];   // Clear existing categories
+
         ToolCategoryRegistry.categories.push({
             name: "tasks",
             description: "<b>Enables tools for amplenote tasks:</b><br />" +
@@ -27,6 +29,12 @@ export class ToolCategoryRegistry {
             description: "<b>Enables tools for the help center:</b><br />" +
             ToolRegistry.getToolsByCategory("help")
                 .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
+        });
+        ToolCategoryRegistry.categories.push({
+            name: "mcp",
+            description: "<b>Enables tools for the help center:</b><br />" +
+                ToolRegistry.getToolsByCategory("mcp")
+                    .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
         });
     }
 

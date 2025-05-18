@@ -4,7 +4,11 @@ import {
     LLM_API_KEY_SETTING,
     LLM_API_URL_SETTING,
     LLM_MODEL_SETTING,
-    CUSTOM_LLM_AVATAR_SETTING, LLM_MAX_TOKENS_SETTING, EMBEDDING_API_URL_SETTING, EMBEDDING_API_KEY_SETTING
+    CUSTOM_LLM_AVATAR_SETTING,
+    LLM_MAX_TOKENS_SETTING,
+    EMBEDDING_API_URL_SETTING,
+    EMBEDDING_API_KEY_SETTING,
+    MCP_SERVER_URL_LIST_SETTING, PLUGIN_VERSION
 } from "./constants.js";
 
 export default {
@@ -12,8 +16,9 @@ export default {
     description: 'Next-gen AI plugin with chat ui and natural language searching.',
     settings: [LLM_API_URL_SETTING, LLM_API_KEY_SETTING, LLM_MODEL_SETTING, LLM_MAX_TOKENS_SETTING,
         CUSTOM_LLM_INSTRUCTION_SETTING, CUSTOM_LLM_AVATAR_SETTING,
-        EMBEDDING_API_URL_SETTING, EMBEDDING_API_KEY_SETTING, USER_PROMPT_LIST_SETTING],
-    version: '0.4.0',
+        EMBEDDING_API_URL_SETTING, EMBEDDING_API_KEY_SETTING,
+        MCP_SERVER_URL_LIST_SETTING, USER_PROMPT_LIST_SETTING],
+    version: PLUGIN_VERSION,
     icon: 'chat',
     instructions: `
 The plugin brings powerful AI features to Amplenote, including the ability to query all your notes for answers and insights, and to interactively edit or rewrite them with AI chat.
@@ -31,6 +36,7 @@ The plugin brings powerful AI features to Amplenote, including the ability to qu
 Q) [How to set up LLM API?](https://public.amplenote.com/SZnCDvp9yU7CbCzkn7RJowcV#1._Setting_up_LLM_Providers)
 Q) [How to use tools?](https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb#Using_Tools_%28%40notes%2C_%40tasks%2C_%40web%2C_%40help%29)
 Q) [How to use custom prompts?](https://public.amplenote.com/he5yXPoUsXPsYBKbH37vEvZb#Using_Custom_Prompts)
+Q) [How to set up MCP servers (optional)?](https://public.amplenote.com/SZnCDvp9yU7CbCzkn7RJowcV#3._Setting_up_MCP_Servers)
 
 <mark style="color:undefined;">*ℹ️ For amplenote / plugin related questions, you can type \`@help <your question>\` in chat.*<!-- {"cycleColor":"44"} --></mark>
 
@@ -56,6 +62,7 @@ Q) [How to set up embedding API (recommended)?](https://public.amplenote.com/SZn
 - 10/01/2024: Beta v0.2.0 release
 - 03/03/2025: Beta v0.3.0 release
 - 12/04/2025: Beta v0.4.0 release
+- 18/05/2025: Beta v0.5.0 release
 
 [^1]: [Continue]()
 
