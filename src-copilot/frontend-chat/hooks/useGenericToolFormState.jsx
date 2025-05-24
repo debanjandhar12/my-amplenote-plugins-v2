@@ -45,11 +45,11 @@ export const useGenericToolFormState = (states, params = {}) => {
     // Call event handler on state change
     React.useEffect(() => {
         if (!formState) return;
+        window.dispatchEvent(new CustomEvent('onToolStateChange', {detail: formState}));
+        console.log('onToolStateChange', formState);
         if (!params.result && states[formState].eventHandler) {   // only run if result is not already set
             (async () => {
                 try {
-                    window.dispatchEvent(new CustomEvent('onToolStateChange', {detail: formState}));
-                    console.log('onToolStateChange', formState);
                     await states[formState].eventHandler({...params, formState, setFormState});
                 } catch (e) {
                     console.error(e);

@@ -1,18 +1,17 @@
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
 import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK, getLLMProviderSettings} from "./chat.testdata.js";
+import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from "./chat.testdata.js";
 import html from "inline:../../embed/chat.html";
 
 import {
     LLM_API_KEY_SETTING,
-    LLM_API_URL_SETTING, LLM_MAX_TOKENS_SETTING,
-    LLM_MODEL_SETTING
+    LLM_MAX_TOKENS_SETTING,
 } from "../../constants.js";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../common-utils/playwright-helpers.ts";
 
 
 describe('chat embed', () => {
-    const {getPage} = createPlaywrightHooks(false);
+    const {getPage} = createPlaywrightHooks();
     describe('handles errors correctly', () => {
         it('when empty settings', async () => {
             const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_SETTINGS = ${JSON.stringify({})};
@@ -21,7 +20,6 @@ describe('chat embed', () => {
                     return window.INJECTED_SETTINGS;
                 }
             }))};
-            window.INJECTED_USER_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_USER_DATA_MOCK))};
             `);
             const page = await getPage();
             await page.setContent(htmlWithMocks);
@@ -42,7 +40,6 @@ describe('chat embed', () => {
                     return window.INJECTED_SETTINGS;
                 }
             }))};
-            window.INJECTED_USER_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_USER_DATA_MOCK))};
             `);
             const page = await getPage();
             await page.setContent(htmlWithMocks);
@@ -66,7 +63,6 @@ describe('chat embed', () => {
                 return window.INJECTED_SETTINGS;
             }
         }))};
-        window.INJECTED_USER_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_USER_DATA_MOCK))};
         `);
         const page = getPage();
         await page.setContent(htmlWithMocks);
@@ -88,7 +84,6 @@ describe('chat embed', () => {
                 return window.INJECTED_SETTINGS;
             }
         }))};
-        window.INJECTED_USER_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_USER_DATA_MOCK))};
         `);
         const page = await getPage();
         await page.setContent(htmlWithMocks);

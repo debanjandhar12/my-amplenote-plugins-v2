@@ -1,6 +1,6 @@
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
 import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK, getLLMProviderSettings} from "./chat.testdata.js";
+import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from "./chat.testdata.js";
 import html from "inline:../../embed/chat.html";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../common-utils/playwright-helpers.ts";
 
@@ -17,10 +17,11 @@ describe('chat embed', () => {
                         return window.INJECTED_SETTINGS;
                     }
                 }))};
-                window.INJECTED_USER_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_USER_DATA_MOCK))};
                 `);
                 const page = await getPage();
                 await page.setContent(htmlWithMocks);
+
+                await waitForCustomEvent(page, 'appLoaded');
 
                 await page.waitForSelector('.aui-composer-input');
                 await page.locator('.aui-composer-input').fill('Say the five letter word: "Apple". Do not say anything else. Only 5 letters.');

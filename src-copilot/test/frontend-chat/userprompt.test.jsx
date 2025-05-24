@@ -1,6 +1,6 @@
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
 import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, EMBED_USER_DATA_MOCK, getLLMProviderSettings} from "./chat.testdata.js";
+import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from "./chat.testdata.js";
 import html from "inline:../../embed/chat.html";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../common-utils/playwright-helpers.ts";
 import {USER_PROMPT_LIST_SETTING} from "../../constants.js";
@@ -16,7 +16,6 @@ describe('chat embed user prompts', () => {
                 return window.INJECTED_SETTINGS;
             }
         }))};
-        window.INJECTED_USER_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_USER_DATA_MOCK))};
         `);
         const page = getPage();
         await page.setContent(htmlWithMocks);
@@ -37,7 +36,6 @@ describe('chat embed user prompts', () => {
                 return window.INJECTED_SETTINGS;
             }
         }))};
-        window.INJECTED_USER_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_USER_DATA_MOCK))};
         `);
         const page = getPage();
         await page.setContent(htmlWithMocks);

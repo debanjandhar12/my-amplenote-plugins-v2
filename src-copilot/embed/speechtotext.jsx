@@ -1,5 +1,5 @@
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK} from "../test/chat/chat.testdata.js";
+import {EMBED_COMMANDS_MOCK} from "../test/frontend-chat/chat.testdata.js";
 import {overwriteWithAmplenoteStyle} from "../frontend-chat/overwriteWithAmplenoteStyle.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import {

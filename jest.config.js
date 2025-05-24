@@ -20,6 +20,15 @@ export default {
   testEnvironmentOptions: {
       url: 'https://plugins.amplenote.com/'
   },
+  reporters: [
+    "default",
+    ["jest-html-reporter", {
+      "outputPath": "./dist/test-report.html",
+      sort: 'status:failed,pending,passed',
+      "includeFailureMsg": true,
+      "includeConsoleLog": true
+    }]
+  ],
   setupFiles: ['<rootDir>/jest.setup.js'],
   setupFilesAfterEnv: ["./common-utils/playwright-helpers.ts"]
 };

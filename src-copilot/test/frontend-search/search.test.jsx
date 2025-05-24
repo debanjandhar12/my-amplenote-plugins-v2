@@ -2,7 +2,7 @@ import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
 import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
 import html from "inline:../../embed/search.html";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../common-utils/playwright-helpers.ts";
-import {EMBED_COMMANDS_MOCK} from "../chat/chat.testdata.js";
+import {EMBED_COMMANDS_MOCK} from "../frontend-chat/chat.testdata.js";
 
 
 describe('search embed', () => {
