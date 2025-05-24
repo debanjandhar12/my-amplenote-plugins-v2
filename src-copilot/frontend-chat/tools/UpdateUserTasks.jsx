@@ -104,11 +104,11 @@ export const UpdateUserTasks = () => {
                     item: {
                         uuid: taskUUID,
                         content: task.content,
-                        startAt: task.startAt,
-                        endAt: task.endAt,
-                        completedAt: task.completedAt,
-                        dismissedAt: task.dismissedAt,
-                        hideUntil: task.hideUntil,
+                        startAt: typeof task.startAt === 'number' ? window.dayjs(task.startAt*1000).format() : null,
+                        endAt: typeof task.endAt === 'number' ? window.dayjs(task.endAt*1000).format() : null,
+                        completedAt: typeof task.completedAt === 'number' ? window.dayjs(task.completedAt*1000).format() : null,
+                        dismissedAt: typeof task.dismissedAt === 'number' ? window.dayjs(task.dismissedAt*1000).format() : null,
+                        hideUntil: typeof task.hideUntil === 'number' ? window.dayjs(task.hideUntil*1000).format() : null,
                         score: task.score,
                         important: task.important,
                         urgent: task.urgent,
@@ -197,19 +197,21 @@ export const UpdateUserTasks = () => {
 
 const updateTask = async ({ item }) => {
     const oldTaskContent = await appConnector.getTask(item.uuid).then(task => task.content);
-    if (item.taskContent && item.taskContent !== oldTaskContent) {
+    if (!item.uuid) throw new Error('Task UUID is required.');
+    console.log('taskupdateobj', item);
+    if (item.content && item.content !== oldTaskContent) {
         await appConnector.updateTask(item.uuid, {
-            content: item.taskContent
+            content: item.content
         });
     }
-    if (item.taskStartAt) {
+    if (item.startAt) {
         await appConnector.updateTask(item.uuid, {
-            startAt: (Date.parse(item.taskStartAt) / 1000) // convert to timestamp
+            startAt: (Date.parse(item.startAt) / 1000) // convert to timestamp
         });
     }
-    if (item.taskEndAt) {
+    if (item.endAt) {
         await appConnector.updateTask(item.uuid, {
-            endAt: (Date.parse(item.taskEndAt) / 1000) // convert to timestamp
+            endAt: (Date.parse(item.endAt) / 1000) // convert to timestamp
         });
     }
     if (item.completedAt) {
@@ -227,9 +229,9 @@ const updateTask = async ({ item }) => {
             hideUntil: (Date.parse(item.hideUntil) / 1000) // convert to timestamp
         });
     }
-    if (item.taskScore) {
+    if (item.score) {
         await appConnector.updateTask(item.uuid, {
-            score: item.taskScore
+            score: item.score
         });
     }
     if (item.important) {

@@ -145,7 +145,7 @@ export const overwriteWithAmplenoteStyle = () => {
     }`.replace(/\s+/g, ' ').trim();
     styleEl.innerText += `
     .app-container .radix-themes {
-        --default-font-size: 15px;
+        --default-font-size: 14px;
     }
     `.replace(/\s+/g, ' ').trim();
     body.appendChild(styleEl);

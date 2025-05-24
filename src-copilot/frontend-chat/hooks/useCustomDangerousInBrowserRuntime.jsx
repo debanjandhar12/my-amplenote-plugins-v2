@@ -1,3 +1,5 @@
+import {errorToString} from "../helpers/errorToString.js";
+
 export const useCustomDangerousInBrowserRuntime = (
     options
 ) => {
@@ -12,8 +14,12 @@ export const useCustomDangerousInBrowserRuntime = (
             }
         } catch (e) {
             if (e.name !== 'AbortError') {
-                console.log(e);
+                console.error(e);
                 options.onError?.(e);
+                yield {
+                    "content": [{"type": "text", "text": "Error Occurred."}],
+                    "status": {"type": "running"}
+                };
             }
             throw e;
         }

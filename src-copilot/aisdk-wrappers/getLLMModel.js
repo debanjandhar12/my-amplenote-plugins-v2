@@ -25,8 +25,6 @@ export async function getLLMModel(appSettings) {
         }).languageModel(model);
     }
     else if (apiUrl.includes('googleapis')) {
-        // Google only implements subset of OpenAI API Schema. Hence, structuredOutputs is set to false.
-        // Keeping it as true will result in error as tools use union type parameter.
         const {createGoogleGenerativeAI} = await dynamicImportESM("@ai-sdk/google");
         return createGoogleGenerativeAI({
             apiKey: apiKey,
