@@ -36,6 +36,7 @@ Q) [How do I enable autolinking to sections of existing notes?][^1]
 - 28/07/2024: Introduce full page noteOption. Greatly improve markdown support. Also, added experimental support for section linking.
 - 13/09/2024: Reduced bundle size + Bug fixes. Also, added replacement selection support when triggering the plugin from noteOption.
 - 28/09/2024: Reduced bundle size.
+- 21/05/2025: Fix bug with gfm markdown.
 
 [^1]: [How do I enable autolinking to sections of existing notes?]()
     To enable autolinking to sections of existing notes, go to the plugin settings and set "Autolink Related Notes Section" setting to "true".

@@ -106,6 +106,18 @@ describe('addPageLinksToMarkdown and processReplacementMap works correctly', () 
             '[Javascript Tips](https://www.amplenote.com/notes/456) [Javascript Tips](https://www.amplenote.com/notes/456) Javascript TipsJavascript Tips'
         );
     });
+    it('regression #4: should avoid table boundaries', async () => {
+        const markdownText = "JavaScript |\n| Header 1 | Header 2 |\n| --- | --- |\n| JavaScript | Row 2 |";
+        const pages = [{ name: 'JavaScript |', uuid: '123' }, ];
+        const {preReplacementMarkdown, replacementMap} = await addPageLinksToMarkdown(markdownText, pages);
+        expect(processReplacementMap(preReplacementMarkdown, replacementMap)).toBe('[JavaScript |](https://www.amplenote.com/notes/123)\n| Header 1 | Header 2 |\n| --- | --- |\n| JavaScript | Row 2 |');
+    });
+    it('regression #5: should work inside table', async () => {
+        const markdownText = "| Header 1 | Header 2 |\n| --- | --- |\n| JavaScript | Row 2 |";
+        const pages = [{ name: 'JavaScript', uuid: '123' }, ];
+        const {preReplacementMarkdown, replacementMap} = await addPageLinksToMarkdown(markdownText, pages);
+        expect(processReplacementMap(preReplacementMarkdown, replacementMap)).toBe('| Header 1 | Header 2 |\n| --- | --- |\n| [JavaScript](https://www.amplenote.com/notes/123) | Row 2 |');
+    });
 });
 describe('addSectionLinksToMarkdown and processReplacementMap works correctly', () => {
     it('should link text nodes with section names', async () => {
