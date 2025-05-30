@@ -31,11 +31,17 @@ export class LocalEmbeddingGenerator extends EmbeddingGeneratorBase {
 }
 
 class LocalEmbeddingGeneratorInner {
+    static isGenerateEmbeddingWorkerInitializing = false;
     static generateEmbeddingWorker = null;
 
     static async initLocalEmbeddingWorker() {
         if (!window.Worker) return;
-        if (!LocalEmbeddingGeneratorInner.generateEmbeddingWorker) {
+        while (LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        if (!LocalEmbeddingGeneratorInner.generateEmbeddingWorker 
+            && !LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing) {
+            LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing = true;
             const embeddingGenerator = new LocalEmbeddingGenerator();
             const {createEasyWebWorker} = await dynamicImportESM('easy-web-worker');
             LocalEmbeddingGeneratorInner.generateEmbeddingWorker = await createEasyWebWorker(generateEmbeddingWorkerSource, {
@@ -43,6 +49,7 @@ class LocalEmbeddingGeneratorInner {
                 maxWorkers: embeddingGenerator.MAX_CONCURRENCY,
                 terminationDelay: 30000});
             await LocalEmbeddingGeneratorInner.generateEmbeddingUsingLocal('test', 'query');
+            LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing = false;
         }
     }
     static async generateEmbeddingUsingLocal(text, inputType) {
@@ -81,7 +88,7 @@ const generateEmbeddingWorkerSource = ({ onMessage }) => {
         if (!pipeline) {
             // We cannot use dynamicImportEsm inside workers yet.
             // This is ok for now as connection to jsdelivr is mandatory for huggingface to load models anyway.
-            pipeline = (await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.0/+esm')).pipeline;
+            pipeline = (await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.2/+esm')).pipeline;
         }
         if (!embeddingPipe) {
             if (opts.webGpuAvailable) {
