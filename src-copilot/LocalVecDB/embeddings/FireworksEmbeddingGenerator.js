@@ -5,7 +5,7 @@ import {EMBEDDING_API_KEY_SETTING} from "../../constants.js";
 let createFireworks, embedMany;
 export class FireworksEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('nomic-ai/nomic-embed-text-v1.5', 0.008, 64);
+        super('nomic-ai/nomic-embed-text-v1.5', 0.008, false, 64);
     }
 
     async generateEmbedding(app, textArray, inputType) {
@@ -23,6 +23,6 @@ export class FireworksEmbeddingGenerator extends EmbeddingGeneratorBase {
             }).textEmbeddingModel(this.MODEL_NAME),
             values: textArray,
         });
-        return embeddings;
+        return embeddings.map(embedding => new Float32Array(embedding));
     }
 }

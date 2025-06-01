@@ -1,10 +1,12 @@
+import {getDotProduct} from "./getDotProduct.js";
+
 export const getCosineSimilarity = (vecA, vecB) => {
     if (vecA.length !== vecB.length) {
         throw new Error("Cannot calculated cosine similarity as vector are of different size");
     }
-    const dotProduct = vecA.reduce((sum, val, index) => sum + val * vecB[index], 0);
-    const magnitudeA = Math.sqrt(vecA.reduce((sum, val) => sum + val * val, 0));
-    const magnitudeB = Math.sqrt(vecB.reduce((sum, val) => sum + val * val, 0));
+    const dotProduct = getDotProduct(vecA, vecB);
+    const magnitudeA = Math.sqrt(getDotProduct(vecA, vecA));
+    const magnitudeB = Math.sqrt(getDotProduct(vecB, vecB));
     const denominator = magnitudeA * magnitudeB;
     if (denominator === 0) {
         return 0;

@@ -3,13 +3,13 @@ import {EMBEDDING_API_KEY_SETTING} from "../../constants.js";
 
 export class PineconeEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('multilingual-e5-large', 0, 64);
+        super('multilingual-e5-large', 0, true, 64);
     }
 
     async generateEmbedding(app, textArray, inputType) {
         textArray = this.getProcessedTextArray(textArray, inputType, "", "");
         let embeddings = await this._fetchWithRetry(app, textArray, inputType)
-        return embeddings.map(embedding => embedding.values);
+        return embeddings.map(embedding => new Float32Array(embedding.values));
     }
 
     async _fetchWithRetry(app, textArray, inputType) {

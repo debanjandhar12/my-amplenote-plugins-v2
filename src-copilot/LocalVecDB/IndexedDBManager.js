@@ -1,7 +1,18 @@
 import {LOCAL_VEC_DB_INDEX_VERSION} from "../constants.js";
 import {openDB} from "idb";
+import {debounce} from "lodash-es";
 
+let instance;
 export class IndexedDBManager {
+    constructor() {
+        if (instance) return instance;
+        instance = this;
+        this.clearInMemoryNoteStoreCache = debounce(() => {
+            this.inMemoryNoteStoreCache = null;
+        }, 60000);
+        return instance;
+    }
+
     async init() {
         if (this.db) return;
         try {
@@ -30,6 +41,7 @@ export class IndexedDBManager {
      */
     async closeDB() {
         if (this.db) {
+            this.clearInMemoryNoteStoreCache();
             this.db.close();
             this.db = null;
         }
@@ -52,8 +64,9 @@ export class IndexedDBManager {
             const helpCenterObjectStore = db.createObjectStore('helpCenter', {keyPath: 'id', autoIncrement: false});
             helpCenterObjectStore.createIndex('metadata.noteUUID', 'metadata.noteUUID', {unique: false});
             db.createObjectStore('config', {keyPath: 'key'});
-        } else { // Reset DB called without version upgrade
+        } else { // Reset DB called without a version upgrade
             await this.init();
+            this.inMemoryNoteStoreCache = null;
             // Truncate all object stores
             const tx = this.db.transaction(this.db.objectStoreNames, 'readwrite');
             for (const storeName of this.db.objectStoreNames) {
@@ -72,7 +85,9 @@ export class IndexedDBManager {
         await this.init();
         const tx = this.db.transaction('notes');
         const notesObjectStore = tx.objectStore('notes');
-        return notesObjectStore.getAll();
+        if (this.inMemoryNoteStoreCache) return this.inMemoryNoteStoreCache;
+        this.inMemoryNoteStoreCache = notesObjectStore.getAll();
+        return this.inMemoryNoteStoreCache;
     }
 
     async getUniqueNoteUUIDsInNoteEmbeddings() {
@@ -96,6 +111,7 @@ export class IndexedDBManager {
      */
     async putMultipleNoteEmbedding(noteEmbeddingObjArr) {
         await this.init();
+        this.inMemoryNoteStoreCache = null;
         const tx = this.db.transaction('notes', 'readwrite');
         const notesObjectStore = tx.objectStore('notes');
         for (const noteEmbeddingObj of noteEmbeddingObjArr) {
@@ -114,6 +130,7 @@ export class IndexedDBManager {
      */
     async deleteNoteEmbeddingByNoteUUIDList(noteUUIDArr) {
         await this.init();
+        this.inMemoryNoteStoreCache = null;
         const tx = this.db.transaction('notes', 'readwrite');
         const notesObjectStore = tx.objectStore('notes');
         const index = notesObjectStore.index('metadata.noteUUID');

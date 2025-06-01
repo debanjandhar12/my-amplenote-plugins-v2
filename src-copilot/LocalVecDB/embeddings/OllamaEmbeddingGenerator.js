@@ -5,7 +5,7 @@ import {EMBEDDING_API_URL_SETTING} from "../../constants.js";
 
 export class OllamaEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('Snowflake/snowflake-arctic-embed-s', 0, 1);
+        super('Snowflake/snowflake-arctic-embed-s', 0, true, 1);
     }
 
     async generateEmbedding(app, textArray, inputType) {
@@ -37,6 +37,6 @@ export class OllamaEmbeddingGenerator extends EmbeddingGeneratorBase {
                 }
             }
         }
-        return embeddings;
+        return embeddings.map(embedding => new Float32Array(embedding));
     }
 }

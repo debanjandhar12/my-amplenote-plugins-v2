@@ -5,7 +5,7 @@ import {EMBEDDING_API_KEY_SETTING} from "../../constants.js";
 let createGoogleGenerativeAI, embedMany;
 export class GoogleEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('text-embedding-004', 0, 64);
+        super('text-embedding-004', 0, true, 64);
     }
 
     async generateEmbedding(app, textArray, inputType) {
@@ -25,6 +25,6 @@ export class GoogleEmbeddingGenerator extends EmbeddingGeneratorBase {
             }),
             values: textArray,
         });
-        return embeddings;
+        return embeddings.map(embedding => new Float32Array(embedding));
     }
 }

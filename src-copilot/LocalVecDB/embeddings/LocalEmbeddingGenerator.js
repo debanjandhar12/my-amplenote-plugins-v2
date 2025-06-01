@@ -5,7 +5,7 @@ import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 
 export class LocalEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('Snowflake/snowflake-arctic-embed-s', 0, 1);
+        super('Snowflake/snowflake-arctic-embed-s', 0, true, 1);
     }
 
     async generateEmbedding(app, textArray, inputType) {
@@ -17,7 +17,7 @@ export class LocalEmbeddingGenerator extends EmbeddingGeneratorBase {
             embeddings = await Promise.all(textArray.map(text =>
                 LocalEmbeddingGeneratorInner.generateEmbeddingUsingLocal(text, inputType)));
         }, {priority: 'user-visible'});
-        return embeddings;
+        return embeddings.map(embedding => new Float32Array(embedding));
     }
 
     async isWebGpuAvailable() {
@@ -108,7 +108,7 @@ const generateEmbeddingWorkerSource = ({ onMessage }) => {
             normalize: true,
         });
         release();
-        return Array.from(output.data);
+        return new Float32Array(output.data);
     };
 
     onMessage(async (message) => {

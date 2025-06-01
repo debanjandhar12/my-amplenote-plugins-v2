@@ -5,7 +5,7 @@ import {EMBEDDING_API_KEY_SETTING} from "../../constants.js";
 let createOpenAI, embedMany;
 export class OpenAIEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('text-embedding-3-small', 0.02, 64);
+        super('text-embedding-3-small', 0.02, true, 64);
     }
 
     async generateEmbedding(app, textArray, inputType) {
@@ -23,6 +23,6 @@ export class OpenAIEmbeddingGenerator extends EmbeddingGeneratorBase {
             }).embedding(this.MODEL_NAME),
             values: textArray,
         });
-        return embeddings;
+        return embeddings.map(embedding => new Float32Array(embedding));
     }
 }

@@ -53,9 +53,10 @@
     "@huggingface/transformers": "3.2.4",
     "fflate": "0.8.2",
     "dayjs": "1.11.13",
+    "fast-dotproduct": "1.3.0",
     "react-error-boundary": "5.0.0",
     "scheduler-polyfill": "^1.3.0",
-    "my-ample-plugin-external": "1.0.22",
+    "my-ample-plugin-external": "1.0.23",
     "idb": "8.0.2"
   },
   "devDependencies": {

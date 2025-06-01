@@ -1,6 +1,7 @@
 import {IndexedDBManager} from "./IndexedDBManager.js";
 import {getSyncState} from "./getSyncState.js";
 import {getCosineSimilarity} from "./utils/getCosineSimilarity.js";
+import {getDotProduct} from "./utils/getDotProduct.js";
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 
 // Based on: https://github.com/babycommando/entity-db/blob/main/src/index.js
@@ -27,7 +28,7 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 256,
 
         // Calculate cosine similarity for each vector and sort by similarity
         const similarities = filteredEmbeddings.map((entry) => {
-            const score = getCosineSimilarity(queryVector, entry.values);
+            const score = embeddingGenerator.IS_GENERATED_EMBEDDING_NORMALIZED ? getDotProduct(queryVector, entry.values) : getCosineSimilarity(queryVector, entry.values);
             return { ...entry, score };
         });
 

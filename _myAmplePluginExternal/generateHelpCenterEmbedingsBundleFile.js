@@ -177,7 +177,8 @@ async function generateEmbeddings(app, records, oldRecords, embedGenerator) {
             'passage'
         );
         embeddings.forEach((embedding, index) => {
-            remainingRecords[index].values = embedding;
+            // Store Float32Array as a normal array so that JSON.stringify can convert it
+            remainingRecords[index].values = Array.from(embedding);
         });
     }
 

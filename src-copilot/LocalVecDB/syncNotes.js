@@ -33,8 +33,8 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         const noteBatches = chunk(targetNotes, MAX_NOTE_BATCH_SIZE);
         console.log('Batches Count', noteBatches.length);
         
-        let processedNoteCount = 0;
-        const totalNoteCount = targetNotes.length;
+        const totalNoteCount = allNotes.length;
+        let processedNoteCount = totalNoteCount - targetNotes.length;
         
         // Process each batch of notes
         for (const [batchIndex, noteBatch] of noteBatches.entries()) {
@@ -43,7 +43,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
                 
                 // Ask for cost confirmation if this is the first batch
                 if (batchIndex === 0) {
-                    const shouldContinue = await confirmEmbeddingCost(app, embeddingGenerator, batchRecords.length*noteBatches.entries().toArray().length*2, sendMessageToEmbed);
+                    const shouldContinue = await confirmEmbeddingCost(app, embeddingGenerator, batchRecords.length*noteBatches.length*2, sendMessageToEmbed);
                     if (!shouldContinue) return false;
                 }
 

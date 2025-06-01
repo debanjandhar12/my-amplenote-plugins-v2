@@ -2,10 +2,12 @@ export class EmbeddingGeneratorBase {
     COST_PER_MILLION_TOKEN = null;
     MODEL_NAME = null;
     MAX_CONCURRENCY = null;
+    IS_GENERATED_EMBEDDING_NORMALIZED = null;
 
-    constructor(modelName, costPerMillionToken, maxConcurrency = 1) {
+    constructor(modelName, costPerMillionToken, isGeneratedEmbeddingNormalized, maxConcurrency = 1) {
         this.COST_PER_MILLION_TOKEN = costPerMillionToken;
         this.MODEL_NAME = modelName;
+        this.IS_GENERATED_EMBEDDING_NORMALIZED = isGeneratedEmbeddingNormalized;
         this.MAX_CONCURRENCY = maxConcurrency;
     }
 

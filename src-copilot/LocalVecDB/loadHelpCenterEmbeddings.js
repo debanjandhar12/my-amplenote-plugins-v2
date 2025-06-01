@@ -36,6 +36,9 @@ export const loadHelpCenterEmbeddings = async (app) => {
     const fflate = await dynamicImportESM("fflate");
     const fileContent = new TextDecoder().decode(fflate.decompressSync(file));
     const helpCenterEmbeddings = JSON.parse(fileContent);
+    helpCenterEmbeddings.forEach(embedding => {
+        embedding.values = new Float32Array(embedding.values);
+    });
     await indexedDBManager.clearHelpCenterEmbeddings();
     await indexedDBManager.putMultipleHelpCenterEmbeddings(helpCenterEmbeddings);
     await indexedDBManager.setConfigValue('lastLoadHelpCenterEmbeddingProvider', embeddingProviderName);
