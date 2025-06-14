@@ -144,7 +144,7 @@ export class Splitter {
             }
             else if (node.type === 'code' && node.position &&
                 node.position.end.offset - node.position.start.offset > this.maxTokens * 3) {
-                console.log('Skipping code block due to length', node);
+                // console.log('Skipping code block due to length', node);
                 return 'skip';
             }
             else if (node.type === 'image' && node.position) {
@@ -153,7 +153,7 @@ export class Splitter {
                 if (imageObjFromAmplenote && imageObjFromAmplenote.text) {
                     alt = imageObjFromAmplenote.text.replaceAll('\n', ' ');
                 }
-                const nodeValue = `![${alt.substring(0, 4000)}](${node.url})`;
+                const nodeValue = `![${alt.substring(0, 160)}](${node.url})`;
                 let nodeTokens = this.tokenize(nodeValue);
                 return this._processTokens(nodeTokens, note, headers);
             }

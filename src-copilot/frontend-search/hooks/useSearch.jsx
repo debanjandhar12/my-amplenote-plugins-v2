@@ -20,7 +20,11 @@ export const useSearch = () => {
     const updateSyncStatus = async () => {
         try {
             const status = await window.appConnector.getLocalVecDBSyncState();
-            setSyncStatus(status);
+            if (status === 'Syncing') {
+                await handleSync();
+            } else {
+                setSyncStatus(status);
+            }
         } catch (e) {
             setSyncStatus('Error');
         }
@@ -89,7 +93,7 @@ export const useSearch = () => {
                 setIsLoading(false);
             }
         }, 800),
-        [searchText, searchOpts]
+        [searchText, searchOpts, syncStatus]
     );
 
     const handleSearch = React.useCallback(() => {

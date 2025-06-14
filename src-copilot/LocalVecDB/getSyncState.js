@@ -1,7 +1,11 @@
 import {IndexedDBManager} from "./IndexedDBManager.js";
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 
-export const getSyncState = async (app) => {
+export const getSyncState = async (app, syncNotesPromise = null) => {
+    if  (syncNotesPromise) {
+        return 'Syncing';
+    }
+
     const indexedDBManager = new IndexedDBManager();
     const lastPluginUUID = await indexedDBManager.getConfigValue('lastPluginUUID');
     const lastEmbeddingModel = await indexedDBManager.getConfigValue('lastEmbeddingModel');

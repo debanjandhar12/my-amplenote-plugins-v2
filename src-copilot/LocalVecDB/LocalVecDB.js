@@ -7,17 +7,27 @@ import {searchHelpCenter} from "./searchHelpCenter.js";
 import {getSyncState} from "./getSyncState.js";
 import {loadHelpCenterEmbeddings} from "./loadHelpCenterEmbeddings.js";
 
+let syncNotesPromise;
 export class LocalVecDB {
     async searchNotes(app, query, queryTextType, opts) {
         return await searchNotes(app, query, queryTextType, opts);
     }
 
     async syncNotes(app, sendMessageToEmbed) {
-        await syncNotes(app, sendMessageToEmbed);
+        // If there's no active sync promise, create one.
+        if (!syncNotesPromise) {
+            syncNotesPromise = syncNotes(app, sendMessageToEmbed)
+                .finally(() => {
+                    syncNotesPromise = null;
+                });
+        }
+
+        // Return the currently active sync promise.
+        return syncNotesPromise;
     }
 
     async getSyncState(app) {
-        return await getSyncState(app);
+        return await getSyncState(app, syncNotesPromise);
     }
 
     async searchHelpCenter(app, query, opts) {

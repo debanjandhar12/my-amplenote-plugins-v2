@@ -38,6 +38,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         
         // Process each batch of notes
         for (const [batchIndex, noteBatch] of noteBatches.entries()) {
+            await scheduler.postTask(async () => {
                 // Process this batch
                 const batchRecords = await processNoteBatch(app, noteBatch, sendMessageToEmbed, processedNoteCount, totalNoteCount);
                 
@@ -64,6 +65,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
                 
                 // Update configs after each batch for resumability
                 await updateSyncConfigs(indexedDBManager, app.context.pluginUUID, embeddingGenerator.MODEL_NAME);
+            }, {priority: 'background'});
         }
 
         // Final update of sync time
@@ -118,18 +120,11 @@ async function processNoteBatch(app, noteBatch, sendMessageToEmbed, processedNot
     sendMessageToEmbed(app, 'syncNotesProgress',
         `Scanning Notes: ${processedNoteCount}/${totalNoteCount}`);
 
-    await scheduler.postTask(async () => {
-        for (const [index, note] of noteBatch.entries()) {
-            const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
-            const splitResultForNote = await splitter.splitNote(app, note);
-            batchRecords.push(...splitResultForNote);
-
-            // Add small pauses to prevent UI freezing
-            if (index !== 0 && index % 10 === 0) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-        }
-    }, {priority: 'user-visible'});
+    for (const [index, note] of noteBatch.entries()) {
+        const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
+        const splitResultForNote = await splitter.splitNote(app, note);
+        batchRecords.push(...splitResultForNote);
+    }
 
     return batchRecords;
 }
@@ -175,7 +170,8 @@ async function processAndStoreEmbeddings(
         const localWarning = embeddingProviderName === 'local' ?
             `<br /><small style="opacity: 0.8;">(💡 Enter embedding api url and key in plugin settings for faster sync)</small>` : '';
         sendMessageToEmbed(app, 'syncNotesProgress',
-            `Generating Embeddings: ${processedNoteCount+Math.floor((MAX_NOTE_BATCH_SIZE/recordsChunks.length)*chunkIndex)}/${totalNoteCount}<br />` +
+            `Generating Embeddings: ${processedNoteCount
+            + Math.floor((noteUUIDs.length/recordsChunks.length)*chunkIndex)}/${totalNoteCount}<br />` +
             `[using ${embeddingProviderName} embedding${gpuInfo}]${localWarning}`);
 
         // Generate embeddings
