@@ -28,13 +28,14 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         const allNotes = await app.filterNotes({});
         const targetNotes = filterAndSortNotes(allNotes, lastSyncTime);
         
-
         // Process notes in batches
         const noteBatches = chunk(targetNotes, MAX_NOTE_BATCH_SIZE);
-        console.log('Batches Count', noteBatches.length);
         
         const totalNoteCount = allNotes.length;
         let processedNoteCount = totalNoteCount - targetNotes.length;
+
+        // Write log statistics before processing all noteBatches
+        await writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, indexedDBManager);
         
         // Process each batch of notes
         for (const [batchIndex, noteBatch] of noteBatches.entries()) {
@@ -208,3 +209,54 @@ async function updateSyncConfigs(indexedDBManager, pluginUUID, modelName) {
     await indexedDBManager.setConfigValue('lastPluginUUID', pluginUUID);
     await indexedDBManager.setConfigValue('lastEmbeddingModel', modelName);
 }
+
+async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, indexedDBManager) {
+    try {
+        // Get user agent
+        const userAgent = navigator.userAgent;
+
+        // Get RAM information
+        let ramInfo = 'Memory info not available';
+        try {
+            if (performance.memory) {
+                const usedJSHeapSize = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
+                const totalJSHeapSize = Math.round(performance.memory.totalJSHeapSize / 1024 / 1024);
+                const jsHeapSizeLimit = Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024);
+                ramInfo = `Used: ${usedJSHeapSize}MB, Total: ${totalJSHeapSize}MB, Limit: ${jsHeapSizeLimit}MB`;
+            }
+        } catch (e) {}
+
+        // Get embedding provider name
+        const embeddingProviderName = getEmbeddingProviderName(app);
+
+        // Get IndexedDB items count and storage space
+        let indexedDBEmbeddingCount = 0;
+        let storageSpace = 'Storage info not available';
+        try {
+            indexedDBEmbeddingCount = await indexedDBManager.getAllNotesEmbeddingsCount();
+            storageSpace = await indexedDBManager.getRemainingStorageSpace();
+        } catch (e) {
+            // Silently fail, keep defaults
+        }
+
+        console.log(
+            `%c=== Starting Sync ===\n` +
+            `%cPlugin UUID: ${app.context.pluginUUID}\n` +
+            `User Agent: ${userAgent}\n` +
+            `RAM: ${ramInfo}\n` +
+            `Embedding Provider: ${embeddingProviderName}\n` +
+            `Existing Progress: ${processedNoteCount}/${totalNoteCount}\n` +
+            `Remaining NoteBatches count: ${noteBatches.length}\n` +
+            `IndexedDB embedding count: ${indexedDBEmbeddingCount}\n` +
+            `IndexedDB Remaining Storage space: ${storageSpace}\n` +
+            `%c=====================`,
+            'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;',
+            'color: white; background-color: #333; font-size: 13px; padding: 2px;',
+            'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;'
+        );
+    } catch (error) {
+        console.error('Error writing log stats:', error);
+    }
+}
+
+

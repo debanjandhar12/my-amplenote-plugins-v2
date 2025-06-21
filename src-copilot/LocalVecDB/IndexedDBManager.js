@@ -144,6 +144,32 @@ export class IndexedDBManager {
         await tx.done;
     }
 
+    /**
+     * Gets the total count of items in notes object store
+     * @returns {Promise<number>} Total count of items
+     */
+    async getAllNotesEmbeddingsCount() {
+        await this.init();
+        let totalCount = 0;
+
+        try {
+            // Count items in notes store
+            const notesTx = this.db.transaction('notes');
+            const notesStore = notesTx.objectStore('notes');
+            totalCount += await notesStore.count();
+
+            // Count items in helpCenter store
+            const helpCenterTx = this.db.transaction('helpCenter');
+            const helpCenterStore = helpCenterTx.objectStore('helpCenter');
+            totalCount += await helpCenterStore.count();
+
+            return totalCount;
+        } catch (error) {
+            console.error('Error getting items count:', error);
+            return 0;
+        }
+    }
+
     // --------------------------------------------
     // -------------- HELP CENTER EMBEDDING ----------------------
     // --------------------------------------------
@@ -193,5 +219,30 @@ export class IndexedDBManager {
         const configObjectStore = tx.objectStore('config');
         await configObjectStore.put({key, value});
         await tx.done;
+    }
+
+    // --------------------------------------------
+    // -------------- MISC ----------------------
+    // --------------------------------------------
+
+    /**
+     * Gets the estimated remaining storage space available
+     * @returns {Promise<string>} Storage space information
+     */
+    async getRemainingStorageSpace() {
+        try {
+            if ('storage' in navigator && 'estimate' in navigator.storage) {
+                const estimate = await navigator.storage.estimate();
+                const usedMB = Math.round((estimate.usage || 0) / 1024 / 1024);
+                const quotaMB = Math.round((estimate.quota || 0) / 1024 / 1024);
+                const remainingMB = quotaMB - usedMB;
+                return `Used: ${usedMB}MB, Quota: ${quotaMB}MB, Remaining: ${remainingMB}MB`;
+            } else {
+                return 'Storage estimate not available';
+            }
+        } catch (error) {
+            console.error('Error getting storage space:', error);
+            return 'Error getting storage space';
+        }
     }
 }

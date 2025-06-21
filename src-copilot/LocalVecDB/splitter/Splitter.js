@@ -51,7 +51,7 @@ export class Splitter {
     async _collectNoteInfo(app, note) {
         this.noteContent = await app.getNoteContent({ uuid: note.uuid });
         this.noteProperties = await getExtendedNoteHandleProperties(app, note);
-        this.noteImages = await app.getNoteImages({ uuid: note.uuid });
+        this.noteImages =  []; // await app.getNoteImages({ uuid: note.uuid });
     }
 
     _rebalanceChunks(rebalanceChunksThreshold) {
@@ -153,7 +153,7 @@ export class Splitter {
                 if (imageObjFromAmplenote && imageObjFromAmplenote.text) {
                     alt = imageObjFromAmplenote.text.replaceAll('\n', ' ');
                 }
-                const nodeValue = `![${alt.substring(0, 160)}](${node.url})`;
+                const nodeValue = `![${alt.substring(0, 128)}](${node.url})`;
                 let nodeTokens = this.tokenize(nodeValue);
                 return this._processTokens(nodeTokens, note, headers);
             }
