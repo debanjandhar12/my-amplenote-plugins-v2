@@ -5,11 +5,13 @@ import {chunk} from "lodash-es";
 import {getEmbeddingProviderName} from "./embeddings/getEmbeddingProviderName.js";
 import 'scheduler-polyfill';
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
+import DuckDBWorkerManager from "./DuckDB/DuckDBWorkerManager.js";
 
 export const syncNotes = async (app, sendMessageToEmbed) => {
     try {
         // -- Initialize --
         const performanceStartTime = performance.now();
+        console.log(await DuckDBWorkerManager.getCollectionInstance('CopilotLocalVecDB'));
         const indexedDBManager = new IndexedDBManager();
         const embeddingProviderName = getEmbeddingProviderName(app);
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);

@@ -1,6 +1,6 @@
 /**
  * Util class that returns:
- * isArchived, isTaskListNote, isSharedByMe,isSharedWithMe, isPublished
+ * isArchived, isTaskListNote, isSharedByMe, isSharedWithMe, isPublished
  */
 let searchResultCache = null;
 export async function getExtendedNoteHandleProperties(app, note) {
