@@ -1,6 +1,13 @@
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
-import * as duckdb from "@duckdb/duckdb-wasm";
-import {DuckDBAccessMode, DuckDBDataProtocol} from "@duckdb/duckdb-wasm";
+// import {
+//     AsyncDuckDB,
+//     createWorker,
+//     DuckDBAccessMode,
+//     getJsDelivrBundles,
+//     selectBundle,
+//         ConsoleLogger,
+//         VoidLogger
+// } from "@duckdb/duckdb-wasm";
 
 const instanceMap = new Map();
 export default class DuckDBWorkerManager {
@@ -9,24 +16,31 @@ export default class DuckDBWorkerManager {
             return instanceMap.get(collectionName);
         }
 
-        // const duckdb = await dynamicImportESM("@duckdb/duckdb-wasm");
-        const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
-        console.log("JSDELIVR_BUNDLES", JSDELIVR_BUNDLES);
-        const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+        const {
+            AsyncDuckDB,
+            createWorker,
+            DuckDBAccessMode,
+            getJsDelivrBundles,
+            selectBundle,
+            ConsoleLogger,
+            VoidLogger
+        } = await dynamicImportESM("@duckdb/duckdb-wasm");
+        const JSDELIVR_BUNDLES = getJsDelivrBundles();
+        const bundle = await selectBundle(JSDELIVR_BUNDLES);
         const worker_url = bundle.mainWorker;
 
         if (!worker_url) {
             throw new Error("Could not determine main duckdb worker URL from bundle.");
         }
 
-        const worker = await duckdb.createWorker(worker_url);
-        const logger = process.env.NODE_ENV === 'development' ? new duckdb.ConsoleLogger() : new duckdb.VoidLogger();
-        let db = new duckdb.AsyncDuckDB(logger, worker);
+        const worker = await createWorker(worker_url);
+        const logger = process.env.NODE_ENV === 'development' ? new ConsoleLogger() : new VoidLogger();
+        let db = new AsyncDuckDB(logger, worker);
         await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
         const root = await navigator.storage.getDirectory();
         console.log("opfs root", root, await Array.fromAsync(root.entries()))
         await db.open({
-            path: 'opfs://testf.db',
+            path: `opfs://${collectionName}.db`,
             accessMode: DuckDBAccessMode.READ_WRITE,
         });
         instanceMap.set(collectionName, db);

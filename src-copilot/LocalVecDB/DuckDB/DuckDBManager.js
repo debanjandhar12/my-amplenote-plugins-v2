@@ -18,10 +18,6 @@ export class DuckDBManager {
                 await this._setConfigValue(conn, 'LOCAL_VEC_DB_INDEX_VERSION', LOCAL_VEC_DB_INDEX_VERSION);
             }
             await conn.send(`CHECKPOINT;`);
-            // const root = await navigator.storage.getDirectory();
-            // const fileHandle = await root.getFileHandle(`testxx.db`, {create: true});
-            // await this.db.registerFileHandle('testxx.db', await fileHandle.getFile(), DuckDBDataProtocol.BROWSER_FSACCESS, true);
-            // await conn.query(`EXPORT DATABASE 'testxxz.db'`);
             conn.close();
         } catch (e) {
             console.error('DuckDBManager init error:', e);
@@ -350,6 +346,7 @@ export class DuckDBManager {
         await this.init();
         const conn = await this.db.connect();
         await this._setConfigValue(conn, key, value);
+        await conn.send(`CHECKPOINT;`);
         conn.close();
     }
 
