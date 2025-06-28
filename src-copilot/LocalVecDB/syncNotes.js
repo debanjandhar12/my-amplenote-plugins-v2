@@ -6,79 +6,82 @@ import {getEmbeddingProviderName} from "./embeddings/getEmbeddingProviderName.js
 import 'scheduler-polyfill';
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 import DuckDBWorkerManager from "./DuckDB/DuckDBWorkerManager.js";
+import {DuckDBManager} from "./DuckDB/DuckDBManager.js";
 
 export const syncNotes = async (app, sendMessageToEmbed) => {
     try {
         // -- Initialize --
         const performanceStartTime = performance.now();
-        console.log(await DuckDBWorkerManager.getCollectionInstance('CopilotLocalVecDB'));
-        const indexedDBManager = new IndexedDBManager();
-        const embeddingProviderName = getEmbeddingProviderName(app);
-        const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
-        let lastSyncTime = await indexedDBManager.getConfigValue('lastSyncTime')
-            || new Date(0).toISOString();
-        const lastPluginUUID = await indexedDBManager.getConfigValue('lastPluginUUID');
-        const lastEmbeddingModel = await indexedDBManager.getConfigValue('lastEmbeddingModel');
-
-        // -- Reset DB if plugin UUID / embedding model has changed --
-        if (lastPluginUUID !== app.context.pluginUUID || lastEmbeddingModel !== embeddingGenerator.MODEL_NAME) {
-            await indexedDBManager.resetDB();
-            lastSyncTime = new Date(0).toISOString();
-        }
-
-        // -- Fetch target notes from amplenote --
-        const allNotes = await app.filterNotes({});
-        const targetNotes = filterAndSortNotes(allNotes, lastSyncTime);
-        
-        // Process notes in batches
-        const noteBatches = chunk(targetNotes, MAX_NOTE_BATCH_SIZE);
-        
-        const totalNoteCount = allNotes.length;
-        let processedNoteCount = totalNoteCount - targetNotes.length;
-
-        // Write log statistics before processing all noteBatches
-        await writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, indexedDBManager);
-        
-        // Process each batch of notes
-        for (const [batchIndex, noteBatch] of noteBatches.entries()) {
-            await scheduler.postTask(async () => {
-                // Process this batch
-                const batchRecords = await processNoteBatch(app, noteBatch, sendMessageToEmbed, processedNoteCount, totalNoteCount);
-                
-                // Ask for cost confirmation if this is the first batch
-                if (batchIndex === 0) {
-                    const shouldContinue = await confirmEmbeddingCost(app, embeddingGenerator, batchRecords.length*noteBatches.length*2, sendMessageToEmbed);
-                    if (!shouldContinue) return false;
-                }
-
-                // Process embeddings and store in DB for this batch
-                await processAndStoreEmbeddings(
-                    app, 
-                    batchRecords, 
-                    embeddingGenerator, 
-                    embeddingProviderName, 
-                    indexedDBManager, 
-                    targetNotes, 
-                    sendMessageToEmbed,
-                    processedNoteCount,
-                    totalNoteCount
-                );
-                
-                processedNoteCount += noteBatch.length;
-                
-                // Update configs after each batch for resumability
-                await updateSyncConfigs(indexedDBManager, app.context.pluginUUID, embeddingGenerator.MODEL_NAME);
-            }, {priority: 'background'});
-        }
-
-        // Final update of sync time
-        await indexedDBManager.setConfigValue('lastSyncTime', new Date().toISOString());
-        await indexedDBManager.closeDB();
-
-        console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', targetNotes.length);
-        sendMessageToEmbed(app, 'syncNotesProgress', `${totalNoteCount}/${totalNoteCount}<br />Sync Completed!`);
-        app.alert("Sync completed!");
-        return true;
+        const dbm = new DuckDBManager();
+        console.log('LOCAL_VEC_DB_INDEX_VERSION', await dbm.getConfigValue('LOCAL_VEC_DB_INDEX_VERSION'));
+        //
+        // const indexedDBManager = new IndexedDBManager();
+        // const embeddingProviderName = getEmbeddingProviderName(app);
+        // const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
+        // let lastSyncTime = await indexedDBManager.getConfigValue('lastSyncTime')
+        //     || new Date(0).toISOString();
+        // const lastPluginUUID = await indexedDBManager.getConfigValue('lastPluginUUID');
+        // const lastEmbeddingModel = await indexedDBManager.getConfigValue('lastEmbeddingModel');
+        //
+        // // -- Reset DB if plugin UUID / embedding model has changed --
+        // if (lastPluginUUID !== app.context.pluginUUID || lastEmbeddingModel !== embeddingGenerator.MODEL_NAME) {
+        //     await indexedDBManager.resetDB();
+        //     lastSyncTime = new Date(0).toISOString();
+        // }
+        //
+        // // -- Fetch target notes from amplenote --
+        // const allNotes = await app.filterNotes({});
+        // const targetNotes = filterAndSortNotes(allNotes, lastSyncTime);
+        //
+        // // Process notes in batches
+        // const noteBatches = chunk(targetNotes, MAX_NOTE_BATCH_SIZE);
+        //
+        // const totalNoteCount = allNotes.length;
+        // let processedNoteCount = totalNoteCount - targetNotes.length;
+        //
+        // // Write log statistics before processing all noteBatches
+        // await writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, indexedDBManager);
+        //
+        // // Process each batch of notes
+        // for (const [batchIndex, noteBatch] of noteBatches.entries()) {
+        //     await scheduler.postTask(async () => {
+        //         // Process this batch
+        //         const batchRecords = await processNoteBatch(app, noteBatch, sendMessageToEmbed, processedNoteCount, totalNoteCount);
+        //
+        //         // Ask for cost confirmation if this is the first batch
+        //         if (batchIndex === 0) {
+        //             const shouldContinue = await confirmEmbeddingCost(app, embeddingGenerator, batchRecords.length*noteBatches.length*2, sendMessageToEmbed);
+        //             if (!shouldContinue) return false;
+        //         }
+        //
+        //         // Process embeddings and store in DB for this batch
+        //         await processAndStoreEmbeddings(
+        //             app,
+        //             batchRecords,
+        //             embeddingGenerator,
+        //             embeddingProviderName,
+        //             indexedDBManager,
+        //             targetNotes,
+        //             sendMessageToEmbed,
+        //             processedNoteCount,
+        //             totalNoteCount
+        //         );
+        //
+        //         processedNoteCount += noteBatch.length;
+        //
+        //         // Update configs after each batch for resumability
+        //         await updateSyncConfigs(indexedDBManager, app.context.pluginUUID, embeddingGenerator.MODEL_NAME);
+        //     }, {priority: 'background'});
+        // }
+        //
+        // // Final update of sync time
+        // await indexedDBManager.setConfigValue('lastSyncTime', new Date().toISOString());
+        // await indexedDBManager.closeDB();
+        //
+        // console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', targetNotes.length);
+        // sendMessageToEmbed(app, 'syncNotesProgress', `${totalNoteCount}/${totalNoteCount}<br />Sync Completed!`);
+        // app.alert("Sync completed!");
+        // return true;
     } catch (e) {
         console.error('syncNotes error:', e);
         sendMessageToEmbed(app, 'syncNotesProgress', `Error: ${e.message}`);

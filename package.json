@@ -58,7 +58,7 @@
     "scheduler-polyfill": "^1.3.0",
     "my-ample-plugin-external": "1.0.23",
     "idb": "8.0.2",
-    "@duckdb/duckdb-wasm": "^1.29.1-dev260.0"
+    "@duckdb/duckdb-wasm": "1.29.1-dev260.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
