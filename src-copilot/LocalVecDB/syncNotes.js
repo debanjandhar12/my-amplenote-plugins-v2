@@ -157,7 +157,7 @@ async function processAndStoreEmbeddings(
     if (records.length === 0) return;
     
     // Delete existing records for these notes
-    const noteUUIDs = [...new Set(records.map(record => record.metadata.noteUUID))];
+    const noteUUIDs = [...new Set(records.map(record => record.noteUUID))];
     await indexedDBManager.deleteNoteEmbeddingByNoteUUIDList(noteUUIDs);
 
     // Process in chunks based on embedding model's concurrency limit
@@ -178,7 +178,7 @@ async function processAndStoreEmbeddings(
         // Generate embeddings
         const embeddings = await embeddingGenerator.generateEmbedding(
             app,
-            recordChunk.map(record => record.metadata.noteContentPart), 
+            recordChunk.map(record => record.processedNoteContent),
             'passage'
         );
         
@@ -193,7 +193,7 @@ async function processAndStoreEmbeddings(
         // Update last sync time for resumability
         try {
             const lastNoteInChunk = recordChunk[recordChunk.length-1];
-            const note = targetNotes.find(n => n.uuid === lastNoteInChunk.metadata.noteUUID);
+            const note = targetNotes.find(n => n.uuid === lastNoteInChunk.noteUUID);
             if (note) {
                 const parsedUpdatedAt = new Date(note.updated || note.updatedAt);
                 parsedUpdatedAt.setSeconds(parsedUpdatedAt.getSeconds() - 1);

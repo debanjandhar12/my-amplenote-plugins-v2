@@ -1,11 +1,14 @@
 import { parse } from '../../markdown/markdown-parser.js';
-import { visit } from "unist-util-visit";
+import { visitParents } from "unist-util-visit-parents";
 import { toString as mdastToString } from "mdast-util-to-string";
-import {isArray, truncate} from "lodash-es";
-import {getExtendedNoteHandleProperties} from "../utils/getExtendedNoteHandleProperties.js";
+import { isArray, truncate } from "lodash-es";
+import { getExtendedNoteHandleProperties } from "../utils/getExtendedNoteHandleProperties.js";
 
 export class Splitter {
     constructor(maxTokens) {
+        if (!maxTokens || maxTokens <= 0) { // Added !maxTokens check for safety
+            throw new Error('maxTokens must be a positive integer');
+        }
         this.maxTokens = maxTokens;
         this.splitRecordList = [];
         this.noteContent = '';
@@ -13,181 +16,250 @@ export class Splitter {
         this.noteImages = [];
     }
 
-    _addSplitRecord(note, headers, isFirstSplit = false) {
-        const lastHeader = headers[headers.length - 1];
-        const lastHeaderText = mdastToString(lastHeader);
-        
-        this.splitRecordList.push({
-            id: note.uuid + "##"+ this.splitRecordList.length,
-            metadata: {
-                noteContentPart: ``,
-                noteUUID: note.uuid,
-                noteTitle: note.name || note.title || 'Untitled Note',
-                noteTags: note.tags || [],
-                headingAnchor: lastHeaderText ? lastHeaderText.trim().replaceAll(' ', '_') : null,
-                ...this.noteProperties
-            },
+    _createNewChunk(note, headers, isFirstSplit = false) {
+        const lastHeader = headers.length > 0 ? headers[headers.length - 1] : null;
+        const lastHeaderText = lastHeader ? mdastToString(lastHeader) : '';
+
+        return {
+            id: note.uuid + "##" + Math.ceil(Math.random()*10000000),
+            actualNoteContentPart: ``,
+            processedNoteContent: ``,
+            noteUUID: note.uuid,
+            noteTitle: note.name || note.title || 'Untitled Note',
+            noteTags: note.tags || [],
+            headingAnchor: lastHeaderText ? lastHeaderText.trim().replaceAll(' ', '_') : null,
+            embeddings: [],
+            ...this.noteProperties,
             tempData: {
                 isFirstSplit,
                 headers,
-                addedTokenCount: 0
+                addedTokenCount: 0,
+                startOffset: null,
+                endOffset: null
             }
-        });
+        };
     }
-    
+
     _getFrontMatter(splitRecord) {
-        const headerHierarchy = splitRecord.tempData.headers && splitRecord.tempData.headers.length > 0 ?
-            splitRecord.tempData.headers.map((header) => `${'#'.repeat(header.depth)} ${
-            this.noteContent.substring(header.position.start.offset, header.position.end.offset).trim().replaceAll('\n','')}`).join('> ') : '';
-        
-        return `---\n`+
-            `title: ${truncate(splitRecord.metadata.noteTitle, {length: 50})}\n` +
-            (splitRecord.tempData.isFirstSplit && splitRecord.metadata.noteTags && isArray(splitRecord.metadata.noteTags) ?
-                `tags: ${splitRecord.metadata.noteTags.slice(0, 4).filter(x => x.length < 10).join(', ')}\n` : '') +
-            (headerHierarchy && headerHierarchy.length < 120 ? `headers: ${headerHierarchy}\n` : '') +
+        const headerHierarchy = splitRecord.tempData.headers?.length > 0 ?
+            splitRecord.tempData.headers.map(header => `${'#'.repeat(header.depth)} ${mdastToString(header)}`).join(' > ')
+            : '';
+
+        return `---\n` +
+            `title: ${truncate(splitRecord.noteTitle, { length: 50 })}\n` +
+            (splitRecord.tempData.isFirstSplit && splitRecord.noteTags && isArray(splitRecord.noteTags) ?
+                `tags: ${splitRecord.noteTags.slice(0, 4).filter(x => x.length < 10).join(', ')}\n` : '') +
+            (headerHierarchy ? `headers: ${truncate(headerHierarchy, { length: 64 })}\n` : '') +
             `---\n`;
     }
 
     async _collectNoteInfo(app, note) {
         this.noteContent = await app.getNoteContent({ uuid: note.uuid });
         this.noteProperties = await getExtendedNoteHandleProperties(app, note);
-        this.noteImages =  []; // await app.getNoteImages({ uuid: note.uuid });
+        this.noteImages = await app.getNoteImages({ uuid: note.uuid });
     }
 
-    _rebalanceChunks(rebalanceChunksThreshold) {
-        if (rebalanceChunksThreshold < 0 || rebalanceChunksThreshold > 1) throw new Error('rebalanceChunksThreshold must be between 0 and 1');
+    /**
+     * Appends content to the current chunk, handling tokenization and overflow.
+     * Includes a safeguard against infinite loops.
+     */
+    _appendContentToChunk(cleanedContent, currentChunk, note, node) {
+        if (!cleanedContent) return currentChunk;
 
-        const rebalancedChunks = [];
-        let currentChunk = null;
+        const hasPosition = node && node.position && typeof node.position.start?.offset === 'number' && typeof node.position.end?.offset === 'number';
 
-        for (const chunk of this.splitRecordList) {
-            if (!currentChunk) {
-                currentChunk = {...chunk};
+        // Track the original note substring range when position info is available
+        if (hasPosition) {
+            if (currentChunk.tempData.startOffset === null) {
+                currentChunk.tempData.startOffset = node.position.start.offset;
+            }
+            currentChunk.tempData.endOffset = node.position.end.offset;
+        }
+
+        let tokens = this.tokenize(cleanedContent);
+
+        while (tokens.length > 0) {
+            const remainingSpace = this.maxTokens - currentChunk.tempData.addedTokenCount;
+
+            if (remainingSpace <= 0) {
+                // If the chunk is full, we must push it and start a new one.
+                this.splitRecordList.push(currentChunk);
+                currentChunk = this._createNewChunk(note, currentChunk.tempData.headers);
                 continue;
             }
 
-            // If combining would exceed rebalanceChunksThreshold * maxTokens, store current and start new
-            if (currentChunk.tempData.addedTokenCount + chunk.tempData.addedTokenCount > (rebalanceChunksThreshold * this.maxTokens)) {
-                rebalancedChunks.push(currentChunk);
-                currentChunk = {...chunk};
-                continue;
+            const tokensToAdd = tokens.slice(0, remainingSpace);
+
+            if (tokensToAdd.length === 0 && tokens.length > 0) {    // safeguard against infinite loop
+                break;
             }
 
-            // Combine chunks
-            if (currentChunk.tempData.headers.length === 0 && chunk.tempData.headers.length > 0
-                && currentChunk.tempData.addedTokenCount === 0) {
-                currentChunk.metadata.headingAnchor = chunk.metadata.headingAnchor;
-                currentChunk.tempData.headers = chunk.tempData.headers;
-            }
-            currentChunk.metadata.noteContentPart += '\n' + chunk.metadata.noteContentPart;
-            currentChunk.tempData.addedTokenCount += 1 + chunk.tempData.addedTokenCount;
+            const contentToAdd = tokensToAdd.join('');
+            currentChunk.processedNoteContent += contentToAdd;
+            currentChunk.tempData.addedTokenCount += tokensToAdd.length;
+            tokens = tokens.slice(tokensToAdd.length);
         }
-
-        if (currentChunk) {
-            rebalancedChunks.push(currentChunk);
-        }
-
-        this.splitRecordList = rebalancedChunks;
+        return currentChunk;
     }
 
-    _enrichChunks() {
-        this.splitRecordList = this.splitRecordList
-            .filter((result) => result.tempData.addedTokenCount > 0);
-        for (const chunk of this.splitRecordList) {
-            chunk.metadata.noteContentPart = this._getFrontMatter(chunk) + chunk.metadata.noteContentPart;
-            delete chunk.tempData;
-        }
-    }
-
-    _processTokens(nodeTokens, note, headers) {
-        if (nodeTokens.length > this.maxTokens * 1000) {
-            return 'skip';
-        }
-
-        while (nodeTokens.length > 0) {
-            const remainingSpace = this.maxTokens - this.splitRecordList[this.splitRecordList.length - 1].tempData.addedTokenCount;
-            if (remainingSpace === 0) {
-                this._addSplitRecord(note, headers);
-            }
-            const addedTokenCount = nodeTokens.slice(0, remainingSpace).length;
-            this.splitRecordList[this.splitRecordList.length - 1].metadata.noteContentPart += nodeTokens.slice(0, remainingSpace).join('');
-            nodeTokens = nodeTokens.slice(remainingSpace);
-            this.splitRecordList[this.splitRecordList.length - 1].tempData.addedTokenCount += addedTokenCount;
-        }
-        return 'skip';
-    }
 
     async splitNote(app, note, rebalanceChunksThreshold = 0.7) {
-        if (note && note.vault) return [];
-        if (note && note.uuid && note.uuid.startsWith("local-")) return [];
+        if (note?.vault || note?.uuid?.startsWith("local-")) return [];
+
         this.splitRecordList = [];
-
-        // Step 1: Collect note information
         await this._collectNoteInfo(app, note);
+        if (typeof this.noteContent !== 'string') {
+            console.warn(`[Splitter] Note content is not a string for note ${note.uuid}. Skipping chunking.`);
+            return [];
+        }
+        
+        if (this.noteContent.length === 0) {
+            return [];
+        }
 
-        // Step 2: Parse and create initial splits
-        const root = await parse(this.noteContent);
-        let headers = [];
-        this._addSplitRecord(note, headers, true);
-        visit(root, (node) => {
+        const root = await parse(this.noteContent.substring(0, this.maxTokens * 630)); // max 210 splits
+        let currentChunk = this._createNewChunk(note, [], true);
+
+        let processedNodeCount = 0;
+        const MAX_NODES_TO_PROCESS = 50000; // Limit to prevent freezing on huge/malformed notes
+        visitParents(root, (node, ancestors) => {
+            if (++processedNodeCount > MAX_NODES_TO_PROCESS) {
+                console.warn(`[Splitter] Exceeded MAX_NODES_TO_PROCESS for note ${note.uuid}. Halting traversal to prevent performance issues.`);
+                return false; // Terminate the `visit` traversal
+            }
+
+            const parent = ancestors[ancestors.length - 1];
+            const currentHeaders = ancestors.filter(a => a.type === 'heading');
+
             if (node.type === 'heading') {
-                headers = headers.filter((header) => header.depth < node.depth);
-                headers.push(node);
-                this._addSplitRecord(note, headers);
-                const headerText = this.noteContent.substring(node.position.start.offset, node.position.end.offset);
-                this.splitRecordList[this.splitRecordList.length - 1].metadata.noteContentPart += headerText + '\n';
-                this.splitRecordList[this.splitRecordList.length - 1].tempData.addedTokenCount += this.tokenize(headerText).length + 1;
+                // Create a new chunk if there is content in the previous chunk
+                const headersIncludingCurrent = [...currentHeaders, node];
+                if (currentChunk.tempData.addedTokenCount > 0) {
+                    this.splitRecordList.push(currentChunk);
+                    currentChunk = this._createNewChunk(note, headersIncludingCurrent);
+                } else {
+                    // If the current chunk is empty, preserve isFirstSplit flag and update headers
+                    const wasFirstSplit = currentChunk.tempData.isFirstSplit;
+                    currentChunk = this._createNewChunk(note, headersIncludingCurrent, wasFirstSplit);
+                }
+                const headerText = mdastToString(node) + '\n';
+                currentChunk = this._appendContentToChunk(headerText, currentChunk, note, node);
                 return 'skip';
             }
-            else if (node.type === 'root' || node.type === 'paragraph') {
+
+            if (node.type === 'code' && node.position &&
+                node.position.end.offset - node.position.start.offset > this.maxTokens * 6) {
+                console.warn('[Splitter] Skipping code block due to length', node);
+                return 'skip';
+            }
+
+            if (['root', 'paragraph', 'listItem'].includes(node.type)) {
                 return 'continue';
             }
-            else if (node.type === 'code' && node.position &&
-                node.position.end.offset - node.position.start.offset > this.maxTokens * 3) {
-                // console.log('Skipping code block due to length', node);
-                return 'skip';
+
+            let cleanedText;
+
+            if (node.type === 'image') {
+                const imageObj = this.noteImages.find(img => img.src.trim() === node.url.trim());
+                const alt = imageObj?.text?.replaceAll('\n', ' ') || node.alt || '';
+                cleanedText = `[Image: ${truncate(alt, { length: 128 })}]`;
             }
-            else if (node.type === 'image' && node.position) {
-                const imageObjFromAmplenote = this.noteImages.find((image) => image.src.trim() === node.url.trim());
-                let alt = "";
-                if (imageObjFromAmplenote && imageObjFromAmplenote.text) {
-                    alt = imageObjFromAmplenote.text.replaceAll('\n', ' ');
+            else if (node.type === 'link') {
+                let alt = ``;
+                if (node.children?.length > 0) {
+                    try {
+                        alt = mdastToString(node.children[0], {includeHtml: false});
+                    } catch (e) {}
                 }
-                const nodeValue = `![${alt.substring(0, 128)}](${node.url})`;
-                let nodeTokens = this.tokenize(nodeValue);
-                return this._processTokens(nodeTokens, note, headers);
+                try {
+                    // Keep only origin
+                    const url = new URL(node.url);
+                    cleanedText = `[${alt}](${url.origin})\``;
+                } catch (e) {cleanedText = `[${alt}](${node.url})`;}
             }
             else {
-                const nodeValue = node.position ?
-                    this.noteContent.substring(node.position.start.offset, node.position.end.offset)
-                    : mdastToString(node);
-
-                let nodeTokens = this.tokenize(nodeValue);
-                return this._processTokens(nodeTokens, note, headers);
+                try {
+                    cleanedText = mdastToString(node, {includeHtml: false});
+                } catch (e) {
+                    console.warn(`[Splitter] Failed to convert node to string for note ${note.uuid}. Skipping chunking.`);
+                    return 'skip';
+                }
             }
+
+            const isBlock = parent && parent.children?.includes(node) && !['text', 'inlineCode'].includes(node.type);
+            if (isBlock) {
+                cleanedText += '\n';
+            }
+
+            currentChunk = this._appendContentToChunk(cleanedText, currentChunk, note, node);
+
+            return 'skip';
         });
 
-        // Step 3: Rebalance chunks if requested
-        this._rebalanceChunks(rebalanceChunksThreshold);
+        if (currentChunk.tempData.addedTokenCount > 0) {
+            this.splitRecordList.push(currentChunk);
+        }
 
-        // Step 4: Enrich with front-matter and delete tempData
+
+        if (this.splitRecordList.length > 1) {
+            this._rebalanceChunks(rebalanceChunksThreshold);
+        }
+
+
+
         this._enrichChunks();
 
         return this.splitRecordList;
     }
+    _rebalanceChunks(rebalanceChunksThreshold) {
+        if (rebalanceChunksThreshold < 0 || rebalanceChunksThreshold > 1) throw new Error('rebalanceChunksThreshold must be between 0 and 1');
+        if (this.splitRecordList.length < 2) return;
 
-    tokenize(content) {
+        const rebalancedChunks = [];
+        let accumulator = this.splitRecordList[0];
+
+        for (let i = 1; i < this.splitRecordList.length; i++) {
+            const nextChunk = this.splitRecordList[i];
+            const combinedTokenCount = accumulator.tempData.addedTokenCount + nextChunk.tempData.addedTokenCount;
+
+            if (combinedTokenCount < this.maxTokens && nextChunk.tempData.addedTokenCount < this.maxTokens * rebalanceChunksThreshold) {
+                accumulator.processedNoteContent += '\n' + nextChunk.processedNoteContent;
+                if (accumulator.tempData.startOffset != null && nextChunk.tempData.endOffset != null) {
+                    accumulator.tempData.endOffset = nextChunk.tempData.endOffset;
+                }
+                accumulator.tempData.addedTokenCount = combinedTokenCount + 1;
+            } else {
+                rebalancedChunks.push(accumulator);
+                accumulator = nextChunk;
+            }
+        }
+        rebalancedChunks.push(accumulator);
+        this.splitRecordList = rebalancedChunks;
+    }
+
+    _enrichChunks() {
+        this.splitRecordList = this.splitRecordList.filter(chunk => chunk.tempData.addedTokenCount > 0);
+
+        for (const chunk of this.splitRecordList) {
+            if (chunk.tempData.startOffset != null && chunk.tempData.endOffset != null) {
+                chunk.actualNoteContentPart = this.noteContent.substring(chunk.tempData.startOffset, chunk.tempData.endOffset);
+            }
+
+            chunk.processedNoteContent = (this._getFrontMatter(chunk) + chunk.processedNoteContent).trim();
+            chunk.actualNoteContentPart = (chunk.actualNoteContentPart || chunk.processedNoteContent).trim();
+            delete chunk.tempData;
+        }
+    }
+
+    tokenize(content) { // Simple tokenizer
         const maxCharsLimitInAToken = 12;
-        return (content.match(/\S+|\s+/g) || []).flatMap(token => {
+        return (content.match(/[\w]+|[^\s\w]|\s+/g) || []).flatMap(token => {
             if (token.length <= maxCharsLimitInAToken) return [token];
             const chunks = [];
             for (let i = 0; i < token.length; i += maxCharsLimitInAToken) {
-                chunks.push(token.slice(i, Math.min(i + maxCharsLimitInAToken, token.length)));
+                chunks.push(token.slice(i, i + maxCharsLimitInAToken));
             }
             return chunks;
         });
     }
 }
-
-// TODO: Images with uuids such as https://images.amplenote.com/4872eeba-7596-11e8-bf60-c6c7cb6d06a5/17d64c1a-af4e-4213-86a1-028350fa1978
-// consume a lot of tokens. Need to find a way to remove them when generating embeddings.

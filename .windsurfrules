@@ -42,6 +42,7 @@ src-*/                  # Plugin source directories
 - **Tests**:
     - Use jest for unit testing.
     - Use playwright for end-to-end testing. There is a helper file in common-utils/playwright-helpers.ts for playwright testing.
+    - Use this command to run specifc test file: `npx jest <file_path>`
 
 ## Tips
 - Check an existing test file when writing a new one.

@@ -22,6 +22,7 @@ describe('Splitter', () => {
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
         const app = mockApp(mockedNote);
         const result = await splitter.splitNote(app, mockedNote, 0);
+
         expect(result.length).toBe(3);
     });
 
@@ -36,10 +37,13 @@ describe('Splitter', () => {
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid', ['test']);
         const app = mockApp(mockedNote);
         const result = await splitter.splitNote(app, mockedNote, 1);
+
         expect(result.length).toBe(1);
-        expect(result[0].metadata.noteTags).toStrictEqual(['test']);
-        expect(result[0].metadata.noteContentPart).toContain('tags: test');
-        expect(result[0].metadata.headingAnchor).toBe('Header_1');
+        expect(result[0].noteTags).toStrictEqual(['test']);
+        expect(result[0].processedNoteContent).toContain('tags: test');
+        // Whether we should use the next chunk header is debatable
+        // Currently we use the previous chunk header anchor for while combining next
+        expect(result[0].headingAnchor).toBe('Header_1');
     });
 
     test('should correctly split on large content', async () => {
@@ -49,6 +53,15 @@ describe('Splitter', () => {
         const app = mockApp(mockedNote);
         const result = await splitter.splitNote(app, mockedNote);
         expect(result.length).toBe(4);
+    });
+
+    test('should not remove markdown link origin', async () => {
+        // We remove additional parts of Markdown links other than origin
+        const splitter = new Splitter(100);
+        const mockedNote = mockNote(`[title](https://test.com/21312423-231231-3123123-3123123)`, 'Test Note', 'mock-uuid');
+        const app = mockApp(mockedNote);
+        const result = await splitter.splitNote(app, mockedNote);
+        expect(result[0].processedNoteContent).toContain('[title](https://test.com)');
     });
 
     test('should ignore large code blocks', async () => {
@@ -72,7 +85,7 @@ describe('Splitter', () => {
         expect(result.length).toBe(1);
         // Word world should not be repeated simply because it is wrapped in bold
         // This bug was encounted when async was used with unist-util-visit
-        expect(result[0].metadata.noteContentPart.match(/World/g).length).toBe(1);
+        expect(result[0].processedNoteContent.match(/World/g).length).toBe(1);
     });
 
     test('works correctly on images', async () => {
@@ -85,8 +98,8 @@ describe('Splitter', () => {
             src: "https://test.com/test.png",
         }]);
         const result = await splitter.splitNote(app, mockedNote);
-        console.log(result);
-        expect(result[0].metadata.noteContentPart).toContain("Passed");
+
+        expect(result[0].processedNoteContent).toContain("Passed");
         expect(result.length).toBe(1);
     });
 
@@ -109,7 +122,7 @@ describe('Splitter', () => {
        const app = mockApp(mockedNote);
        const result = await splitter.splitNote(app, mockedNote);
        expect(result.length).toBe(1);
-       expect(result[0].metadata.noteContentPart.includes("\nThis is another new line."))
+       expect(result[0].processedNoteContent.includes("\nThis is another new line."))
            .toBe(true);
     });
 

@@ -60,9 +60,9 @@ export class IndexedDBManager {
             }
             // Create new object stores
             const notesObjectStore = db.createObjectStore('notes', {keyPath: 'id', autoIncrement: false});
-            notesObjectStore.createIndex('metadata.noteUUID', 'metadata.noteUUID', {unique: false});
+            notesObjectStore.createIndex('noteUUID', 'noteUUID', {unique: false});
             const helpCenterObjectStore = db.createObjectStore('helpCenter', {keyPath: 'id', autoIncrement: false});
-            helpCenterObjectStore.createIndex('metadata.noteUUID', 'metadata.noteUUID', {unique: false});
+            helpCenterObjectStore.createIndex('noteUUID', 'noteUUID', {unique: false});
             db.createObjectStore('config', {keyPath: 'key'});
         } else { // Reset DB called without a version upgrade
             await this.init();
@@ -94,11 +94,11 @@ export class IndexedDBManager {
         await this.init();
         const tx = this.db.transaction('notes');
         const notesObjectStore = tx.objectStore('notes');
-        const index = notesObjectStore.index('metadata.noteUUID');
+        const index = notesObjectStore.index('noteUUID');
         const uniqueUUIDs = new Set();
         let cursor = await index.openCursor();
         while (cursor) {
-            uniqueUUIDs.add(cursor.value.metadata.noteUUID);
+            uniqueUUIDs.add(cursor.value.noteUUID);
             cursor = await cursor.continue();
         }
         return uniqueUUIDs;
@@ -133,7 +133,7 @@ export class IndexedDBManager {
         this.inMemoryNoteStoreCache = null;
         const tx = this.db.transaction('notes', 'readwrite');
         const notesObjectStore = tx.objectStore('notes');
-        const index = notesObjectStore.index('metadata.noteUUID');
+        const index = notesObjectStore.index('noteUUID');
         for (const noteUUID of noteUUIDArr) {
             let cursor = await index.openCursor(IDBKeyRange.only(noteUUID));
             while (cursor) {
