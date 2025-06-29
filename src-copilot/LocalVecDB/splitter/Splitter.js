@@ -21,7 +21,7 @@ export class Splitter {
         const lastHeaderText = lastHeader ? mdastToString(lastHeader) : '';
 
         return {
-            id: note.uuid + "##" + Math.ceil(Math.random()*10000000),
+            id: note.uuid + "##" + (this.splitRecordList.length + 1).toString().padStart(4, '0'),
             actualNoteContentPart: ``,
             processedNoteContent: ``,
             noteUUID: note.uuid,
@@ -186,9 +186,15 @@ export class Splitter {
                 }
             }
 
+            cleanedText = cleanedText.replace(/\\(?=\n|$)/g, ''); // Amplenote uses '\' to denote new line, remove that
+
             const isBlock = parent && parent.children?.includes(node) && !['text', 'inlineCode'].includes(node.type);
             if (isBlock) {
                 cleanedText += '\n';
+            }
+
+            if (!(cleanedText.endsWith(' ') || cleanedText.endsWith('\n'))) {
+              cleanedText += ' ';
             }
 
             currentChunk = this._appendContentToChunk(cleanedText, currentChunk, note, node);
@@ -200,12 +206,9 @@ export class Splitter {
             this.splitRecordList.push(currentChunk);
         }
 
-
         if (this.splitRecordList.length > 1) {
             this._rebalanceChunks(rebalanceChunksThreshold);
         }
-
-
 
         this._enrichChunks();
 
@@ -240,6 +243,12 @@ export class Splitter {
     _enrichChunks() {
         this.splitRecordList = this.splitRecordList.filter(chunk => chunk.tempData.addedTokenCount > 0);
 
+        // Handle empty notes
+        if (this.splitRecordList.length === 1 && this.splitRecordList[0].processedNoteContent.trim().length === 0) {
+            this.splitRecordList[0].processedNoteContent = 'This note is empty. It does not have any content.';
+        }
+
+        // Add _getFrontMatter to processedNoteContent and calculate actualNoteContentPart
         for (const chunk of this.splitRecordList) {
             if (chunk.tempData.startOffset != null && chunk.tempData.endOffset != null) {
                 chunk.actualNoteContentPart = this.noteContent.substring(chunk.tempData.startOffset, chunk.tempData.endOffset);

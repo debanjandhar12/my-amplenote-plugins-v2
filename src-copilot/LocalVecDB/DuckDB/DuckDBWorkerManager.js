@@ -1,6 +1,7 @@
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 import {OPFSManager} from "./OPFSManager.js";
 import {debounce} from "lodash-es";
+import { Mutex } from "async-mutex";
 // import {
 //     AsyncDuckDB,
 //     createWorker,
@@ -12,37 +13,40 @@ import {debounce} from "lodash-es";
 // } from "@duckdb/duckdb-wasm";
 
 let db, isTerminated = true, debouncedTerminateDatabase;
+const mutex = new Mutex();
 export default class DuckDBWorkerManager {
     static async getCollectionInstance(collectionName) {
-        if (!db) {
-            const {
-                AsyncDuckDB,
-                createWorker,
-                getJsDelivrBundles,
-                selectBundle,
-                ConsoleLogger,
-                VoidLogger
-            } = await dynamicImportESM("@duckdb/duckdb-wasm");
-            const JSDELIVR_BUNDLES = getJsDelivrBundles();
-            const bundle = await selectBundle(JSDELIVR_BUNDLES);
-            const worker_url = bundle.mainWorker;
+        return mutex.runExclusive(async () => {
+            if (!db) {
+                const {
+                    AsyncDuckDB,
+                    createWorker,
+                    getJsDelivrBundles,
+                    selectBundle,
+                    ConsoleLogger,
+                    VoidLogger
+                } = await dynamicImportESM("@duckdb/duckdb-wasm");
+                const JSDELIVR_BUNDLES = getJsDelivrBundles();
+                const bundle = await selectBundle(JSDELIVR_BUNDLES);
+                const worker_url = bundle.mainWorker;
 
-            if (!worker_url) {
-                throw new Error("Could not determine main duckdb worker URL from bundle.");
+                if (!worker_url) {
+                    throw new Error("Could not determine main duckdb worker URL from bundle.");
+                }
+
+                const worker = await createWorker(worker_url);
+                // const logger = process.env.NODE_ENV === 'development' ? new ConsoleLogger() : new VoidLogger();
+                const logger = new ConsoleLogger();
+                db = new AsyncDuckDB(logger, worker);
+                await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
             }
-
-            const worker = await createWorker(worker_url);
-            // const logger = process.env.NODE_ENV === 'development' ? new ConsoleLogger() : new VoidLogger();
-            const logger = new ConsoleLogger();
-            db = new AsyncDuckDB(logger, worker);
-            await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
-        }
-        await db.open({
-            path: `opfs://${collectionName}.db`,
-            accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3
+            await db.open({
+                path: `opfs://${collectionName}.db`,
+                accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3
+            });
+            isTerminated = false;
+            return db;
         });
-        isTerminated = false;
-        return db;
     }
 
     static isTerminated() {
@@ -56,7 +60,7 @@ export default class DuckDBWorkerManager {
             db = null;
             isTerminated = true;
         }
-      }, 30000);
+      }, 3 * 60000); // 3 minutes
     }
 
     static async cancelDebouncedTerminateDatabase() {

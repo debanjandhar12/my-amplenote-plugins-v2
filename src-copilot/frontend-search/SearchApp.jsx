@@ -253,7 +253,7 @@ export const SearchApp = () => {
                         itemContent={(index) => (
                             <NoteCard
                                 title={searchResults[index].noteTitle}
-                                noteContentPart={searchResults[index].noteContentPart}
+                                actualNoteContentPart={searchResults[index].actualNoteContentPart}
                                 noteUUID={searchResults[index].noteUUID}
                                 headingAnchor={searchResults[index].headingAnchor}
                             />

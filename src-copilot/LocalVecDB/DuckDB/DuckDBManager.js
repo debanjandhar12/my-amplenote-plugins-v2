@@ -94,6 +94,7 @@ export class DuckDBManager {
 
     async _resetTables(conn) {
         try {
+            await conn.query('DROP TABLE IF EXISTS DB_CONFIG');
             await conn.query('DROP TABLE IF EXISTS USER_NOTE_EMBEDDINGS');
             await conn.query('DROP TABLE IF EXISTS HELP_CENTER_EMBEDDINGS');
             console.log('DuckDBManager resetTables completed');
@@ -316,13 +317,39 @@ export class DuckDBManager {
         let conn;
         try {
             conn = await this.db.connect();
-            const stmt = await conn.prepare('DELETE FROM USER_NOTE_EMBEDDINGS WHERE noteUUID = ?');
-            for (const noteUUID of noteUUIDArr) {
-                await stmt.query(noteUUID);
-            }
+            const stmt = await conn.prepare('DELETE FROM USER_NOTE_EMBEDDINGS WHERE noteUUID IN ?');
+            await stmt.query(JSON.stringify(noteUUIDArr));
             await stmt.close();
         } catch (e) {
             console.error("Failed to delete note embedding:", e);
+            throw e;
+        } finally {
+            if (conn) {
+                await conn.close();
+            }
+        }
+    }
+
+    /**
+     * Deletes all note embedding chunks that do not have a note UUID from the provided list.
+     * @param {string[]} noteUUIDArr - Array of note UUIDs to keep.
+     * @returns {Promise<void>}
+     */
+    async deleteNoteRecordByNoteUUIDNotInList(noteUUIDArr) {
+        if (!noteUUIDArr || noteUUIDArr.length === 0) {
+            console.log("No note UUIDs provided to keep. Skipping to avoid deleting all records.");
+            return;
+        }
+
+        await this.init();
+        let conn;
+        try {
+            conn = await this.db.connect();
+            const stmt = await conn.prepare('DELETE FROM USER_NOTE_EMBEDDINGS WHERE noteUUID NOT IN ?');
+            await stmt.query(JSON.stringify(noteUUIDArr));
+            await stmt.close();
+        } catch (e) {
+            console.error("Failed to delete note embeddings not in list:", e);
             throw e;
         } finally {
             if (conn) {

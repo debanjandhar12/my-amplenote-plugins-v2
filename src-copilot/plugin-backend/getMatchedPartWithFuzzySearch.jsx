@@ -8,6 +8,6 @@ export const getMatchedPartWithFuzzySearch = async (app, noteUUID, searchText, l
     const note = await app.findNote({uuid: noteUUID});
     const splitResult = await splitter.splitNote(app, note, true);
 
-    const fuse = new Fuse(splitResult, { keys: ['metadata.noteContentPart'], threshold: 0.4 });
-    return fuse.search(searchText, { limit }).map(result => result.item.metadata.noteContentPart);
+    const fuse = new Fuse(splitResult, { keys: ['actualNoteContentPart`'], threshold: 0.4 });
+    return fuse.search(searchText, { limit }).map(result => result.item.actualNoteContentPart);
 }

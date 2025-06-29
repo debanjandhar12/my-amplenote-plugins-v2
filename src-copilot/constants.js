@@ -17,7 +17,7 @@ export const PINECONE_API_KEY_SETTING = "Pinecone API Key (Optional)";
 export const PLUGIN_VERSION = "0.5.0";
 
 // Vector DB Configs
-export const LOCAL_VEC_DB_INDEX_VERSION = 33;
+export const LOCAL_VEC_DB_INDEX_VERSION = 36;
 export const LOCAL_VEC_DB_MAX_TOKENS = 507;
 export const MAX_NOTE_BATCH_SIZE = 48;
 

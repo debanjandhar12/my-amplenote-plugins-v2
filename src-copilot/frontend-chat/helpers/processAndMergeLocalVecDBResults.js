@@ -2,7 +2,7 @@ import {stripYAMLFromMarkdown} from "../../markdown/stripYAMLFromMarkdown.js";
 
 export const processAndMergeLocalVecDBResults = async (results, thresholdScore = 0.15) => {
     const filteredResults = results
-        .filter(result => result.score >= thresholdScore)
+        .filter(result => result.similarity >= thresholdScore)
         .sort((a, b) => a.id.localeCompare(b.id));
 
     // merge results with the same note
@@ -10,16 +10,16 @@ export const processAndMergeLocalVecDBResults = async (results, thresholdScore =
     let currentResult = filteredResults[0];
     for (let i = 1; i < filteredResults.length; i++) {
         const nextResult = filteredResults[i];
-        if (currentResult.metadata.noteUUID === nextResult.metadata.noteUUID) {
-            currentResult.score = Math.max(currentResult.score, nextResult.score);
-            currentResult.metadata.noteContentPart = await stripYAMLFromMarkdown(currentResult.metadata.noteContentPart);
+        if (currentResult.noteUUID === nextResult.noteUUID) {
+            currentResult.similarity = Math.max(currentResult.similarity, nextResult.similarity);
+            currentResult.actualNoteContentPart = await stripYAMLFromMarkdown(currentResult.actualNoteContentPart);
             // check if nextResult has the next part of the same note
             try {
                 if (nextResult.id !== currentResult.id.split('##')[0] + '##' + (parseInt(currentResult.id.split('##')[1]) + 1)) {
-                    currentResult.metadata.noteContentPart += '\n' + '<<Redacted>>';
+                    currentResult.actualNoteContentPart += '\n' + '<<Redacted>>';
                 }
             } catch (e) { }
-            currentResult.metadata.noteContentPart += '\n' + await stripYAMLFromMarkdown(nextResult.metadata.noteContentPart);
+            currentResult.actualNoteContentPart += '\n' + await stripYAMLFromMarkdown(nextResult.actualNoteContentPart);
         } else {
             mergedResults.push(currentResult);
             currentResult = nextResult;
@@ -28,9 +28,9 @@ export const processAndMergeLocalVecDBResults = async (results, thresholdScore =
     mergedResults.push(currentResult);
 
     return mergedResults.map(result => ({
-        noteTitle: result.metadata.noteTitle,
-        noteUUID: result.metadata.noteUUID,
-        noteContentPart: result.metadata.noteContentPart,
-        tags: result.metadata.noteTags ? result.metadata.noteTags : [],
+        noteTitle: result.noteTitle,
+        noteUUID: result.noteUUID,
+        actualNoteContentPart: result.actualNoteContentPart,
+        tags: result.noteTags ? result.noteTags : [],
     }));
 }

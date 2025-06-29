@@ -134,7 +134,7 @@ export const SearchNotesByTitleTagsContent = () => {
                 if (!args.noteContent || args.noteContent.trim() === '') continue;
                 const matchedParts = await appConnector.getMatchedPartWithFuzzySearch(result.noteUUID || result.uuid, args.noteContent.trim());
                 if (matchedParts.length > 0) {
-                    result.noteContentPart = await stripYAMLFromMarkdown(matchedParts[0]);
+                    result.actualNoteContentPart = await stripYAMLFromMarkdown(matchedParts[0]);
                 }
             }
 
@@ -186,7 +186,7 @@ export const SearchNotesByTitleTagsContent = () => {
                     title: note.name || note.title || note.noteTitle,
                     tags: args.tags && note.tags && typeof note.tags === 'string' ?
                         note.tags.split(',') : note.tags,
-                    ...(note.noteContentPart && { noteContentPart: note.noteContentPart })
+                    ...(note.actualNoteContentPart && { actualNoteContentPart: note.actualNoteContentPart })
                 }));
 
             // Apply strict filtering if enabled
