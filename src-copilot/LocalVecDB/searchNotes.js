@@ -1,12 +1,11 @@
-import {IndexedDBManager} from "./IndexedDBManager.js";
 import {getSyncState} from "./getSyncState.js";
-import {getCosineSimilarity} from "./utils/getCosineSimilarity.js";
-import {getDotProduct} from "./utils/getDotProduct.js";
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 import { DuckDBManager } from "./DuckDB/DuckDBManager.js";
+import {debounce} from "lodash-es";
+import DuckDBWorkerManager from "./DuckDB/DuckDBWorkerManager.js";
 
-// Based on: https://github.com/babycommando/entity-db/blob/main/src/index.js
-export const searchNotes = async (app, queryText, queryTextType, {limit = 256,
+let terminateDuckDBDebounce = null;
+export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
     isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null}) => {
     if (await getSyncState(app) === 'Not synced')
         throw new Error('No syncing has been performed, or the last sync is outdated. Please sync your notes with LocalVecDB.');
@@ -18,13 +17,17 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 256,
         // Get embeddings for the query text
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
         const queryVector = (await embeddingGenerator.generateEmbedding(app, queryText, queryTextType || "query"))[0];
-        return await dbm.searchNoteRecordByEmbedding(queryVector, {
+        const results = await dbm.searchNoteRecordByEmbedding(queryVector, {
             limit,
             isArchived,
             isSharedByMe,
             isSharedWithMe,
             isTaskListNote
         });
+        terminateDuckDBDebounce = debounce(() => {
+            DuckDBWorkerManager.terminateDB();
+        }, 60000);
+        return results;
     } catch (e) {
         throw new Error(`Error querying vectors: ${e}`);
     }

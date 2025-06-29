@@ -6,7 +6,7 @@ import {isArray} from "lodash-es";
 let instance;
 export class DuckDBManager {
     async init() {
-        if (this.db) return;
+        if (this.db && !DuckDBWorkerManager.isTerminated()) return;
         try {
             this.db = await DuckDBWorkerManager.getCollectionInstance('CopilotLocalVecDB');
             const conn = await this.db.connect();

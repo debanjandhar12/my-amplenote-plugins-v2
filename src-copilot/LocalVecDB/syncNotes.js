@@ -102,6 +102,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         // Final update of sync time
         await dbm.setConfigValue('lastSyncTime', new Date().toISOString());
         // await dbm.closeDB(); - todo: add this
+        await DuckDBWorkerManager.terminateDB();
 
         console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', targetNotes.length);
         sendMessageToEmbed(app, 'syncNotesProgress', `${totalNoteCount}/${totalNoteCount}<br />Sync Completed!`);
