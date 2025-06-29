@@ -1,3 +1,4 @@
+import { DuckDBManager } from "./DuckDB/DuckDBManager.js";
 import {IndexedDBManager} from "./IndexedDBManager.js";
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 
@@ -6,23 +7,23 @@ export const getSyncState = async (app, syncNotesPromise = null) => {
         return 'Syncing';
     }
 
-    const indexedDBManager = new IndexedDBManager();
-    const lastPluginUUID = await indexedDBManager.getConfigValue('lastPluginUUID');
-    const lastEmbeddingModel = await indexedDBManager.getConfigValue('lastEmbeddingModel');
+    const dbm = new DuckDBManager();
+    const lastPluginUUID = await dbm.getConfigValue('lastPluginUUID');
+    const lastEmbeddingModel = await dbm.getConfigValue('lastEmbeddingModel');
     const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
     if (lastPluginUUID !== app.context.pluginUUID || lastEmbeddingModel !== embeddingGenerator.MODEL_NAME) {
-        await indexedDBManager.closeDB();
+        // await dbm.closeDB(); - TODO
         return 'Not synced';
     }
 
-    const uniqueNoteUUIDs = await indexedDBManager.getUniqueNoteUUIDsInNoteEmbeddings();
+    const uniqueNoteUUIDs = await dbm.getActualNoteCount();
     const uniqueNoteUUIDsCount = uniqueNoteUUIDs.size;
     if (uniqueNoteUUIDsCount === 0) {
-        await indexedDBManager.closeDB();
+        // await dbm.closeDB(); - TODO
         return 'Not synced';
     }
     const allNotes = await app.filterNotes({});
-    let lastSyncTime = await indexedDBManager.getConfigValue('lastSyncTime')
+    let lastSyncTime = await dbm.getConfigValue('lastSyncTime')
         || new Date(0).toISOString();
     const targetNotes = allNotes
         // Filter out notes that are already synced
@@ -37,8 +38,8 @@ export const getSyncState = async (app, syncNotesPromise = null) => {
                 return true;
             }
         });
-    await indexedDBManager.closeDB();
-    if (targetNotes.length >= (allNotes.length/4)) {
+    // await dbm.closeDB(); - TODO
+    if (targetNotes.length >= (allNotes.length/2)) {
         return 'Not synced';
     }
 

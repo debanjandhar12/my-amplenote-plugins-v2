@@ -35,7 +35,7 @@ export class DuckDBManager {
             CREATE TABLE IF NOT EXISTS USER_NOTE_EMBEDDINGS (
                 id VARCHAR PRIMARY KEY,
                 actualNoteContentPart VARCHAR,
-                embeddings FLOAT[],
+                embedding FLOAT[],
                 headingAnchor VARCHAR,
                 isArchived BOOLEAN,
                 isPublished BOOLEAN,
@@ -59,7 +59,7 @@ export class DuckDBManager {
             CREATE TABLE IF NOT EXISTS HELP_CENTER_EMBEDDINGS (
                 id VARCHAR PRIMARY KEY,
                 actualNoteContentPart VARCHAR,
-                embeddings FLOAT[],
+                embedding FLOAT[],
                 headingAnchor VARCHAR,
                 isArchived BOOLEAN,
                 isPublished BOOLEAN,
@@ -118,13 +118,13 @@ export class DuckDBManager {
     }
 
     // --------------------------------------------
-    // -------------- NOTE EMBEDDINGS --------------
+    // -------------- NOTE TABLE ------------------
     // --------------------------------------------
     /**
-     * Returns the count of unique notes in the note embeddings table.
+     * Returns the count of unique notes in db.
      * @returns {Promise<number>}
      */
-    async getNoteCountInNoteEmbeddings() {
+    async getActualNoteCount() {
         await this.init();
         let conn;
         try {
@@ -154,7 +154,7 @@ export class DuckDBManager {
         await conn.query('BEGIN TRANSACTION');
         const stmt = await conn.prepare(`
               INSERT OR REPLACE INTO USER_NOTE_EMBEDDINGS (
-                  id, actualNoteContentPart, embeddings, headingAnchor, isArchived,
+                  id, actualNoteContentPart, embedding, headingAnchor, isArchived,
                   isPublished, isSharedByMe, isSharedWithMe, isTaskListNote,
                   noteTags, noteTitle, noteUUID, processedNoteContent
               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -173,24 +173,24 @@ export class DuckDBManager {
                 if (!noteEmbeddingObj.processedNoteContent) {
                   throw new Error('Note embedding object must have a "processedNoteContent" property.');
                 }
-                if (!noteEmbeddingObj.embeddings) {
-                    throw new Error('Note embedding object must have an "embeddings" property.');
+                if (!noteEmbeddingObj.embedding) {
+                    throw new Error('Note embedding object must have an "embedding" property.');
                 }
-                if (typeof noteEmbeddingObj.embeddings === 'string') {
-                    throw new Error('Note embedding object "embeddings" property cannot be a string.');
+                if (typeof noteEmbeddingObj.embedding === 'string') {
+                    throw new Error('Note embedding object "embedding" property cannot be a string.');
                 }
                 if (noteEmbeddingObj.noteTags && !isArray(noteEmbeddingObj.noteTags)) {
                     throw new Error('Note embedding object "noteTags" property must be an array of strings.');
                 }
-                if (noteEmbeddingObj.embeddings instanceof Float32Array ||
-                      noteEmbeddingObj.embeddings instanceof Float64Array) {
+                if (noteEmbeddingObj.embedding instanceof Float32Array ||
+                      noteEmbeddingObj.embedding instanceof Float64Array) {
                   // Convert to array so we can JSON.stringify it
-                  noteEmbeddingObj.embeddings = Array.from(noteEmbeddingObj.embeddings);
+                  noteEmbeddingObj.embedding = Array.from(noteEmbeddingObj.embedding);
                 }
                 await stmt.query(
                     noteEmbeddingObj.id,
                     noteEmbeddingObj.actualNoteContentPart,
-                    JSON.stringify(noteEmbeddingObj.embeddings),
+                    JSON.stringify(noteEmbeddingObj.embedding),
                     noteEmbeddingObj.headingAnchor,
                     noteEmbeddingObj.isArchived,
                     noteEmbeddingObj.isPublished,
@@ -221,18 +221,18 @@ export class DuckDBManager {
         conn.close();
     }
 
-    async searchNoteEmbedding(embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
+    async searchNoteRecordByEmbedding(embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
         await this.init();
         let conn;
         let stmt;
-        
+
         try {
             conn = await this.db.connect();
-            
+
             // Build WHERE clause conditions
             const conditions = ['similarity > ?'];
             const params = [];
-            
+
             if (isArchived !== null) {
                 conditions.push('isArchived = ?');
                 params.push(isArchived);
@@ -249,13 +249,13 @@ export class DuckDBManager {
                 conditions.push('isTaskListNote = ?');
                 params.push(isTaskListNote);
             }
-            
+
             const whereClause = conditions.join(' AND ');
-            
+
             stmt = await conn.prepare(`
                 SELECT
                     *,
-                    list_dot_product(embeddings, ?) as similarity
+                    list_dot_product(embedding, ?) as similarity
                 FROM
                     USER_NOTE_EMBEDDINGS
                 WHERE
@@ -264,7 +264,7 @@ export class DuckDBManager {
                     similarity DESC
                 LIMIT ?;
             `);
-            
+
             if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
                 // Convert to array so we can JSON.stringify it
                 embedding = Array.from(embedding);
@@ -272,24 +272,24 @@ export class DuckDBManager {
             if (!isArray(embedding)) {
                 throw new Error('Embedding must be an array of numbers.');
             }
-            
+
             const results = await stmt.query(JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
             let jsonResults = results.toArray().map(row => row.toJSON());
             jsonResults.forEach(row => {
-                if (row.embeddings) {
-                    row.embeddings = row.embeddings.toArray();
+                if (row.embedding) {
+                    row.embedding = row.embedding.toArray();
                 }
-                if (!(row.embeddings instanceof Float32Array)) {
-                    row.embeddings = new Float32Array(row.embeddings);
+                if (!(row.embedding instanceof Float32Array)) {
+                    row.embedding = new Float32Array(row.embedding);
                 }
                 if (row.noteTags) {
                     row.noteTags = row.noteTags.toArray();
                 }
             });
-            
+
             return jsonResults;
         } catch (e) {
-            console.error("Failed to search note embeddings:", e);
+            console.error("Failed to search note embedding:", e);
             throw e;
         } finally {
             if (stmt) {
@@ -306,7 +306,7 @@ export class DuckDBManager {
      * @param {string[]} noteUUIDArr - Array of note UUIDs to delete.
      * @returns {Promise<void>}
      */
-    async deleteNoteEmbeddingByNoteUUIDList(noteUUIDArr) {
+    async deleteNoteRecordByNoteUUIDList(noteUUIDArr) {
         if (!noteUUIDArr || noteUUIDArr.length === 0) {
             console.log("No note UUIDs provided to delete. Skipping.");
             return;
@@ -322,7 +322,7 @@ export class DuckDBManager {
             }
             await stmt.close();
         } catch (e) {
-            console.error("Failed to delete note embeddings:", e);
+            console.error("Failed to delete note embedding:", e);
             throw e;
         } finally {
             if (conn) {
@@ -332,10 +332,10 @@ export class DuckDBManager {
     }
 
     /**
-     * Gets the total count of items in both note embedding table
+     * Gets the total count of items. Each note can have multiple records.
      * @returns {Promise<number>} Total count of items
      */
-    async getAllNotesEmbeddingsCount() {
+    async getNotesRecordCount() {
         await this.init();
         let conn;
         try {

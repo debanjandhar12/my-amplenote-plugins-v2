@@ -28,7 +28,7 @@ export class Splitter {
             noteTitle: note.name || note.title || 'Untitled Note',
             noteTags: note.tags || [],
             headingAnchor: lastHeaderText ? lastHeaderText.trim().replaceAll(' ', '_') : null,
-            embeddings: [],
+            embedding: [],
             ...this.noteProperties,
             tempData: {
                 isFirstSplit,
@@ -112,7 +112,7 @@ export class Splitter {
             console.warn(`[Splitter] Note content is not a string for note ${note.uuid}. Skipping chunking.`);
             return [];
         }
-        
+
         if (this.noteContent.length === 0) {
             return [];
         }
