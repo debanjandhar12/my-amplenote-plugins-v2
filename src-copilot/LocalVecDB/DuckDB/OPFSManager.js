@@ -122,7 +122,7 @@ export class OPFSManager {
      * Gets the estimated remaining storage space available
      * @returns {Promise<string>} Storage space information
      */
-    async getRemainingStorageSpace() {
+    static async getRemainingStorageSpace() {
         try {
             if ('storage' in navigator && 'estimate' in navigator.storage) {
                 const estimate = await navigator.storage.estimate();

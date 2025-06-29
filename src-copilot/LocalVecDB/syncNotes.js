@@ -1,4 +1,3 @@
-import {IndexedDBManager} from "./IndexedDBManager.js";
 import {Splitter} from "./splitter/Splitter.js";
 import {LOCAL_VEC_DB_MAX_TOKENS, MAX_NOTE_BATCH_SIZE} from "../constants.js";
 import {chunk} from "lodash-es";
@@ -65,7 +64,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         let processedNoteCount = totalNoteCount - targetNotes.length;
 
         // Write log statistics before processing all noteBatches
-        // await writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, indexedDBManager);
+        await writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, dbm);
 
         // Process each batch of notes
         for (const [batchIndex, noteBatch] of noteBatches.entries()) {
@@ -101,8 +100,9 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
 
         // Final update of sync time
         await dbm.setConfigValue('lastSyncTime', new Date().toISOString());
-        // await dbm.closeDB(); - todo: add this
-        await DuckDBWorkerManager.terminateDB();
+        setTimeout(() => {
+            DuckDBWorkerManager.terminateDB();
+        }, 1000);
 
         console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', targetNotes.length);
         sendMessageToEmbed(app, 'syncNotesProgress', `${totalNoteCount}/${totalNoteCount}<br />Sync Completed!`);
@@ -241,7 +241,7 @@ async function updateSyncConfigs(dbm, pluginUUID, modelName) {
     await dbm.setConfigValue('lastEmbeddingModel', modelName);
 }
 
-async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, indexedDBManager) {
+async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, dbm) {
     try {
         // Get user agent
         const userAgent = navigator.userAgent;
@@ -261,11 +261,11 @@ async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCoun
         const embeddingProviderName = getEmbeddingProviderName(app);
 
         // Get IndexedDB items count and storage space
-        let indexedDBEmbeddingCount = 0;
+        let existingDuckDBRecordCount = 0;
         let storageSpace = 'Storage info not available';
         try {
-            indexedDBEmbeddingCount = await indexedDBManager.getAllNotesEmbeddingsCount();
-            storageSpace = await indexedDBManager.getRemainingStorageSpace();
+            existingDuckDBRecordCount = await dbm.getNotesRecordCount();
+            storageSpace = await OPFSManager.getRemainingStorageSpace();
         } catch (e) {
             // Silently fail, keep defaults
         }
@@ -278,8 +278,10 @@ async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCoun
             `Embedding Provider: ${embeddingProviderName}\n` +
             `Existing Progress: ${processedNoteCount}/${totalNoteCount}\n` +
             `Remaining NoteBatches count: ${noteBatches.length}\n` +
-            `IndexedDB embedding count: ${indexedDBEmbeddingCount}\n` +
-            `IndexedDB Remaining Storage space: ${storageSpace}\n` +
+            `Existing DuckDB Records count: ${existingDuckDBRecordCount}\n` +
+            `OPFS Remaining Storage space: ${storageSpace}\n` +
+            `OPFS Persisted: ${await OPFSManager.isPersisted()}\n` +
+            `OPFS File List: ${JSON.stringify(await OPFSManager.getFileList())}\n` +
             `%c=====================`,
             'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;',
             'color: white; background-color: #333; font-size: 13px; padding: 2px;',

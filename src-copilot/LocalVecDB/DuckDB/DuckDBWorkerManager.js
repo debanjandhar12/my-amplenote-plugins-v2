@@ -36,7 +36,6 @@ export default class DuckDBWorkerManager {
             db = new AsyncDuckDB(logger, worker);
             await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
         }
-        console.log("existing opfs file list", await OPFSManager.getFileList())
         await db.open({
             path: `opfs://${collectionName}.db`,
             accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3

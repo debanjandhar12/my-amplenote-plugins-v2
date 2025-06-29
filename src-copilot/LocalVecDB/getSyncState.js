@@ -12,14 +12,12 @@ export const getSyncState = async (app, syncNotesPromise = null) => {
     const lastEmbeddingModel = await dbm.getConfigValue('lastEmbeddingModel');
     const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
     if (lastPluginUUID !== app.context.pluginUUID || lastEmbeddingModel !== embeddingGenerator.MODEL_NAME) {
-        // await dbm.closeDB(); - TODO
         return 'Not synced';
     }
 
     const uniqueNoteUUIDs = await dbm.getActualNoteCount();
     const uniqueNoteUUIDsCount = uniqueNoteUUIDs.size;
     if (uniqueNoteUUIDsCount === 0) {
-        // await dbm.closeDB(); - TODO
         return 'Not synced';
     }
     const allNotes = await app.filterNotes({});
@@ -38,7 +36,6 @@ export const getSyncState = async (app, syncNotesPromise = null) => {
                 return true;
             }
         });
-    // await dbm.closeDB(); - TODO
     if (targetNotes.length >= (allNotes.length/2)) {
         return 'Not synced';
     }
