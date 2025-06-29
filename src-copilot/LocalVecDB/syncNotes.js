@@ -14,6 +14,10 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         const performanceStartTime = performance.now();
         const dbm = new DuckDBManager();
         console.log('LOCAL_VEC_DB_INDEX_VERSION', await dbm.getConfigValue('LOCAL_VEC_DB_INDEX_VERSION'));
+        console.log('getUniqueNoteCountInNoteEmbeddings', await dbm.getNoteCountInNoteEmbeddings());
+        console.log('deleteNoteEmbeddingByNoteUUIDList', await dbm.deleteNoteEmbeddingByNoteUUIDList(['uuid1', 'uuid2']));
+        console.log('resetDB', await dbm.resetDB());
+
         //
         // const indexedDBManager = new IndexedDBManager();
         // const embeddingProviderName = getEmbeddingProviderName(app);
@@ -149,18 +153,18 @@ async function confirmEmbeddingCost(app, embeddingGenerator, recordCount, sendMe
 }
 
 async function processAndStoreEmbeddings(
-    app, 
-    records, 
-    embeddingGenerator, 
-    embeddingProviderName, 
-    indexedDBManager, 
-    targetNotes, 
+    app,
+    records,
+    embeddingGenerator,
+    embeddingProviderName,
+    indexedDBManager,
+    targetNotes,
     sendMessageToEmbed,
     processedNoteCount,
     totalNoteCount
 ) {
     if (records.length === 0) return;
-    
+
     // Delete existing records for these notes
     const noteUUIDs = [...new Set(records.map(record => record.noteUUID))];
     await indexedDBManager.deleteNoteEmbeddingByNoteUUIDList(noteUUIDs);
@@ -168,7 +172,7 @@ async function processAndStoreEmbeddings(
     // Process in chunks based on embedding model's concurrency limit
     const chunkSize = embeddingGenerator.MAX_CONCURRENCY;
     const recordsChunks = chunk(records, chunkSize);
-    
+
     for (const [chunkIndex, recordChunk] of recordsChunks.entries()) {
         // Update progress
         const gpuInfo = embeddingProviderName === 'local' ?
@@ -186,15 +190,15 @@ async function processAndStoreEmbeddings(
             recordChunk.map(record => record.processedNoteContent),
             'passage'
         );
-        
+
         // Add embeddings to records
         embeddings.forEach((embedding, index) => {
             recordChunk[index].values = embedding;
         });
-        
+
         // Store in database
         await indexedDBManager.putMultipleNoteEmbedding(recordChunk);
-        
+
         // Update last sync time for resumability
         try {
             const lastNoteInChunk = recordChunk[recordChunk.length-1];
@@ -263,5 +267,3 @@ async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCoun
         console.error('Error writing log stats:', error);
     }
 }
-
-

@@ -1,4 +1,5 @@
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
+import {OPFSManager} from "./OPFSManager.js";
 // import {
 //     AsyncDuckDB,
 //     createWorker,
@@ -37,8 +38,7 @@ export default class DuckDBWorkerManager {
         const logger = process.env.NODE_ENV === 'development' ? new ConsoleLogger() : new VoidLogger();
         let db = new AsyncDuckDB(logger, worker);
         await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
-        const root = await navigator.storage.getDirectory();
-        console.log("opfs root", root, await Array.fromAsync(root.entries()))
+        console.log("existing opfs file list", await OPFSManager.getFileList())
         await db.open({
             path: `opfs://${collectionName}.db`,
             accessMode: DuckDBAccessMode.READ_WRITE,

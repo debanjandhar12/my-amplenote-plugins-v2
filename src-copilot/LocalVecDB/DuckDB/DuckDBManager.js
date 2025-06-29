@@ -1,6 +1,7 @@
 import {LOCAL_VEC_DB_INDEX_VERSION} from "../../constants.js";
 import DuckDBWorkerManager from "./DuckDBWorkerManager.js";
 import {DuckDBDataProtocol} from "@duckdb/duckdb-wasm";
+import {OPFSManager} from "./OPFSManager.js";
 
 let instance;
 export class DuckDBManager {
@@ -19,6 +20,9 @@ export class DuckDBManager {
             }
             await conn.send(`CHECKPOINT;`);
             conn.close();
+            if (await OPFSManager.doesFileExists(`CopilotLocalVecDB.db`) === false) {
+                throw new Error('DuckDB file not created in OPFS after all init operations');
+            }
         } catch (e) {
             console.error('DuckDBManager init error:', e);
             throw e;
@@ -31,7 +35,7 @@ export class DuckDBManager {
             CREATE TABLE IF NOT EXISTS NOTE_OBJECTS (
                 id VARCHAR PRIMARY KEY,
                 actualNoteContentPart TEXT,
-                embeddings DOUBLE[],
+                embeddings FLOAT[],
                 headingAnchor VARCHAR,
                 isArchived BOOLEAN,
                 isPublished BOOLEAN,
@@ -55,7 +59,7 @@ export class DuckDBManager {
             CREATE TABLE IF NOT EXISTS HELP_CENTER_OBJECTS (
                 id VARCHAR PRIMARY KEY,
                 actualNoteContentPart TEXT,
-                embeddings DOUBLE[],
+                embeddings FLOAT[],
                 headingAnchor VARCHAR,
                 isArchived BOOLEAN,
                 isPublished BOOLEAN,
@@ -107,73 +111,37 @@ export class DuckDBManager {
         const conn = await this.db.connect();
         await this._resetTables(conn);
         await this._createTables(conn);
+        await this._setConfigValue(conn, 'LOCAL_VEC_DB_INDEX_VERSION', LOCAL_VEC_DB_INDEX_VERSION);
+        await conn.send(`CHECKPOINT;`);
         conn.close();
         console.log('LocalVecDB resetDB');
-    }
-
-    /**
-     * Transforms a Splitter object to DuckDB format
-     */
-    _transformSplitterObjectToDuckDB(obj) {
-        return {
-            id: obj.id,
-            actualNoteContentPart: obj.actualNoteContentPart || '',
-            embeddings: obj.embeddings ? Array.from(obj.embeddings) : [],
-            headingAnchor: obj.headingAnchor || null,
-            isArchived: obj.isArchived || false,
-            isPublished: obj.isPublished || false,
-            isSharedByMe: obj.isSharedByMe || false,
-            isSharedWithMe: obj.isSharedWithMe || false,
-            isTaskListNote: obj.isTaskListNote || false,
-            noteTags: obj.noteTags || [],
-            noteTitle: obj.noteTitle || '',
-            noteUUID: obj.noteUUID,
-            processedNoteContent: obj.processedNoteContent || ''
-        };
-    }
-
-    /**
-     * Transforms a DuckDB object back to Splitter format
-     */
-    _transformDuckDBObjectToSplitter(obj) {
-        return {
-            id: obj.id,
-            actualNoteContentPart: obj.actualNoteContentPart,
-            embeddings: obj.embeddings ? new Float32Array(obj.embeddings) : new Float32Array(),
-            headingAnchor: obj.headingAnchor,
-            isArchived: obj.isArchived,
-            isPublished: obj.isPublished,
-            isSharedByMe: obj.isSharedByMe,
-            isSharedWithMe: obj.isSharedWithMe,
-            isTaskListNote: obj.isTaskListNote,
-            noteTags: obj.noteTags || [],
-            noteTitle: obj.noteTitle,
-            noteUUID: obj.noteUUID,
-            processedNoteContent: obj.processedNoteContent
-        };
     }
 
     // --------------------------------------------
     // -------------- NOTE EMBEDDINGS --------------
     // --------------------------------------------
-    async getAllNotesEmbeddings() {
-        await this.init();
+    // async getAllNotesEmbeddings() {
+    //     await this.init();
+    //
+    //     const conn = await this.db.connect();
+    //     const result = await conn.query('SELECT * FROM NOTE_OBJECTS');
+    //     const rows = result.toArray().toArray().map(row => row.toJSON()));
+    //     conn.close();
+    //
+    //     return rows;
+    // }
 
-        const conn = await this.db.connect();
-        const result = await conn.query('SELECT * FROM NOTE_OBJECTS');
-        const rows = result.toArray().map(row => this._transformDuckDBObjectToSplitter(row));
-        conn.close();
-        
-        return rows;
-    }
-
-    async getUniqueNoteUUIDsInNoteEmbeddings() {
+    /**
+     * Returns the count of unique notes in the note embeddings table.
+     * @returns {Promise<number>}
+     */
+    async getNoteCountInNoteEmbeddings() {
         await this.init();
         const conn = await this.db.connect();
-        const result = await conn.query('SELECT DISTINCT noteUUID FROM NOTE_OBJECTS');
-        const uniqueUUIDs = new Set(result.toArray().map(row => row.noteUUID));
+        const result = await conn.query('SELECT count(DISTINCT noteUUID) FROM NOTE_OBJECTS');
+        const count = result.toArray()[0].count;
         conn.close();
-        return uniqueUUIDs;
+        return count;
     }
 
     /**
@@ -189,9 +157,9 @@ export class DuckDBManager {
             if (!noteEmbeddingObj.id) {
                 throw new Error('Each note embedding object must have an "id" property.');
             }
-            
+
             const transformed = this._transformSplitterObjectToDuckDB(noteEmbeddingObj);
-            
+
             // Use INSERT OR REPLACE for upsert functionality
             await conn.query(`
                 INSERT OR REPLACE INTO NOTE_OBJECTS (
@@ -225,17 +193,14 @@ export class DuckDBManager {
      */
     async deleteNoteEmbeddingByNoteUUIDList(noteUUIDArr) {
         await this.init();
-        this.inMemoryNoteStoreCache = null;
         const conn = await this.db.connect();
-        
-        for (const noteUUID of noteUUIDArr) {
-            await conn.query('DELETE FROM NOTE_OBJECTS WHERE noteUUID = $1', [noteUUID]);
-        }
+        const stmt = conn.prepare('DELETE FROM NOTE_EMBEDDINGS WHERE note_uuid in ?');
+        stmt.run(noteUUIDArr);
         conn.close();
     }
 
     /**
-     * Gets the total count of items in both note and help center tables
+     * Gets the total count of items in both note embedding table
      * @returns {Promise<number>} Total count of items
      */
     async getAllNotesEmbeddingsCount() {
@@ -244,14 +209,10 @@ export class DuckDBManager {
 
         try {
             const conn = await this.db.connect();
-            
+
             // Count items in notes table
             const notesResult = await conn.query('SELECT COUNT(*) as count FROM NOTE_OBJECTS');
             totalCount += notesResult.toArray()[0].count;
-
-            // Count items in help center table
-            const helpCenterResult = await conn.query('SELECT COUNT(*) as count FROM HELP_CENTER_OBJECTS');
-            totalCount += helpCenterResult.toArray()[0].count;
 
             conn.close();
             return totalCount;
@@ -281,9 +242,9 @@ export class DuckDBManager {
             if (!helpCenterEmbeddingObj.id) {
                 throw new Error('Each help center embedding object must have an "id" property.');
             }
-            
+
             const transformed = this._transformSplitterObjectToDuckDB(helpCenterEmbeddingObj);
-            
+
             await conn.query(`
                 INSERT OR REPLACE INTO HELP_CENTER_OBJECTS (
                     id, actualNoteContentPart, embeddings, headingAnchor, isArchived,
@@ -348,30 +309,5 @@ export class DuckDBManager {
         await this._setConfigValue(conn, key, value);
         await conn.send(`CHECKPOINT;`);
         conn.close();
-    }
-
-    // --------------------------------------------
-    // -------------- MISC ----------------------
-    // --------------------------------------------
-
-    /**
-     * Gets the estimated remaining storage space available
-     * @returns {Promise<string>} Storage space information
-     */
-    async getRemainingStorageSpace() {
-        try {
-            if ('storage' in navigator && 'estimate' in navigator.storage) {
-                const estimate = await navigator.storage.estimate();
-                const usedMB = Math.round((estimate.usage || 0) / 1024 / 1024);
-                const quotaMB = Math.round((estimate.quota || 0) / 1024 / 1024);
-                const remainingMB = quotaMB - usedMB;
-                return `Used: ${usedMB}MB, Quota: ${quotaMB}MB, Remaining: ${remainingMB}MB`;
-            } else {
-                return 'Storage estimate not available';
-            }
-        } catch (error) {
-            console.error('Error getting storage space:', error);
-            return 'Error getting storage space';
-        }
     }
 }
