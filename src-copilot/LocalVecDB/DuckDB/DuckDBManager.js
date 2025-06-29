@@ -1,7 +1,7 @@
 import {LOCAL_VEC_DB_INDEX_VERSION} from "../../constants.js";
 import DuckDBWorkerManager from "./DuckDBWorkerManager.js";
-import {DuckDBDataProtocol} from "@duckdb/duckdb-wasm";
 import {OPFSManager} from "./OPFSManager.js";
+import {isArray} from "lodash-es";
 
 let instance;
 export class DuckDBManager {
@@ -19,7 +19,7 @@ export class DuckDBManager {
                 await this._setConfigValue(conn, 'LOCAL_VEC_DB_INDEX_VERSION', LOCAL_VEC_DB_INDEX_VERSION);
             }
             await conn.send(`CHECKPOINT;`);
-            conn.close();
+            await conn.close();
             if (await OPFSManager.doesFileExists(`CopilotLocalVecDB.db`) === false) {
                 throw new Error('DuckDB file not created in OPFS after all init operations');
             }
@@ -32,9 +32,9 @@ export class DuckDBManager {
     async _createTables(conn) {
         // Notes embeddings table
         await conn.query(`
-            CREATE TABLE IF NOT EXISTS NOTE_OBJECTS (
+            CREATE TABLE IF NOT EXISTS USER_NOTE_EMBEDDINGS (
                 id VARCHAR PRIMARY KEY,
-                actualNoteContentPart TEXT,
+                actualNoteContentPart VARCHAR,
                 embeddings FLOAT[],
                 headingAnchor VARCHAR,
                 isArchived BOOLEAN,
@@ -45,20 +45,20 @@ export class DuckDBManager {
                 noteTags VARCHAR[],
                 noteTitle VARCHAR,
                 noteUUID VARCHAR,
-                processedNoteContent TEXT
+                processedNoteContent VARCHAR
             )
         `);
 
         // Create index on noteUUID
         await conn.query(`
-            CREATE INDEX IF NOT EXISTS idx_note_objects_uuid ON NOTE_OBJECTS(noteUUID)
+            CREATE INDEX IF NOT EXISTS idx_user_note_embeddings_uuid ON USER_NOTE_EMBEDDINGS(noteUUID)
         `);
 
         // Help center embeddings table
         await conn.query(`
-            CREATE TABLE IF NOT EXISTS HELP_CENTER_OBJECTS (
+            CREATE TABLE IF NOT EXISTS HELP_CENTER_EMBEDDINGS (
                 id VARCHAR PRIMARY KEY,
-                actualNoteContentPart TEXT,
+                actualNoteContentPart VARCHAR,
                 embeddings FLOAT[],
                 headingAnchor VARCHAR,
                 isArchived BOOLEAN,
@@ -69,18 +69,18 @@ export class DuckDBManager {
                 noteTags VARCHAR[],
                 noteTitle VARCHAR,
                 noteUUID VARCHAR,
-                processedNoteContent TEXT
+                processedNoteContent VARCHAR
             )
         `);
 
         // Create index on noteUUID for help center
         await conn.query(`
-            CREATE INDEX IF NOT EXISTS idx_help_center_objects_uuid ON HELP_CENTER_OBJECTS(noteUUID)
+            CREATE INDEX IF NOT EXISTS idx_help_center_embeddings_uuid ON HELP_CENTER_EMBEDDINGS(noteUUID)
         `);
 
         // Config table
         await conn.query(`
-            CREATE TABLE IF NOT EXISTS CONFIG (
+            CREATE TABLE IF NOT EXISTS DB_CONFIG (
                 key VARCHAR PRIMARY KEY,
                 value VARCHAR
             )
@@ -88,14 +88,14 @@ export class DuckDBManager {
 
         // Create index on key
         await conn.query(`
-            CREATE INDEX IF NOT EXISTS idx_config_key ON CONFIG(key)
+            CREATE INDEX IF NOT EXISTS idx_db_config_key ON DB_CONFIG(key)
         `);
     }
 
     async _resetTables(conn) {
         try {
-            await conn.query('DROP TABLE IF EXISTS NOTE_OBJECTS');
-            await conn.query('DROP TABLE IF EXISTS HELP_CENTER_OBJECTS');
+            await conn.query('DROP TABLE IF EXISTS USER_NOTE_EMBEDDINGS');
+            await conn.query('DROP TABLE IF EXISTS HELP_CENTER_EMBEDDINGS');
             console.log('DuckDBManager resetTables completed');
         } catch (e) {
             console.error('Error resetting tables:', e);
@@ -124,7 +124,7 @@ export class DuckDBManager {
     //     await this.init();
     //
     //     const conn = await this.db.connect();
-    //     const result = await conn.query('SELECT * FROM NOTE_OBJECTS');
+    //     const result = await conn.query('SELECT * FROM USER_NOTE_EMBEDDINGS');
     //     const rows = result.toArray().toArray().map(row => row.toJSON()));
     //     conn.close();
     //
@@ -138,7 +138,7 @@ export class DuckDBManager {
     async getNoteCountInNoteEmbeddings() {
         await this.init();
         const conn = await this.db.connect();
-        const result = await conn.query('SELECT count(DISTINCT noteUUID) FROM NOTE_OBJECTS');
+        const result = await conn.query('SELECT COUNT(DISTINCT noteUUID)::INTEGER as count FROM USER_NOTE_EMBEDDINGS');
         const count = result.toArray()[0].count;
         conn.close();
         return count;
@@ -151,39 +151,115 @@ export class DuckDBManager {
      */
     async putMultipleNoteEmbedding(noteEmbeddingObjArr) {
         await this.init();
+        const errors = [];
         const conn = await this.db.connect();
-
+        await conn.query('BEGIN TRANSACTION');
+        const stmt = await conn.prepare(`
+              INSERT OR REPLACE INTO USER_NOTE_EMBEDDINGS (
+                  id, actualNoteContentPart, embeddings, headingAnchor, isArchived,
+                  isPublished, isSharedByMe, isSharedWithMe, isTaskListNote,
+                  noteTags, noteTitle, noteUUID, processedNoteContent
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `);
         for (const noteEmbeddingObj of noteEmbeddingObjArr) {
-            if (!noteEmbeddingObj.id) {
-                throw new Error('Each note embedding object must have an "id" property.');
+            try {
+                if (!noteEmbeddingObj.id) {
+                    throw new Error('Note embedding object must have an "id" property.');
+                }
+                if (!noteEmbeddingObj.noteUUID) {
+                    throw new Error('Note embedding object must have a "noteUUID" property.');
+                }
+                if (!noteEmbeddingObj.actualNoteContentPart) {
+                  throw new Error('Note embedding object must have an "actualNoteContentPart" property.');
+                }
+                if (!noteEmbeddingObj.processedNoteContent) {
+                  throw new Error('Note embedding object must have a "processedNoteContent" property.');
+                }
+                if (!noteEmbeddingObj.embeddings) {
+                    throw new Error('Note embedding object must have an "embeddings" property.');
+                }
+                if (typeof noteEmbeddingObj.embeddings === 'string') {
+                    throw new Error('Note embedding object "embeddings" property cannot be a string.');
+                }
+                if (noteEmbeddingObj.noteTags && !isArray(noteEmbeddingObj.noteTags)) {
+                    throw new Error('Note embedding object "noteTags" property must be an array of strings.');
+                }
+                if (noteEmbeddingObj.embeddings instanceof Float32Array ||
+                      noteEmbeddingObj.embeddings instanceof Float64Array) {
+                  // Convert to array so we can JSON.stringify it
+                  noteEmbeddingObj.embeddings = Array.from(noteEmbeddingObj.embeddings);
+                }
+                await stmt.query(
+                    noteEmbeddingObj.id,
+                    noteEmbeddingObj.actualNoteContentPart,
+                    JSON.stringify(noteEmbeddingObj.embeddings),
+                    noteEmbeddingObj.headingAnchor,
+                    noteEmbeddingObj.isArchived,
+                    noteEmbeddingObj.isPublished,
+                    noteEmbeddingObj.isSharedByMe,
+                    noteEmbeddingObj.isSharedWithMe,
+                    noteEmbeddingObj.isTaskListNote,
+                    JSON.stringify(noteEmbeddingObj.noteTags),
+                    noteEmbeddingObj.noteTitle,
+                    noteEmbeddingObj.noteUUID,
+                    noteEmbeddingObj.processedNoteContent
+                );
+            } catch (e) {
+                errors.push({
+                    message: `Failed to process item at index ${index} (id: ${noteEmbeddingObj.id || 'N/A'})`,
+                    cause: e,
+                    item: noteEmbeddingObj
+                });
             }
-
-            const transformed = this._transformSplitterObjectToDuckDB(noteEmbeddingObj);
-
-            // Use INSERT OR REPLACE for upsert functionality
-            await conn.query(`
-                INSERT OR REPLACE INTO NOTE_OBJECTS (
-                    id, actualNoteContentPart, embeddings, headingAnchor, isArchived,
-                    isPublished, isSharedByMe, isSharedWithMe, isTaskListNote,
-                    noteTags, noteTitle, noteUUID, processedNoteContent
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-            `, [
-                transformed.id,
-                transformed.actualNoteContentPart,
-                transformed.embeddings,
-                transformed.headingAnchor,
-                transformed.isArchived,
-                transformed.isPublished,
-                transformed.isSharedByMe,
-                transformed.isSharedWithMe,
-                transformed.isTaskListNote,
-                transformed.noteTags,
-                transformed.noteTitle,
-                transformed.noteUUID,
-                transformed.processedNoteContent
-            ]);
         }
+        if (errors.length > 0) {
+            await conn.query('ROLLBACK');
+            await stmt.close();
+            conn.close();
+            throw new AggregateError(errors, `Failed to insert ${errors.length} of ${noteEmbeddingObjArr.length} note embeddings.`);
+        }
+        await conn.query('COMMIT');
+        await stmt.close();
         conn.close();
+    }
+
+    async searchNoteEmbedding(embedding, {limit = 10, threshold = 0} = {}) {
+      const conn = await this.db.connect();
+      const stmt = await conn.prepare(`
+        SELECT
+            *,
+            list_dot_product(embeddings, ?) as similarity
+        FROM
+            USER_NOTE_EMBEDDINGS
+        WHERE
+            similarity > ?
+        ORDER BY
+            similarity DESC
+        LIMIT ?;
+        `);
+      if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
+        // Convert to array so we can JSON.stringify it
+        embedding = Array.from(embedding);
+      }
+      if (!isArray(embedding)) {
+        throw new Error('Embedding must be an array of numbers.');
+      }
+      const results = await stmt.query(JSON.stringify(embedding), threshold, limit);
+      let jsonResults = results.toArray().map(row => row.toJSON());
+      jsonResults.forEach(row => {
+        if (row.embeddings) {
+            row.embeddings = row.embeddings.toArray();
+        }
+        if (!(row.embeddings instanceof Float32Array)) {
+            row.embeddings = new Float32Array(row.embeddings);
+        }
+        if (row.noteTags) {
+            row.noteTags = row.noteTags.toArray();
+        }
+      });
+      await stmt.close();
+      conn.close();
+      return jsonResults;
     }
 
     /**
@@ -192,11 +268,28 @@ export class DuckDBManager {
      * @returns {Promise<void>}
      */
     async deleteNoteEmbeddingByNoteUUIDList(noteUUIDArr) {
+        if (!noteUUIDArr || noteUUIDArr.length === 0) {
+            console.log("No note UUIDs provided to delete. Skipping.");
+            return;
+        }
+
         await this.init();
-        const conn = await this.db.connect();
-        const stmt = conn.prepare('DELETE FROM NOTE_EMBEDDINGS WHERE note_uuid in ?');
-        stmt.run(noteUUIDArr);
-        conn.close();
+        let conn;
+        try {
+            conn = await this.db.connect();
+            const stmt = await conn.prepare('DELETE FROM USER_NOTE_EMBEDDINGS WHERE noteUUID = ?');
+            for (const noteUUID of noteUUIDArr) {
+                await stmt.query(noteUUID);
+            }
+            await stmt.close();
+        } catch (e) {
+            console.error("Failed to delete note embeddings:", e);
+            throw e;
+        } finally {
+            if (conn) {
+                await conn.close();
+            }
+        }
     }
 
     /**
@@ -211,7 +304,7 @@ export class DuckDBManager {
             const conn = await this.db.connect();
 
             // Count items in notes table
-            const notesResult = await conn.query('SELECT COUNT(*) as count FROM NOTE_OBJECTS');
+            const notesResult = await conn.query('SELECT COUNT(*)::INTEGER as count FROM USER_NOTE_EMBEDDINGS');
             totalCount += notesResult.toArray()[0].count;
 
             conn.close();
@@ -223,76 +316,23 @@ export class DuckDBManager {
     }
 
     // --------------------------------------------
-    // -------------- HELP CENTER EMBEDDING ----------------------
-    // --------------------------------------------
-    async getAllHelpCenterEmbeddings() {
-        await this.init();
-        const conn = await this.db.connect();
-        const result = await conn.query('SELECT * FROM HELP_CENTER_OBJECTS');
-        const rows = result.toArray().map(row => this._transformDuckDBObjectToSplitter(row));
-        conn.close();
-        return rows;
-    }
-
-    async putMultipleHelpCenterEmbeddings(helpCenterEmbeddingObjArr) {
-        await this.init();
-        const conn = await this.db.connect();
-
-        for (const helpCenterEmbeddingObj of helpCenterEmbeddingObjArr) {
-            if (!helpCenterEmbeddingObj.id) {
-                throw new Error('Each help center embedding object must have an "id" property.');
-            }
-
-            const transformed = this._transformSplitterObjectToDuckDB(helpCenterEmbeddingObj);
-
-            await conn.query(`
-                INSERT OR REPLACE INTO HELP_CENTER_OBJECTS (
-                    id, actualNoteContentPart, embeddings, headingAnchor, isArchived,
-                    isPublished, isSharedByMe, isSharedWithMe, isTaskListNote,
-                    noteTags, noteTitle, noteUUID, processedNoteContent
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-            `, [
-                transformed.id,
-                transformed.actualNoteContentPart,
-                transformed.embeddings,
-                transformed.headingAnchor,
-                transformed.isArchived,
-                transformed.isPublished,
-                transformed.isSharedByMe,
-                transformed.isSharedWithMe,
-                transformed.isTaskListNote,
-                transformed.noteTags,
-                transformed.noteTitle,
-                transformed.noteUUID,
-                transformed.processedNoteContent
-            ]);
-        }
-        conn.close();
-    }
-
-    async clearHelpCenterEmbeddings() {
-        await this.init();
-        const conn = await this.db.connect();
-        await conn.query('DELETE FROM HELP_CENTER_OBJECTS');
-        conn.close();
-    }
-
-    // --------------------------------------------
-    // -------------- CONFIG ----------------------
+    // -------------- DB_CONFIG ----------------------
     // --------------------------------------------
     async _getConfigValue(conn, key) {
         let result = null;
         try {
-            const stmt = await conn.prepare('SELECT value FROM CONFIG WHERE key = ?');
+            const stmt = await conn.prepare('SELECT value FROM DB_CONFIG WHERE key = ?');
             result = await stmt.query(String(key));
+            await stmt.close();
         } catch (e) {}
         const rows = result ? result.toArray() : [];
         return rows.length > 0 ? rows[0].value : null;
     }
 
     async _setConfigValue(conn, key, value) {
-        const stmt = await conn.prepare('INSERT OR REPLACE INTO CONFIG (key, value) VALUES (?, ?)');
+        const stmt = await conn.prepare('INSERT OR REPLACE INTO DB_CONFIG (key, value) VALUES (?, ?)');
         await stmt.query(String(key), String(value));
+        await stmt.close();
     }
 
     async getConfigValue(key) {

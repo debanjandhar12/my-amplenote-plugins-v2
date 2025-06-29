@@ -14,7 +14,20 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         const performanceStartTime = performance.now();
         const dbm = new DuckDBManager();
         console.log('LOCAL_VEC_DB_INDEX_VERSION', await dbm.getConfigValue('LOCAL_VEC_DB_INDEX_VERSION'));
-        console.log('getUniqueNoteCountInNoteEmbeddings', await dbm.getNoteCountInNoteEmbeddings());
+        console.log('putMultipleNoteEmbedding', await dbm.putMultipleNoteEmbedding([{
+          id: 'id1',
+          noteUUID: 'uuid1',
+          noteTitle: 'title1',
+          actualNoteContentPart: 'content1',
+          processedNoteContent: 'processedContent1',
+          isPublished: true,
+          noteTags: ['tag1)));SELECT'],
+          embeddings: [0.1234, 0.2, 0.3]
+        }]));
+        console.log('getAllNotesEmbeddingsCountBefore', await dbm.getAllNotesEmbeddingsCount());
+        console.log('getNoteCountInNoteEmbeddings', await dbm.getNoteCountInNoteEmbeddings());
+        console.log('searchNoteEmbedding', await dbm.searchNoteEmbedding(new Float32Array([0.1234, 0.2, 0.3])));
+        console.log('getAllNotesEmbeddingsCountAfter', await dbm.getAllNotesEmbeddingsCount());
         console.log('deleteNoteEmbeddingByNoteUUIDList', await dbm.deleteNoteEmbeddingByNoteUUIDList(['uuid1', 'uuid2']));
         console.log('resetDB', await dbm.resetDB());
 

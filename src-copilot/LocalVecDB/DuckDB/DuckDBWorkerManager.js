@@ -35,7 +35,8 @@ export default class DuckDBWorkerManager {
         }
 
         const worker = await createWorker(worker_url);
-        const logger = process.env.NODE_ENV === 'development' ? new ConsoleLogger() : new VoidLogger();
+        // const logger = process.env.NODE_ENV === 'development' ? new ConsoleLogger() : new VoidLogger();
+        const logger = new ConsoleLogger();
         let db = new AsyncDuckDB(logger, worker);
         await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
         console.log("existing opfs file list", await OPFSManager.getFileList())
