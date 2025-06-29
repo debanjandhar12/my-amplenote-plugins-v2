@@ -1,5 +1,33 @@
 export class OPFSManager {
     /**
+     * Checks if the Origin Private File System (OPFS) is supported by the browser.
+     * @returns {boolean} True if OPFS is supported, false otherwise.
+     */
+    static async checkSupport() {
+        if (!navigator.storage || !navigator.storage.getDirectory) {
+            return false;
+        }
+        try {
+            await navigator.storage.getDirectory();
+        } catch (error) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Checks if the Origin Private File System (OPFS) is persisted.
+     * @returns {boolean} True if OPFS is persisted, false otherwise.
+     */
+    static async isPersisted() {
+        const isPersisted = await navigator.storage.persist();
+        if (isPersisted) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Returns the root directory handle of the Origin Private File System.
      *
      * @returns {Promise<FileSystemDirectoryHandle>} A promise that resolves

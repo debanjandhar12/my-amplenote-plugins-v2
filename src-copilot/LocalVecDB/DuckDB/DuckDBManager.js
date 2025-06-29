@@ -120,28 +120,26 @@ export class DuckDBManager {
     // --------------------------------------------
     // -------------- NOTE EMBEDDINGS --------------
     // --------------------------------------------
-    // async getAllNotesEmbeddings() {
-    //     await this.init();
-    //
-    //     const conn = await this.db.connect();
-    //     const result = await conn.query('SELECT * FROM USER_NOTE_EMBEDDINGS');
-    //     const rows = result.toArray().toArray().map(row => row.toJSON()));
-    //     conn.close();
-    //
-    //     return rows;
-    // }
-
     /**
      * Returns the count of unique notes in the note embeddings table.
      * @returns {Promise<number>}
      */
     async getNoteCountInNoteEmbeddings() {
         await this.init();
-        const conn = await this.db.connect();
-        const result = await conn.query('SELECT COUNT(DISTINCT noteUUID)::INTEGER as count FROM USER_NOTE_EMBEDDINGS');
-        const count = result.toArray()[0].count;
-        conn.close();
-        return count;
+        let conn;
+        try {
+            conn = await this.db.connect();
+            const result = await conn.query('SELECT COUNT(DISTINCT noteUUID)::INTEGER as count FROM USER_NOTE_EMBEDDINGS');
+            const count = result.toArray()[0].count;
+            return count;
+        } catch (e) {
+            console.error("Failed to get note count in note embeddings:", e);
+            throw e;
+        } finally {
+            if (conn) {
+                await conn.close();
+            }
+        }
     }
 
     /**
@@ -223,43 +221,84 @@ export class DuckDBManager {
         conn.close();
     }
 
-    async searchNoteEmbedding(embedding, {limit = 10, threshold = 0} = {}) {
-      const conn = await this.db.connect();
-      const stmt = await conn.prepare(`
-        SELECT
-            *,
-            list_dot_product(embeddings, ?) as similarity
-        FROM
-            USER_NOTE_EMBEDDINGS
-        WHERE
-            similarity > ?
-        ORDER BY
-            similarity DESC
-        LIMIT ?;
-        `);
-      if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
-        // Convert to array so we can JSON.stringify it
-        embedding = Array.from(embedding);
-      }
-      if (!isArray(embedding)) {
-        throw new Error('Embedding must be an array of numbers.');
-      }
-      const results = await stmt.query(JSON.stringify(embedding), threshold, limit);
-      let jsonResults = results.toArray().map(row => row.toJSON());
-      jsonResults.forEach(row => {
-        if (row.embeddings) {
-            row.embeddings = row.embeddings.toArray();
+    async searchNoteEmbedding(embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
+        await this.init();
+        let conn;
+        let stmt;
+        
+        try {
+            conn = await this.db.connect();
+            
+            // Build WHERE clause conditions
+            const conditions = ['similarity > ?'];
+            const params = [];
+            
+            if (isArchived !== null) {
+                conditions.push('isArchived = ?');
+                params.push(isArchived);
+            }
+            if (isSharedByMe !== null) {
+                conditions.push('isSharedByMe = ?');
+                params.push(isSharedByMe);
+            }
+            if (isSharedWithMe !== null) {
+                conditions.push('isSharedWithMe = ?');
+                params.push(isSharedWithMe);
+            }
+            if (isTaskListNote !== null) {
+                conditions.push('isTaskListNote = ?');
+                params.push(isTaskListNote);
+            }
+            
+            const whereClause = conditions.join(' AND ');
+            
+            stmt = await conn.prepare(`
+                SELECT
+                    *,
+                    list_dot_product(embeddings, ?) as similarity
+                FROM
+                    USER_NOTE_EMBEDDINGS
+                WHERE
+                    ${whereClause}
+                ORDER BY
+                    similarity DESC
+                LIMIT ?;
+            `);
+            
+            if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
+                // Convert to array so we can JSON.stringify it
+                embedding = Array.from(embedding);
+            }
+            if (!isArray(embedding)) {
+                throw new Error('Embedding must be an array of numbers.');
+            }
+            
+            const results = await stmt.query(JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
+            let jsonResults = results.toArray().map(row => row.toJSON());
+            jsonResults.forEach(row => {
+                if (row.embeddings) {
+                    row.embeddings = row.embeddings.toArray();
+                }
+                if (!(row.embeddings instanceof Float32Array)) {
+                    row.embeddings = new Float32Array(row.embeddings);
+                }
+                if (row.noteTags) {
+                    row.noteTags = row.noteTags.toArray();
+                }
+            });
+            
+            return jsonResults;
+        } catch (e) {
+            console.error("Failed to search note embeddings:", e);
+            throw e;
+        } finally {
+            if (stmt) {
+                await stmt.close();
+            }
+            if (conn) {
+                await conn.close();
+            }
         }
-        if (!(row.embeddings instanceof Float32Array)) {
-            row.embeddings = new Float32Array(row.embeddings);
-        }
-        if (row.noteTags) {
-            row.noteTags = row.noteTags.toArray();
-        }
-      });
-      await stmt.close();
-      conn.close();
-      return jsonResults;
     }
 
     /**
@@ -298,20 +337,22 @@ export class DuckDBManager {
      */
     async getAllNotesEmbeddingsCount() {
         await this.init();
-        let totalCount = 0;
-
+        let conn;
         try {
-            const conn = await this.db.connect();
+            conn = await this.db.connect();
 
             // Count items in notes table
             const notesResult = await conn.query('SELECT COUNT(*)::INTEGER as count FROM USER_NOTE_EMBEDDINGS');
-            totalCount += notesResult.toArray()[0].count;
+            const totalCount = notesResult.toArray()[0].count;
 
-            conn.close();
             return totalCount;
         } catch (error) {
-            console.error('Error getting items count:', error);
-            return 0;
+            console.error('Failed to get all notes embeddings count:', error);
+            throw error;
+        } finally {
+            if (conn) {
+                await conn.close();
+            }
         }
     }
 
@@ -337,17 +378,35 @@ export class DuckDBManager {
 
     async getConfigValue(key) {
         await this.init();
-        const conn = await this.db.connect();
-        const value = await this._getConfigValue(conn, key);
-        conn.close();
-        return value;
+        let conn;
+        try {
+            conn = await this.db.connect();
+            const value = await this._getConfigValue(conn, key);
+            return value;
+        } catch (e) {
+            console.error("Failed to get config value:", e);
+            throw e;
+        } finally {
+            if (conn) {
+                await conn.close();
+            }
+        }
     }
 
     async setConfigValue(key, value) {
         await this.init();
-        const conn = await this.db.connect();
-        await this._setConfigValue(conn, key, value);
-        await conn.send(`CHECKPOINT;`);
-        conn.close();
+        let conn;
+        try {
+            conn = await this.db.connect();
+            await this._setConfigValue(conn, key, value);
+            await conn.send(`CHECKPOINT;`);
+        } catch (e) {
+            console.error("Failed to set config value:", e);
+            throw e;
+        } finally {
+            if (conn) {
+                await conn.close();
+            }
+        }
     }
 }

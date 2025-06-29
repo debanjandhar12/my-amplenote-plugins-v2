@@ -7,13 +7,21 @@ import 'scheduler-polyfill';
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 import DuckDBWorkerManager from "./DuckDB/DuckDBWorkerManager.js";
 import {DuckDBManager} from "./DuckDB/DuckDBManager.js";
+import {OPFSManager} from "./DuckDB/OPFSManager.js";
 
 export const syncNotes = async (app, sendMessageToEmbed) => {
     try {
         // -- Initialize --
         const performanceStartTime = performance.now();
+        if (!await OPFSManager.checkSupport()) {
+            throw new Error('OPFS is not supported in this browser. It is required for LocalVecDB.');
+        }
+        if (!await OPFSManager.isPersisted()) {
+            throw new Error('OPFS is not persisted. Please enable the storage permission in your browser. It is required for LocalVecDB.');
+        }
         const dbm = new DuckDBManager();
         console.log('LOCAL_VEC_DB_INDEX_VERSION', await dbm.getConfigValue('LOCAL_VEC_DB_INDEX_VERSION'));
+        console.log('getAllNotesEmbeddingsCountBefore', await dbm.getAllNotesEmbeddingsCount());
         console.log('putMultipleNoteEmbedding', await dbm.putMultipleNoteEmbedding([{
           id: 'id1',
           noteUUID: 'uuid1',
@@ -24,12 +32,11 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
           noteTags: ['tag1)));SELECT'],
           embeddings: [0.1234, 0.2, 0.3]
         }]));
-        console.log('getAllNotesEmbeddingsCountBefore', await dbm.getAllNotesEmbeddingsCount());
         console.log('getNoteCountInNoteEmbeddings', await dbm.getNoteCountInNoteEmbeddings());
         console.log('searchNoteEmbedding', await dbm.searchNoteEmbedding(new Float32Array([0.1234, 0.2, 0.3])));
         console.log('getAllNotesEmbeddingsCountAfter', await dbm.getAllNotesEmbeddingsCount());
-        console.log('deleteNoteEmbeddingByNoteUUIDList', await dbm.deleteNoteEmbeddingByNoteUUIDList(['uuid1', 'uuid2']));
-        console.log('resetDB', await dbm.resetDB());
+        // console.log('deleteNoteEmbeddingByNoteUUIDList', await dbm.deleteNoteEmbeddingByNoteUUIDList(['uuid1', 'uuid2']));
+        // console.log('resetDB', await dbm.resetDB());
 
         //
         // const indexedDBManager = new IndexedDBManager();
