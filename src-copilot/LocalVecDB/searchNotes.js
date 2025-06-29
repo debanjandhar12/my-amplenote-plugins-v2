@@ -4,7 +4,6 @@ import { DuckDBManager } from "./DuckDB/DuckDBManager.js";
 import {debounce} from "lodash-es";
 import DuckDBWorkerManager from "./DuckDB/DuckDBWorkerManager.js";
 
-let terminateDuckDBDebounce = null;
 export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
     isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null}) => {
     if (await getSyncState(app) === 'Not synced')
@@ -13,6 +12,7 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
     if (!queryText || !queryText.trim()) return [];
 
     const dbm = new DuckDBManager();
+    await DuckDBWorkerManager.cancelDebouncedTerminateDatabase();
     try {
         // Get embeddings for the query text
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
@@ -24,9 +24,7 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
             isSharedWithMe,
             isTaskListNote
         });
-        terminateDuckDBDebounce = debounce(() => {
-            DuckDBWorkerManager.terminateDB();
-        }, 60000);
+        DuckDBWorkerManager.debouncedTerminateDatabase();
         return results;
     } catch (e) {
         throw new Error(`Error querying vectors: ${e}`);

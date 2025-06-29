@@ -1,5 +1,6 @@
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 import {OPFSManager} from "./OPFSManager.js";
+import {debounce} from "lodash-es";
 // import {
 //     AsyncDuckDB,
 //     createWorker,
@@ -10,7 +11,7 @@ import {OPFSManager} from "./OPFSManager.js";
 //         VoidLogger
 // } from "@duckdb/duckdb-wasm";
 
-let db, isTerminated = true;
+let db, isTerminated = true, debouncedTerminateDatabase;
 export default class DuckDBWorkerManager {
     static async getCollectionInstance(collectionName) {
         if (!db) {
@@ -48,11 +49,19 @@ export default class DuckDBWorkerManager {
         return isTerminated;
     }
 
-    static async terminateDB() {
+    static debouncedTerminateDatabase() {
+      debouncedTerminateDatabase = debounce(async () => {
         if (db) {
             await db.terminate();
             db = null;
             isTerminated = true;
         }
+      }, 30000);
+    }
+
+    static async cancelDebouncedTerminateDatabase() {
+      if (debouncedTerminateDatabase) {
+        debouncedTerminateDatabase.cancel();
+      }
     }
 }

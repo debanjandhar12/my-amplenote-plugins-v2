@@ -1,6 +1,7 @@
 import { DuckDBManager } from "./DuckDB/DuckDBManager.js";
 import {IndexedDBManager} from "./IndexedDBManager.js";
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
+import DuckDBWorkerManager from "./DuckDB/DuckDBWorkerManager.js";
 
 export const getSyncState = async (app, syncNotesPromise = null) => {
     if  (syncNotesPromise) {
@@ -8,16 +9,19 @@ export const getSyncState = async (app, syncNotesPromise = null) => {
     }
 
     const dbm = new DuckDBManager();
+    await DuckDBWorkerManager.cancelDebouncedTerminateDatabase();
     const lastPluginUUID = await dbm.getConfigValue('lastPluginUUID');
     const lastEmbeddingModel = await dbm.getConfigValue('lastEmbeddingModel');
     const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
     if (lastPluginUUID !== app.context.pluginUUID || lastEmbeddingModel !== embeddingGenerator.MODEL_NAME) {
+        DuckDBWorkerManager.debouncedTerminateDatabase();
         return 'Not synced';
     }
 
     const uniqueNoteUUIDs = await dbm.getActualNoteCount();
     const uniqueNoteUUIDsCount = uniqueNoteUUIDs.size;
     if (uniqueNoteUUIDsCount === 0) {
+        DuckDBWorkerManager.debouncedTerminateDatabase();
         return 'Not synced';
     }
     const allNotes = await app.filterNotes({});
@@ -37,6 +41,7 @@ export const getSyncState = async (app, syncNotesPromise = null) => {
             }
         });
     if (targetNotes.length >= (allNotes.length/2)) {
+        DuckDBWorkerManager.debouncedTerminateDatabase();
         return 'Not synced';
     }
 
