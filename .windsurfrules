@@ -37,6 +37,7 @@ src-*/                  # Plugin source directories
 - **Tests**:
     - Use playwright for end-to-end testing. There is a helper file in common-utils/playwright-helpers.ts for playwright testing
     - Use this command to run specific test file: `npx jest <file_path>`
+    - Use this command to perform build of copilot plugin and so on: `node esbuild.js src-copilot`
     - Always read existing tests before writing new ones
 
 # Development Guidelines

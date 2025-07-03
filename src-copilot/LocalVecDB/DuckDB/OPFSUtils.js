@@ -1,4 +1,4 @@
-export class OPFSManager {
+export class OPFSUtils {
     /**
      * Checks if the Origin Private File System (OPFS) is supported by the browser.
      * @returns {boolean} True if OPFS is supported, false otherwise.
@@ -67,7 +67,7 @@ export class OPFSManager {
         }
 
         try {
-            const root = await OPFSManager.getRoot();
+            const root = await OPFSUtils.getRoot();
             await root.getFileHandle(fileName, { create: false });
             return true;
         } catch (error) {
@@ -93,7 +93,7 @@ export class OPFSManager {
         const fileList = [];
 
         try {
-            const root = await OPFSManager.getRoot();
+            const root = await OPFSUtils.getRoot();
 
             for await (const entry of root.entries()) {
                 const [name, handle] = entry;

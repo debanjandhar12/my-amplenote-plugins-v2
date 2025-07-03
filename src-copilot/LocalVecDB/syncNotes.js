@@ -4,9 +4,9 @@ import {chunk} from "lodash-es";
 import {getEmbeddingProviderName} from "./embeddings/getEmbeddingProviderName.js";
 import 'scheduler-polyfill';
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
-import DuckDBWorkerManager from "./DuckDB/DuckDBWorkerManager.js";
-import {DuckDBManager} from "./DuckDB/DuckDBManager.js";
-import {OPFSManager} from "./DuckDB/OPFSManager.js";
+import DuckDBConnectionController from "./DuckDB/DuckDBConnectionController.js";
+import {DuckDBNotesManager} from "./DuckDB/DuckDBNotesManager.js";
+import {OPFSUtils} from "./DuckDB/OPFSUtils.js";
 
 // console.log('LOCAL_VEC_DB_INDEX_VERSION', await dbm.getConfigValue('LOCAL_VEC_DB_INDEX_VERSION'));
 // console.log('getAllNotesEmbeddingsCountBefore', await dbm.getAllNotesEmbeddingsCount());
@@ -30,18 +30,18 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
     try {
         // -- Initialize --
         const performanceStartTime = performance.now();
-        if (!await OPFSManager.checkSupport()) {
+        if (!await OPFSUtils.checkSupport()) {
             throw new Error('OPFS is not supported in this browser. It is required for LocalVecDB.');
         }
-        if (!await OPFSManager.isPersisted()) {
+        if (!await OPFSUtils.isPersisted()) {
             throw new Error('OPFS is not persisted. Please enable the storage permission in your browser. It is required for LocalVecDB.');
         }
 
         try {indexedDB.deleteDatabase('LocalVecDB')} catch(e){} // Delete older IndexedDB
 
         sendMessageToEmbed(app, 'syncNotesProgress', `Starting sync...`);
-        const dbm = new DuckDBManager();
-        await DuckDBWorkerManager.cancelTerminate();
+        const dbm = new DuckDBNotesManager();
+        await DuckDBConnectionController.cancelTerminate();
         const embeddingProviderName = getEmbeddingProviderName(app);
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
         let lastSyncTime = await dbm.getConfigValue('lastSyncTime')
@@ -104,13 +104,13 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
                 await updateSyncConfigs(dbm, app.context.pluginUUID, embeddingGenerator.MODEL_NAME);
 
                 // Just in case, cancel the debounced terminate database
-                await DuckDBWorkerManager.cancelTerminate();
+                await DuckDBConnectionController.cancelTerminate();
             }, {priority: 'background'});
         }
 
         // Final update of sync time
         await dbm.setConfigValue('lastSyncTime', new Date().toISOString());
-        DuckDBWorkerManager.scheduleTerminate();
+        DuckDBConnectionController.scheduleTerminate();
 
         console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', targetNotes.length);
         sendMessageToEmbed(app, 'syncNotesProgress', `${totalNoteCount}/${totalNoteCount}<br />Sync Completed!`);
@@ -273,7 +273,7 @@ async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCoun
         let storageSpace = 'Storage info not available';
         try {
             existingDuckDBRecordCount = await dbm.getNotesRecordCount();
-            storageSpace = await OPFSManager.getRemainingStorageSpace();
+            storageSpace = await OPFSUtils.getRemainingStorageSpace();
         } catch (e) {
             // Silently fail, keep defaults
         }
@@ -288,8 +288,8 @@ async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCoun
             `Remaining NoteBatches count: ${noteBatches.length}\n` +
             `Existing DuckDB Records count: ${existingDuckDBRecordCount}\n` +
             `OPFS Remaining Storage space: ${storageSpace}\n` +
-            `OPFS Persisted: ${await OPFSManager.isPersisted()}\n` +
-            `OPFS File List: ${JSON.stringify(await OPFSManager.getFileList())}\n` +
+            `OPFS Persisted: ${await OPFSUtils.isPersisted()}\n` +
+            `OPFS File List: ${JSON.stringify(await OPFSUtils.getFileList())}\n` +
             `%c=====================`,
             'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;',
             'color: white; background-color: #333; font-size: 13px; padding: 2px;',

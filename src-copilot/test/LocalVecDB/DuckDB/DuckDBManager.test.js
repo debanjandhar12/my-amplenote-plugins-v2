@@ -1,15 +1,15 @@
-import { DuckDBManager } from '../../../LocalVecDB/DuckDB/DuckDBManager.js';
+import { DuckDBNotesManager } from '../../../LocalVecDB/DuckDB/DuckDBNotesManager.js';
 
 describe('DuckDBManager', () => {
     let duckDBManager;
 
     beforeEach(() => {
-        duckDBManager = new DuckDBManager();
+        duckDBManager = new DuckDBNotesManager();
     });
 
     test('should handle singleton pattern', () => {
-        const manager1 = new DuckDBManager();
-        const manager2 = new DuckDBManager();
+        const manager1 = new DuckDBNotesManager();
+        const manager2 = new DuckDBNotesManager();
         expect(manager1).toBe(manager2);
     });
 

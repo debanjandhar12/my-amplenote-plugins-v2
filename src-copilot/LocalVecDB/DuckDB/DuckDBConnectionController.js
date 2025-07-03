@@ -13,15 +13,7 @@ import { Mutex } from "async-mutex";
 
 let db, isTerminated = true, currentCollectionName;
 const mutex = new Mutex();
-const debouncedTerminate = debounce(async () => {
-    if (db) {
-        await db.terminate();
-        db = null;
-        currentCollectionName = null;
-        isTerminated = true;
-    }
-}, 3 * 60 * 1000); // 3 minutes
-export default class DuckDBWorkerManager {
+export default class DuckDBConnectionController {
     static async getCollectionInstance(collectionName, opts = {persistent: true}) {
         return mutex.runExclusive(async () => {
             if (!db) {
@@ -50,6 +42,11 @@ export default class DuckDBWorkerManager {
             if (currentCollectionName === collectionName) {
                 return db;
             }
+            try {
+                await db.dropFiles();
+                await db.flushFiles();
+                await db.reset();
+            } catch (e) {console.log(e);}
             await db.open({
                 path: opts.persistent ? `opfs://${collectionName}.db` : `./${collectionName}.db`,
                 accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3
@@ -68,7 +65,24 @@ export default class DuckDBWorkerManager {
         debouncedTerminate();
     }
 
+    static async forceTerminate() {
+        if (db) {
+            try {
+                await db.dropFiles();
+                await db.flushFiles();
+                await db.reset();
+            } catch (e) {console.log(e);}
+            await db.terminate();
+            db = null;
+            currentCollectionName = null;
+            isTerminated = true;
+        }
+    }
+
     static cancelTerminate() {
         debouncedTerminate.cancel();
     }
 }
+
+const debouncedTerminate = debounce(DuckDBConnectionController.forceTerminate,
+    3 * 60 * 1000); // 3 minutes

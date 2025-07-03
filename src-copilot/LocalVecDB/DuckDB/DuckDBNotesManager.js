@@ -1,14 +1,14 @@
 import {LOCAL_VEC_DB_INDEX_VERSION} from "../../constants.js";
-import DuckDBWorkerManager from "./DuckDBWorkerManager.js";
-import {OPFSManager} from "./OPFSManager.js";
+import DuckDBConnectionController from "./DuckDBConnectionController.js";
+import {OPFSUtils} from "./OPFSUtils.js";
 import {isArray} from "lodash-es";
 
 let instance;
-export class DuckDBManager {
+export class DuckDBNotesManager {
     async init() {
-        if (this.db && !DuckDBWorkerManager.isTerminated()) return;
+        if (this.db && !DuckDBConnectionController.isTerminated()) return;
         try {
-            this.db = await DuckDBWorkerManager.getCollectionInstance('CopilotLocalVecDB');
+            this.db = await DuckDBConnectionController.getCollectionInstance('CopilotLocalVecDB');
             const conn = await this.db.connect();
 
             // Check if we need to reset the database due to version change
@@ -20,7 +20,7 @@ export class DuckDBManager {
             }
             await conn.send(`CHECKPOINT;`);
             await conn.close();
-            if (await OPFSManager.doesFileExists(`CopilotLocalVecDB.db`) === false) {
+            if (await OPFSUtils.doesFileExists(`CopilotLocalVecDB.db`) === false) {
                 throw new Error('DuckDB file not created in OPFS after all init operations');
             }
         } catch (e) {
@@ -437,43 +437,5 @@ export class DuckDBManager {
         }
     }
 
-    async wtf(embedding) {
-        await this.init();
-        let conn;
-        try {
-            conn = await this.db.connect();
 
-            const stmt = await conn.prepare(`
-                SELECT
-                    *,
-                    list_dot_product(embedding, ?) as similarity
-                FROM
-                    read_parquet('https://unpkg.com/my-ample-plugin-external@1.0.24/bundles/localHelpCenterEmbeddings.parquet')
-                ORDER BY
-                    similarity DESC
-                LIMIT ?;
-            `);
-            const result = await stmt.query(JSON.stringify(Array.from(embedding)), 10);
-            const rows = result.toArray();
-            const resArr = [];
-            rows.forEach(row => {
-                resArr.push({
-                    id: row.id,
-                    noteUUID: row.noteUUID,
-                    noteTitle: row.noteTitle,
-                    actualNoteContentPart: row.actualNoteContentPart,
-                    similarity: row.similarity
-                });
-            });
-            console.log('help rows', resArr);
-            return resArr;
-        } catch (e) {
-            console.error("Failed to get config value:", e);
-            throw e;
-        } finally {
-            if (conn) {
-                await conn.close();
-            }
-        }
-    }
 }

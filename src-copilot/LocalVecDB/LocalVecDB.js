@@ -5,7 +5,6 @@ import {syncNotes} from "./syncNotes.js";
 import {searchNotes} from "./searchNotes.js";
 import {searchHelpCenter} from "./searchHelpCenter.js";
 import {getSyncState} from "./getSyncState.js";
-import {loadHelpCenterEmbeddings} from "./loadHelpCenterEmbeddings.js";
 
 let syncNotesPromise;
 export class LocalVecDB {
@@ -32,9 +31,5 @@ export class LocalVecDB {
 
     async searchHelpCenter(app, query, opts) {
         return await searchHelpCenter(app, query, opts);
-    }
-
-    async loadHelpCenterEmbeddings(app) {
-        return await loadHelpCenterEmbeddings(app);
     }
 }

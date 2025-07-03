@@ -1,8 +1,8 @@
 import {getSyncState} from "./getSyncState.js";
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
-import { DuckDBManager } from "./DuckDB/DuckDBManager.js";
+import { DuckDBNotesManager } from "./DuckDB/DuckDBNotesManager.js";
 import {debounce} from "lodash-es";
-import DuckDBWorkerManager from "./DuckDB/DuckDBWorkerManager.js";
+import DuckDBConnectionController from "./DuckDB/DuckDBConnectionController.js";
 
 export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
     isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null}) => {
@@ -11,8 +11,8 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
 
     if (!queryText || !queryText.trim()) return [];
 
-    const dbm = new DuckDBManager();
-    await DuckDBWorkerManager.cancelTerminate();
+    const dbm = new DuckDBNotesManager();
+    await DuckDBConnectionController.cancelTerminate();
     try {
         // Get embeddings for the query text
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
@@ -24,7 +24,7 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
             isSharedWithMe,
             isTaskListNote
         });
-        DuckDBWorkerManager.scheduleTerminate();
+        DuckDBConnectionController.scheduleTerminate();
         return results;
     } catch (e) {
         throw new Error(`Error querying vectors: ${e}`);
