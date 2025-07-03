@@ -436,4 +436,44 @@ export class DuckDBManager {
             }
         }
     }
+
+    async wtf(embedding) {
+        await this.init();
+        let conn;
+        try {
+            conn = await this.db.connect();
+
+            const stmt = await conn.prepare(`
+                SELECT
+                    *,
+                    list_dot_product(embedding, ?) as similarity
+                FROM
+                    read_parquet('https://unpkg.com/my-ample-plugin-external@1.0.24/bundles/localHelpCenterEmbeddings.parquet')
+                ORDER BY
+                    similarity DESC
+                LIMIT ?;
+            `);
+            const result = await stmt.query(JSON.stringify(Array.from(embedding)), 10);
+            const rows = result.toArray();
+            const resArr = [];
+            rows.forEach(row => {
+                resArr.push({
+                    id: row.id,
+                    noteUUID: row.noteUUID,
+                    noteTitle: row.noteTitle,
+                    actualNoteContentPart: row.actualNoteContentPart,
+                    similarity: row.similarity
+                });
+            });
+            console.log('help rows', resArr);
+            return resArr;
+        } catch (e) {
+            console.error("Failed to get config value:", e);
+            throw e;
+        } finally {
+            if (conn) {
+                await conn.close();
+            }
+        }
+    }
 }

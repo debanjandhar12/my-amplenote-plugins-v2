@@ -321,7 +321,7 @@ const plugin = {
             return await new LocalVecDB().searchNotes(app, queryText, queryTextType, opts);
         },
         "searchHelpCenter": async function (app, queryText, opts) {
-            await new LocalVecDB().loadHelpCenterEmbeddings(app);
+            // await new LocalVecDB().loadHelpCenterEmbeddings(app);
             return await new LocalVecDB().searchHelpCenter(app, queryText, opts);
         },
         "getMatchedPartWithFuzzySearch": async function (app, noteUUID, searchText, limit) {

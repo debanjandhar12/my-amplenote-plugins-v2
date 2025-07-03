@@ -22,7 +22,7 @@ const debouncedTerminate = debounce(async () => {
     }
 }, 3 * 60 * 1000); // 3 minutes
 export default class DuckDBWorkerManager {
-    static async getCollectionInstance(collectionName, {persistent = true}) {
+    static async getCollectionInstance(collectionName, opts = {persistent: true}) {
         return mutex.runExclusive(async () => {
             if (!db) {
                 const {
@@ -51,7 +51,7 @@ export default class DuckDBWorkerManager {
                 return db;
             }
             await db.open({
-                path: persistent ? `opfs://${collectionName}.db` : `./${collectionName}.db`,
+                path: opts.persistent ? `opfs://${collectionName}.db` : `./${collectionName}.db`,
                 accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3
             });
             currentCollectionName = collectionName;
@@ -68,7 +68,7 @@ export default class DuckDBWorkerManager {
         debouncedTerminate();
     }
 
-    static async cancelTerminate() {
+    static cancelTerminate() {
         debouncedTerminate.cancel();
     }
 }

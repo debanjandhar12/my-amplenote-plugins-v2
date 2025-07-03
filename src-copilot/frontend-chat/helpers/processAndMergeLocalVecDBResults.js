@@ -5,6 +5,10 @@ export const processAndMergeLocalVecDBResults = async (results, thresholdScore =
         .filter(result => result.similarity >= thresholdScore)
         .sort((a, b) => a.id.localeCompare(b.id));
 
+    if (filteredResults.length === 0) {
+        return [];
+    }
+
     // merge results with the same note
     const mergedResults = [];
     let currentResult = filteredResults[0];
