@@ -8,7 +8,7 @@ export class DuckDBNotesManager {
     async init() {
         if (this.db && !DuckDBConnectionController.isTerminated()) return;
         try {
-            this.db = await DuckDBConnectionController.getCollectionInstance('CopilotLocalVecDB');
+            this.db = await DuckDBConnectionController.getCollectionInstance('CopilotNotesDB', {persistent: true});
             const conn = await this.db.connect();
 
             // Check if we need to reset the database due to version change

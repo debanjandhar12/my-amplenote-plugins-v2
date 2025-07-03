@@ -30,14 +30,21 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
     try {
         // -- Initialize --
         const performanceStartTime = performance.now();
+
+        try {indexedDB.deleteDatabase('LocalVecDB')} catch(e){} // Delete older IndexedDB
+
         if (!await OPFSUtils.checkSupport()) {
             throw new Error('OPFS is not supported in this browser. It is required for LocalVecDB.');
         }
-        if (!await OPFSUtils.isPersisted()) {
-            throw new Error('OPFS is not persisted. Please enable the storage permission in your browser. It is required for LocalVecDB.');
+        if (!await OPFSUtils.isPersisted() && !await OPFSUtils.askStoragePermission()) {
+            const confirm = await app.prompt(`OPFS is not persisted. The browser may delete your data. For better reliability, it's recommended to enable persistent storage. Do you want to ignore this and continue anyway?`, {
+                inputs: []
+            });
+            if (!confirm) {
+                DuckDBConnectionController.scheduleTerminate();
+                return;
+            }
         }
-
-        try {indexedDB.deleteDatabase('LocalVecDB')} catch(e){} // Delete older IndexedDB
 
         sendMessageToEmbed(app, 'syncNotesProgress', `Starting sync...`);
         const dbm = new DuckDBNotesManager();
@@ -70,7 +77,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         await writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, dbm);
 
         // Clear notes that were deleted
-        sendMessageToEmbed(app, 'syncNotesProgress', `Preprocessing database...`);
+        sendMessageToEmbed(app, 'syncNotesProgress', `Sanitizing database...`);
         await dbm.deleteNoteRecordByNoteUUIDNotInList(allNotes.map(note => note.uuid));
 
         // Process each batch of notes

@@ -15,6 +15,14 @@ export class OPFSUtils {
         return true;
     }
 
+    static async askStoragePermission() {
+        try {
+            return await navigator.storage.persist();
+        } catch (error) {
+            return false;
+        }
+    }
+
     /**
      * Checks if the Origin Private File System (OPFS) is persisted.
      * @returns {boolean} True if OPFS is persisted, false otherwise.
@@ -84,8 +92,8 @@ export class OPFSUtils {
      * Lists all files present directly at the root of the OPFS.
      * Does not list files in subdirectories.
      *
-     * @returns {Promise<Array<{fileName: string, fileSize: number}>>} A promise that resolves
-     *          with an array of objects, each containing the file's name and size.
+     * @returns {Promise<Array<{fileName: string, fileSizeMB: number}>>} A promise that resolves
+     *          with an array of objects, each containing the file's name and size in megabytes.
      *          Returns an empty array if the root is empty or no files are present.
      * @throws {Error} If unable to list files from the OPFS root.
      */
@@ -104,7 +112,7 @@ export class OPFSUtils {
 
                         fileList.push({
                             fileName: name,
-                            fileSize: file.size
+                            fileSizeMB: Math.round(file.size / 1024 / 1024)
                         });
                     } catch (fileError) {
                         console.warn(`Could not get details for file '${name}':`, fileError);
