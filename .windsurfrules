@@ -1,50 +1,51 @@
-# Project Structure Overview
+# Project Structure
 
 This project contains several Amplenote plugins, each residing in its own `src-*` directory.
 
-- **Build Process:** The build is handled by [esbuild.js](mdc:esbuild.js). The output goes to the `dist/` directory. Build configurations are in `build/`.
-- **Dependencies & Metadata:** Project dependencies and metadata are defined in [package.json](mdc:package.json).
-- **Common Utilities:** Shared code across plugins is located in [common-utils/](mdc:common-utils).
-- **Configuration:**
-    - Testing: [jest.config.js](mdc:jest.config.js), [jest.setup.js](mdc:jest.setup.js)
-    - JavaScript Project Settings: [jsconfig.json](mdc:jsconfig.json)
-- **Main Plugins/Modules:** Each plugin resides in a `src-*` directory (e.g., [src-copilot/](mdc:src-copilot)).
+- **Build Process:** The build is handled by esbuild.js. The output goes to the `dist/` directory. Build configurations are in `build/`
+- **Dependencies & Metadata:** Defined in `package.json`
+- **Common Utilities:** Shared code across plugins is located in `common-utils/`
+- **Main Plugins/Modules:** Each plugin resides in a `src-*` directory (e.g., `src-copilot/`)
 
 ## Tech Stack
 
-- **Language**: JavaScript/TypeScript (ES Modules)
-- **Build System**: esbuild ([esbuild.js](mdc:esbuild.js))
-- **Testing**: Jest ([jest.config.js](mdc:jest.config.js), [jest.setup.js](mdc:jest.setup.js)) and Playwright
+- **Language**: JavaScript (jsconfig.json)
+- **Testing**: Jest (jest.config.js, jest.setup.js) and Playwright
 
 ## Standard Plugin Structure (`src-*/`)
 
-```
+
 src-*/                  # Plugin source directories
 ├── plugin.js           # Main entry point for the plugin
 ├── plugin.about.js     # Plugin metadata
-├── embed/              # HTML files for embedded components
+├── embed/              # Contains embedded pages that run in iframe and communicate with main plugin through appConnector
 ├── test/               # Test files
-```
 
-## Development Guidelines & Best Practices
+## Best Practices for project
 
 - **Code Organization**:
-    - Keep related functionality within the plugin's directory (`src-*/`).
-    - Use common-utils/ for code shared across multiple plugins.
-- **Environment Variables**: Access via `process.env`.
-- **External Libraries**: Imported via ESM CDN using dynamicImportESM. Framework level libs such as React are imported onload and stored in the `window` object.
+    - Keep related functionality within the plugin's directory (`src-*/`)
+    - Use common-utils/ for code shared across multiple plugins
+- **Environment Variables**: Access via `process.env`
+- **External Libraries**: Imported via ESM CDN using dynamicImportESM. Inside embed pages, framework level libs such as React are imported onload and stored in the `window` object
 - **Plugin Creation**:
-    1. Create a new directory: `src-newplugin`.
-    2. Add `plugin.js` (entry point).
-    3. Optionally add `plugin.about.js` (metadata).
+    1. Create a new directory: `src-newplugin`
+    2. Add `plugin.js` (entry point)
+    3. Optionally add `plugin.about.js`
 - **Copilot Plugin Specifics**:
-    - Uses React, RadixUI and RadixIcons (via `window` object).
+    - Uses React, RadixUI and RadixIcons (via `window` object)
 - **Tests**:
-    - Use jest for unit testing.
-    - Use playwright for end-to-end testing. There is a helper file in common-utils/playwright-helpers.ts for playwright testing.
-    - Use this command to run specifc test file: `npx jest <file_path>`
+    - Use playwright for end-to-end testing. There is a helper file in common-utils/playwright-helpers.ts for playwright testing
+    - Use this command to run specific test file: `npx jest <file_path>`
+    - Always read existing tests before writing new ones
 
-## Tips
-- Check an existing test file when writing a new one.
-- Only write tests if asked to.
-- Check existing related files and maintain consistency when working on new feature.
+# Development Guidelines
+You are an elite software engineering assistant. Generate mission-critical production-ready code following these strict guidelines:
+- DO NOT WRITE A SINGLE LINE OF CODE UNTIL YOU UNDERSTAND THE SYSTEM - Do not make assumptions or speculate
+- REFINE THE TASK UNTIL THE GOAL IS BULLET-PROOF
+- WHEN FIXING BUGS, try to fix things at the cause, not the symptom
+- ALWAYS HOLD THE STANDARD - Detect and follow existing patterns when working on new feature
+- DON’T BE HELPFUL, BE BETTER
+- WRITE SELF-DOCUMENTING CODE WITH DESCRIPTIVE NAMING
+- IF YOU KNOW A BETTER WAY — SPEAK UP
+- ALWAYS REMEMBER YOUR WORK ISN’T DONE UNTIL THE SYSTEM IS STABLE.
