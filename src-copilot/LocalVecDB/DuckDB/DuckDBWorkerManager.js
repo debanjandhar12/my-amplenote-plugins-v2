@@ -1,5 +1,4 @@
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
-import {OPFSManager} from "./OPFSManager.js";
 import {debounce} from "lodash-es";
 import { Mutex } from "async-mutex";
 // import {
@@ -12,10 +11,18 @@ import { Mutex } from "async-mutex";
 //         VoidLogger
 // } from "@duckdb/duckdb-wasm";
 
-let db, isTerminated = true, debouncedTerminateDatabase;
+let db, isTerminated = true, currentCollectionName;
 const mutex = new Mutex();
+const debouncedTerminate = debounce(async () => {
+    if (db) {
+        await db.terminate();
+        db = null;
+        currentCollectionName = null;
+        isTerminated = true;
+    }
+}, 3 * 60 * 1000); // 3 minutes
 export default class DuckDBWorkerManager {
-    static async getCollectionInstance(collectionName) {
+    static async getCollectionInstance(collectionName, {persistent = true}) {
         return mutex.runExclusive(async () => {
             if (!db) {
                 const {
@@ -40,10 +47,14 @@ export default class DuckDBWorkerManager {
                 db = new AsyncDuckDB(logger, worker);
                 await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
             }
+            if (currentCollectionName === collectionName) {
+                return db;
+            }
             await db.open({
-                path: `opfs://${collectionName}.db`,
+                path: persistent ? `opfs://${collectionName}.db` : `./${collectionName}.db`,
                 accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3
             });
+            currentCollectionName = collectionName;
             isTerminated = false;
             return db;
         });
@@ -53,19 +64,11 @@ export default class DuckDBWorkerManager {
         return isTerminated;
     }
 
-    static debouncedTerminateDatabase() {
-      debouncedTerminateDatabase = debounce(async () => {
-        if (db) {
-            await db.terminate();
-            db = null;
-            isTerminated = true;
-        }
-      }, 3 * 60000); // 3 minutes
+    static scheduleTerminate() {
+        debouncedTerminate();
     }
 
-    static async cancelDebouncedTerminateDatabase() {
-      if (debouncedTerminateDatabase) {
-        debouncedTerminateDatabase.cancel();
-      }
+    static async cancelTerminate() {
+        debouncedTerminate.cancel();
     }
 }

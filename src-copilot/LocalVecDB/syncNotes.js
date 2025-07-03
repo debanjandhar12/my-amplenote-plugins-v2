@@ -41,7 +41,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
 
         sendMessageToEmbed(app, 'syncNotesProgress', `Starting sync...`);
         const dbm = new DuckDBManager();
-        await DuckDBWorkerManager.cancelDebouncedTerminateDatabase();
+        await DuckDBWorkerManager.cancelTerminate();
         const embeddingProviderName = getEmbeddingProviderName(app);
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
         let lastSyncTime = await dbm.getConfigValue('lastSyncTime')
@@ -104,13 +104,13 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
                 await updateSyncConfigs(dbm, app.context.pluginUUID, embeddingGenerator.MODEL_NAME);
 
                 // Just in case, cancel the debounced terminate database
-                await DuckDBWorkerManager.cancelDebouncedTerminateDatabase();
+                await DuckDBWorkerManager.cancelTerminate();
             }, {priority: 'background'});
         }
 
         // Final update of sync time
         await dbm.setConfigValue('lastSyncTime', new Date().toISOString());
-        DuckDBWorkerManager.debouncedTerminateDatabase();
+        DuckDBWorkerManager.scheduleTerminate();
 
         console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', targetNotes.length);
         sendMessageToEmbed(app, 'syncNotesProgress', `${totalNoteCount}/${totalNoteCount}<br />Sync Completed!`);

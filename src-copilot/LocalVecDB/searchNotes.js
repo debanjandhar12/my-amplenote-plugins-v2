@@ -12,7 +12,7 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
     if (!queryText || !queryText.trim()) return [];
 
     const dbm = new DuckDBManager();
-    await DuckDBWorkerManager.cancelDebouncedTerminateDatabase();
+    await DuckDBWorkerManager.cancelTerminate();
     try {
         // Get embeddings for the query text
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
@@ -24,7 +24,7 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
             isSharedWithMe,
             isTaskListNote
         });
-        DuckDBWorkerManager.debouncedTerminateDatabase();
+        DuckDBWorkerManager.scheduleTerminate();
         return results;
     } catch (e) {
         throw new Error(`Error querying vectors: ${e}`);

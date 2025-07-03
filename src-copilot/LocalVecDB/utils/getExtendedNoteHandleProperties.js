@@ -1,42 +1,59 @@
-import {debounce} from "lodash-es";
+import { debounce } from "lodash-es";
 
 /**
  * Util class that returns:
  * isArchived, isTaskListNote, isSharedByMe, isSharedWithMe, isPublished
  */
-let searchResultCache = null, debouncedClearSearchResultCache = null;
+let searchResultCache = null;
+
+const debouncedClearSearchResultCache = debounce(() => {
+    searchResultCache = null;
+    console.log("🔄 Cleared search result cache due to inactivity.");
+}, 3 * 60 * 1000); // 3 minutes
+
 export async function getExtendedNoteHandleProperties(app, note) {
     if (!searchResultCache) {
         searchResultCache = {};
-        const isArchivedSearch = await app.filterNotes({group: "archived"});
+
+        const isArchivedSearch = await app.filterNotes({ group: "archived" });
         if (isArchivedSearch) {
-            searchResultCache.isArchivedNoteUUIDs = new Set(isArchivedSearch.map(note => note.uuid));
+            searchResultCache.isArchivedNoteUUIDs = new Set(isArchivedSearch.map(n => n.uuid));
         }
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const isTaskListNoteSearch = await app.filterNotes({group: "taskList"});
+
+        await delay(1000);
+
+        const isTaskListNoteSearch = await app.filterNotes({ group: "taskList" });
         if (isTaskListNoteSearch) {
-            searchResultCache.isTaskListNoteUUIDs = new Set(isTaskListNoteSearch.map(note => note.uuid));
+            searchResultCache.isTaskListNoteUUIDs = new Set(isTaskListNoteSearch.map(n => n.uuid));
         }
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const isSharedByMeSearch = await app.filterNotes({group: "shared"});
+
+        await delay(1000);
+
+        const isSharedByMeSearch = await app.filterNotes({ group: "shared" });
         if (isSharedByMeSearch) {
-            searchResultCache.isSharedByMeNoteUUIDs = new Set(isSharedByMeSearch.map(note => note.uuid));
+            searchResultCache.isSharedByMeNoteUUIDs = new Set(isSharedByMeSearch.map(n => n.uuid));
         }
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const isSharedWithMeSearch = await app.filterNotes({group: "shareReceived"});
+
+        await delay(1000);
+
+        const isSharedWithMeSearch = await app.filterNotes({ group: "shareReceived" });
         if (isSharedWithMeSearch) {
-            searchResultCache.isSharedWithMeNoteUUIDs = new Set(isSharedWithMeSearch.map(note => note.uuid));
+            searchResultCache.isSharedWithMeNoteUUIDs = new Set(isSharedWithMeSearch.map(n => n.uuid));
         }
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        debouncedClearSearchResultCache = debounce(() => {
-            searchResultCache = null;
-        }, 3 * 60000); // 3 minutes
     }
+
+    // Reset debounce timer to clear cache after inactivity
+    debouncedClearSearchResultCache();
+
     return {
-        isArchived: searchResultCache.isArchivedNoteUUIDs.has(note.uuid),
-        isTaskListNote: searchResultCache.isTaskListNoteUUIDs.has(note.uuid),
-        isSharedByMe: searchResultCache.isSharedByMeNoteUUIDs.has(note.uuid),
-        isSharedWithMe: searchResultCache.isSharedWithMeNoteUUIDs.has(note.uuid),
-        isPublished: note.published || false
+        isArchived: searchResultCache.isArchivedNoteUUIDs?.has(note.uuid) ?? false,
+        isTaskListNote: searchResultCache.isTaskListNoteUUIDs?.has(note.uuid) ?? false,
+        isSharedByMe: searchResultCache.isSharedByMeNoteUUIDs?.has(note.uuid) ?? false,
+        isSharedWithMe: searchResultCache.isSharedWithMeNoteUUIDs?.has(note.uuid) ?? false,
+        isPublished: note.published || false,
     };
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
