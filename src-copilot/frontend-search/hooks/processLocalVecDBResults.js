@@ -1,8 +1,7 @@
 import {stripYAMLFromMarkdown} from "../../markdown/stripYAMLFromMarkdown.js";
 
-export const processLocalVecDBResults = async (results, thresholdScore = 0.15) => {
+export const processLocalVecDBResults = async (results) => {
     const filteredResults = results
-        .filter(result => result.similarity >= thresholdScore)
         //Keep only the highest-scored result for each unique noteUUID.
         .reduce((acc, result) => {
             const uuid = result.noteUUID;

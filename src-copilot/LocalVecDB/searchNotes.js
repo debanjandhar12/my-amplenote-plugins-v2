@@ -17,7 +17,7 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
         // Get embeddings for the query text
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
         const queryVector = (await embeddingGenerator.generateEmbedding(app, queryText, queryTextType || "query"))[0];
-        const results = await dbm.searchNoteRecordByEmbedding(queryVector, {
+        const results = await dbm.searchNoteRecordByRRF(queryText, queryVector, {
             limit,
             isArchived,
             isSharedByMe,

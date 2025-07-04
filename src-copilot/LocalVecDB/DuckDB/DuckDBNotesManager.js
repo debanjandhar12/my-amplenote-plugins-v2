@@ -54,30 +54,6 @@ export class DuckDBNotesManager {
             CREATE INDEX IF NOT EXISTS idx_user_note_embeddings_uuid ON USER_NOTE_EMBEDDINGS(noteUUID)
         `);
 
-        // Help center embeddings table
-        await conn.query(`
-            CREATE TABLE IF NOT EXISTS HELP_CENTER_EMBEDDINGS (
-                id VARCHAR PRIMARY KEY,
-                actualNoteContentPart VARCHAR,
-                embedding FLOAT[],
-                headingAnchor VARCHAR,
-                isArchived BOOLEAN,
-                isPublished BOOLEAN,
-                isSharedByMe BOOLEAN,
-                isSharedWithMe BOOLEAN,
-                isTaskListNote BOOLEAN,
-                noteTags VARCHAR[],
-                noteTitle VARCHAR,
-                noteUUID VARCHAR,
-                processedNoteContent VARCHAR
-            )
-        `);
-
-        // Create index on noteUUID for help center
-        await conn.query(`
-            CREATE INDEX IF NOT EXISTS idx_help_center_embeddings_uuid ON HELP_CENTER_EMBEDDINGS(noteUUID)
-        `);
-
         // Config table
         await conn.query(`
             CREATE TABLE IF NOT EXISTS DB_CONFIG (
@@ -96,7 +72,6 @@ export class DuckDBNotesManager {
         try {
             await conn.query('DROP TABLE IF EXISTS DB_CONFIG');
             await conn.query('DROP TABLE IF EXISTS USER_NOTE_EMBEDDINGS');
-            await conn.query('DROP TABLE IF EXISTS HELP_CENTER_EMBEDDINGS');
             console.log('DuckDBManager resetTables completed');
         } catch (e) {
             console.error('Error resetting tables:', e);
@@ -222,8 +197,114 @@ export class DuckDBNotesManager {
         conn.close();
     }
 
-    async searchNoteRecordByEmbedding(embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
+    async updateFTSIndex() {
         await this.init();
+        let conn;
+        try {
+          conn = await this.db.connect();
+          const isUpdated = await this._getConfigValue(conn, 'lastSyncTime') === await this._getConfigValue(conn, 'lastFTSIndexTime');
+          if (!isUpdated) {
+            await conn.query(`PRAGMA create_fts_index('USER_NOTE_EMBEDDINGS', 'id', 'processedNoteContent', overwrite=1)`);
+            await this._setConfigValue(conn, 'lastFTSIndexTime', await this._getConfigValue(conn, 'lastSyncTime'));
+            await conn.send(`CHECKPOINT;`);
+          }
+        }
+        catch (e) {
+          conn.close();
+          throw e;
+        }
+    }
+
+    // async searchNoteRecordByEmbedding(embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
+    //     await this.init();
+    //     let conn;
+    //     let stmt;
+
+    //     try {
+    //         conn = await this.db.connect();
+
+    //         // Build WHERE clause conditions
+    //         const conditions = ['similarity > ?'];
+    //         const params = [];
+
+    //         if (isArchived !== null) {
+    //             conditions.push('isArchived = ?');
+    //             params.push(isArchived);
+    //         }
+    //         if (isSharedByMe !== null) {
+    //             conditions.push('isSharedByMe = ?');
+    //             params.push(isSharedByMe);
+    //         }
+    //         if (isSharedWithMe !== null) {
+    //             conditions.push('isSharedWithMe = ?');
+    //             params.push(isSharedWithMe);
+    //         }
+    //         if (isTaskListNote !== null) {
+    //             conditions.push('isTaskListNote = ?');
+    //             params.push(isTaskListNote);
+    //         }
+
+    //         const whereClause = conditions.join(' AND ');
+
+    //         stmt = await conn.prepare(`
+    //             SELECT
+    //                 *,
+    //                 list_dot_product(embedding, ?) as similarity
+    //             FROM
+    //                 USER_NOTE_EMBEDDINGS
+    //             WHERE
+    //                 ${whereClause}
+    //             ORDER BY
+    //                 similarity DESC
+    //             LIMIT ?;
+    //         `);
+
+    //         if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
+    //             // Convert to array so we can JSON.stringify it
+    //             embedding = Array.from(embedding);
+    //         }
+    //         if (!isArray(embedding)) {
+    //             throw new Error('Embedding must be an array of numbers.');
+    //         }
+
+    //         const results = await stmt.query(JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
+    //         let jsonResults = results.toArray().map(row => row.toJSON());
+    //         jsonResults.forEach(row => {
+    //             if (row.embedding) {
+    //                 row.embedding = row.embedding.toArray();
+    //             }
+    //             if (!(row.embedding instanceof Float32Array)) {
+    //                 row.embedding = new Float32Array(row.embedding);
+    //             }
+    //             if (row.noteTags) {
+    //                 row.noteTags = row.noteTags.toArray();
+    //             }
+    //         });
+
+    //         return jsonResults;
+    //     } catch (e) {
+    //         console.error("Failed to search note embedding:", e);
+    //         throw e;
+    //     } finally {
+    //         if (stmt) {
+    //             await stmt.close();
+    //         }
+    //         if (conn) {
+    //             await conn.close();
+    //         }
+    //     }
+    // }
+
+    /**
+     * Search note records by RRF (Reciprocal Ranked Fusion).
+     * This method combines results from a full-text search (BM25) and a vector similarity search.
+     * @param {string} query The text query for the full-text search.
+     * @param {Array<number>|Float32Array|Float64Array} embedding The query embedding for the vector search.
+     * @param {object} options Search options.
+     */
+    async searchNoteRecordByRRF(query, embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
+        await this.init();
+        await this.updateFTSIndex();
         let conn;
         let stmt;
 
@@ -252,18 +333,55 @@ export class DuckDBNotesManager {
             }
 
             const whereClause = conditions.join(' AND ');
-
             stmt = await conn.prepare(`
-                SELECT
-                    *,
-                    list_dot_product(embedding, ?) as similarity
-                FROM
-                    USER_NOTE_EMBEDDINGS
-                WHERE
-                    ${whereClause}
-                ORDER BY
-                    similarity DESC
-                LIMIT ?;
+              WITH fts_ranked AS (
+                  SELECT
+                      id,
+                      ROW_NUMBER() OVER (ORDER BY FTS_MAIN_USER_NOTE_EMBEDDINGS.match_bm25(id, ?) DESC) as rank
+                  FROM
+                      USER_NOTE_EMBEDDINGS
+              ),
+              embed_ranked AS (
+                  SELECT
+                      id,
+                      list_dot_product(embedding, ?) as embedding_similarity,
+                      ROW_NUMBER() OVER (ORDER BY embedding_similarity DESC) as rank
+                  FROM
+                      USER_NOTE_EMBEDDINGS
+              ),
+              fused_scores AS (
+                  SELECT
+                      COALESCE(fts.id, embed.id) AS id,
+                      embed.embedding_similarity as embedding_similarity,
+                      (rrf(fts.rank) + rrf(embed.rank)) * (61/2) AS similarity
+                  FROM
+                      fts_ranked AS fts
+                  FULL OUTER JOIN
+                      embed_ranked AS embed ON fts.id = embed.id
+              )
+              SELECT
+                  main.id,
+                  main.actualNoteContentPart,
+                  main.embedding,
+                  main.headingAnchor,
+                  main.isSharedByMe,
+                  main.isSharedWithMe,
+                  main.isTaskListNote,
+                  main.noteTags,
+                  main.noteTitle,
+                  main.noteUUID,
+                  main.processedNoteContent,
+                  fused.embedding_similarity as embedding_similarity,
+                  fused.similarity
+              FROM
+                  fused_scores AS fused
+              JOIN
+                  USER_NOTE_EMBEDDINGS AS main ON fused.id = main.id
+              WHERE
+                ${whereClause}
+              ORDER BY
+                  fused.similarity DESC
+              LIMIT ?;
             `);
 
             if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
@@ -274,7 +392,7 @@ export class DuckDBNotesManager {
                 throw new Error('Embedding must be an array of numbers.');
             }
 
-            const results = await stmt.query(JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
+            const results = await stmt.query(query, JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
             let jsonResults = results.toArray().map(row => row.toJSON());
             jsonResults.forEach(row => {
                 if (row.embedding) {
@@ -436,6 +554,4 @@ export class DuckDBNotesManager {
             }
         }
     }
-
-
 }

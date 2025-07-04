@@ -46,11 +46,18 @@ export default class DuckDBConnectionController {
                 await db.dropFiles();
                 await db.flushFiles();
                 await db.reset();
+                await new Promise(resolve => setTimeout(resolve, 100));
             } catch (e) {console.log(e);}
             await db.open({
                 path: opts.persistent ? `opfs://${collectionName}.db` : `./${collectionName}.db`,
                 accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3
             });
+            const conn = await db.connect();
+            await conn.query("INSTALL fts");
+            await conn.query("LOAD fts");
+            await conn.query(`CREATE OR REPLACE MACRO rrf(rank, k:=60) AS
+                      coalesce((1 / (k + rank)), 0)`);
+            await conn.close();
             currentCollectionName = collectionName;
             isTerminated = false;
             return db;
