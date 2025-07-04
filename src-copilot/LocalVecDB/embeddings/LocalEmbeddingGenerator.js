@@ -1,11 +1,11 @@
 import {EmbeddingGeneratorBase} from "./EmbeddingGeneratorBase.js";
 import 'scheduler-polyfill';
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
-
+import {LOCAL_VEC_DB_MAX_TOKENS} from "../../constants.js";
 
 export class LocalEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('Snowflake/snowflake-arctic-embed-s', 0, true, 1);
+        super('Xenova/jina-embeddings-v2-small-en', 0, true, 1);
     }
 
     async generateEmbedding(app, textArray, inputType) {
@@ -13,7 +13,7 @@ export class LocalEmbeddingGenerator extends EmbeddingGeneratorBase {
         await scheduler.postTask(async () => {
             await LocalEmbeddingGeneratorInner.initLocalEmbeddingWorker();
             textArray = this.getProcessedTextArray(textArray, inputType,
-            "", "Represent this sentence for searching relevant passages: ");
+            "", "");
             embeddings = await Promise.all(textArray.map(text =>
                 LocalEmbeddingGeneratorInner.generateEmbeddingUsingLocal(text, inputType)));
         }, {priority: 'user-visible'});
@@ -39,7 +39,7 @@ class LocalEmbeddingGeneratorInner {
         while (LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing) {
             await new Promise(resolve => setTimeout(resolve, 100));
         }
-        if (!LocalEmbeddingGeneratorInner.generateEmbeddingWorker 
+        if (!LocalEmbeddingGeneratorInner.generateEmbeddingWorker
             && !LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing) {
             LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing = true;
             const embeddingGenerator = new LocalEmbeddingGenerator();
@@ -104,8 +104,10 @@ const generateEmbeddingWorkerSource = ({ onMessage }) => {
             }
         }
         const output = await embeddingPipe(inputText, {
-            pooling: 'cls',
+            pooling: 'mean',
             normalize: true,
+            truncate: true,
+            max_length: LOCAL_VEC_DB_MAX_TOKENS // required for jina-embeddings-v2-small-en
         });
         release();
         return new Float32Array(output.data);

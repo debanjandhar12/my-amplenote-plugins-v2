@@ -3,7 +3,7 @@ import {EMBEDDING_API_KEY_SETTING} from "../../constants.js";
 
 export class PineconeEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('multilingual-e5-large', 0, true, 64);
+        super('llama-text-embed-v2', 0, true, 64);
     }
 
     async generateEmbedding(app, textArray, inputType) {

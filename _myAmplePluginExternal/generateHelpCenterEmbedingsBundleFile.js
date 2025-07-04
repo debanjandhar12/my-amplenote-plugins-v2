@@ -25,6 +25,8 @@ import {GoogleEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/Goo
  * OLLAMA_ORIGINS=https://plugins.amplenote.com ollama serve
  * ollama pull snowflake-arctic-embed:33m-s-fp16 (first time only)
  * npx jest --runTestsByPath ./_myAmplePluginExternal/generateHelpCenterEmbedingsBundleFile.js --passWithNoTests --testMatch "**"
+ * Once parquet files are generated, it can be browsed using:
+ * https://demo.duckui.com/
  */
 
 const CONFIG = {
