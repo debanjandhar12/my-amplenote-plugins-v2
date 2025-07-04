@@ -28,6 +28,9 @@ export async function validatePluginSettings(app) {
     if (!settings[LLM_API_URL_SETTING].trim()) {
         errors.push('LLM API URL cannot be empty.');
     }
+    if (settings[LLM_API_URL_SETTING].trim().includes('https://api.openai.com/v1/chat/completion')) {
+      errors.push('LLM API URL should not contain `/chat/completion` at end.');
+    }
     try {
         if (isLLMApiUrlValid) {
             await getLLMModel(app.settings);
@@ -35,11 +38,11 @@ export async function validatePluginSettings(app) {
     } catch (e) {
         errors.push(e.message);
     }
-    if (appSettings[LLM_MAX_TOKENS_SETTING] &&appSettings[LLM_MAX_TOKENS_SETTING].trim() !== '') {
-        if (isNaN(appSettings[LLM_MAX_TOKENS_SETTING])) {
+    if (settings[LLM_MAX_TOKENS_SETTING] && settings[LLM_MAX_TOKENS_SETTING].trim() !== '') {
+        if (isNaN(settings[LLM_MAX_TOKENS_SETTING])) {
             errors.push('LLM Max Tokens must be a valid number.');
         }
-        if (Number(appSettings[LLM_MAX_TOKENS_SETTING]) < 4096) {
+        if (Number(settings[LLM_MAX_TOKENS_SETTING]) < 4096) {
             errors.push('LLM Max Tokens must be greater than or equal to 4096.');
         }
     }

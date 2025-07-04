@@ -16,7 +16,11 @@ export class PineconeEmbeddingGenerator extends EmbeddingGeneratorBase {
         try {
             return await this._fetchEmbedding(app, textArray, inputType);
         } catch (e) {
-            if (e.message?.includes('rate limit') || e.message?.includes('failed to reach Pinecone')) {
+            const errorMessage = (e.message || '').toLowerCase();
+
+            if (errorMessage.includes('rate limit')
+                || errorMessage.includes('max embedding tokens')
+                || errorMessage.includes('failed to reach Pinecone')) {
                 console.warn('Pinecone embedding rate limit error detected. Waiting for 60 seconds...', e);
                 await this._handleRateLimit();
                 return await this._fetchEmbedding(app, textArray, inputType);

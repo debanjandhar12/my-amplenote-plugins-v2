@@ -14,7 +14,7 @@ export const useSearch = () => {
     const [searchOpts, setSearchOpts] = React.useState({
         isArchived: null, isSharedByMe: null, isSharedWithMe: null, isTaskListNote: null, isPublished: null
     });
-    const [syncStatus, setSyncStatus] = React.useState('');
+    const [syncStatus, setSyncStatus] = React.useState('Loading');
 
     // Fetch initial sync status
     const updateSyncStatus = async () => {

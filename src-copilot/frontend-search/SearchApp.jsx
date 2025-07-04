@@ -111,6 +111,7 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts, syncStatus }
         switch (status) {
             case 'Fully Synced':
                 return 'green';
+            case 'Loading':
             case 'Partially synced':
                 return 'yellow';
             default:

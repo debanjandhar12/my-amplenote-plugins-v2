@@ -37,7 +37,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
             throw new Error('OPFS is not supported in this browser. It is required for LocalVecDB.');
         }
         if (!await OPFSUtils.isPersisted() && !await OPFSUtils.askStoragePermission()) {
-            const confirm = await app.prompt(`OPFS is not persisted. The browser may delete your data. For better reliability, it's recommended to enable persistent storage. Do you want to ignore this and continue anyway?`, {
+            const confirm = await app.prompt(`OPFS is not persisted. The browser may delete the indexed data. For better reliability, it's recommended to enable persistent storage. Do you want to ignore this and continue anyway?`, {
                 inputs: []
             });
             if (!confirm) {
