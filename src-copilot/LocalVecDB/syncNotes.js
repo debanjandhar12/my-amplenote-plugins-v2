@@ -117,11 +117,15 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
 
         // Final update of sync time
         await dbm.setConfigValue('lastSyncTime', new Date().toISOString());
-        DuckDBConnectionController.scheduleTerminate();
+
+        // Update the fts index
+        sendMessageToEmbed(app, 'syncNotesProgress', `Updating index...`);
+        await dbm.updateFTSIndex();
 
         console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', targetNotes.length);
         sendMessageToEmbed(app, 'syncNotesProgress', `${totalNoteCount}/${totalNoteCount}<br />Sync Completed!`);
         app.alert("Sync completed!");
+        DuckDBConnectionController.scheduleTerminate();
         return true;
     } catch (e) {
         console.error('syncNotes error:', e);

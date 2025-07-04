@@ -353,7 +353,7 @@ export class DuckDBNotesManager {
                   SELECT
                       COALESCE(fts.id, embed.id) AS id,
                       embed.embedding_similarity as embedding_similarity,
-                      (rrf(fts.rank) + rrf(embed.rank)) * (61/2) AS similarity
+                      ( (0.6 * rrf(fts.rank)) + (1.4 * rrf(embed.rank)) ) * (61/2) AS similarity -- make similarity 0 to 1
                   FROM
                       fts_ranked AS fts
                   FULL OUTER JOIN
