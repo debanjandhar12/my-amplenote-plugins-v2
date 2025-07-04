@@ -12,12 +12,12 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
     if (!queryText || !queryText.trim()) return [];
 
     const dbm = new DuckDBNotesManager();
-    await DuckDBConnectionController.cancelTerminate();
+    DuckDBConnectionController.cancelTerminate();
     try {
         // Get embeddings for the query text
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
         const queryVector = (await embeddingGenerator.generateEmbedding(app, queryText, queryTextType || "query"))[0];
-        const results = await dbm.searchNoteRecordByRRF(queryText, queryVector, {
+        const results = await dbm.searchNoteRecordByEmbedding(queryVector, {
             limit,
             isArchived,
             isSharedByMe,

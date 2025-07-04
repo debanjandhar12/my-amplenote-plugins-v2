@@ -1,7 +1,7 @@
 import {LOCAL_VEC_DB_INDEX_VERSION} from "../../constants.js";
 import DuckDBConnectionController from "./DuckDBConnectionController.js";
 import {OPFSUtils} from "./OPFSUtils.js";
-import {isArray} from "lodash-es";
+import {isArray, truncate} from "lodash-es";
 
 let instance;
 export class DuckDBNotesManager {
@@ -197,103 +197,85 @@ export class DuckDBNotesManager {
         conn.close();
     }
 
-    async updateFTSIndex() {
+    async searchNoteRecordByEmbedding(embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
         await this.init();
         let conn;
+        let stmt;
+
         try {
-          conn = await this.db.connect();
-          const isUpdated = await this._getConfigValue(conn, 'lastSyncTime') === await this._getConfigValue(conn, 'lastFTSIndexTime');
-          if (!isUpdated) {
-            await conn.query(`PRAGMA create_fts_index('USER_NOTE_EMBEDDINGS', 'id', 'processedNoteContent', overwrite=1)`);
-            await this._setConfigValue(conn, 'lastFTSIndexTime', await this._getConfigValue(conn, 'lastSyncTime'));
-            await conn.send(`CHECKPOINT;`);
-          }
-        }
-        catch (e) {
-          conn.close();
-          throw e;
+            conn = await this.db.connect();
+
+            // Build WHERE clause conditions
+            const conditions = ['similarity > ?'];
+            const params = [];
+
+            if (isArchived !== null) {
+                conditions.push('isArchived = ?');
+                params.push(isArchived);
+            }
+            if (isSharedByMe !== null) {
+                conditions.push('isSharedByMe = ?');
+                params.push(isSharedByMe);
+            }
+            if (isSharedWithMe !== null) {
+                conditions.push('isSharedWithMe = ?');
+                params.push(isSharedWithMe);
+            }
+            if (isTaskListNote !== null) {
+                conditions.push('isTaskListNote = ?');
+                params.push(isTaskListNote);
+            }
+
+            const whereClause = conditions.join(' AND ');
+
+            stmt = await conn.prepare(`
+                SELECT
+                    *,
+                    list_dot_product(embedding, ?) as similarity
+                FROM
+                    USER_NOTE_EMBEDDINGS
+                WHERE
+                    ${whereClause}
+                ORDER BY
+                    similarity DESC
+                LIMIT ?;
+            `);
+
+            if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
+                // Convert to array so we can JSON.stringify it
+                embedding = Array.from(embedding);
+            }
+            if (!isArray(embedding)) {
+                throw new Error('Embedding must be an array of numbers.');
+            }
+
+            const results = await stmt.query(JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
+            let jsonResults = results.toArray().map(row => row.toJSON());
+            jsonResults.forEach(row => {
+                if (row.embedding) {
+                    row.embedding = row.embedding.toArray();
+                }
+                if (!(row.embedding instanceof Float32Array)) {
+                    row.embedding = new Float32Array(row.embedding);
+                }
+                if (row.noteTags) {
+                    row.noteTags = row.noteTags.toArray();
+                }
+            });
+
+            return jsonResults;
+        } catch (e) {
+            console.error("Failed to search note embedding:", e);
+            throw e;
+        } finally {
+            if (stmt) {
+                await stmt.close();
+            }
+            if (conn) {
+                await conn.close();
+            }
         }
     }
-
-    // async searchNoteRecordByEmbedding(embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
-    //     await this.init();
-    //     let conn;
-    //     let stmt;
-
-    //     try {
-    //         conn = await this.db.connect();
-
-    //         // Build WHERE clause conditions
-    //         const conditions = ['similarity > ?'];
-    //         const params = [];
-
-    //         if (isArchived !== null) {
-    //             conditions.push('isArchived = ?');
-    //             params.push(isArchived);
-    //         }
-    //         if (isSharedByMe !== null) {
-    //             conditions.push('isSharedByMe = ?');
-    //             params.push(isSharedByMe);
-    //         }
-    //         if (isSharedWithMe !== null) {
-    //             conditions.push('isSharedWithMe = ?');
-    //             params.push(isSharedWithMe);
-    //         }
-    //         if (isTaskListNote !== null) {
-    //             conditions.push('isTaskListNote = ?');
-    //             params.push(isTaskListNote);
-    //         }
-
-    //         const whereClause = conditions.join(' AND ');
-
-    //         stmt = await conn.prepare(`
-    //             SELECT
-    //                 *,
-    //                 list_dot_product(embedding, ?) as similarity
-    //             FROM
-    //                 USER_NOTE_EMBEDDINGS
-    //             WHERE
-    //                 ${whereClause}
-    //             ORDER BY
-    //                 similarity DESC
-    //             LIMIT ?;
-    //         `);
-
-    //         if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
-    //             // Convert to array so we can JSON.stringify it
-    //             embedding = Array.from(embedding);
-    //         }
-    //         if (!isArray(embedding)) {
-    //             throw new Error('Embedding must be an array of numbers.');
-    //         }
-
-    //         const results = await stmt.query(JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
-    //         let jsonResults = results.toArray().map(row => row.toJSON());
-    //         jsonResults.forEach(row => {
-    //             if (row.embedding) {
-    //                 row.embedding = row.embedding.toArray();
-    //             }
-    //             if (!(row.embedding instanceof Float32Array)) {
-    //                 row.embedding = new Float32Array(row.embedding);
-    //             }
-    //             if (row.noteTags) {
-    //                 row.noteTags = row.noteTags.toArray();
-    //             }
-    //         });
-
-    //         return jsonResults;
-    //     } catch (e) {
-    //         console.error("Failed to search note embedding:", e);
-    //         throw e;
-    //     } finally {
-    //         if (stmt) {
-    //             await stmt.close();
-    //         }
-    //         if (conn) {
-    //             await conn.close();
-    //         }
-    //     }
-    // }
 
     /**
      * Search note records by RRF (Reciprocal Ranked Fusion).
@@ -337,7 +319,7 @@ export class DuckDBNotesManager {
               WITH fts_ranked AS (
                   SELECT
                       id,
-                      ROW_NUMBER() OVER (ORDER BY FTS_MAIN_USER_NOTE_EMBEDDINGS.match_bm25(id, ?) DESC) as rank
+                      ROW_NUMBER() OVER (ORDER BY FTS_MAIN_USER_NOTE_EMBEDDINGS.match_bm25(id, ?, fields := 'headingAnchor,noteTitle') DESC) as rank
                   FROM
                       USER_NOTE_EMBEDDINGS
               ),
@@ -392,7 +374,7 @@ export class DuckDBNotesManager {
                 throw new Error('Embedding must be an array of numbers.');
             }
 
-            const results = await stmt.query(query, JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
+            const results = await stmt.query(truncate(query, {length: 128}), JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
             let jsonResults = results.toArray().map(row => row.toJSON());
             jsonResults.forEach(row => {
                 if (row.embedding) {
@@ -417,6 +399,24 @@ export class DuckDBNotesManager {
             if (conn) {
                 await conn.close();
             }
+        }
+    }
+
+    async updateFTSIndex() {
+        await this.init();
+        let conn;
+        try {
+          conn = await this.db.connect();
+          const isUpdated = await this._getConfigValue(conn, 'lastSyncTime') === await this._getConfigValue(conn, 'lastFTSIndexTime');
+          if (!isUpdated) {
+            await conn.query(`PRAGMA create_fts_index('USER_NOTE_EMBEDDINGS', 'id', input_values:='headingAnchor,noteTitle', overwrite:=1)`);
+            await this._setConfigValue(conn, 'lastFTSIndexTime', await this._getConfigValue(conn, 'lastSyncTime'));
+            await conn.send(`CHECKPOINT;`);
+          }
+        }
+        catch (e) {
+          conn.close();
+          throw e;
         }
     }
 
