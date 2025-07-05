@@ -293,7 +293,7 @@ export class DuckDBNotesManager {
         try {
             conn = await this.db.connect();
 
-            // At the top of your function, before preparing the statement
+            // Define FTS scoring macro
             await conn.query(`
             CREATE OR REPLACE MACRO fts_score(query_stems_list, text_column) AS (
                 CASE
@@ -307,7 +307,7 @@ export class DuckDBNotesManager {
             );
         `);
 
-            // 2. Define a NEW, SIMPLER `fts_match` macro.
+            // Define FTS matching macro
             await conn.query(`
             CREATE OR REPLACE MACRO fts_match(query_stems_list, text_column) AS
                 list_has_any(
@@ -316,8 +316,8 @@ export class DuckDBNotesManager {
                 );
         `);
 
-            // Build WHERE clause conditions
-            const conditions = ['similarity > ?'];
+            // Build WHERE clause conditions for initial filtering
+            const conditions = [];
             const params = [];
 
             if (isArchived !== null) {
@@ -337,65 +337,78 @@ export class DuckDBNotesManager {
                 params.push(isTaskListNote);
             }
 
-            const whereClause = conditions.join(' AND ');
+            const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+            const expandedLimit = limit * 2;
+
             stmt = await conn.prepare(`
                 WITH query_stems AS (
-                    -- This CTE runs ONCE to process the search query string.
+                    -- Pre-process the search query string once
                     SELECT list_distinct(list_transform(string_split(lower(?), ' '), x -> stem(x, 'porter'))) as stems
                 ),
-                     fts_ranked AS (
-                         SELECT
-                             t.id,
-                             -- The simplified macro is now called with the pre-processed list from query_stems
-                             ROW_NUMBER() OVER (ORDER BY fts_score(q.stems, t.processedNoteContent) DESC) as rank
-                         FROM
-                             USER_NOTE_EMBEDDINGS AS t,
-                             query_stems AS q  -- Use a comma for an implicit CROSS JOIN
-                         WHERE
-                             -- The pre-filter also uses the pre-processed list
-                             fts_match(q.stems, t.processedNoteContent)
-                     ),
-              embed_ranked AS (
-                  SELECT
-                      id,
-                      list_dot_product(embedding, ?) as embedding_similarity,
-                      ROW_NUMBER() OVER (ORDER BY embedding_similarity DESC) as rank
-                  FROM
-                      USER_NOTE_EMBEDDINGS
-              ),
-              fused_scores AS (
-                  SELECT
-                      COALESCE(fts.id, embed.id) AS id,
-                      embed.embedding_similarity as embedding_similarity,
-                      ( (0.4 * COALESCE(1.0 / (60 + fts.rank), 0)) + (0.6 * COALESCE(1.0 / (60 + embed.rank), 0)) ) AS similarity
-                  FROM
-                      fts_ranked AS fts
-                  FULL OUTER JOIN
-                      embed_ranked AS embed ON fts.id = embed.id
-              )
-              SELECT
-                  main.id,
-                  main.actualNoteContentPart,
-                  main.embedding,
-                  main.headingAnchor,
-                  main.isSharedByMe,
-                  main.isSharedWithMe,
-                  main.isTaskListNote,
-                  main.noteTags,
-                  main.noteTitle,
-                  main.noteUUID,
-                  main.processedNoteContent,
-                  fused.embedding_similarity as embedding_similarity,
-                  fused.similarity
-              FROM
-                  fused_scores AS fused
-              JOIN
-                  USER_NOTE_EMBEDDINGS AS main ON fused.id = main.id
-              WHERE
-                ${whereClause}
-              ORDER BY
-                  fused.similarity DESC
-              LIMIT ?;
+                -- Step 1: Get top embedding matches first with early filtering
+                embed_candidates AS (
+                    SELECT
+                        id,
+                        actualNoteContentPart,
+                        embedding,
+                        headingAnchor,
+                        isSharedByMe,
+                        isSharedWithMe,
+                        isTaskListNote,
+                        noteTags,
+                        noteTitle,
+                        noteUUID,
+                        processedNoteContent,
+                        list_dot_product(embedding, ?) as embedding_similarity,
+                        ROW_NUMBER() OVER (ORDER BY list_dot_product(embedding, ?) DESC) as embed_rank
+                    FROM
+                        USER_NOTE_EMBEDDINGS
+                    ${whereClause}
+                    ORDER BY embedding_similarity DESC
+                    LIMIT ?
+                ),
+                -- Step 2: Apply FTS scoring only to the top embedding candidates
+                fts_scored AS (
+                    SELECT
+                        ec.*,
+                        fts_score(q.stems, ec.processedNoteContent) as fts_score,
+                        ROW_NUMBER() OVER (ORDER BY fts_score(q.stems, ec.processedNoteContent) DESC) as fts_rank
+                    FROM
+                        embed_candidates AS ec,
+                        query_stems AS q
+                    WHERE
+                        fts_match(q.stems, ec.processedNoteContent)
+                ),
+                -- Step 3: Calculate final RRF scores
+                final_scores AS (
+                    SELECT
+                        *,
+                        ( (0.4 * COALESCE(1.0 / (60 + fts_rank), 0)) + (0.6 * COALESCE(1.0 / (60 + embed_rank), 0)) ) AS similarity
+                    FROM
+                        fts_scored
+                    WHERE
+                        embedding_similarity > ?
+                )
+                SELECT
+                    id,
+                    actualNoteContentPart,
+                    embedding,
+                    headingAnchor,
+                    isSharedByMe,
+                    isSharedWithMe,
+                    isTaskListNote,
+                    noteTags,
+                    noteTitle,
+                    noteUUID,
+                    processedNoteContent,
+                    embedding_similarity,
+                    fts_score,
+                    similarity
+                FROM
+                    final_scores
+                ORDER BY
+                    similarity DESC
+                LIMIT ?;
             `);
 
             if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
@@ -406,7 +419,17 @@ export class DuckDBNotesManager {
                 throw new Error('Embedding must be an array of numbers.');
             }
 
-            const results = await stmt.query(truncate(query, {length: 128}), JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
+            const embeddingStr = JSON.stringify(embedding);
+            const results = await stmt.query(
+                truncate(query, {length: 128}), 
+                embeddingStr, 
+                embeddingStr, 
+                expandedLimit, 
+                ...params, 
+                thresholdSimilarity, 
+                limit
+            );
+            
             let jsonResults = results.toArray().map(row => row.toJSON());
             jsonResults.forEach(row => {
                 if (row.embedding) {
