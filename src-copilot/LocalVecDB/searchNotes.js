@@ -1,7 +1,6 @@
 import {getSyncState} from "./getSyncState.js";
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 import { DuckDBNotesManager } from "./DuckDB/DuckDBNotesManager.js";
-import {debounce} from "lodash-es";
 import DuckDBConnectionController from "./DuckDB/DuckDBConnectionController.js";
 
 export const searchNotes = async (app, queryText, queryTextType, {limit = 64,

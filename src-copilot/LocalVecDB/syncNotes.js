@@ -119,8 +119,8 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         await dbm.setConfigValue('lastSyncTime', new Date().toISOString());
 
         // Update the fts index
-        sendMessageToEmbed(app, 'syncNotesProgress', `Updating index...`);
-        await dbm.updateFTSIndex();
+        // sendMessageToEmbed(app, 'syncNotesProgress', `Updating index...`);
+        // await dbm.updateFTSIndex();
 
         console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', targetNotes.length);
         sendMessageToEmbed(app, 'syncNotesProgress', `${totalNoteCount}/${totalNoteCount}<br />Sync Completed!`);

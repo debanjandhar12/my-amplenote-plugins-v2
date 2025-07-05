@@ -316,98 +316,134 @@ export class DuckDBNotesManager {
             }
 
             const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-            const ftsScanLimit = 200;
+            const ftsScanLimit = 120;
 
             stmt = await conn.prepare(`
-                WITH query_stems AS (
-                    -- 1. Pre-process the search query string
-                    SELECT list_distinct(list_transform(
-                            list_filter(string_split(lower(?), ' '), word ->
-                                                                     length(word) > 0 AND
-                                                                     -- remove stop words
-                                                                     NOT list_contains([${eng.map(word => `'${word}'`).join(',')}], word) AND
-                                                                     -- remove non-alphabetic characters
-                                                                     NOT regexp_matches(word, '(\\.|[^a-z])+')
-                            ),
-                            x -> stem(x, 'porter')
-                                         )) AS stems
-                ),
-                -- 2. Get top embedding matches with initial filtering
-                embed_candidates AS (
-                         SELECT
-                             id,
-                             actualNoteContentPart,
-                             embedding,
-                             headingAnchor,
-                             isSharedByMe,
-                             isSharedWithMe,
-                             isTaskListNote,
-                             noteTags,
-                             noteTitle,
-                             noteUUID,
-                             processedNoteContent,
-                             list_dot_product(embedding, ?) AS embedding_similarity,
-                             ROW_NUMBER() OVER (ORDER BY list_dot_product(embedding, ?) DESC) AS embed_rank
-                         FROM
-                             user_note_embeddings
-                                 ${whereClause}
-                         ORDER BY embedding_similarity DESC
-                    LIMIT ?
+                WITH
+                    query_stems AS (
+                        -- 1. Pre-process the search query string
+                        SELECT list_distinct(
+                                list_transform(
+                                    list_filter(string_split(lower(?), ' '), word -> length(word) > 0 AND
+                                        -- remove stop words
+                                        NOT list_contains([${eng.map(word => `'${word}'`).join(',')}], word) AND
+                                        -- remove non-alphabetic characters
+                                        NOT regexp_matches(word, '(\\.|[^a-z])+')
+                                    ),
+                                    x -> stem(x, 'porter')
+                                )
+                            ) AS stems
                     ),
-                -- 3. Calculate document stems for IDF computation
-                candidate_doc_stems AS (
-                    SELECT
-                        id,
-                        list_distinct(list_transform(
-                            list_filter(string_split(lower(processedNoteContent), ' '), word ->
-                                length(word) > 0 AND
-                                NOT list_contains([${eng.map(word => `'${word}'`).join(',')}], word) AND
-                                NOT regexp_matches(word, '(\\.|[^a-z])+')
-                            ),
-                            x -> stem(x, 'porter')
-                        )) AS doc_stems
-                    FROM embed_candidates
-                ),
-                -- 4. Calculate IDF scores for query terms
-                query_term_idf AS (
-                    SELECT
-                        q.stem,
-                        log((SELECT COUNT(*) FROM candidate_doc_stems) / CAST(COUNT(c.id) + 1 AS DOUBLE)) AS idf_score
-                    FROM
-                        (SELECT unnest(stems) AS stem FROM query_stems) AS q
-                        LEFT JOIN
-                        candidate_doc_stems c ON list_contains(c.doc_stems, q.stem)
-                    GROUP BY
-                        q.stem
-                ),
-                -- 5. Apply TF-IDF scoring to candidates
-                fts_scored AS (
-                    SELECT
-                        ec.*,
-                        (SELECT SUM(qti.idf_score)
-                         FROM query_term_idf qti
-                         WHERE list_contains(cds.doc_stems, qti.stem)
-                        ) AS fts_score,
-                        ROW_NUMBER() OVER (ORDER BY (SELECT SUM(qti.idf_score) FROM query_term_idf qti WHERE list_contains(cds.doc_stems, qti.stem)) DESC) AS fts_rank
-                    FROM
-                        embed_candidates ec
-                        JOIN
-                        candidate_doc_stems cds ON ec.id = cds.id
-                    WHERE
-                        (SELECT count(*) FROM (SELECT unnest(stems) FROM query_stems)) = 0
-                           OR
-                        list_has_any((SELECT stems FROM query_stems), cds.doc_stems)
-                ),
-                -- 6. Calculate final RRF scores combining embedding and text similarity
-                final_scores AS (
-                    SELECT
-                        *,
-                        ( (0.4 * COALESCE(1.0 / (60 + fts_rank), 0)) + (0.6 * COALESCE(1.0 / (60 + embed_rank), 0)) ) * (61 / 2) AS similarity
-                    FROM
-                        fts_scored
-                    WHERE
-                        embedding_similarity > ?
-                )
+                    -- 2. Get top embedding matches with initial filtering
+                    embed_candidates AS (
+                        SELECT
+                            id,
+                            actualNoteContentPart,
+                            embedding,
+                            headingAnchor,
+                            isSharedByMe,
+                            isSharedWithMe,
+                            isTaskListNote,
+                            noteTags,
+                            noteTitle,
+                            noteUUID,
+                            processedNoteContent,
+                            list_dot_product(embedding, ?) AS embedding_similarity,
+                            ROW_NUMBER() OVER (
+                                ORDER BY
+                                    list_dot_product(embedding, ?) DESC
+                            ) AS embed_rank
+                        FROM
+                            user_note_embeddings ${whereClause}
+                        ORDER BY
+                            embedding_similarity DESC
+                        LIMIT ?
+                    ),
+                    -- 3. Calculate document stems for IDF computation
+                    candidate_doc_stems AS (
+                        SELECT
+                            id,
+                            list_distinct(
+                                list_transform(
+                                    list_filter(string_split(lower(processedNoteContent), ' '), word -> length(word) > 0 AND
+                                        NOT list_contains([${eng.map(word => `'${word}'`).join(',')}], word) AND
+                                        NOT regexp_matches(word, '(\\\\.|[^a-z])+')
+                                    ),
+                                    x -> stem(x, 'porter')
+                                )
+                            ) AS doc_stems
+                        FROM
+                            embed_candidates
+                    ),
+                    -- 4. Calculate IDF scores for query terms
+                    query_term_idf AS (
+                        SELECT
+                            q.stem,
+                            log((
+                                    SELECT
+                                        COUNT(*)
+                                    FROM
+                                        candidate_doc_stems
+                                ) / CAST(COUNT(c.id) + 1 AS DOUBLE)) AS idf_score
+                        FROM (
+                                SELECT
+                                    unnest(stems) AS stem
+                                FROM
+                                    query_stems
+                            ) AS q
+                            LEFT JOIN candidate_doc_stems c ON list_contains(c.doc_stems, q.stem)
+                        GROUP BY
+                            q.stem
+                    ),
+                    -- 5. Calculate scores for all candidates
+                    fts_scored AS (
+                        SELECT
+                            ec.*,
+                            CASE
+                                WHEN (
+                                    SELECT
+                                        count(*) = 0
+                                    FROM
+                                        query_term_idf
+                                ) THEN 0 -- No valid query terms, so score is 0
+                                WHEN list_has_any((
+                                    SELECT
+                                        stems
+                                    FROM
+                                        query_stems
+                                ), cds.doc_stems) THEN (
+                                    SELECT
+                                        SUM(qti.idf_score)
+                                    FROM
+                                        query_term_idf qti
+                                    WHERE
+                                        list_contains(cds.doc_stems, qti.stem)
+                                )
+                                ELSE 0
+                            END AS fts_score
+                        FROM
+                            embed_candidates ec
+                            JOIN candidate_doc_stems cds ON ec.id = cds.id
+                    ),
+                    -- 6. Calculate Rank and Final RRF Score
+                    final_scores AS (
+                        SELECT
+                            *,
+                            ROW_NUMBER() OVER (
+                                ORDER BY
+                                    fts_score DESC
+                            ) as fts_rank,
+                            (
+                                (0.4 * COALESCE(1.0 / (60 + ROW_NUMBER() OVER (
+                                            ORDER BY
+                                                fts_score DESC
+                                        )), 0)) + (0.6 * COALESCE(1.0 / (60 + embed_rank), 0))
+                            ) * (61 / 2) AS similarity
+                        FROM
+                            fts_scored
+                        WHERE
+                            embedding_similarity > ?
+                    )
                 SELECT
                     id,
                     actualNoteContentPart,
@@ -427,7 +463,7 @@ export class DuckDBNotesManager {
                     final_scores
                 ORDER BY
                     similarity DESC
-                    LIMIT ?;
+                LIMIT ?;
             `);
 
             if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
