@@ -4,9 +4,6 @@ import {OPFSUtils} from "./OPFSUtils.js";
 import {isArray, truncate} from "lodash-es";
 import { eng } from "stopword";
 
-// English stopwords for FTS filtering from stopword package
-const STOPWORDS = eng;
-
 let instance;
 export class DuckDBNotesManager {
     async init() {
@@ -290,40 +287,11 @@ export class DuckDBNotesManager {
      */
     async searchNoteRecordByRRF(query, embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
         await this.init();
-        // await this.updateFTSIndex();
         let conn;
         let stmt;
 
         try {
             conn = await this.db.connect();
-
-            // Define FTS scoring macro
-            await conn.query(`
-                CREATE OR REPLACE MACRO fts_score(query_stems_list, doc_stems_list) AS (
-                    CASE
-                        WHEN len(doc_stems_list) = 0 THEN 0.0
-                        ELSE
-                            CAST(len(list_filter(doc_stems_list, x -> list_contains(query_stems_list, x))) AS DOUBLE)
-                    END
-                );
-            `);
-
-            // Define FTS matching macro
-            await conn.query(`
-                CREATE OR REPLACE MACRO fts_match(query_stems_list, doc_stems_list) AS
-                    list_has_any(doc_stems_list, query_stems_list);
-            `);
-
-            // Define word filtering macro to remove stopwords and invalid patterns
-            await conn.query(`
-                CREATE OR REPLACE MACRO filter_words(word_list) AS (
-                    list_filter(word_list, word ->
-                        length(word) > 0 AND
-                        NOT list_contains(${JSON.stringify(STOPWORDS)}, word) AND
-                        NOT regexp_matches(word, '(\\.|[^a-z])+')
-                    )
-                );
-            `);
 
             // Build WHERE clause conditions for initial filtering
             const conditions = [];
@@ -348,69 +316,91 @@ export class DuckDBNotesManager {
 
             const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
             const totalNotes = await this.getActualNoteCount();
-            const expandedLimit = Math.max(limit * 2, Math.floor(totalNotes * 0.1));
+            const ftsScanLimit = 200;
 
             stmt = await conn.prepare(`
                 WITH query_stems AS (
-                    -- Pre-process the search query string once with stopword and pattern filtering
+                    -- 1. Pre-process the search query string
                     SELECT list_distinct(list_transform(
-                        filter_words(string_split(lower(?), ' ')),
-                        x -> stem(x, 'porter')
-                    )) as stems
+                            list_filter(string_split(lower(?), ' '), word ->
+                                                                     length(word) > 0 AND
+                                                                     -- remove stop words
+                                                                     NOT list_contains([${eng.map(word => `'${word}'`).join(',')}], word) AND
+                                                                     -- remove non-alphabetic characters
+                                                                     NOT regexp_matches(word, '(\\.|[^a-z])+')
+                            ),
+                            x -> stem(x, 'porter')
+                                         )) as stems
                 ),
-                -- Step 1: Get top embedding matches first with early filtering
+                -- 2. Get top embedding matches with initial filtering
                 embed_candidates AS (
+                         SELECT
+                             id,
+                             actualNoteContentPart,
+                             embedding,
+                             headingAnchor,
+                             isSharedByMe,
+                             isSharedWithMe,
+                             isTaskListNote,
+                             noteTags,
+                             noteTitle,
+                             noteUUID,
+                             processedNoteContent,
+                             list_dot_product(embedding, ?) as embedding_similarity,
+                             ROW_NUMBER() OVER (ORDER BY list_dot_product(embedding, ?) DESC) as embed_rank
+                         FROM
+                             USER_NOTE_EMBEDDINGS
+                                 ${whereClause}
+                         ORDER BY embedding_similarity DESC
+                    LIMIT ?
+                    ),
+                -- 3. Calculate document stems for IDF computation
+                candidate_doc_stems AS (
                     SELECT
                         id,
-                        actualNoteContentPart,
-                        embedding,
-                        headingAnchor,
-                        isSharedByMe,
-                        isSharedWithMe,
-                        isTaskListNote,
-                        noteTags,
-                        noteTitle,
-                        noteUUID,
-                        processedNoteContent,
-                        list_dot_product(embedding, ?) as embedding_similarity,
-                        ROW_NUMBER() OVER (ORDER BY list_dot_product(embedding, ?) DESC) as embed_rank
-                    FROM
-                        USER_NOTE_EMBEDDINGS
-                        ${whereClause}
-                    ORDER BY embedding_similarity DESC
-                    LIMIT ?
-                ),
-                -- Step 1.5: Pre-process document text for FTS with filtering
-                candidates_with_stems AS (
-                    SELECT
-                        *,
-                        -- Filter and stem the document text only ONCE here
-                        list_transform(
-                            filter_words(string_split(lower(processedNoteContent), ' ')),
+                        list_distinct(list_transform(
+                            list_filter(string_split(lower(processedNoteContent), ' '), word ->
+                                length(word) > 0 AND
+                                NOT list_contains([${eng.map(word => `'${word}'`).join(',')}], word) AND
+                                NOT regexp_matches(word, '(\\.|[^a-z])+')
+                            ),
                             x -> stem(x, 'porter')
-                        ) AS doc_stems
-                    FROM
-                        embed_candidates
+                        )) AS doc_stems
+                    FROM embed_candidates
                 ),
-                -- Step 2: Apply FTS scoring only to the top candidates
+                -- 4. Calculate IDF scores for query terms
+                query_term_idf AS (
+                    SELECT
+                        q.stem,
+                        log((SELECT count(*) FROM candidate_doc_stems) / CAST(count(c.id) + 1 AS DOUBLE)) AS idf_score
+                    FROM
+                        (SELECT unnest(stems) as stem FROM query_stems) AS q
+                        LEFT JOIN
+                        candidate_doc_stems c ON list_contains(c.doc_stems, q.stem)
+                    GROUP BY
+                        q.stem
+                ),
+                -- 5. Apply TF-IDF scoring to candidates
                 fts_scored AS (
                     SELECT
-                        cs.*,
-                        -- Call the new macros with the pre-processed lists
-                        fts_score(q.stems, cs.doc_stems) as fts_score,
-                        ROW_NUMBER() OVER (ORDER BY fts_score(q.stems, cs.doc_stems) DESC) as fts_rank
+                        ec.*,
+                        (SELECT sum(qti.idf_score)
+                         FROM query_term_idf qti
+                         WHERE list_contains(cds.doc_stems, qti.stem)
+                        ) as fts_score,
+                        ROW_NUMBER() OVER (ORDER BY (SELECT sum(qti.idf_score) FROM query_term_idf qti WHERE list_contains(cds.doc_stems, qti.stem)) DESC) as fts_rank
                     FROM
-                        candidates_with_stems AS cs, -- Use the new CTE
-                        query_stems AS q
+                        embed_candidates ec
+                        JOIN
+                        candidate_doc_stems cds ON ec.id = cds.id
                     WHERE
-                        -- Use the new, more efficient match macro
-                        fts_match(q.stems, cs.doc_stems)
+                        list_has_any((SELECT stems FROM query_stems), cds.doc_stems)
                 ),
-                -- Step 3: Calculate final RRF scores
+                -- 6. Calculate final RRF scores combining embedding and text similarity
                 final_scores AS (
                     SELECT
                         *,
-                        ( (0.4 * COALESCE(1.0 / (60 + fts_rank), 0)) + (0.6 * COALESCE(1.0 / (60 + embed_rank), 0)) ) AS similarity
+                        ( (0.4 * COALESCE(1.0 / (60 + fts_rank), 0)) + (0.6 * COALESCE(1.0 / (60 + embed_rank), 0)) ) * (61 / 2) AS similarity
                     FROM
                         fts_scored
                     WHERE
@@ -435,7 +425,7 @@ export class DuckDBNotesManager {
                     final_scores
                 ORDER BY
                     similarity DESC
-                LIMIT ?;
+                    LIMIT ?;
             `);
 
             if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
@@ -451,8 +441,8 @@ export class DuckDBNotesManager {
                 truncate(query, {length: 128}),
                 embeddingStr,
                 embeddingStr,
-                expandedLimit,
                 ...params,
+                ftsScanLimit,
                 thresholdSimilarity,
                 limit
             );
