@@ -107,7 +107,7 @@ export class DuckDBNotesManager {
         let conn;
         try {
             conn = await this.db.connect();
-            const result = await conn.query('SELECT COUNT(DISTINCT noteUUID)::INTEGER AS count FROM user_note_embeddings');
+            const result = await conn.query('SELECT approx_count_distinct(DISTINCT noteUUID)::INTEGER AS count FROM user_note_embeddings');
             const count = result.toArray()[0].count;
             return count;
         } catch (e) {
@@ -316,7 +316,6 @@ export class DuckDBNotesManager {
             }
 
             const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-            const totalNotes = await this.getActualNoteCount();
             const ftsScanLimit = 200;
 
             stmt = await conn.prepare(`
@@ -395,6 +394,8 @@ export class DuckDBNotesManager {
                         JOIN
                         candidate_doc_stems cds ON ec.id = cds.id
                     WHERE
+                        (SELECT count(*) FROM (SELECT unnest(stems) FROM query_stems)) = 0
+                           OR
                         list_has_any((SELECT stems FROM query_stems), cds.doc_stems)
                 ),
                 -- 6. Calculate final RRF scores combining embedding and text similarity
