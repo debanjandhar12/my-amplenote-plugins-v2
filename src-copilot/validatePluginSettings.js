@@ -28,9 +28,7 @@ export async function validatePluginSettings(app) {
     if (!settings[LLM_API_URL_SETTING].trim()) {
         errors.push('LLM API URL cannot be empty.');
     }
-    if (settings[LLM_API_URL_SETTING].trim().includes('https://api.openai.com/v1/chat/completion')) {
-      errors.push('LLM API URL should not contain `/chat/completion` at end.');
-    }
+
     try {
         if (isLLMApiUrlValid) {
             await getLLMModel(app.settings);

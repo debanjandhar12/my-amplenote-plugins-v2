@@ -7,6 +7,11 @@ export async function getLLMModel(appSettings) {
     const apiKey = appSettings[LLM_API_KEY_SETTING];
     if (!apiUrl || !apiUrl.trim()) throw new Error('API URL is not provided. Please check plugin settings.');
     if (!model || !model.trim()) throw new Error('Model is not provided. Please check plugin settings.');
+    
+    if (apiUrl.endsWith('/chat/completion')) {
+        apiUrl = apiUrl.slice(0, -16); // Remove '/chat/completion' (16 characters)
+    }
+    
     apiUrl = apiUrl.toLowerCase();
     model = model.toLowerCase();
 
