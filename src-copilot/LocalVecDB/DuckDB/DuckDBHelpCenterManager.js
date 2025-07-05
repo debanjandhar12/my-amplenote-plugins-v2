@@ -17,7 +17,7 @@ export class DuckDBHelpCenterManager {
         }
     }
 
-    async searchHelpCenterRecordByEmbedding(embedding, {limit = 15} = {}) {
+    async searchHelpCenterRecordByEmbedding(embedding, {limit = 15, filename = 'localHelpCenterEmbeddings.parquet'} = {}) {
         await this.init();
         let conn;
         let stmt;
@@ -25,7 +25,7 @@ export class DuckDBHelpCenterManager {
         try {
             conn = await this.db.connect();
 
-            const parquetUrl = getUnPkgBundleUrl('localHelpCenterEmbeddings.parquet');
+            const parquetUrl = getUnPkgBundleUrl(filename);
 
             stmt = await conn.prepare(`
                 SELECT
