@@ -295,26 +295,20 @@ export class DuckDBNotesManager {
 
             // Define FTS scoring macro
             await conn.query(`
-            CREATE OR REPLACE MACRO fts_score(query_stems_list, text_column) AS (
-                CASE
-                    WHEN len(query_stems_list) = 0 THEN 0.0
-                    ELSE
-                        CAST(len(list_intersect(
-                            list_distinct(list_transform(string_split(lower(text_column), ' '), x -> stem(x, 'porter'))),
-                            query_stems_list
-                        )) AS DOUBLE) / len(query_stems_list)
-                END
-            );
-        `);
+                CREATE OR REPLACE MACRO fts_score(query_stems_list, doc_stems_list) AS (
+                    CASE
+                        WHEN len(doc_stems_list) = 0 THEN 0.0
+                        ELSE
+                            CAST(len(list_filter(doc_stems_list, x -> list_contains(query_stems_list, x))) AS DOUBLE)
+                    END
+                );
+            `);
 
             // Define FTS matching macro
             await conn.query(`
-            CREATE OR REPLACE MACRO fts_match(query_stems_list, text_column) AS
-                list_has_any(
-                    list_transform(string_split(lower(text_column), ' '), x -> stem(x, 'porter')),
-                    query_stems_list
-                );
-        `);
+                CREATE OR REPLACE MACRO fts_match(query_stems_list, doc_stems_list) AS
+                    list_has_any(doc_stems_list, query_stems_list);
+            `);
 
             // Build WHERE clause conditions for initial filtering
             const conditions = [];
@@ -338,7 +332,8 @@ export class DuckDBNotesManager {
             }
 
             const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-            const expandedLimit = limit * 2;
+            const totalNotes = await this.getActualNoteCount();
+            const expandedLimit = Math.max(limit * 2, Math.floor(totalNotes * 0.1));
 
             stmt = await conn.prepare(`
                 WITH query_stems AS (
@@ -363,21 +358,32 @@ export class DuckDBNotesManager {
                         ROW_NUMBER() OVER (ORDER BY list_dot_product(embedding, ?) DESC) as embed_rank
                     FROM
                         USER_NOTE_EMBEDDINGS
-                    ${whereClause}
+                        ${whereClause}
                     ORDER BY embedding_similarity DESC
                     LIMIT ?
                 ),
-                -- Step 2: Apply FTS scoring only to the top embedding candidates
+                -- Step 1.5: Pre-process document text for FTS (NEW EFFICIENT STEP)
+                candidates_with_stems AS (
+                    SELECT
+                        *,
+                        -- Stem the document text only ONCE here
+                        list_transform(string_split(lower(processedNoteContent), ' '), x -> stem(x, 'porter')) AS doc_stems
+                    FROM
+                        embed_candidates
+                ),
+                -- Step 2: Apply FTS scoring only to the top candidates
                 fts_scored AS (
                     SELECT
-                        ec.*,
-                        fts_score(q.stems, ec.processedNoteContent) as fts_score,
-                        ROW_NUMBER() OVER (ORDER BY fts_score(q.stems, ec.processedNoteContent) DESC) as fts_rank
+                        cs.*,
+                        -- Call the new macros with the pre-processed lists
+                        fts_score(q.stems, cs.doc_stems) as fts_score,
+                        ROW_NUMBER() OVER (ORDER BY fts_score(q.stems, cs.doc_stems) DESC) as fts_rank
                     FROM
-                        embed_candidates AS ec,
+                        candidates_with_stems AS cs, -- Use the new CTE
                         query_stems AS q
                     WHERE
-                        fts_match(q.stems, ec.processedNoteContent)
+                        -- Use the new, more efficient match macro
+                        fts_match(q.stems, cs.doc_stems)
                 ),
                 -- Step 3: Calculate final RRF scores
                 final_scores AS (
@@ -421,15 +427,15 @@ export class DuckDBNotesManager {
 
             const embeddingStr = JSON.stringify(embedding);
             const results = await stmt.query(
-                truncate(query, {length: 128}), 
-                embeddingStr, 
-                embeddingStr, 
-                expandedLimit, 
-                ...params, 
-                thresholdSimilarity, 
+                truncate(query, {length: 128}),
+                embeddingStr,
+                embeddingStr,
+                expandedLimit,
+                ...params,
+                thresholdSimilarity,
                 limit
             );
-            
+
             let jsonResults = results.toArray().map(row => row.toJSON());
             jsonResults.forEach(row => {
                 if (row.embedding) {
