@@ -3,6 +3,16 @@ import DuckDBConnectionController from "./DuckDBConnectionController.js";
 import {OPFSUtils} from "./OPFSUtils.js";
 import {isArray, truncate} from "lodash-es";
 
+// Common English stopwords for FTS filtering
+const STOPWORDS = [
+    'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'has', 'he', 'in', 'is', 'it',
+    'its', 'of', 'on', 'that', 'the', 'to', 'was', 'will', 'with', 'the', 'this', 'but', 'they',
+    'have', 'had', 'what', 'said', 'each', 'which', 'she', 'do', 'how', 'their', 'if', 'up', 'out',
+    'many', 'then', 'them', 'these', 'so', 'some', 'her', 'would', 'make', 'like', 'into', 'him',
+    'time', 'two', 'more', 'very', 'when', 'come', 'may', 'see', 'need', 'down', 'should', 'now',
+    'over', 'such', 'take', 'than', 'them', 'well', 'were'
+];
+
 let instance;
 export class DuckDBNotesManager {
     async init() {
@@ -310,6 +320,17 @@ export class DuckDBNotesManager {
                     list_has_any(doc_stems_list, query_stems_list);
             `);
 
+            // Define word filtering macro to remove stopwords and invalid patterns
+            await conn.query(`
+                CREATE OR REPLACE MACRO filter_words(word_list) AS (
+                    list_filter(word_list, word ->
+                        length(word) > 0 AND
+                        NOT list_contains(${JSON.stringify(STOPWORDS)}, word) AND
+                        NOT regexp_matches(word, '(\\.|[^a-z])+')
+                    )
+                );
+            `);
+
             // Build WHERE clause conditions for initial filtering
             const conditions = [];
             const params = [];
@@ -337,8 +358,11 @@ export class DuckDBNotesManager {
 
             stmt = await conn.prepare(`
                 WITH query_stems AS (
-                    -- Pre-process the search query string once
-                    SELECT list_distinct(list_transform(string_split(lower(?), ' '), x -> stem(x, 'porter'))) as stems
+                    -- Pre-process the search query string once with stopword and pattern filtering
+                    SELECT list_distinct(list_transform(
+                        filter_words(string_split(lower(?), ' ')),
+                        x -> stem(x, 'porter')
+                    )) as stems
                 ),
                 -- Step 1: Get top embedding matches first with early filtering
                 embed_candidates AS (
@@ -362,12 +386,15 @@ export class DuckDBNotesManager {
                     ORDER BY embedding_similarity DESC
                     LIMIT ?
                 ),
-                -- Step 1.5: Pre-process document text for FTS (NEW EFFICIENT STEP)
+                -- Step 1.5: Pre-process document text for FTS with filtering
                 candidates_with_stems AS (
                     SELECT
                         *,
-                        -- Stem the document text only ONCE here
-                        list_transform(string_split(lower(processedNoteContent), ' '), x -> stem(x, 'porter')) AS doc_stems
+                        -- Filter and stem the document text only ONCE here
+                        list_transform(
+                            filter_words(string_split(lower(processedNoteContent), ' ')),
+                            x -> stem(x, 'porter')
+                        ) AS doc_stems
                     FROM
                         embed_candidates
                 ),
