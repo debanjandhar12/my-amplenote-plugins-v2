@@ -151,6 +151,12 @@ const plugin = {
                 return !(await plugin.isEmbedOpen(app));
             },
             run: async function (app) {
+                console.log('max tokens', await app.filterNotes({
+                    query: 'max tokens'}));
+                console.log('logseq', await app.filterNotes({
+                    query: 'logseq'}));
+                console.log('holiday', await app.filterNotes({
+                    query: 'holiday'}));
                 await app.openSidebarEmbed(1, {openChat: true});
             }
         },

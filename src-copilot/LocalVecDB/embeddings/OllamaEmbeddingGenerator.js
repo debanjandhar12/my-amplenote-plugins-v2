@@ -1,7 +1,7 @@
 import {EmbeddingGeneratorBase} from "./EmbeddingGeneratorBase.js";
 import {getEmbeddingProviderName} from "./getEmbeddingProviderName.js";
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
-import {EMBEDDING_API_URL_SETTING} from "../../constants.js";
+import {EMBEDDING_API_URL_SETTING, LOCAL_VEC_DB_MAX_TOKENS} from "../../constants.js";
 
 export class OllamaEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {

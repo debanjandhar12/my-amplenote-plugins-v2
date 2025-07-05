@@ -132,11 +132,7 @@ async function saveRecords(records, filePath) {
             });
         }
 
-
         await writer.close();
-        console.log(`Successfully saved ${records.length} records to ${filePath
-}`);
-
     } catch (e) {
         console.error(`Failed to save records to ${filePath}:`, e);
         throw e;
@@ -334,7 +330,7 @@ test('Generate Help Center Embeddings', async () => {
         'https://public.amplenote.com/16oi13jtaNMoSxqjQMKgBdUE',
         'https://public.amplenote.com/SZnCDvp9yU7CbCzkn7RJowcV',
         'https://public.amplenote.com/WykvBZZSXReMcVFRrjrhk4mS',
-        // ...(await getAllHelpCenterLinks())
+        ...(await getAllHelpCenterLinks())
     ];
     await generateHelpCenterEmbeddings();
     console.log('Done! Please execute "node ./_myAmplePluginExternal/publish.js" to publish to npm');

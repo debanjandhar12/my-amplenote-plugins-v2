@@ -1,6 +1,6 @@
 {
   "name": "my-ample-plugin-external",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "This npm package contains files used by my plugins for amplenote",
   "dependencies": {
     "@ai-sdk/anthropic": "1.2.10",

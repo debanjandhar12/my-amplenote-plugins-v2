@@ -319,7 +319,7 @@ export class DuckDBNotesManager {
               WITH fts_ranked AS (
                   SELECT
                       id,
-                      ROW_NUMBER() OVER (ORDER BY FTS_MAIN_USER_NOTE_EMBEDDINGS.match_bm25(id, ?, fields := 'headingAnchor,noteTitle') DESC) as rank
+                      ROW_NUMBER() OVER (ORDER BY FTS_MAIN_USER_NOTE_EMBEDDINGS.match_bm25(id, ?, fields := 'processedNoteContent') DESC) as rank
                   FROM
                       USER_NOTE_EMBEDDINGS
               ),
@@ -409,7 +409,7 @@ export class DuckDBNotesManager {
           conn = await this.db.connect();
           const isUpdated = await this._getConfigValue(conn, 'lastSyncTime') === await this._getConfigValue(conn, 'lastFTSIndexTime');
           if (!isUpdated) {
-            await conn.query(`PRAGMA create_fts_index('USER_NOTE_EMBEDDINGS', 'id', input_values:='headingAnchor,noteTitle', overwrite:=1)`);
+            await conn.query(`PRAGMA create_fts_index('USER_NOTE_EMBEDDINGS', 'id', input_values:='processedNoteContent', overwrite:=1)`);
             await this._setConfigValue(conn, 'lastFTSIndexTime', await this._getConfigValue(conn, 'lastSyncTime'));
             await conn.send(`CHECKPOINT;`);
           }
