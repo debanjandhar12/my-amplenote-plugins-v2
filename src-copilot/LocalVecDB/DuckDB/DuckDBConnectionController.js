@@ -57,7 +57,7 @@ export default class DuckDBConnectionController {
             await conn.query("LOAD fts");
             await conn.query("SET temp_directory='tmp'"); // does not work atm even with registerOPFSFilename
             await conn.query(`CREATE OR REPLACE MACRO rrf(rank, k:=60) AS
-                      coalesce((1 / (k + rank)), 0)`);
+                      COALESCE((1 / (k + rank)), 0)`);
             await conn.close();
             currentCollectionName = collectionName;
             isTerminated = false;

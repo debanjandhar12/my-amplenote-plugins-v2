@@ -30,7 +30,7 @@ export class DuckDBHelpCenterManager {
             stmt = await conn.prepare(`
                 SELECT
                     *,
-                    list_dot_product(embedding, ?) as similarity
+                    list_dot_product(embedding, ?) AS similarity
                 FROM
                     read_parquet('${parquetUrl}')
                 ORDER BY

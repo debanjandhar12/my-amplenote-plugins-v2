@@ -18,8 +18,9 @@ export class DuckDBNotesManager {
                 await this._resetTables(conn);
                 await this._createTables(conn);
                 await this._setConfigValue(conn, 'LOCAL_VEC_DB_INDEX_VERSION', LOCAL_VEC_DB_INDEX_VERSION);
+                await conn.send(`CHECKPOINT;`);
             }
-            await conn.send(`CHECKPOINT;`);
+
             await conn.close();
             if (await OPFSUtils.doesFileExists(`CopilotLocalVecDB.db`) === false) {
                 throw new Error('DuckDB file not created in OPFS after all init operations');
@@ -33,7 +34,7 @@ export class DuckDBNotesManager {
     async _createTables(conn) {
         // Notes embeddings table
         await conn.query(`
-            CREATE TABLE IF NOT EXISTS USER_NOTE_EMBEDDINGS (
+            CREATE TABLE IF NOT EXISTS user_note_embeddings (
                 id VARCHAR PRIMARY KEY,
                 actualNoteContentPart VARCHAR,
                 embedding FLOAT[],
@@ -52,12 +53,12 @@ export class DuckDBNotesManager {
 
         // Create index on noteUUID
         await conn.query(`
-            CREATE INDEX IF NOT EXISTS idx_user_note_embeddings_uuid ON USER_NOTE_EMBEDDINGS(noteUUID)
+            CREATE INDEX IF NOT EXISTS idx_user_note_embeddings_uuid ON user_note_embeddings(noteUUID)
         `);
 
         // Config table
         await conn.query(`
-            CREATE TABLE IF NOT EXISTS DB_CONFIG (
+            CREATE TABLE IF NOT EXISTS db_config (
                 key VARCHAR PRIMARY KEY,
                 value VARCHAR
             )
@@ -65,14 +66,14 @@ export class DuckDBNotesManager {
 
         // Create index on key
         await conn.query(`
-            CREATE INDEX IF NOT EXISTS idx_db_config_key ON DB_CONFIG(key)
+            CREATE INDEX IF NOT EXISTS idx_db_config_key ON db_config(key)
         `);
     }
 
     async _resetTables(conn) {
         try {
-            await conn.query('DROP TABLE IF EXISTS DB_CONFIG');
-            await conn.query('DROP TABLE IF EXISTS USER_NOTE_EMBEDDINGS');
+            await conn.query('DROP TABLE IF EXISTS db_config');
+            await conn.query('DROP TABLE IF EXISTS user_note_embeddings');
             console.log('DuckDBManager resetTables completed');
         } catch (e) {
             console.error('Error resetting tables:', e);
@@ -106,7 +107,7 @@ export class DuckDBNotesManager {
         let conn;
         try {
             conn = await this.db.connect();
-            const result = await conn.query('SELECT COUNT(DISTINCT noteUUID)::INTEGER as count FROM USER_NOTE_EMBEDDINGS');
+            const result = await conn.query('SELECT COUNT(DISTINCT noteUUID)::INTEGER AS count FROM user_note_embeddings');
             const count = result.toArray()[0].count;
             return count;
         } catch (e) {
@@ -130,7 +131,7 @@ export class DuckDBNotesManager {
         const conn = await this.db.connect();
         await conn.query('BEGIN TRANSACTION');
         const stmt = await conn.prepare(`
-              INSERT OR REPLACE INTO USER_NOTE_EMBEDDINGS (
+              INSERT OR REPLACE INTO user_note_embeddings (
                   id, actualNoteContentPart, embedding, headingAnchor, isArchived,
                   isPublished, isSharedByMe, isSharedWithMe, isTaskListNote,
                   noteTags, noteTitle, noteUUID, processedNoteContent
@@ -198,85 +199,85 @@ export class DuckDBNotesManager {
         conn.close();
     }
 
-    async searchNoteRecordByEmbedding(embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
-        await this.init();
-        let conn;
-        let stmt;
-
-        try {
-            conn = await this.db.connect();
-
-            // Build WHERE clause conditions
-            const conditions = ['similarity > ?'];
-            const params = [];
-
-            if (isArchived !== null) {
-                conditions.push('isArchived = ?');
-                params.push(isArchived);
-            }
-            if (isSharedByMe !== null) {
-                conditions.push('isSharedByMe = ?');
-                params.push(isSharedByMe);
-            }
-            if (isSharedWithMe !== null) {
-                conditions.push('isSharedWithMe = ?');
-                params.push(isSharedWithMe);
-            }
-            if (isTaskListNote !== null) {
-                conditions.push('isTaskListNote = ?');
-                params.push(isTaskListNote);
-            }
-
-            const whereClause = conditions.join(' AND ');
-
-            stmt = await conn.prepare(`
-                SELECT
-                    *,
-                    list_dot_product(embedding, ?) as similarity
-                FROM
-                    USER_NOTE_EMBEDDINGS
-                WHERE
-                    ${whereClause}
-                ORDER BY
-                    similarity DESC
-                LIMIT ?;
-            `);
-
-            if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
-                // Convert to array so we can JSON.stringify it
-                embedding = Array.from(embedding);
-            }
-            if (!isArray(embedding)) {
-                throw new Error('Embedding must be an array of numbers.');
-            }
-
-            const results = await stmt.query(JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
-            let jsonResults = results.toArray().map(row => row.toJSON());
-            jsonResults.forEach(row => {
-                if (row.embedding) {
-                    row.embedding = row.embedding.toArray();
-                }
-                if (!(row.embedding instanceof Float32Array)) {
-                    row.embedding = new Float32Array(row.embedding);
-                }
-                if (row.noteTags) {
-                    row.noteTags = row.noteTags.toArray();
-                }
-            });
-
-            return jsonResults;
-        } catch (e) {
-            console.error("Failed to search note embedding:", e);
-            throw e;
-        } finally {
-            if (stmt) {
-                await stmt.close();
-            }
-            if (conn) {
-                await conn.close();
-            }
-        }
-    }
+    // async searchNoteRecordByEmbedding(embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
+    //     await this.init();
+    //     let conn;
+    //     let stmt;
+    //
+    //     try {
+    //         conn = await this.db.connect();
+    //
+    //         // Build WHERE clause conditions
+    //         const conditions = ['similarity > ?'];
+    //         const params = [];
+    //
+    //         if (isArchived !== null) {
+    //             conditions.push('isArchived = ?');
+    //             params.push(isArchived);
+    //         }
+    //         if (isSharedByMe !== null) {
+    //             conditions.push('isSharedByMe = ?');
+    //             params.push(isSharedByMe);
+    //         }
+    //         if (isSharedWithMe !== null) {
+    //             conditions.push('isSharedWithMe = ?');
+    //             params.push(isSharedWithMe);
+    //         }
+    //         if (isTaskListNote !== null) {
+    //             conditions.push('isTaskListNote = ?');
+    //             params.push(isTaskListNote);
+    //         }
+    //
+    //         const whereClause = conditions.join(' AND ');
+    //
+    //         stmt = await conn.prepare(`
+    //             SELECT
+    //                 *,
+    //                 list_dot_product(embedding, ?) AS similarity
+    //             FROM
+    //                 user_note_embeddings
+    //             WHERE
+    //                 ${whereClause}
+    //             ORDER BY
+    //                 similarity DESC
+    //             LIMIT ?;
+    //         `);
+    //
+    //         if (embedding instanceof Float32Array || embedding instanceof Float64Array) {
+    //             // Convert to array so we can JSON.stringify it
+    //             embedding = Array.from(embedding);
+    //         }
+    //         if (!isArray(embedding)) {
+    //             throw new Error('Embedding must be an array of numbers.');
+    //         }
+    //
+    //         const results = await stmt.query(JSON.stringify(embedding), thresholdSimilarity, ...params, limit);
+    //         let jsonResults = results.toArray().map(row => row.toJSON());
+    //         jsonResults.forEach(row => {
+    //             if (row.embedding) {
+    //                 row.embedding = row.embedding.toArray();
+    //             }
+    //             if (!(row.embedding instanceof Float32Array)) {
+    //                 row.embedding = new Float32Array(row.embedding);
+    //             }
+    //             if (row.noteTags) {
+    //                 row.noteTags = row.noteTags.toArray();
+    //             }
+    //         });
+    //
+    //         return jsonResults;
+    //     } catch (e) {
+    //         console.error("Failed to search note embedding:", e);
+    //         throw e;
+    //     } finally {
+    //         if (stmt) {
+    //             await stmt.close();
+    //         }
+    //         if (conn) {
+    //             await conn.close();
+    //         }
+    //     }
+    // }
 
     /**
      * Search note records by RRF (Reciprocal Ranked Fusion).
@@ -330,7 +331,7 @@ export class DuckDBNotesManager {
                                                                      NOT regexp_matches(word, '(\\.|[^a-z])+')
                             ),
                             x -> stem(x, 'porter')
-                                         )) as stems
+                                         )) AS stems
                 ),
                 -- 2. Get top embedding matches with initial filtering
                 embed_candidates AS (
@@ -346,10 +347,10 @@ export class DuckDBNotesManager {
                              noteTitle,
                              noteUUID,
                              processedNoteContent,
-                             list_dot_product(embedding, ?) as embedding_similarity,
-                             ROW_NUMBER() OVER (ORDER BY list_dot_product(embedding, ?) DESC) as embed_rank
+                             list_dot_product(embedding, ?) AS embedding_similarity,
+                             ROW_NUMBER() OVER (ORDER BY list_dot_product(embedding, ?) DESC) AS embed_rank
                          FROM
-                             USER_NOTE_EMBEDDINGS
+                             user_note_embeddings
                                  ${whereClause}
                          ORDER BY embedding_similarity DESC
                     LIMIT ?
@@ -372,9 +373,9 @@ export class DuckDBNotesManager {
                 query_term_idf AS (
                     SELECT
                         q.stem,
-                        log((SELECT count(*) FROM candidate_doc_stems) / CAST(count(c.id) + 1 AS DOUBLE)) AS idf_score
+                        log((SELECT COUNT(*) FROM candidate_doc_stems) / CAST(COUNT(c.id) + 1 AS DOUBLE)) AS idf_score
                     FROM
-                        (SELECT unnest(stems) as stem FROM query_stems) AS q
+                        (SELECT unnest(stems) AS stem FROM query_stems) AS q
                         LEFT JOIN
                         candidate_doc_stems c ON list_contains(c.doc_stems, q.stem)
                     GROUP BY
@@ -384,11 +385,11 @@ export class DuckDBNotesManager {
                 fts_scored AS (
                     SELECT
                         ec.*,
-                        (SELECT sum(qti.idf_score)
+                        (SELECT SUM(qti.idf_score)
                          FROM query_term_idf qti
                          WHERE list_contains(cds.doc_stems, qti.stem)
-                        ) as fts_score,
-                        ROW_NUMBER() OVER (ORDER BY (SELECT sum(qti.idf_score) FROM query_term_idf qti WHERE list_contains(cds.doc_stems, qti.stem)) DESC) as fts_rank
+                        ) AS fts_score,
+                        ROW_NUMBER() OVER (ORDER BY (SELECT SUM(qti.idf_score) FROM query_term_idf qti WHERE list_contains(cds.doc_stems, qti.stem)) DESC) AS fts_rank
                     FROM
                         embed_candidates ec
                         JOIN
@@ -507,7 +508,7 @@ export class DuckDBNotesManager {
         let conn;
         try {
             conn = await this.db.connect();
-            const stmt = await conn.prepare('DELETE FROM USER_NOTE_EMBEDDINGS WHERE noteUUID IN ?');
+            const stmt = await conn.prepare('DELETE FROM user_note_embeddings WHERE noteUUID IN ?');
             await stmt.query(JSON.stringify(noteUUIDArr));
             await stmt.close();
         } catch (e) {
@@ -535,7 +536,7 @@ export class DuckDBNotesManager {
         let conn;
         try {
             conn = await this.db.connect();
-            const stmt = await conn.prepare('DELETE FROM USER_NOTE_EMBEDDINGS WHERE noteUUID NOT IN ?');
+            const stmt = await conn.prepare('DELETE FROM user_note_embeddings WHERE noteUUID NOT IN ?');
             await stmt.query(JSON.stringify(noteUUIDArr));
             await stmt.close();
         } catch (e) {
@@ -559,7 +560,7 @@ export class DuckDBNotesManager {
             conn = await this.db.connect();
 
             // Count items in notes table
-            const notesResult = await conn.query('SELECT COUNT(*)::INTEGER as count FROM USER_NOTE_EMBEDDINGS');
+            const notesResult = await conn.query('SELECT COUNT(*)::INTEGER AS count FROM user_note_embeddings');
             const totalCount = notesResult.toArray()[0].count;
 
             return totalCount;
@@ -579,7 +580,7 @@ export class DuckDBNotesManager {
     async _getConfigValue(conn, key) {
         let result = null;
         try {
-            const stmt = await conn.prepare('SELECT value FROM DB_CONFIG WHERE key = ?');
+            const stmt = await conn.prepare('SELECT value FROM db_config WHERE key = ?');
             result = await stmt.query(String(key));
             await stmt.close();
         } catch (e) {}
@@ -588,7 +589,7 @@ export class DuckDBNotesManager {
     }
 
     async _setConfigValue(conn, key, value) {
-        const stmt = await conn.prepare('INSERT OR REPLACE INTO DB_CONFIG (key, value) VALUES (?, ?)');
+        const stmt = await conn.prepare('INSERT OR REPLACE INTO db_config (key, value) VALUES (?, ?)');
         await stmt.query(String(key), String(value));
         await stmt.close();
     }
