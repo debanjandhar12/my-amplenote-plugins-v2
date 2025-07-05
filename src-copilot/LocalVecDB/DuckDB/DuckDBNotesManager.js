@@ -286,12 +286,35 @@ export class DuckDBNotesManager {
      */
     async searchNoteRecordByRRF(query, embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
         await this.init();
-        await this.updateFTSIndex();
+        // await this.updateFTSIndex();
         let conn;
         let stmt;
 
         try {
             conn = await this.db.connect();
+
+            // At the top of your function, before preparing the statement
+            await conn.query(`
+            CREATE OR REPLACE MACRO fts_score(query_stems_list, text_column) AS (
+                CASE
+                    WHEN len(query_stems_list) = 0 THEN 0.0
+                    ELSE
+                        CAST(len(list_intersect(
+                            list_distinct(list_transform(string_split(lower(text_column), ' '), x -> stem(x, 'porter'))),
+                            query_stems_list
+                        )) AS DOUBLE) / len(query_stems_list)
+                END
+            );
+        `);
+
+            // 2. Define a NEW, SIMPLER `fts_match` macro.
+            await conn.query(`
+            CREATE OR REPLACE MACRO fts_match(query_stems_list, text_column) AS
+                list_has_any(
+                    list_transform(string_split(lower(text_column), ' '), x -> stem(x, 'porter')),
+                    query_stems_list
+                );
+        `);
 
             // Build WHERE clause conditions
             const conditions = ['similarity > ?'];
@@ -316,13 +339,22 @@ export class DuckDBNotesManager {
 
             const whereClause = conditions.join(' AND ');
             stmt = await conn.prepare(`
-              WITH fts_ranked AS (
-                  SELECT
-                      id,
-                      ROW_NUMBER() OVER (ORDER BY FTS_MAIN_USER_NOTE_EMBEDDINGS.match_bm25(id, ?, fields := 'processedNoteContent') DESC) as rank
-                  FROM
-                      USER_NOTE_EMBEDDINGS
-              ),
+                WITH query_stems AS (
+                    -- This CTE runs ONCE to process the search query string.
+                    SELECT list_distinct(list_transform(string_split(lower(?), ' '), x -> stem(x, 'porter'))) as stems
+                ),
+                     fts_ranked AS (
+                         SELECT
+                             t.id,
+                             -- The simplified macro is now called with the pre-processed list from query_stems
+                             ROW_NUMBER() OVER (ORDER BY fts_score(q.stems, t.processedNoteContent) DESC) as rank
+                         FROM
+                             USER_NOTE_EMBEDDINGS AS t,
+                             query_stems AS q  -- Use a comma for an implicit CROSS JOIN
+                         WHERE
+                             -- The pre-filter also uses the pre-processed list
+                             fts_match(q.stems, t.processedNoteContent)
+                     ),
               embed_ranked AS (
                   SELECT
                       id,
@@ -335,7 +367,7 @@ export class DuckDBNotesManager {
                   SELECT
                       COALESCE(fts.id, embed.id) AS id,
                       embed.embedding_similarity as embedding_similarity,
-                      ( (0.6 * rrf(fts.rank)) + (1.4 * rrf(embed.rank)) ) * (61/2) AS similarity -- make similarity 0 to 1
+                      ( (0.4 * COALESCE(1.0 / (60 + fts.rank), 0)) + (0.6 * COALESCE(1.0 / (60 + embed.rank), 0)) ) AS similarity
                   FROM
                       fts_ranked AS fts
                   FULL OUTER JOIN
@@ -402,23 +434,23 @@ export class DuckDBNotesManager {
         }
     }
 
-    async updateFTSIndex() {
-        await this.init();
-        let conn;
-        try {
-          conn = await this.db.connect();
-          const isUpdated = await this._getConfigValue(conn, 'lastSyncTime') === await this._getConfigValue(conn, 'lastFTSIndexTime');
-          if (!isUpdated) {
-            await conn.query(`PRAGMA create_fts_index('USER_NOTE_EMBEDDINGS', 'id', input_values:='processedNoteContent', overwrite:=1)`);
-            await this._setConfigValue(conn, 'lastFTSIndexTime', await this._getConfigValue(conn, 'lastSyncTime'));
-            await conn.send(`CHECKPOINT;`);
-          }
-        }
-        catch (e) {
-          conn.close();
-          throw e;
-        }
-    }
+    // async updateFTSIndex() {
+    //     await this.init();
+    //     let conn;
+    //     try {
+    //       conn = await this.db.connect();
+    //       const isUpdated = await this._getConfigValue(conn, 'lastSyncTime') === await this._getConfigValue(conn, 'lastFTSIndexTime');
+    //       if (!isUpdated) {
+    //         await conn.query(`PRAGMA create_fts_index('USER_NOTE_EMBEDDINGS', 'id', input_values:='processedNoteContent', overwrite:=1)`);
+    //         await this._setConfigValue(conn, 'lastFTSIndexTime', await this._getConfigValue(conn, 'lastSyncTime'));
+    //         await conn.send(`CHECKPOINT;`);
+    //       }
+    //     }
+    //     catch (e) {
+    //       conn.close();
+    //       throw e;
+    //     }
+    // }
 
     /**
      * Deletes all note embedding chunks that have given note UUID.
