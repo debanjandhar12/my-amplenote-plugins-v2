@@ -2,16 +2,10 @@ import {LOCAL_VEC_DB_INDEX_VERSION} from "../../constants.js";
 import DuckDBConnectionController from "./DuckDBConnectionController.js";
 import {OPFSUtils} from "./OPFSUtils.js";
 import {isArray, truncate} from "lodash-es";
+import { eng } from "stopword";
 
-// Common English stopwords for FTS filtering
-const STOPWORDS = [
-    'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'has', 'he', 'in', 'is', 'it',
-    'its', 'of', 'on', 'that', 'the', 'to', 'was', 'will', 'with', 'the', 'this', 'but', 'they',
-    'have', 'had', 'what', 'said', 'each', 'which', 'she', 'do', 'how', 'their', 'if', 'up', 'out',
-    'many', 'then', 'them', 'these', 'so', 'some', 'her', 'would', 'make', 'like', 'into', 'him',
-    'time', 'two', 'more', 'very', 'when', 'come', 'may', 'see', 'need', 'down', 'should', 'now',
-    'over', 'such', 'take', 'than', 'them', 'well', 'were'
-];
+// English stopwords for FTS filtering from stopword package
+const STOPWORDS = eng;
 
 let instance;
 export class DuckDBNotesManager {
