@@ -67,7 +67,6 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
             await dbm.resetDB();
             lastSyncTime = new Date(0).toISOString();
         }
-
         // -- Fetch target notes from amplenote --
         const allNotes = await app.filterNotes({});
         const targetNotes = filterAndSortNotes(allNotes, lastSyncTime);
@@ -273,116 +272,93 @@ async function updateSyncConfigs(dbm, pluginUUID, modelName) {
 
 async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, dbm, syncId, mode, performanceTime, error) {
     try {
-        // Get user agent
         const userAgent = navigator.userAgent;
+        const pluginUUID = app.context.pluginUUID || 'unknown';
 
-        // Get RAM information
         let ramInfo = 'Memory info not available';
-        try {
-            if (performance.memory) {
-                const usedJSHeapSize = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
-                const totalJSHeapSize = Math.round(performance.memory.totalJSHeapSize / 1024 / 1024);
-                const jsHeapSizeLimit = Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024);
-                ramInfo = `Used: ${usedJSHeapSize}MB, Total: ${totalJSHeapSize}MB, Limit: ${jsHeapSizeLimit}MB`;
-            }
-        } catch (e) {}
+        let usedJSHeapSize = 0, totalJSHeapSize = 0, jsHeapSizeLimit = 0;
+        if (performance.memory) {
+            usedJSHeapSize = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
+            totalJSHeapSize = Math.round(performance.memory.totalJSHeapSize / 1024 / 1024);
+            jsHeapSizeLimit = Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024);
+            ramInfo = `Used: ${usedJSHeapSize}MB, Total: ${totalJSHeapSize}MB, Limit: ${jsHeapSizeLimit}MB`;
+        }
 
-        // Get storage space
         let storageSpace = 'Storage info not available';
+        let isPersisted = false;
+        let fileList = [];
+        let duckDBRecordCount = 0;
+        let embeddingProviderName = 'Unknown';
+
         try {
             storageSpace = await OPFSUtils.getRemainingStorageSpace();
-        } catch (e) {
-            // Silently fail, keep defaults
-        }
+            isPersisted = await OPFSUtils.isPersisted();
+            fileList = await OPFSUtils.getFileList();
+            if (dbm) duckDBRecordCount = await dbm.getNotesRecordCount();
+            embeddingProviderName = getEmbeddingProviderName(app);
+        } catch (e) {}
 
-        if (mode === 'start') {
-            console.log(
-                `%c=== Starting Sync [${syncId}] ===\n` +
-                `%cUser Agent: ${userAgent}\n` +
-                `RAM: ${ramInfo}\n` +
-                `OPFS Remaining Storage space: ${storageSpace}\n` +
-                `%c=====================`,
-                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;',
-                'color: white; background-color: #333; font-size: 13px; padding: 2px;',
-                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;'
-            );
-        } else if (mode === 'progress') {
-            // Get embedding provider name
-            const embeddingProviderName = getEmbeddingProviderName(app);
+        // Console logging based on mode
+        const colors = {
+            start: 'green', progress: 'green', end: 'green', error: 'red'
+        };
+        const modeText = mode.charAt(0).toUpperCase() + mode.slice(1);
+        let details = `Plugin UUID: ${pluginUUID}\nUser Agent: ${userAgent}\nRAM: ${ramInfo}\nEmbedding Provider: ${embeddingProviderName}\nOPFS Storage: ${storageSpace}\nOPFS Persisted: ${isPersisted}\nOPFS Files: ${JSON.stringify(fileList)}`;
 
-            // Get DuckDB items count
-            let existingDuckDBRecordCount = 'Failed to get';
-            try {
-                existingDuckDBRecordCount = await dbm.getNotesRecordCount();
-            } catch (e) {}
-
-            console.log(
-                `%c=== Progress Sync [${syncId}] ===\n` +
-                `%cPlugin UUID: ${app.context.pluginUUID}\n` +
-                `User Agent: ${userAgent}\n` +
-                `RAM: ${ramInfo}\n` +
-                `Embedding Provider: ${embeddingProviderName}\n` +
-                `Existing Progress: ${processedNoteCount}/${totalNoteCount}\n` +
-                `Remaining NoteBatches count: ${noteBatches.length}\n` +
-                `Existing DuckDB Records count: ${existingDuckDBRecordCount}\n` +
-                `OPFS Remaining Storage space: ${storageSpace}\n` +
-                `OPFS Persisted: ${await OPFSUtils.isPersisted()}\n` +
-                `OPFS File List: ${JSON.stringify(await OPFSUtils.getFileList())}\n` +
-                `%c=====================`,
-                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;',
-                'color: white; background-color: #333; font-size: 13px; padding: 2px;',
-                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;'
-            );
+        if (mode === 'progress') {
+            details += `\nProgress: ${processedNoteCount}/${totalNoteCount}\nRemaining Batches: ${noteBatches?.length || 0}\nDuckDB Records: ${duckDBRecordCount}`;
         } else if (mode === 'end') {
-            // Get embedding provider name
-            const embeddingProviderName = getEmbeddingProviderName(app);
-
-            // Get DuckDB items count
-            let duckDBRecordCount = 'Failed to get';
-            try {
-                duckDBRecordCount = await dbm.getNotesRecordCount();
-            } catch (e) {}
-
-            console.log(
-                `%c=== Completed Sync [${syncId}] ===\n` +
-                `%cPlugin UUID: ${app.context.pluginUUID}\n` +
-                `User Agent: ${userAgent}\n` +
-                `RAM: ${ramInfo}\n` +
-                `Embedding Provider: ${embeddingProviderName}\n` +
-                `DuckDB Records count: ${duckDBRecordCount}\n` +
-                `OPFS Remaining Storage space: ${storageSpace}\n` +
-                `OPFS Persisted: ${await OPFSUtils.isPersisted()}\n` +
-                `OPFS File List: ${JSON.stringify(await OPFSUtils.getFileList())}\n` +
-                `Performance: ${performanceTime}ms\n` +
-                `%c=====================`,
-                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;',
-                'color: white; background-color: #333; font-size: 13px; padding: 2px;',
-                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;'
-            );
+            details += `\nDuckDB Records: ${duckDBRecordCount}\nPerformance: ${performanceTime}ms`;
         } else if (mode === 'error') {
-            // Get embedding provider name (if possible)
-            let embeddingProviderName = 'Unknown';
-            try {
-                embeddingProviderName = getEmbeddingProviderName(app);
-            } catch (e) {}
-
-            console.log(
-                `%c=== Error Sync [${syncId}] ===\n` +
-                `%cPlugin UUID: ${app.context.pluginUUID}\n` +
-                `User Agent: ${userAgent}\n` +
-                `RAM: ${ramInfo}\n` +
-                `Embedding Provider: ${embeddingProviderName}\n` +
-                `OPFS Remaining Storage space: ${storageSpace}\n` +
-                `OPFS Persisted: ${await OPFSUtils.isPersisted()}\n` +
-                `OPFS File List: ${JSON.stringify(await OPFSUtils.getFileList())}\n` +
-                `Error: ${error?.message || 'Unknown error'}\n` +
-                `Error Stack: ${error?.stack || 'No stack trace available'}\n` +
-                `%c=====================`,
-                'color: white; background-color: red; font-weight: bold; font-size: 14px; padding: 2px;',
-                'color: white; background-color: #333; font-size: 13px; padding: 2px;',
-                'color: white; background-color: red; font-weight: bold; font-size: 14px; padding: 2px;'
-            );
+            details += `\nError: ${error?.message || 'Unknown error'}\nStack: ${error?.stack || 'No stack trace'}`;
         }
+
+        console.log(
+            `%c=== ${modeText} Sync [${syncId}] ===\n%c${details}\n%c=====================`,
+            `color: white; background-color: ${colors[mode]}; font-weight: bold; font-size: 14px; padding: 2px;`,
+            'color: white; background-color: #333; font-size: 13px; padding: 2px;',
+            `color: white; background-color: ${colors[mode]}; font-weight: bold; font-size: 14px; padding: 2px;`
+        );
+
+        try {
+            const logData = {
+                fields: {
+                    syncId: { stringValue: syncId },
+                    mode: { stringValue: mode },
+                    timestamp: { timestampValue: new Date().toISOString() },
+                    pluginUUID: { stringValue: pluginUUID },
+                    userAgent: { stringValue: userAgent },
+                    embeddingProviderName: { stringValue: embeddingProviderName },
+                    processedNoteCount: { integerValue: processedNoteCount || 0 },
+                    totalNoteCount: { integerValue: totalNoteCount || 0 },
+                    duckDBRecordCount: { integerValue: duckDBRecordCount },
+                    storageSpace: { stringValue: storageSpace },
+                    isPersisted: { booleanValue: isPersisted },
+                    fileList: { stringValue: JSON.stringify(fileList) },
+                    ramInfo: { stringValue: ramInfo },
+                    usedJSHeapSize: { integerValue: usedJSHeapSize },
+                    totalJSHeapSize: { integerValue: totalJSHeapSize },
+                    jsHeapSizeLimit: { integerValue: jsHeapSizeLimit }
+                }
+            };
+
+            if (mode === 'progress') logData.fields.remainingNoteBatchesCount = { integerValue: noteBatches?.length || 0 };
+            else if (mode === 'end') logData.fields.performanceTime = { doubleValue: performanceTime || 0 };
+            else if (mode === 'error') {
+                if (typeof error === 'string') {
+                    logData.fields.errorMessage = { stringValue: error.toLowerCase().includes('api') ? 'API Error' : error };
+                } else {
+                    logData.fields.errorMessage = { stringValue: error.message?.toLowerCase().includes('api') ? 'API Error' : error.message };
+                    logData.fields.errorStack = { stringValue: error.message?.toLowerCase().includes('api') ? '' : error.stack };
+                }
+            }
+
+            const response = await fetch('https://firestore.googleapis.com/v1/projects/amplenote-plugins/databases/(default)/documents/analytics2', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(logData)
+            });
+        } catch (e) {}
     } catch (error) {
         console.error('Error writing log stats:', error);
     }
