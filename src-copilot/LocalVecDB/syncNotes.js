@@ -27,6 +27,9 @@ import {OPFSUtils} from "./DuckDB/OPFSUtils.js";
 // console.log('resetDB', await dbm.resetDB());
 
 export const syncNotes = async (app, sendMessageToEmbed) => {
+    // Generate random sync ID at the very beginning
+    const syncId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
     try {
         // -- Initialize --
         const performanceStartTime = performance.now();
@@ -48,7 +51,10 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
 
         sendMessageToEmbed(app, 'syncNotesProgress', `Starting sync...`);
         const dbm = new DuckDBNotesManager();
-        await DuckDBConnectionController.cancelTerminate();
+        DuckDBConnectionController.cancelTerminate();
+
+        // Write initial log statistics
+        await writeLogStats(app, null, 0, 0, dbm, syncId, 'start');
         const embeddingProviderName = getEmbeddingProviderName(app);
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
         let lastSyncTime = await dbm.getConfigValue('lastSyncTime')
@@ -74,25 +80,29 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         let processedNoteCount = totalNoteCount - targetNotes.length;
 
         // Write log statistics before processing all noteBatches
-        await writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, dbm);
+        await writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, dbm, syncId, 'progress');
 
         // Clear notes that were deleted
         sendMessageToEmbed(app, 'syncNotesProgress', `Sanitizing database...`);
-        await dbm.deleteNoteRecordByNoteUUIDNotInList(allNotes.map(note => note.uuid));
+        await scheduler.postTask(async () => {
+          await dbm.deleteNoteRecordByNoteUUIDNotInList(allNotes.map(note => note.uuid));
+        }, {priority: 'background'});
 
         // Process each batch of notes
         for (const [batchIndex, noteBatch] of noteBatches.entries()) {
+            let batchRecords = [];
             await scheduler.postTask(async () => {
-                // Process this batch
-                const batchRecords = await processNoteBatch(app, noteBatch, sendMessageToEmbed, processedNoteCount, totalNoteCount);
+                batchRecords = await processNoteBatch(app, noteBatch, sendMessageToEmbed, processedNoteCount, totalNoteCount);
+            }, {priority: 'background'});
 
-                // Ask for cost confirmation if this is the first batch
-                if (batchIndex === 0) {
-                    const shouldContinue = await confirmEmbeddingCost(app, embeddingGenerator, batchRecords.length*noteBatches.length*2, sendMessageToEmbed);
-                    if (!shouldContinue) return false;
-                }
+            // Ask for cost confirmation if this is the first batch
+            if (batchIndex === 0) {
+                const shouldContinue = await confirmEmbeddingCost(app, embeddingGenerator, batchRecords.length*noteBatches.length*2, sendMessageToEmbed);
+                if (!shouldContinue) return false;
+            }
 
-                // Process embeddings and store in DB for this batch
+            // Process embeddings and store in DB for this batch
+            await scheduler.postTask(async () => {
                 await processAndStoreEmbeddings(
                     app,
                     batchRecords,
@@ -122,13 +132,14 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         // sendMessageToEmbed(app, 'syncNotesProgress', `Updating index...`);
         // await dbm.updateFTSIndex();
 
-        console.log('syncNotes perf:', performance.now() - performanceStartTime, ', note count:', targetNotes.length);
         sendMessageToEmbed(app, 'syncNotesProgress', `${totalNoteCount}/${totalNoteCount}<br />Sync Completed!`);
+        await writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, dbm, syncId, 'end', performance.now() - performanceStartTime);
         app.alert("Sync completed!");
         DuckDBConnectionController.scheduleTerminate();
         return true;
     } catch (e) {
-        console.error('syncNotes error:', e);
+        console.error('sync error', e);
+        await writeLogStats(app, null, 0, 0, null, syncId, 'error', null, e);
         sendMessageToEmbed(app, 'syncNotesProgress', `Error: ${e.message}`);
         app.alert("Sync failed: " + e.message);
         throw e;
@@ -260,7 +271,7 @@ async function updateSyncConfigs(dbm, pluginUUID, modelName) {
     await dbm.setConfigValue('lastEmbeddingModel', modelName);
 }
 
-async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, dbm) {
+async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, dbm, syncId, mode, performanceTime, error) {
     try {
         // Get user agent
         const userAgent = navigator.userAgent;
@@ -276,36 +287,102 @@ async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCoun
             }
         } catch (e) {}
 
-        // Get embedding provider name
-        const embeddingProviderName = getEmbeddingProviderName(app);
-
-        // Get IndexedDB items count and storage space
-        let existingDuckDBRecordCount = 0;
+        // Get storage space
         let storageSpace = 'Storage info not available';
         try {
-            existingDuckDBRecordCount = await dbm.getNotesRecordCount();
             storageSpace = await OPFSUtils.getRemainingStorageSpace();
         } catch (e) {
             // Silently fail, keep defaults
         }
 
-        console.log(
-            `%c=== Starting Sync ===\n` +
-            `%cPlugin UUID: ${app.context.pluginUUID}\n` +
-            `User Agent: ${userAgent}\n` +
-            `RAM: ${ramInfo}\n` +
-            `Embedding Provider: ${embeddingProviderName}\n` +
-            `Existing Progress: ${processedNoteCount}/${totalNoteCount}\n` +
-            `Remaining NoteBatches count: ${noteBatches.length}\n` +
-            `Existing DuckDB Records count: ${existingDuckDBRecordCount}\n` +
-            `OPFS Remaining Storage space: ${storageSpace}\n` +
-            `OPFS Persisted: ${await OPFSUtils.isPersisted()}\n` +
-            `OPFS File List: ${JSON.stringify(await OPFSUtils.getFileList())}\n` +
-            `%c=====================`,
-            'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;',
-            'color: white; background-color: #333; font-size: 13px; padding: 2px;',
-            'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;'
-        );
+        if (mode === 'start') {
+            console.log(
+                `%c=== Starting Sync [${syncId}] ===\n` +
+                `%cUser Agent: ${userAgent}\n` +
+                `RAM: ${ramInfo}\n` +
+                `OPFS Remaining Storage space: ${storageSpace}\n` +
+                `%c=====================`,
+                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;',
+                'color: white; background-color: #333; font-size: 13px; padding: 2px;',
+                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;'
+            );
+        } else if (mode === 'progress') {
+            // Get embedding provider name
+            const embeddingProviderName = getEmbeddingProviderName(app);
+
+            // Get DuckDB items count
+            let existingDuckDBRecordCount = 'Failed to get';
+            try {
+                existingDuckDBRecordCount = await dbm.getNotesRecordCount();
+            } catch (e) {}
+
+            console.log(
+                `%c=== Progress Sync [${syncId}] ===\n` +
+                `%cPlugin UUID: ${app.context.pluginUUID}\n` +
+                `User Agent: ${userAgent}\n` +
+                `RAM: ${ramInfo}\n` +
+                `Embedding Provider: ${embeddingProviderName}\n` +
+                `Existing Progress: ${processedNoteCount}/${totalNoteCount}\n` +
+                `Remaining NoteBatches count: ${noteBatches.length}\n` +
+                `Existing DuckDB Records count: ${existingDuckDBRecordCount}\n` +
+                `OPFS Remaining Storage space: ${storageSpace}\n` +
+                `OPFS Persisted: ${await OPFSUtils.isPersisted()}\n` +
+                `OPFS File List: ${JSON.stringify(await OPFSUtils.getFileList())}\n` +
+                `%c=====================`,
+                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;',
+                'color: white; background-color: #333; font-size: 13px; padding: 2px;',
+                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;'
+            );
+        } else if (mode === 'end') {
+            // Get embedding provider name
+            const embeddingProviderName = getEmbeddingProviderName(app);
+
+            // Get DuckDB items count
+            let duckDBRecordCount = 'Failed to get';
+            try {
+                duckDBRecordCount = await dbm.getNotesRecordCount();
+            } catch (e) {}
+
+            console.log(
+                `%c=== Completed Sync [${syncId}] ===\n` +
+                `%cPlugin UUID: ${app.context.pluginUUID}\n` +
+                `User Agent: ${userAgent}\n` +
+                `RAM: ${ramInfo}\n` +
+                `Embedding Provider: ${embeddingProviderName}\n` +
+                `DuckDB Records count: ${duckDBRecordCount}\n` +
+                `OPFS Remaining Storage space: ${storageSpace}\n` +
+                `OPFS Persisted: ${await OPFSUtils.isPersisted()}\n` +
+                `OPFS File List: ${JSON.stringify(await OPFSUtils.getFileList())}\n` +
+                `Performance: ${performanceTime}ms\n` +
+                `%c=====================`,
+                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;',
+                'color: white; background-color: #333; font-size: 13px; padding: 2px;',
+                'color: white; background-color: green; font-weight: bold; font-size: 14px; padding: 2px;'
+            );
+        } else if (mode === 'error') {
+            // Get embedding provider name (if possible)
+            let embeddingProviderName = 'Unknown';
+            try {
+                embeddingProviderName = getEmbeddingProviderName(app);
+            } catch (e) {}
+
+            console.log(
+                `%c=== Error Sync [${syncId}] ===\n` +
+                `%cPlugin UUID: ${app.context.pluginUUID}\n` +
+                `User Agent: ${userAgent}\n` +
+                `RAM: ${ramInfo}\n` +
+                `Embedding Provider: ${embeddingProviderName}\n` +
+                `OPFS Remaining Storage space: ${storageSpace}\n` +
+                `OPFS Persisted: ${await OPFSUtils.isPersisted()}\n` +
+                `OPFS File List: ${JSON.stringify(await OPFSUtils.getFileList())}\n` +
+                `Error: ${error?.message || 'Unknown error'}\n` +
+                `Error Stack: ${error?.stack || 'No stack trace available'}\n` +
+                `%c=====================`,
+                'color: white; background-color: red; font-weight: bold; font-size: 14px; padding: 2px;',
+                'color: white; background-color: #333; font-size: 13px; padding: 2px;',
+                'color: white; background-color: red; font-weight: bold; font-size: 14px; padding: 2px;'
+            );
+        }
     } catch (error) {
         console.error('Error writing log stats:', error);
     }
