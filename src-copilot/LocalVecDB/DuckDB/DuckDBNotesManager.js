@@ -139,7 +139,7 @@ export class DuckDBNotesManager {
                   noteTags, noteTitle, noteUUID, processedNoteContent
               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `);
-        for (const noteEmbeddingObj of noteEmbeddingObjArr) {
+        for (const [index, noteEmbeddingObj] of noteEmbeddingObjArr.entries()) {
             try {
                 if (!noteEmbeddingObj.id) {
                     throw new Error('Note embedding object must have an "id" property.');
@@ -184,17 +184,20 @@ export class DuckDBNotesManager {
                 );
             } catch (e) {
                 errors.push({
-                    message: `Failed to process item at index ${index} (id: ${noteEmbeddingObj.id || 'N/A'})`,
+                    message: `Failed to process item at index ${index} (id: ${noteEmbeddingObj.id || 'N/A'})` +
+                             `Error Reason: ${e?.message}`,
                     cause: e,
                     item: noteEmbeddingObj
                 });
             }
         }
         if (errors.length > 0) {
-            await conn.query('ROLLBACK');
-            await stmt.close();
-            conn.close();
-            throw new AggregateError(errors, `Failed to insert ${errors.length} of ${noteEmbeddingObjArr.length} note embeddings.`);
+            try {
+                await conn.query('ROLLBACK');
+                await stmt.close();
+                conn.close();
+            } catch (e) {console.warn(e)}
+            throw errors[0];
         }
         await conn.query('COMMIT');
         await conn.query(`CHECKPOINT`);
@@ -472,10 +475,10 @@ export class DuckDBNotesManager {
                     fts_score,
                     similarity,
                     -- Debug information
-                    doc_stems,
-                    query_stems,
-                    embed_rank,
-                    fts_rank
+                    -- doc_stems,
+                    -- query_stems,
+                    -- embed_rank,
+                    -- fts_rank
                 FROM
                     final_scores
                 ORDER BY

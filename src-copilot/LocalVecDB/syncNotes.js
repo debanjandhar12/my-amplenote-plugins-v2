@@ -28,7 +28,7 @@ import {OPFSUtils} from "./DuckDB/OPFSUtils.js";
 
 export const syncNotes = async (app, sendMessageToEmbed) => {
     // Generate random sync ID at the very beginning
-    const syncId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const syncId = 'X6'+Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
     try {
         // -- Initialize --
@@ -319,46 +319,6 @@ async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCoun
             'color: white; background-color: #333; font-size: 13px; padding: 2px;',
             `color: white; background-color: ${colors[mode]}; font-weight: bold; font-size: 14px; padding: 2px;`
         );
-
-        try {
-            const logData = {
-                fields: {
-                    syncId: { stringValue: syncId },
-                    mode: { stringValue: mode },
-                    timestamp: { timestampValue: new Date().toISOString() },
-                    pluginUUID: { stringValue: pluginUUID },
-                    userAgent: { stringValue: userAgent },
-                    embeddingProviderName: { stringValue: embeddingProviderName },
-                    processedNoteCount: { integerValue: processedNoteCount || 0 },
-                    totalNoteCount: { integerValue: totalNoteCount || 0 },
-                    duckDBRecordCount: { integerValue: duckDBRecordCount },
-                    storageSpace: { stringValue: storageSpace },
-                    isPersisted: { booleanValue: isPersisted },
-                    fileList: { stringValue: JSON.stringify(fileList) },
-                    ramInfo: { stringValue: ramInfo },
-                    usedJSHeapSize: { integerValue: usedJSHeapSize },
-                    totalJSHeapSize: { integerValue: totalJSHeapSize },
-                    jsHeapSizeLimit: { integerValue: jsHeapSizeLimit }
-                }
-            };
-
-            if (mode === 'progress') logData.fields.remainingNoteBatchesCount = { integerValue: noteBatches?.length || 0 };
-            else if (mode === 'end') logData.fields.performanceTime = { doubleValue: performanceTime || 0 };
-            else if (mode === 'error') {
-                if (typeof error === 'string') {
-                    logData.fields.errorMessage = { stringValue: error.toLowerCase().includes('api') ? 'API Error' : error };
-                } else {
-                    logData.fields.errorMessage = { stringValue: error.message?.toLowerCase().includes('api') ? 'API Error' : error.message };
-                    logData.fields.errorStack = { stringValue: error.message?.toLowerCase().includes('api') ? '' : error.stack };
-                }
-            }
-
-            const response = await fetch('https://firestore.googleapis.com/v1/projects/amplenote-plugins/databases/(default)/documents/analytics2', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(logData)
-            });
-        } catch (e) {}
     } catch (error) {
         console.error('Error writing log stats:', error);
     }
