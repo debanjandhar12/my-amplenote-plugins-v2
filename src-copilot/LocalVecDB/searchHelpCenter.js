@@ -25,7 +25,7 @@ function calculateHelpCenterFilename(embeddingProviderName) {
 export const searchHelpCenter = async (app, queryText, {limit = 15}) => {
     if (!queryText || !queryText.trim()) return [];
 
-    DuckDBConnectionController.cancelTerminate();
+    await DuckDBConnectionController.lockAutoTerminate();
     const helpCenterManager = new DuckDBHelpCenterManager();
     try {
         // Calculate filename based on embedding provider
@@ -36,9 +36,10 @@ export const searchHelpCenter = async (app, queryText, {limit = 15}) => {
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
         const queryVector = (await embeddingGenerator.generateEmbedding(app, queryText, "query"))[0];
         const result = await helpCenterManager.searchHelpCenterRecordByEmbedding(queryVector, {limit, filename});
-        DuckDBConnectionController.scheduleTerminate();
+        DuckDBConnectionController.unlockAutoTerminate();
         return result;
     } catch (e) {
+        DuckDBConnectionController.unlockAutoTerminate();
         throw new Error(`Error querying vectors: ${e}`);
     }
 }

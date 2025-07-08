@@ -11,7 +11,7 @@ import { Mutex } from "async-mutex";
 //         VoidLogger
 // } from "@duckdb/duckdb-wasm";
 
-let db, isTerminated = true, currentCollectionName;
+let db, isTerminated = true, currentCollectionName, lock_count = 0;
 const mutex = new Mutex();
 export default class DuckDBConnectionController {
     static async getCollectionInstance(collectionName, opts = {persistent: true}) {
@@ -43,8 +43,8 @@ export default class DuckDBConnectionController {
                 return db;
             }
             try {
-                await db.dropFiles();
                 await db.flushFiles();
+                await db.dropFiles();
                 await db.reset();
                 await new Promise(resolve => setTimeout(resolve, 100));
             } catch (e) {console.log(e);}
@@ -53,8 +53,8 @@ export default class DuckDBConnectionController {
                 accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3
             });
             const conn = await db.connect();
-            await conn.query("INSTALL fts");
-            await conn.query("LOAD fts");
+            // await conn.query("INSTALL fts"); -> commented since will auto load
+            // await conn.query("LOAD fts");
             await conn.query("SET temp_directory='tmp'"); // does not work atm even with registerOPFSFilename
             await conn.query(`CREATE OR REPLACE MACRO rrf(rank, k:=60) AS
                       COALESCE((1 / (k + rank)), 0)`);
@@ -69,15 +69,12 @@ export default class DuckDBConnectionController {
         return isTerminated;
     }
 
-    static scheduleTerminate() {
-        debouncedTerminate();
-    }
-
     static async forceTerminate() {
         if (db) {
+            lock_count = 0;
             try {
-                await db.dropFiles();
                 await db.flushFiles();
+                await db.dropFiles();
                 await db.reset();
             } catch (e) {console.log(e);}
             await db.terminate();
@@ -87,10 +84,25 @@ export default class DuckDBConnectionController {
         }
     }
 
-    static cancelTerminate() {
-        debouncedTerminate.cancel();
+    static async lockAutoTerminate() {
+        if (db) {
+            lock_count++;
+            debouncedTerminate.cancel();
+        }
+    }
+
+    static async unlockAutoTerminate() {
+        if (db) {
+            lock_count = Math.max(0, lock_count - 1);
+            if (lock_count === 0) {
+                debouncedTerminate();
+            }
+        }
     }
 }
 
-const debouncedTerminate = debounce(DuckDBConnectionController.forceTerminate,
-    3 * 60 * 1000); // 3 minutes
+const debouncedTerminate = debounce(() => {
+    if (lock_count === 0) {
+        DuckDBConnectionController.forceTerminate();
+    }
+},3 * 60 * 1000); // 3 minutes

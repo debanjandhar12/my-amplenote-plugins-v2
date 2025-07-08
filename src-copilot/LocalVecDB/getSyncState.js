@@ -9,19 +9,19 @@ export const getSyncState = async (app, syncNotesPromise = null) => {
     }
 
     const dbm = new DuckDBNotesManager();
-    await DuckDBConnectionController.cancelTerminate();
+    await DuckDBConnectionController.lockAutoTerminate();
     const lastPluginUUID = await dbm.getConfigValue('lastPluginUUID');
     const lastEmbeddingModel = await dbm.getConfigValue('lastEmbeddingModel');
     const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
     if (lastPluginUUID !== app.context.pluginUUID || lastEmbeddingModel !== embeddingGenerator.MODEL_NAME) {
-        DuckDBConnectionController.scheduleTerminate();
+        DuckDBConnectionController.unlockAutoTerminate();
         return 'Not synced';
     }
 
     const uniqueNoteUUIDs = await dbm.getActualNoteCount();
     const uniqueNoteUUIDsCount = uniqueNoteUUIDs.size;
     if (uniqueNoteUUIDsCount === 0) {
-        DuckDBConnectionController.scheduleTerminate();
+        DuckDBConnectionController.unlockAutoTerminate();
         return 'Not synced';
     }
     const allNotes = await app.filterNotes({});
@@ -41,9 +41,11 @@ export const getSyncState = async (app, syncNotesPromise = null) => {
             }
         });
     if (targetNotes.length >= (allNotes.length/2)) {
-        DuckDBConnectionController.scheduleTerminate();
+        DuckDBConnectionController.unlockAutoTerminate();
         return 'Not synced';
     }
 
-    return targetNotes.length === 0 ? 'Fully Synced' : 'Partially synced';
+    const result = targetNotes.length === 0 ? 'Fully Synced' : 'Partially synced';
+    DuckDBConnectionController.unlockAutoTerminate();
+    return result;
 }

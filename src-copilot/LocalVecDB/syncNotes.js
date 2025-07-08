@@ -44,14 +44,13 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
                 inputs: []
             });
             if (!confirm) {
-                DuckDBConnectionController.scheduleTerminate();
                 return;
             }
         }
 
         sendMessageToEmbed(app, 'syncNotesProgress', `Starting sync...`);
         const dbm = new DuckDBNotesManager();
-        DuckDBConnectionController.cancelTerminate();
+        await DuckDBConnectionController.lockAutoTerminate();
 
         // Write initial log statistics
         await writeLogStats(app, null, 0, 0, dbm, syncId, 'start');
@@ -98,7 +97,10 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
             // Ask for cost confirmation if this is the first batch
             if (batchIndex === 0) {
                 const shouldContinue = await confirmEmbeddingCost(app, embeddingGenerator, batchRecords.length*noteBatches.length*2, sendMessageToEmbed);
-                if (!shouldContinue) return false;
+                if (!shouldContinue) {
+                    await DuckDBConnectionController.unlockAutoTerminate();
+                    return false;
+                }
             }
 
             // Process embeddings and store in DB for this batch
@@ -119,9 +121,6 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
 
                 // Update configs after each batch for resumability
                 await updateSyncConfigs(dbm, app.context.pluginUUID, embeddingGenerator.MODEL_NAME);
-
-                // Just in case, cancel the debounced terminate database
-                await DuckDBConnectionController.cancelTerminate();
             }, {priority: 'background'});
         }
 
@@ -135,10 +134,11 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         sendMessageToEmbed(app, 'syncNotesProgress', `${totalNoteCount}/${totalNoteCount}<br />Sync Completed!`);
         await writeLogStats(app, noteBatches, processedNoteCount, totalNoteCount, dbm, syncId, 'end', performance.now() - performanceStartTime);
         app.alert("Sync completed!");
-        DuckDBConnectionController.scheduleTerminate();
+        DuckDBConnectionController.unlockAutoTerminate();
         return true;
     } catch (e) {
         console.error('sync error', e);
+        DuckDBConnectionController.unlockAutoTerminate();
         await writeLogStats(app, null, 0, 0, null, syncId, 'error', null, e);
         sendMessageToEmbed(app, 'syncNotesProgress', `Error: ${e.message}`);
         app.alert("Sync failed: " + e.message);
