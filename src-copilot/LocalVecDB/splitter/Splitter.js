@@ -3,6 +3,7 @@ import { visitParents } from "unist-util-visit-parents";
 import { toString as mdastToString } from "mdast-util-to-string";
 import { isArray, truncate } from "lodash-es";
 import { getExtendedNoteHandleProperties } from "../utils/getExtendedNoteHandleProperties.js";
+import { sanitizeText } from "../utils/sanitizeText.js"
 
 export class Splitter {
     constructor(maxTokens) {
@@ -256,7 +257,35 @@ export class Splitter {
 
             chunk.processedNoteContent = (this._getFrontMatter(chunk) + chunk.processedNoteContent).trim();
             chunk.actualNoteContentPart = (chunk.actualNoteContentPart || chunk.processedNoteContent).trim();
+
+            // Sanitize text content to prevent surrogate pair errors
+            this._sanitizeRecord(chunk);
+
             delete chunk.tempData;
+        }
+    }
+
+    _sanitizeRecord(record) {
+        // Sanitize text fields that might contain problematic characters
+        if (record.processedNoteContent) {
+            record.processedNoteContent = sanitizeText(record.processedNoteContent);
+        }
+
+        if (record.actualNoteContentPart) {
+            record.actualNoteContentPart = sanitizeText(record.actualNoteContentPart);
+        }
+
+        if (record.noteTitle) {
+            record.noteTitle = sanitizeText(record.noteTitle);
+        }
+
+        if (record.headingAnchor) {
+            record.headingAnchor = sanitizeText(record.headingAnchor);
+        }
+
+        // Sanitize tags array
+        if (Array.isArray(record.noteTags)) {
+            record.noteTags = record.noteTags.map(tag => sanitizeText(tag));
         }
     }
 

@@ -134,4 +134,32 @@ describe('Splitter', () => {
         const result = await splitter.splitNote(app, mockedNote);
         expect(result.length).toBe(2);
     });
+
+    // Invalid surrogate pairs must be removed or duckdb will throw error
+    test('should handle surrogate pairs and invalid UTF-16 sequences', async () => {
+        const splitter = new Splitter(100);
+        // Include various characters:
+        // \uD800 - unpaired high surrogate (should be removed)
+        // \uDC00 - unpaired low surrogate (should be removed)
+        // \uD800\uDC00 - valid surrogate pair (should be preserved)
+        // \uD83D\uDE00 - valid emoji (should be preserved)
+        const content = `This text contains problematic characters: \uD800 and \uDC00 and valid ones: \uD800\uDC00 😀`;
+        const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
+        const app = mockApp(mockedNote);
+        const result = await splitter.splitNote(app, mockedNote);
+
+        expect(result.length).toBe(1);
+
+        // Check that unpaired surrogates are removed
+        expect(result[0].processedNoteContent).not.toContain('\uD800 and \uDC00');
+
+        // Verify the content still contains the main text
+        expect(result[0].processedNoteContent).toContain('This text contains problematic characters');
+
+        // Check that valid surrogates are still present
+        expect(result[0].processedNoteContent).toContain('\uD800\uDC00');
+
+        // Check that emojis are still present
+        expect(result[0].processedNoteContent).toContain('😀');
+    });
 });

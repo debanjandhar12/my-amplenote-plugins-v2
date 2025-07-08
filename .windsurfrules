@@ -26,6 +26,7 @@ src-*/                  # Plugin source directories
 - **Code Organization**:
     - Keep related functionality within the plugin's directory (`src-*/`)
     - Use common-utils/ for code shared across multiple plugins
+    - Try to use named imports for better tree-shaking
 - **Environment Variables**: Access via `process.env`
 - **External Libraries**: Imported via ESM CDN using dynamicImportESM. Inside embed pages, framework level libs such as React are imported onload and stored in the `window` object
 - **Plugin Creation**:
