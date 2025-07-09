@@ -368,7 +368,7 @@ export class DuckDBNotesManager {
                                 list_transform(
                                     list_filter(string_split(lower(processedNoteContent), ' '), word -> length(word) > 0 AND
                                         NOT list_contains([${eng.map(word => `'${word}'`).join(',')}], word) AND
-                                        NOT regexp_matches(word, '(\\\\.|[^a-z])+')
+                                        NOT regexp_matches(word, '(\\.|[^a-z])+')
                                     ),
                                     x -> stem(x, 'porter')
                                 )
@@ -376,25 +376,24 @@ export class DuckDBNotesManager {
                         FROM
                             embed_candidates
                     ),
-                    -- 4. Calculate IDF scores for query terms
+                    -- 4. Calculate smoothened IDF scores for query terms
+                    candidate_doc_count AS (
+                        SELECT COUNT(*) AS total_docs FROM candidate_doc_stems
+                    ),
                     query_term_idf AS (
                         SELECT
                             q.stem,
-                            log((
-                                    SELECT
-                                        COUNT(*)
-                                    FROM
-                                        candidate_doc_stems
-                                ) / CAST(COUNT(c.id) + 1 AS DOUBLE)) AS idf_score
-                        FROM (
-                                SELECT
-                                    unnest(stems) AS stem
-                                FROM
-                                    query_stems
-                            ) AS q
-                            LEFT JOIN candidate_doc_stems c ON list_contains(c.doc_stems, q.stem)
+                            -- Smoothed IDF formula: log((N + 1.0) / (df + 1.0)) + 1.0
+                            -- This ensures the result is always positive and handles terms found in all documents.
+                            log((cdc.total_docs + 1.0) / (COUNT(cds.id) + 1.0)) + 1.0 AS idf_score
+                        FROM
+                            (SELECT unnest(stems) AS stem FROM query_stems) AS q
+                        CROSS JOIN
+                            candidate_doc_count cdc
+                        LEFT JOIN
+                            candidate_doc_stems cds ON list_contains(cds.doc_stems, q.stem)
                         GROUP BY
-                            q.stem
+                            q.stem, cdc.total_docs
                     ),
                     -- 5. Calculate scores for all candidates
                     fts_scored AS (
@@ -432,7 +431,8 @@ export class DuckDBNotesManager {
                             *,
                             ROW_NUMBER() OVER (
                                 ORDER BY
-                                    fts_score DESC
+                                    fts_score DESC,
+                                    embedding_similarity DESC
                             ) as fts_rank,
                             (
                                 (0.4 * COALESCE(1.0 / (60 + ROW_NUMBER() OVER (
