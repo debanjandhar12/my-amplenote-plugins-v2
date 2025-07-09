@@ -328,7 +328,7 @@ export class DuckDBNotesManager {
                                     list_filter(
                                         string_split(
                                             regexp_replace(
-                                                regexp_replace(lower(?), '[^a-z0-9 ]', ' ', 'g'),
+                                                regexp_replace(lower(?), '[^a-z0-9\s]', ' ', 'g'),
                                                 '\s+', ' ', 'g'
                                             ),
                                             ' '
@@ -377,7 +377,7 @@ export class DuckDBNotesManager {
                                     list_filter(
                                         string_split(
                                             regexp_replace(
-                                                regexp_replace(lower(COALESCE(processedNoteContent, '')), '[^a-z0-9 ]', ' ', 'g'),
+                                                regexp_replace(lower(COALESCE(processedNoteContent, '')), '[^a-z0-9\s]', ' ', 'g'),
                                                 '\s+', ' ', 'g'
                                             ),
                                             ' '
@@ -430,26 +430,29 @@ export class DuckDBNotesManager {
                             embed_candidates ec
                             JOIN candidate_doc_stems cds ON ec.id = cds.id
                     ),
-                    -- 6. Calculate Rank and Final RRF Score
-                    final_scores AS (
+                    -- 6. Calculate Ranks
+                    ranked_scores AS (
                         SELECT
                             *,
                             ROW_NUMBER() OVER (
                                 ORDER BY
                                     fts_score DESC,
                                     embedding_similarity DESC
-                            ) as fts_rank,
-                            (
-                                (0.48 * COALESCE(1.0 / (60 + ROW_NUMBER() OVER (
-                                            ORDER BY
-                                                fts_score DESC,
-                                                embedding_similarity DESC
-                                        )), 0)) + (0.52 * COALESCE(1.0 / (60 + embed_rank), 0))
-                            ) * (61 / 2) AS similarity
+                            ) as fts_rank
                         FROM
                             fts_scored
                         WHERE
                             embedding_similarity > ?
+                    ),
+                    -- 7. Calculate Final RRF Score
+                    final_scores AS (
+                        SELECT
+                            *,
+                            (
+                                (0.45 * COALESCE(1.0 / (60 + fts_rank), 0)) + (0.55 * COALESCE(1.0 / (60 + embed_rank), 0))
+                            ) * (61 / 2) AS similarity
+                        FROM
+                            ranked_scores
                     )
                 SELECT
                     id,
