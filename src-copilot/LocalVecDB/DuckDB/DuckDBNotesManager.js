@@ -317,7 +317,7 @@ export class DuckDBNotesManager {
             }
 
             const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-            const ftsScanLimit = 120;
+            const ftsScanLimit = 160;
 
             stmt = await conn.prepare(`
                 WITH
@@ -325,11 +325,19 @@ export class DuckDBNotesManager {
                         -- 1. Pre-process the search query string
                         SELECT list_distinct(
                                 list_transform(
-                                    list_filter(string_split(lower(?), ' '), word -> length(word) > 0 AND
-                                        -- remove stop words
-                                        NOT list_contains([${eng.map(word => `'${word}'`).join(',')}], word) AND
-                                        -- remove non-alphabetic characters
-                                        NOT regexp_matches(word, '(\\.|[^a-z])+')
+                                    list_filter(
+                                        string_split(
+                                            regexp_replace(
+                                                regexp_replace(lower(?), '[^a-z0-9 ]', ' ', 'g'),
+                                                '\s+', ' ', 'g'
+                                            ),
+                                            ' '
+                                        ),
+                                        word -> word IS NOT NULL AND length(trim(word)) > 1 AND
+                                            -- remove stop words
+                                            NOT list_contains([${eng.map(word => `'${word.replace(/'/g, "''")}'`).join(',')}], word) AND
+                                            -- only include words with at least one alphabetic character
+                                            regexp_matches(word, '[a-z]')
                                     ),
                                     x -> stem(x, 'porter')
                                 )
@@ -352,7 +360,7 @@ export class DuckDBNotesManager {
                             list_dot_product(embedding, ?) AS embedding_similarity,
                             ROW_NUMBER() OVER (
                                 ORDER BY
-                                    list_dot_product(embedding, ?) DESC
+                                    embedding_similarity DESC
                             ) AS embed_rank
                         FROM
                             user_note_embeddings ${whereClause}
@@ -366,9 +374,19 @@ export class DuckDBNotesManager {
                             id,
                             list_distinct(
                                 list_transform(
-                                    list_filter(string_split(lower(processedNoteContent), ' '), word -> length(word) > 0 AND
-                                        NOT list_contains([${eng.map(word => `'${word}'`).join(',')}], word) AND
-                                        NOT regexp_matches(word, '(\\.|[^a-z])+')
+                                    list_filter(
+                                        string_split(
+                                            regexp_replace(
+                                                regexp_replace(lower(COALESCE(processedNoteContent, '')), '[^a-z0-9 ]', ' ', 'g'),
+                                                '\s+', ' ', 'g'
+                                            ),
+                                            ' '
+                                        ),
+                                        word -> word IS NOT NULL AND length(trim(word)) > 1 AND
+                                            -- remove stop words
+                                            NOT list_contains([${eng.map(word => `'${word.replace(/'/g, "''")}'`).join(',')}], word) AND
+                                            -- only include words with at least one alphabetic character
+                                            regexp_matches(word, '[a-z]')
                                     ),
                                     x -> stem(x, 'porter')
                                 )
@@ -384,7 +402,6 @@ export class DuckDBNotesManager {
                         SELECT
                             q.stem,
                             -- Smoothed IDF formula: log((N + 1.0) / (df + 1.0)) + 1.0
-                            -- This ensures the result is always positive and handles terms found in all documents.
                             log((cdc.total_docs + 1.0) / (COUNT(cds.id) + 1.0)) + 1.0 AS idf_score
                         FROM
                             (SELECT unnest(stems) AS stem FROM query_stems) AS q
@@ -399,28 +416,16 @@ export class DuckDBNotesManager {
                     fts_scored AS (
                         SELECT
                             ec.*,
-                            CASE
-                                WHEN (
-                                    SELECT
-                                        count(*) = 0
-                                    FROM
-                                        query_term_idf
-                                ) THEN 0 -- No valid query terms, so score is 0
-                                WHEN list_has_any((
-                                    SELECT
-                                        stems
-                                    FROM
-                                        query_stems
-                                ), cds.doc_stems) THEN (
-                                    SELECT
-                                        SUM(qti.idf_score)
-                                    FROM
-                                        query_term_idf qti
-                                    WHERE
-                                        list_contains(cds.doc_stems, qti.stem)
-                                )
-                                ELSE 0
-                            END AS fts_score
+                            cds.doc_stems,
+                            (SELECT stems FROM query_stems) AS query_stems,
+                            COALESCE((
+                                SELECT
+                                    SUM(qti.idf_score)
+                                FROM
+                                    query_term_idf qti
+                                WHERE
+                                    list_contains(cds.doc_stems, qti.stem)
+                            ), 0) AS fts_score
                         FROM
                             embed_candidates ec
                             JOIN candidate_doc_stems cds ON ec.id = cds.id
@@ -435,10 +440,11 @@ export class DuckDBNotesManager {
                                     embedding_similarity DESC
                             ) as fts_rank,
                             (
-                                (0.4 * COALESCE(1.0 / (60 + ROW_NUMBER() OVER (
+                                (0.48 * COALESCE(1.0 / (60 + ROW_NUMBER() OVER (
                                             ORDER BY
-                                                fts_score DESC
-                                        )), 0)) + (0.6 * COALESCE(1.0 / (60 + embed_rank), 0))
+                                                fts_score DESC,
+                                                embedding_similarity DESC
+                                        )), 0)) + (0.52 * COALESCE(1.0 / (60 + embed_rank), 0))
                             ) * (61 / 2) AS similarity
                         FROM
                             fts_scored
@@ -459,7 +465,12 @@ export class DuckDBNotesManager {
                     processedNoteContent,
                     embedding_similarity,
                     fts_score,
-                    similarity
+                    similarity,
+                    -- Debug information
+                    doc_stems,
+                    query_stems,
+                    embed_rank,
+                    fts_rank
                 FROM
                     final_scores
                 ORDER BY
@@ -479,7 +490,6 @@ export class DuckDBNotesManager {
             const results = await stmt.query(
                 truncate(query, {length: 128}),
                 embeddingStr,
-                embeddingStr,
                 ...params,
                 ftsScanLimit,
                 thresholdSimilarity,
@@ -496,6 +506,12 @@ export class DuckDBNotesManager {
                 }
                 if (row.noteTags) {
                     row.noteTags = row.noteTags.toArray();
+                }
+                if (row.doc_stems) {
+                    row.doc_stems = row.doc_stems.toArray();
+                }
+                if (row.query_stems) {
+                    row.query_stems = row.query_stems.toArray();
                 }
             });
 
