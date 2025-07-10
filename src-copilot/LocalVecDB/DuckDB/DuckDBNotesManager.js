@@ -6,10 +6,12 @@ import { eng } from "stopword";
 
 let instance;
 export class DuckDBNotesManager {
+    static dbFileName = 'CopilotNotesDB';
+
     async init() {
         if (this.db && !DuckDBConnectionController.isTerminated()) return;
         try {
-            this.db = await DuckDBConnectionController.getCollectionInstance('CopilotNotesDB', {persistent: true});
+            this.db = await DuckDBConnectionController.getCollectionInstance(DuckDBNotesManager.dbFileName, {persistent: true});
             const conn = await this.db.connect();
 
             // Check if we need to reset the database due to version change
@@ -22,7 +24,7 @@ export class DuckDBNotesManager {
             }
 
             await conn.close();
-            if (await OPFSUtils.doesFileExists(`CopilotLocalVecDB.db`) === false) {
+            if (await OPFSUtils.doesFileExists(`${DuckDBNotesManager.dbFileName}.db`) === false) {
                 throw new Error('DuckDB file not created in OPFS after all init operations');
             }
         } catch (e) {
