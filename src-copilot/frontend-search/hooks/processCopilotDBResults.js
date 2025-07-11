@@ -1,6 +1,6 @@
 import {stripYAMLFromMarkdown} from "../../markdown/stripYAMLFromMarkdown.js";
 
-export const processLocalVecDBResults = async (results) => {
+export const processCopilotDBResults = async (results) => {
     const filteredResults = results
         //Keep only the highest-scored result for each unique noteUUID.
         .reduce((acc, result) => {

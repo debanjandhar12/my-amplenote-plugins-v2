@@ -5,7 +5,7 @@ import {
     LLM_API_KEY_SETTING,
     LLM_API_URL_SETTING, LLM_MAX_TOKENS_SETTING, MCP_SERVER_URL_LIST_SETTING
 } from "./constants.js";
-import {EmbeddingGeneratorFactory} from "./LocalVecDB/embeddings/EmbeddingGeneratorFactory.js";
+import {EmbeddingGeneratorFactory} from "./CopilotDB/embeddings/EmbeddingGeneratorFactory.js";
 
 export async function validatePluginSettings(app) {
     const errors = [];

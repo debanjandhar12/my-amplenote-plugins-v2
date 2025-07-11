@@ -2,7 +2,7 @@ import {OPFSUtils} from "./DuckDB/OPFSUtils.js";
 import DuckDBConnectionController from "./DuckDB/DuckDBConnectionController.js";
 import {DuckDBNotesManager} from "./DuckDB/DuckDBNotesManager.js";
 
-export async function clearLocalVecDBData(app) {
+export async function clearCopilotDBData(app) {
     // Force terminate any active database connections
     await DuckDBConnectionController.forceTerminate();
     

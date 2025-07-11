@@ -1,7 +1,7 @@
 import {EmbeddingGeneratorBase} from "./EmbeddingGeneratorBase.js";
 import {getEmbeddingProviderName} from "./getEmbeddingProviderName.js";
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
-import {EMBEDDING_API_URL_SETTING, LOCAL_VEC_DB_MAX_TOKENS} from "../../constants.js";
+import {EMBEDDING_API_URL_SETTING, COPILOT_DB_MAX_TOKENS} from "../../constants.js";
 
 export class OllamaEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
@@ -20,7 +20,7 @@ export class OllamaEmbeddingGenerator extends EmbeddingGeneratorBase {
             pooling: 'mean',
             normalize: true,
             truncate: true,
-            max_length: LOCAL_VEC_DB_MAX_TOKENS // required for jina-embeddings-v2-small-en
+            max_length: COPILOT_DB_MAX_TOKENS // required for jina-embeddings-v2-small-en
         });
 
         // Ideally since we are passing truncate, we do not need to retry if

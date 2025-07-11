@@ -1,4 +1,4 @@
-import {processLocalVecDBResults} from "./processLocalVecDBResults.js";
+import {processCopilotDBResults} from "./processCopilotDBResults.js";
 import {debounce} from "lodash-es";
 
 // Custom hook for search functionality
@@ -19,7 +19,7 @@ export const useSearch = () => {
     // Fetch initial sync status
     const updateSyncStatus = async () => {
         try {
-            const status = await window.appConnector.getLocalVecDBSyncState();
+            const status = await window.appConnector.getCopilotDBSyncState();
             if (status === 'Syncing') {
                 await handleSync();
             } else {
@@ -43,7 +43,7 @@ export const useSearch = () => {
             }
 
             // Check for sync start command
-            const startSync = await window.appConnector.receiveMessageFromPlugin('startSyncToLocalVecDBInSearchInterface');
+            const startSync = await window.appConnector.receiveMessageFromPlugin('startSyncToCopilotDBInSearchInterface');
             if (startSync === true) {
                 handleSync();
             }
@@ -53,8 +53,8 @@ export const useSearch = () => {
 
     // Search functionality
     const performSearch = async (query, queryType, searchOpts = {}) => {
-        const results = await window.appConnector.searchNotesInLocalVecDB(query, queryType, searchOpts);
-        return await processLocalVecDBResults(results);
+        const results = await window.appConnector.searchNotesInCopilotDB(query, queryType, searchOpts);
+        return await processCopilotDBResults(results);
     };
 
     // Debounced search handler
@@ -124,7 +124,7 @@ export const useSearch = () => {
             setSyncProgressText(lastSyncProgressText);
         }, 1000);
         try {
-            await window.appConnector.syncNotesWithLocalVecDB();
+            await window.appConnector.syncNotesWithCopilotDB();
             if (searchText.trim()) {
                 await handleSearch();
             }

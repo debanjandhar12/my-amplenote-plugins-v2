@@ -1,5 +1,5 @@
 import { DuckDBNotesManager } from "./DuckDB/DuckDBNotesManager.js";
-import {IndexedDBManager} from "./IndexedDBManager.js";
+
 import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
 import DuckDBConnectionController from "./DuckDB/DuckDBConnectionController.js";
 

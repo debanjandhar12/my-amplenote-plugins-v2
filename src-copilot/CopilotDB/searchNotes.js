@@ -6,7 +6,7 @@ import DuckDBConnectionController from "./DuckDB/DuckDBConnectionController.js";
 export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
     isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null}) => {
     if (await getSyncState(app) === 'Not synced')
-        throw new Error('No syncing has been performed, or the last sync is outdated. Please sync your notes with LocalVecDB.');
+        throw new Error('No syncing has been performed, or the last sync is outdated. Please sync your notes with CopilotDB.');
 
     if (!queryText || !queryText.trim()) return [];
 

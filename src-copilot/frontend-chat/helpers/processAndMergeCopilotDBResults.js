@@ -1,6 +1,6 @@
 import {stripYAMLFromMarkdown} from "../../markdown/stripYAMLFromMarkdown.js";
 
-export const processAndMergeLocalVecDBResults = async (results) => {
+export const processAndMergeCopilotDBResults = async (results) => {
     const filteredResults = results
         .sort((a, b) => a.id.localeCompare(b.id));
 

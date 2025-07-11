@@ -5,7 +5,7 @@ import {ToolCardContainer} from "../components/tools-ui/ToolCardContainer.jsx";
 import {errorToString} from "../helpers/errorToString.js";
 import {uniqBy} from "lodash-es";
 import {stripYAMLFromMarkdown} from "../../markdown/stripYAMLFromMarkdown.js";
-import {processAndMergeLocalVecDBResults} from "../helpers/processAndMergeLocalVecDBResults.js";
+import {processAndMergeCopilotDBResults} from "../helpers/processAndMergeCopilotDBResults.js";
 
 export const SearchNotesByTitleTagsContent = () => {
     return createGenericReadTool({
@@ -54,16 +54,16 @@ export const SearchNotesByTitleTagsContent = () => {
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         renderInit: ({args, formData}) => {
-            const {localVecDBSearchError} = formData;
+            const {copilotDBSearchError} = formData;
             const {Flex, Text, Spinner} = window.RadixUI;
             const {ExclamationTriangleIcon} = window.RadixIcons;
-            if (localVecDBSearchError) {
+            if (copilotDBSearchError) {
                 return <ToolCardContainer>
                     <Flex direction="column" gap="2">
                         <Flex style={{ alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'rgba(0, 0, 0, 0.05)', borderRadius: '4px' }}>
                             <ExclamationTriangleIcon />
                             <Text style={{ color: 'crimson' }}>
-                                LocalVecDB search failed: {errorToString(formData.localVecDBSearchError)}
+                                CopilotDB search failed: {errorToString(formData.copilotDBSearchError)}
                             </Text>
                         </Flex>
                         <Flex style={{ alignItems: 'center', gap: '8px' }}>
@@ -75,29 +75,29 @@ export const SearchNotesByTitleTagsContent = () => {
                     </Flex>
                 </ToolCardContainer>
             }
-            return <ToolCardMessage text={`Searching user notes using LocalVecDB...`}
+            return <ToolCardMessage text={`Searching user notes using CopilotDB...`}
                                     icon={<Spinner />} />
         },
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
-            let localVecDBSearchError = null;
+            let copilotDBSearchError = null;
 
-            // Perform LocalVecDB-decrypted search
+            // Perform CopilotDB-decrypted search
             let searchResults0 = [];
             try {
                 // TODO: pass signal
                 if (args.noteContent && args.noteContent.trim() !== '') {
                     args.limitSearchResults = args.limitSearchResults || 10;
-                    const results = await appConnector.searchNotesInLocalVecDB(args.noteContent, "query", {
+                    const results = await appConnector.searchNotesInCopilotDB(args.noteContent, "query", {
                         limit: Math.floor((args.limitSearchResults * 3) / 2),
                         isArchived: args.isArchived, isSharedByMe: args.isSharedByMe,
                         isSharedWithMe: args.isSharedWithMe
                     });
-                    searchResults0.push(...await processAndMergeLocalVecDBResults(results));
+                    searchResults0.push(...await processAndMergeCopilotDBResults(results));
                 }
             } catch (e) {
-                localVecDBSearchError = e;
-                setFormData({...formData, localVecDBSearchError: localVecDBSearchError});
-                console.error(localVecDBSearchError);
+                copilotDBSearchError = e;
+                setFormData({...formData, copilotDBSearchError: copilotDBSearchError});
+                console.error(copilotDBSearchError);
             }
 
             // Perform amplenote search
@@ -221,7 +221,7 @@ export const SearchNotesByTitleTagsContent = () => {
             }
 
             setFormData({...formData, searchResults: searchResultsMapped,
-                localVecDBSearchError});
+                copilotDBSearchError});
             setFormState('completed');
         },
         onCompleted: ({addResult, formData}) => {
@@ -231,7 +231,7 @@ export const SearchNotesByTitleTagsContent = () => {
         renderCompleted: ({formData, toolName, args}) => {
             const {Flex, Text} = window.RadixUI;
             const {MagnifyingGlassIcon, ExclamationTriangleIcon} = window.RadixIcons;
-            if (formData.localVecDBSearchError) {
+            if (formData.copilotDBSearchError) {
                 return <ToolCardResultMessage
                     result={JSON.stringify(formData.searchResults)}
                     toolName={toolName}
@@ -240,7 +240,7 @@ export const SearchNotesByTitleTagsContent = () => {
                         <Flex style={{ alignItems: 'center', gap: '8px', padding: '8px', backgroundColor: 'rgba(0, 0, 0, 0.05)', borderRadius: '4px' }}>
                             <ExclamationTriangleIcon />
                             <Text style={{ color: 'crimson' }}>
-                                LocalVecDB search failed: {errorToString(formData.localVecDBSearchError)}
+                                CopilotDB search failed: {errorToString(formData.copilotDBSearchError)}
                             </Text>
                         </Flex>
                         <Flex style={{ alignItems: 'center', gap: '8px' }}>

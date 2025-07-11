@@ -10,7 +10,7 @@ export const EMBED_COMMANDS_MOCK = {
     "filterNotes": async (...args) => {
         return [];
     },
-    "searchNotesInLocalVecDB": async (...args) => {
+    "searchNotesInCopilotDB": async (...args) => {
         return [];
     },
     "getNoteTitleByUUID": async (noteUUID) => {

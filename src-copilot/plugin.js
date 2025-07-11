@@ -4,14 +4,14 @@ import speechtotextHTML from 'inline:./embed/speechtotext.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {generateText} from "./aisdk-wrappers/generateText.js";
 import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
-import {LocalVecDB} from "./LocalVecDB/LocalVecDB.js";
+import {CopilotDB} from "./CopilotDB/CopilotDB.js";
 import {getMatchedPartWithFuzzySearch} from "./plugin-backend/getMatchedPartWithFuzzySearch.jsx";
 import {validatePluginSettings} from "./validatePluginSettings.js";
 import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
 import {handleContinue} from "./plugin-backend/handleContinue.js";
 import {handleRefineSelection} from "./plugin-backend/handleRefineSelection.js";
 import {handleImageGeneration, checkImageGenerationAvailability} from "./plugin-backend/handleImageGeneration.js";
-import {clearLocalVecDBData} from "./LocalVecDB/clearLocalVecDBData.js";
+import {clearCopilotDBData} from "./CopilotDB/clearCopilotDBData.js";
 
 const plugin = {
     currentNoteUUID: null,
@@ -79,9 +79,9 @@ const plugin = {
                 await app.alert(e);
             }
         },
-        "Sync notes with LocalVecDB": async function (app) {
+        "Sync notes with CopilotDB": async function (app) {
             try {
-                await plugin.sendMessageToEmbed(app, 'startSyncToLocalVecDBInSearchInterface', true);
+                await plugin.sendMessageToEmbed(app, 'startSyncToCopilotDBInSearchInterface', true);
                 await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
             } catch (e) {
                 console.error(e);
@@ -96,24 +96,24 @@ const plugin = {
                 await app.alert(e);
             }
         },
-        "Clear LocalVecDB OPFS data": async function (app) {
+        "Clear CopilotDB OPFS data": async function (app) {
             try {
                 const confirmed = await app.prompt(
-                    "This will permanently delete all LocalVecDB data stored in your browser. You will need to sync your notes again to use the search features of this plugin. Are you sure you want to continue?",
+                    "This will permanently delete all CopilotDB data stored in your browser. You will need to sync your notes again to use the search features of this plugin. Are you sure you want to continue?",
                     {
                         inputs: []
                     }
                 );
-                
+
                 if (!confirmed) {
                     return;
                 }
-                
-                const result = await clearLocalVecDBData(app);
+
+                const result = await clearCopilotDBData(app);
                 await app.alert(`${result.message}`);
             } catch (e) {
                 console.error(e);
-                await app.alert(`Error clearing LocalVecDB data: ${e.message || e}`);
+                await app.alert(`Error clearing CopilotDB data: ${e.message || e}`);
             }
         }
     },
@@ -338,17 +338,17 @@ const plugin = {
                 throw 'Failed getUserDailyJotNote - ' + e;
             }
         },
-        "getLocalVecDBSyncState": async function (app) {
-            return await new LocalVecDB().getSyncState(app);
+        "getCopilotDBSyncState": async function (app) {
+            return await new CopilotDB().getSyncState(app);
         },
-        "syncNotesWithLocalVecDB": async function (app) {
-            await new LocalVecDB().syncNotes(app, plugin.sendMessageToEmbed);
+        "syncNotesWithCopilotDB": async function (app) {
+            await new CopilotDB().syncNotes(app, plugin.sendMessageToEmbed);
         },
-        "searchNotesInLocalVecDB": async function (app, queryText, queryTextType, opts) {
-            return await new LocalVecDB().searchNotes(app, queryText, queryTextType, opts);
+        "searchNotesInCopilotDB": async function (app, queryText, queryTextType, opts) {
+            return await new CopilotDB().searchNotes(app, queryText, queryTextType, opts);
         },
         "searchHelpCenter": async function (app, queryText, opts) {
-            return await new LocalVecDB().searchHelpCenter(app, queryText, opts);
+            return await new CopilotDB().searchHelpCenter(app, queryText, opts);
         },
         "getMatchedPartWithFuzzySearch": async function (app, noteUUID, searchText, limit) {
             return await getMatchedPartWithFuzzySearch(app, noteUUID, searchText, limit);

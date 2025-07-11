@@ -1,5 +1,5 @@
 import {Splitter} from "./splitter/Splitter.js";
-import {LOCAL_VEC_DB_MAX_TOKENS, MAX_NOTE_BATCH_SIZE} from "../constants.js";
+import {COPILOT_DB_MAX_TOKENS, MAX_NOTE_BATCH_SIZE} from "../constants.js";
 import {chunk} from "lodash-es";
 import {getEmbeddingProviderName} from "./embeddings/getEmbeddingProviderName.js";
 import 'scheduler-polyfill';
@@ -8,7 +8,7 @@ import DuckDBConnectionController from "./DuckDB/DuckDBConnectionController.js";
 import {DuckDBNotesManager} from "./DuckDB/DuckDBNotesManager.js";
 import {OPFSUtils} from "./DuckDB/OPFSUtils.js";
 
-// console.log('LOCAL_VEC_DB_INDEX_VERSION', await dbm.getConfigValue('LOCAL_VEC_DB_INDEX_VERSION'));
+// console.log('COPILOT_DB_INDEX_VERSION', await dbm.getConfigValue('COPILOT_DB_INDEX_VERSION'));
 // console.log('getAllNotesEmbeddingsCountBefore', await dbm.getAllNotesEmbeddingsCount());
 // console.log('putMultipleNoteEmbedding', await dbm.putMultipleNoteEmbedding([{
 //     id: 'id1',
@@ -34,10 +34,10 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         // -- Initialize --
         const performanceStartTime = performance.now();
 
-        try {indexedDB.deleteDatabase('LocalVecDB')} catch(e){} // Delete older IndexedDB
+
 
         if (!await OPFSUtils.checkSupport()) {
-            throw new Error('OPFS is not supported in this browser. It is required for LocalVecDB.');
+            throw new Error('OPFS is not supported in this browser. It is required for CopilotDB.');
         }
         if (!await OPFSUtils.isPersisted() && !await OPFSUtils.askStoragePermission()) {
             const confirm = await app.prompt(`OPFS is not persisted. The browser may delete the indexed data. For better reliability, it's recommended to enable persistent storage. Do you want to ignore this and continue anyway?`, {
@@ -182,7 +182,7 @@ async function processNoteBatch(app, noteBatch, sendMessageToEmbed, processedNot
         `Scanning Notes: ${processedNoteCount}/${totalNoteCount}`);
 
     for (const [index, note] of noteBatch.entries()) {
-        const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
+        const splitter = new Splitter(COPILOT_DB_MAX_TOKENS);
         const splitResultForNote = await splitter.splitNote(app, note);
         batchRecords.push(...splitResultForNote);
     }

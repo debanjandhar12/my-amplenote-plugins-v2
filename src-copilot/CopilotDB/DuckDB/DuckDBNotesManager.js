@@ -1,4 +1,4 @@
-import {LOCAL_VEC_DB_INDEX_VERSION} from "../../constants.js";
+import {COPILOT_DB_INDEX_VERSION} from "../../constants.js";
 import DuckDBConnectionController from "./DuckDBConnectionController.js";
 import {OPFSUtils} from "./OPFSUtils.js";
 import {isArray, truncate} from "lodash-es";
@@ -15,11 +15,11 @@ export class DuckDBNotesManager {
             const conn = await this.db.connect();
 
             // Check if we need to reset the database due to version change
-            const currentVersion = await this._getConfigValue(conn, 'LOCAL_VEC_DB_INDEX_VERSION');
-            if (currentVersion !== String(LOCAL_VEC_DB_INDEX_VERSION)) {
+            const currentVersion = await this._getConfigValue(conn, 'COPILOT_DB_INDEX_VERSION');
+            if (currentVersion !== String(COPILOT_DB_INDEX_VERSION)) {
                 await this._resetTables(conn);
                 await this._createTables(conn);
-                await this._setConfigValue(conn, 'LOCAL_VEC_DB_INDEX_VERSION', LOCAL_VEC_DB_INDEX_VERSION);
+                await this._setConfigValue(conn, 'COPILOT_DB_INDEX_VERSION', COPILOT_DB_INDEX_VERSION);
                 await conn.query(`CHECKPOINT`);
             }
 
@@ -91,10 +91,10 @@ export class DuckDBNotesManager {
         const conn = await this.db.connect();
         await this._resetTables(conn);
         await this._createTables(conn);
-        await this._setConfigValue(conn, 'LOCAL_VEC_DB_INDEX_VERSION', LOCAL_VEC_DB_INDEX_VERSION);
+        await this._setConfigValue(conn, 'COPILOT_DB_INDEX_VERSION', COPILOT_DB_INDEX_VERSION);
         await conn.query(`CHECKPOINT;`);
         conn.close();
-        console.log('LocalVecDB resetDB');
+        console.log('CopilotDB resetDB');
     }
 
     // --------------------------------------------

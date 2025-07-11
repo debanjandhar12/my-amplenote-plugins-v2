@@ -1,7 +1,7 @@
 import {EmbeddingGeneratorBase} from "./EmbeddingGeneratorBase.js";
 import 'scheduler-polyfill';
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
-import {LOCAL_VEC_DB_MAX_TOKENS} from "../../constants.js";
+import {COPILOT_DB_MAX_TOKENS} from "../../constants.js";
 
 export class LocalEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
@@ -107,7 +107,7 @@ const generateEmbeddingWorkerSource = ({ onMessage }) => {
             pooling: 'mean',
             normalize: true,
             truncate: true,
-            max_length: LOCAL_VEC_DB_MAX_TOKENS // required for jina-embeddings-v2-small-en
+            max_length: COPILOT_DB_MAX_TOKENS // required for jina-embeddings-v2-small-en
         });
         release();
         return new Float32Array(output.data);

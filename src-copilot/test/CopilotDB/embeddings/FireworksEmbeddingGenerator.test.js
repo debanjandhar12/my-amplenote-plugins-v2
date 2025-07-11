@@ -1,13 +1,13 @@
 import {mockApp} from "../../../../common-utils/test-helpers.js";
-import {PineconeEmbeddingGenerator} from "../../../LocalVecDB/embeddings/PineconeEmbeddingGenerator.js";
+import {FireworksEmbeddingGenerator} from "../../../CopilotDB/embeddings/FireworksEmbeddingGenerator.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
 
-describe('Pinecone Embedding', () => {
+describe('Fireworks Embedding', () => {
     test('works with single string', async () => {
-        if (!process.env.PINECONE_API_KEY) return;
-        const embeddingGenerator = new PineconeEmbeddingGenerator();
+        if (!process.env.FIREWORKS_API_KEY) return;
+        const embeddingGenerator = new FireworksEmbeddingGenerator();
         const app = mockApp();
-        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.PINECONE_API_KEY;
+        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.FIREWORKS_API_KEY;
         const result = await embeddingGenerator.generateEmbedding(app, "Hi", 'query');
         expect(result.length).toBe(1);
         expect(Array.isArray(result)).toBe(true);
@@ -15,10 +15,10 @@ describe('Pinecone Embedding', () => {
     });
 
     test('works with array', async () => {
-        if (!process.env.PINECONE_API_KEY) return;
-        const embeddingGenerator = new PineconeEmbeddingGenerator();
+        if (!process.env.FIREWORKS_API_KEY) return;
+        const embeddingGenerator = new FireworksEmbeddingGenerator();
         const app = mockApp();
-        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.PINECONE_API_KEY;
+        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.FIREWORKS_API_KEY;
         const result = await embeddingGenerator.generateEmbedding(app, ["Hello", "World"], 'query');
         expect(result.length).toBe(2);
         expect(Array.isArray(result)).toBe(true);
@@ -27,7 +27,7 @@ describe('Pinecone Embedding', () => {
     });
 
     test('throws error with invalid API key', async () => {
-        const embeddingGenerator = new PineconeEmbeddingGenerator();
+        const embeddingGenerator = new FireworksEmbeddingGenerator();
         const app = mockApp();
         app.settings[EMBEDDING_API_KEY_SETTING] = "invalid_api_key";
 

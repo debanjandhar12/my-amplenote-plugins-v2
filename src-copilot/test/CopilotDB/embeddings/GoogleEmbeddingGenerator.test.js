@@ -1,14 +1,13 @@
 import {mockApp} from "../../../../common-utils/test-helpers.js";
-import {OpenAIEmbeddingGenerator} from "../../../LocalVecDB/embeddings/OpenAIEmbeddingGenerator.js";
+import {GoogleEmbeddingGenerator} from "../../../CopilotDB/embeddings/GoogleEmbeddingGenerator.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
 
-
-describe('OpenAi Embedding', () => {
+describe('Google Embedding', () => {
     test('works with single string', async () => {
-        if (!process.env.OPENAI_API_KEY) return;
-        const embeddingGenerator = new OpenAIEmbeddingGenerator();
+        if (!process.env.GOOGLE_API_KEY) return;
+        const embeddingGenerator = new GoogleEmbeddingGenerator();
         const app = mockApp();
-        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.OPENAI_API_KEY;
+        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.GOOGLE_API_KEY;
         const result = await embeddingGenerator.generateEmbedding(app, "Hi", 'query');
         expect(result.length).toBe(1);
         expect(Array.isArray(result)).toBe(true);
@@ -16,10 +15,10 @@ describe('OpenAi Embedding', () => {
     });
 
     test('works with array', async () => {
-        if (!process.env.OPENAI_API_KEY) return;
-        const embeddingGenerator = new OpenAIEmbeddingGenerator();
+        if (!process.env.GOOGLE_API_KEY) return;
+        const embeddingGenerator = new GoogleEmbeddingGenerator();
         const app = mockApp();
-        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.OPENAI_API_KEY;
+        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.GOOGLE_API_KEY;
         const result = await embeddingGenerator.generateEmbedding(app, ["Hello", "World"], 'query');
         expect(result.length).toBe(2);
         expect(Array.isArray(result)).toBe(true);
@@ -28,7 +27,7 @@ describe('OpenAi Embedding', () => {
     });
 
     test('throws error with invalid API key', async () => {
-        const embeddingGenerator = new OpenAIEmbeddingGenerator();
+        const embeddingGenerator = new GoogleEmbeddingGenerator();
         const app = mockApp();
         app.settings[EMBEDDING_API_KEY_SETTING] = "invalid_api_key";
 

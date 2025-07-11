@@ -7,7 +7,7 @@ import {EMBED_COMMANDS_MOCK} from "../frontend-chat/chat.testdata.js";
 
 describe('search embed', () => {
     const {getPage} = createPlaywrightHooks();
-    const commandMocks = {...EMBED_COMMANDS_MOCK, getSettings: async () => ({}), getLocalVecDBSyncState: async () => 'Fully Synced'};
+    const commandMocks = {...EMBED_COMMANDS_MOCK, getSettings: async () => ({}), getCopilotDBSyncState: async () => 'Fully Synced'};
     it('loads correctly', async () => {
         const htmlWithMocks = addScriptToHtmlString(html, `
             window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions(commandMocks))};
@@ -38,7 +38,7 @@ describe('search embed', () => {
 
         const commandMocksWithSearch = {
             ...commandMocks,
-            searchNotesInLocalVecDB: async () =>  [
+            searchNotesInCopilotDB: async () =>  [
                 {
                     noteUUID: "note1",
                     noteTitle: "Test Note 1",

@@ -41,8 +41,8 @@ Q) [How to set up MCP servers (optional)?](https://public.amplenote.com/SZnCDvp9
 <mark style="color:undefined;">*ℹ️ For amplenote / plugin related questions, you can type \`@help <your question>\` in chat.*<!-- {"cycleColor":"44"} --></mark>
 
 **🔍** <mark style="color:undefined;">**Natural Language Search Documentation:**<!-- {"cycleColor":"57"} --></mark>
-Q) [How does natural language search work?](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#How_it_Works%3A_LocalVecDB_%26_Embeddings)
-Q) [How to use sync notes to LocalVecDB?](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#Syncing_Notes_with_LocalVecDB)
+Q) [How does natural language search work?](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#How_it_Works%3A_CopilotDB_%26_Embeddings)
+Q) [How to use sync notes to CopilotDB?](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#Syncing_Notes_with_CopilotDB)
 Q) [How to use natural language search?](https://public.amplenote.com/jKhhLtHMaSDGM8ooY4R9MiYi#Using_Natural_Language_Search)
 Q) [How to set up embedding API (recommended)?](https://public.amplenote.com/SZnCDvp9yU7CbCzkn7RJowcV#2._Setting_up_Embedding_Providers)
 

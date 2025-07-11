@@ -9,7 +9,7 @@ const SearchStatus = ({ isLoading, error, isSyncing, syncError, syncProgressText
     if (isSyncing) {
         return (
             <Box style={{ padding: '20px', textAlign: 'center', backgroundColor: '#0ea5e9', color: 'white', borderRadius: '6px' }}>
-                Syncing notes with LocalVecDB...
+                Syncing notes with CopilotDB...
                 {
                     syncProgressText &&
                     <Box style={{ marginTop: '4px', backgroundColor: '#0369a1', color: 'white', borderRadius: '4px', padding: '10px' }}>
@@ -138,7 +138,7 @@ const SearchMenu = ({ onSync, isSyncing, searchOpts, setSearchOpts, syncStatus }
                     onSelect={onSync}
                     disabled={isSyncing}
                 >
-                    {isSyncing ? 'Syncing...' : 'Sync notes with LocalVecDB'}
+                    {isSyncing ? 'Syncing...' : 'Sync notes with CopilotDB'}
                 </DropdownMenu.Item>
                 <DropdownMenu.Separator />
                 <Text color="gray" style={{ fontSize: '14px', padding: '4px' }}>Search Options</Text>

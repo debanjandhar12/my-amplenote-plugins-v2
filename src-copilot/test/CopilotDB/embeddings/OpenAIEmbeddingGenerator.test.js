@@ -1,13 +1,14 @@
 import {mockApp} from "../../../../common-utils/test-helpers.js";
-import {FireworksEmbeddingGenerator} from "../../../LocalVecDB/embeddings/FireworksEmbeddingGenerator.js";
+import {OpenAIEmbeddingGenerator} from "../../../CopilotDB/embeddings/OpenAIEmbeddingGenerator.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
 
-describe('Fireworks Embedding', () => {
+
+describe('OpenAi Embedding', () => {
     test('works with single string', async () => {
-        if (!process.env.FIREWORKS_API_KEY) return;
-        const embeddingGenerator = new FireworksEmbeddingGenerator();
+        if (!process.env.OPENAI_API_KEY) return;
+        const embeddingGenerator = new OpenAIEmbeddingGenerator();
         const app = mockApp();
-        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.FIREWORKS_API_KEY;
+        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.OPENAI_API_KEY;
         const result = await embeddingGenerator.generateEmbedding(app, "Hi", 'query');
         expect(result.length).toBe(1);
         expect(Array.isArray(result)).toBe(true);
@@ -15,10 +16,10 @@ describe('Fireworks Embedding', () => {
     });
 
     test('works with array', async () => {
-        if (!process.env.FIREWORKS_API_KEY) return;
-        const embeddingGenerator = new FireworksEmbeddingGenerator();
+        if (!process.env.OPENAI_API_KEY) return;
+        const embeddingGenerator = new OpenAIEmbeddingGenerator();
         const app = mockApp();
-        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.FIREWORKS_API_KEY;
+        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.OPENAI_API_KEY;
         const result = await embeddingGenerator.generateEmbedding(app, ["Hello", "World"], 'query');
         expect(result.length).toBe(2);
         expect(Array.isArray(result)).toBe(true);
@@ -27,7 +28,7 @@ describe('Fireworks Embedding', () => {
     });
 
     test('throws error with invalid API key', async () => {
-        const embeddingGenerator = new FireworksEmbeddingGenerator();
+        const embeddingGenerator = new OpenAIEmbeddingGenerator();
         const app = mockApp();
         app.settings[EMBEDDING_API_KEY_SETTING] = "invalid_api_key";
 

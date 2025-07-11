@@ -1,7 +1,7 @@
-import {Splitter} from "../src-copilot/LocalVecDB/splitter/Splitter.js";
+import {Splitter} from "../src-copilot/CopilotDB/splitter/Splitter.js";
 import {mockApp, mockNote} from "../common-utils/test-helpers.js";
 import {getCorsBypassUrl} from "../common-utils/cors-helpers.js";
-import {EMBEDDING_API_KEY_SETTING, EMBEDDING_API_URL_SETTING, LOCAL_VEC_DB_MAX_TOKENS} from "../src-copilot/constants.js";
+import {EMBEDDING_API_KEY_SETTING, EMBEDDING_API_URL_SETTING, COPILOT_DB_MAX_TOKENS} from "../src-copilot/constants.js";
 const { existsSync } = require('fs');
 const { join } = require('path');
 const { JSDOM } = require("jsdom");
@@ -9,11 +9,11 @@ const parquet = require('parquetjs-lite');
 import {fetch} from "cross-fetch";
 import {TransformStream} from 'stream/web';
 import {cloneDeep} from "lodash-es";
-import {OpenAIEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/OpenAIEmbeddingGenerator.js";
-import {FireworksEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/FireworksEmbeddingGenerator.js";
-import {OllamaEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/OllamaEmbeddingGenerator.js";
-import {PineconeEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/PineconeEmbeddingGenerator.js";
-import {GoogleEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/GoogleEmbeddingGenerator.js";
+import {OpenAIEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/OpenAIEmbeddingGenerator.js";
+import {FireworksEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/FireworksEmbeddingGenerator.js";
+import {OllamaEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/OllamaEmbeddingGenerator.js";
+import {PineconeEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/PineconeEmbeddingGenerator.js";
+import {GoogleEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/GoogleEmbeddingGenerator.js";
 
 /**
  * This script is used to generate embeddings and store in bundles folder as parquet files.
@@ -271,7 +271,7 @@ async function generateHelpCenterEmbeddings() {
     const fireworksEmbeddingGenerator = new FireworksEmbeddingGenerator();
 
     for (const [i, url] of CONFIG.HELP_CENTER_URLS.entries()) {
-        const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
+        const splitter = new Splitter(COPILOT_DB_MAX_TOKENS);
         const [content, title] = await getMarkdownFromAmpleNoteUrl(url);
         const mockedNote = mockNote(content, title, url);
         const app = mockApp(mockedNote);

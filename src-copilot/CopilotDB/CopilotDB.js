@@ -8,7 +8,7 @@ import {getSyncState} from "./getSyncState.js";
 
 
 let syncNotesPromise;
-export class LocalVecDB {
+export class CopilotDB {
     async searchNotes(app, query, queryTextType, opts) {
         return await searchNotes(app, query, queryTextType, opts);
     }
