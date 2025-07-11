@@ -21,5 +21,4 @@ export const COPILOT_DB_INDEX_VERSION = 45;
 export const COPILOT_DB_MAX_TOKENS = 1280;
 export const MAX_NOTE_BATCH_SIZE = 48;
 
-// Chat History DB Configs
-export const COPILOT_CHAT_HISTORY_DB_INDEX_VERSION = 6;
+

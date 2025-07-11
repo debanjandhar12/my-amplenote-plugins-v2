@@ -1,6 +1,9 @@
-import {OPFSUtils} from "../DuckDB/OPFSUtils.js";
-import {COPILOT_CHAT_HISTORY_DB_INDEX_VERSION} from "../../constants.js";
+import {OPFSUtils} from "./OPFSUtils.js";
+import {COPILOT_DB_INDEX_VERSION} from "../../constants.js";
 
+/**
+ * This does not use duckdb. It uses a simple JSON file and stores it in OPFS.
+ */
 export class CopilotChatHistoryDB {
     constructor() {
         this.fileName = 'copilot-chat-history.json';
@@ -17,6 +20,9 @@ export class CopilotChatHistoryDB {
         
         if (!this.opfsSupported) {
             console.warn('OPFS not supported, using in-memory storage for chat history');
+        } else {
+            // Check and handle version changes for OPFS
+            await this._handleVersionReset();
         }
         
         this.initialized = true;
@@ -35,27 +41,43 @@ export class CopilotChatHistoryDB {
         }
 
         const data = await OPFSUtils.readJsonFile(this.fileName);
-        return data || {};
+        if (!data) {
+            return { version: COPILOT_DB_INDEX_VERSION, threads: {} };
+        }
+        
+        // Ensure we have the version and threads structure
+        if (!data.version || !data.threads) {
+            return { version: COPILOT_DB_INDEX_VERSION, threads: data };
+        }
+        
+        return data;
     }
 
     async _saveThreadsData(threadsData) {
         await this.init();
         
         if (!this.opfsSupported) {
-            // Save to in-memory storage
+            // Save to in-memory storage (only thread data, not version)
             this.inMemoryStorage.clear();
-            for (const [key, value] of Object.entries(threadsData)) {
+            const threads = threadsData.threads || threadsData;
+            for (const [key, value] of Object.entries(threads)) {
                 this.inMemoryStorage.set(key, value);
             }
             return true;
         }
 
-        return await OPFSUtils.writeJsonFile(this.fileName, threadsData);
+        // Ensure we save with version structure
+        const dataToSave = {
+            version: COPILOT_DB_INDEX_VERSION,
+            threads: threadsData.threads || threadsData
+        };
+        
+        return await OPFSUtils.writeJsonFile(this.fileName, dataToSave);
     }
 
     async getAllThreads() {
         const threadsData = await this._getThreadsData();
-        const threads = Object.values(threadsData);
+        const threads = Object.values(threadsData.threads || threadsData);
         return threads.sort((a, b) => new Date(b.updated) - new Date(a.updated));
     }
 
@@ -64,12 +86,13 @@ export class CopilotChatHistoryDB {
         
         try {
             const threadsData = await this._getThreadsData();
+            const threads = threadsData.threads || threadsData;
             
-            if (!threadsData[threadId]) {
+            if (!threads[threadId]) {
                 return false; // Thread doesn't exist
             }
             
-            delete threadsData[threadId];
+            delete threads[threadId];
             await this._saveThreadsData(threadsData);
             return true;
         } catch (e) {
@@ -82,15 +105,17 @@ export class CopilotChatHistoryDB {
         if (!threadId) return null;
         
         const threadsData = await this._getThreadsData();
-        return threadsData[threadId] || null;
+        const threads = threadsData.threads || threadsData;
+        return threads[threadId] || null;
     }
 
     async putThread(thread) {
         this._validateThread(thread);
         
         const threadsData = await this._getThreadsData();
+        const threads = threadsData.threads || threadsData;
         
-        threadsData[thread.remoteId] = {
+        threads[thread.remoteId] = {
             remoteId: thread.remoteId,
             name: thread.name,
             created: thread.created,
@@ -115,5 +140,24 @@ export class CopilotChatHistoryDB {
             throw new Error('Invalid date format for created or updated');
         }
         return true;
+    }
+
+    async _handleVersionReset() {
+        if (!this.opfsSupported) return;
+        
+        try {
+            const data = await OPFSUtils.readJsonFile(this.fileName);
+            
+            if (!data) return;
+            
+            const currentVersion = data.version || 0;
+            
+            if (currentVersion !== COPILOT_DB_INDEX_VERSION) {
+                await OPFSUtils.deleteFile(this.fileName);
+                console.log(`Chat history reset completed due to version change from ${currentVersion} to ${COPILOT_DB_INDEX_VERSION}.`);
+            }
+        } catch (error) {
+            console.error('Error during chat history version check:', error);
+        }
     }
 }

@@ -6,7 +6,7 @@ import {searchNotes as _searchNotes} from "./searchNotes.js";
 import {searchHelpCenter as _searchHelpCenter} from "./searchHelpCenter.js";
 import {getSyncState as _getSyncState} from "./getSyncState.js";
 import {clearCopilotDBData as _clearCopilotDBData} from "./clearCopilotDBData.js";
-import {CopilotChatHistoryDB} from "./JsonDB/CopilotChatHistoryDB.js";
+import {CopilotChatHistoryDB} from "./DuckDB/CopilotChatHistoryDB.js";
 
 // Singleton pattern for syncNotes - maintain global state
 let syncNotesPromise = null;
