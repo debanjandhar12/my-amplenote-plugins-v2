@@ -11,6 +11,7 @@ import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
 import {handleContinue} from "./plugin-backend/handleContinue.js";
 import {handleRefineSelection} from "./plugin-backend/handleRefineSelection.js";
 import {handleImageGeneration, checkImageGenerationAvailability} from "./plugin-backend/handleImageGeneration.js";
+import {clearLocalVecDBData} from "./LocalVecDB/clearLocalVecDBData.js";
 
 const plugin = {
     currentNoteUUID: null,
@@ -93,6 +94,26 @@ const plugin = {
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
+            }
+        },
+        "Clear LocalVecDB OPFS data": async function (app) {
+            try {
+                const confirmed = await app.prompt(
+                    "This will permanently delete all LocalVecDB data stored in your browser. You will need to sync your notes again to use the search features of this plugin. Are you sure you want to continue?",
+                    {
+                        inputs: []
+                    }
+                );
+                
+                if (!confirmed) {
+                    return;
+                }
+                
+                const result = await clearLocalVecDBData(app);
+                await app.alert(`${result.message}`);
+            } catch (e) {
+                console.error(e);
+                await app.alert(`Error clearing LocalVecDB data: ${e.message || e}`);
             }
         }
     },

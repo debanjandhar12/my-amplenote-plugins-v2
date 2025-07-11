@@ -6,6 +6,7 @@ import {searchNotes} from "./searchNotes.js";
 import {searchHelpCenter} from "./searchHelpCenter.js";
 import {getSyncState} from "./getSyncState.js";
 
+
 let syncNotesPromise;
 export class LocalVecDB {
     async searchNotes(app, query, queryTextType, opts) {
@@ -32,4 +33,6 @@ export class LocalVecDB {
     async searchHelpCenter(app, query, opts) {
         return await searchHelpCenter(app, query, opts);
     }
+
+
 }

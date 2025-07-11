@@ -146,4 +146,31 @@ export class OPFSUtils {
             return 'Error getting storage space';
         }
     }
+
+    /**
+     * Deletes a file from the OPFS root directory.
+     * 
+     * @param {string} fileName The name of the file to delete.
+     * @returns {Promise<boolean>} A promise that resolves to true if the file was deleted,
+     *          false if the file didn't exist.
+     * @throws {Error} If an error occurs during deletion (other than file not found).
+     */
+    static async deleteFile(fileName) {
+        if (!fileName || typeof fileName !== 'string') {
+            throw new Error("Invalid fileName provided to deleteFile.");
+        }
+
+        try {
+            const root = await OPFSUtils.getRoot();
+            await root.removeEntry(fileName);
+            return true;
+        } catch (error) {
+            if (error.name === 'NotFoundError') {
+                return false;
+            } else {
+                console.error(`Error deleting file '${fileName}':`, error);
+                throw error;
+            }
+        }
+    }
 }
