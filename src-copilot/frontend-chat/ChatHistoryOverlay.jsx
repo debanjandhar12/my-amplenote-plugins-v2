@@ -1,11 +1,11 @@
 import {ThreadCard} from './components/ThreadCard.jsx';
-import {CopilotChatHistoryDB} from "./helpers/CopilotChatHistoryDB.js";
+
 import {getChatAppContext} from "./context/ChatAppContext.jsx";
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 
 export function ChatHistoryOverlay() {
   const assistantRuntime = AssistantUI.useAssistantRuntime();
-  const chatHistoryDB = new CopilotChatHistoryDB();
+
   const [allRemoteThreads, setAllRemoteThreads] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filteredThreads, setFilteredThreads] = React.useState([]);
@@ -14,7 +14,7 @@ export function ChatHistoryOverlay() {
   React.useEffect(() => {
     (async () => {
       try {
-        const allRemoteThreads = await chatHistoryDB.getAllThreads();
+        const allRemoteThreads = await appConnector.getAllChatThreadsFromCopilotDB();
         setAllRemoteThreads(allRemoteThreads);
       } catch (e) {
         console.error(e);
@@ -37,7 +37,7 @@ export function ChatHistoryOverlay() {
 
   const handleDeleteThread = async (threadId) => {
     await assistantRuntime.threads.getItemById(threadId).delete();
-    const allRemoteThreads = await chatHistoryDB.getAllThreads();
+    const allRemoteThreads = await appConnector.getAllChatThreadsFromCopilotDB();
     setAllRemoteThreads(allRemoteThreads);
   }
 

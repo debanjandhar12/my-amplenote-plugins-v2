@@ -4,7 +4,7 @@ import speechtotextHTML from 'inline:./embed/speechtotext.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {generateText} from "./aisdk-wrappers/generateText.js";
 import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
-import {getSyncState, syncNotes, searchNotes, searchHelpCenter, clearCopilotDBData} from "./CopilotDB";
+import {getSyncState, syncNotes, searchNotes, searchHelpCenter, clearCopilotDBData, getAllChatThreads, deleteChatThread, getChatThread, saveChatThread, getLastUpdatedChatThread} from "./CopilotDB";
 import {getMatchedPartWithFuzzySearch} from "./plugin-backend/getMatchedPartWithFuzzySearch.jsx";
 import {validatePluginSettings} from "./validatePluginSettings.js";
 import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
@@ -352,6 +352,21 @@ const plugin = {
         },
         "getMatchedPartWithFuzzySearch": async function (app, noteUUID, searchText, limit) {
             return await getMatchedPartWithFuzzySearch(app, noteUUID, searchText, limit);
+        },
+        "getAllChatThreadsFromCopilotDB": async function (app) {
+            return await getAllChatThreads();
+        },
+        "deleteChatThreadFromCopilotDB": async function (app, threadId) {
+            return await deleteChatThread(threadId);
+        },
+        "getChatThreadFromCopilotDB": async function (app, threadId) {
+            return await getChatThread(threadId);
+        },
+        "saveChatThreadToCopilotDB": async function (app, thread) {
+            return await saveChatThread(thread);
+        },
+        "getLastUpdatedChatThreadFromCopilotDB": async function (app) {
+            return await getLastUpdatedChatThread();
         }
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
         'receiveMessageFromPlugin', 'ping'])

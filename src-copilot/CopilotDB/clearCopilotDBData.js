@@ -6,11 +6,11 @@ export async function clearCopilotDBData(app) {
     // Force terminate any active database connections
     await DuckDBConnectionController.forceTerminate();
     
-    // Get all files from OPFS and filter for .db and .db.wal files
+    // Get all files from OPFS and filter for .db, .db.wal files, and chat history
     const allFiles = await OPFSUtils.getFileList();
     const filesToDelete = allFiles
         .map(file => file.fileName)
-        .filter(fileName => fileName.endsWith('.db') || fileName.endsWith('.db.wal'));
+        .filter(fileName => fileName.endsWith('.db') || fileName.endsWith('.db.wal') || fileName === 'copilot-chat-history.json');
     
     const deletedFiles = [];
     for (const fileName of filesToDelete) {
@@ -29,7 +29,7 @@ export async function clearCopilotDBData(app) {
         success: true,
         deletedFiles: deletedFiles,
         message: deletedFiles.length > 0 
-            ? `Successfully deleted ${deletedFiles.length} database file(s): ${deletedFiles.join(', ')}`
-            : 'No database files found to delete'
+            ? `Successfully deleted ${deletedFiles.length} file(s): ${deletedFiles.join(', ')}`
+            : 'No CopilotDB files found to delete'
     };
 }
