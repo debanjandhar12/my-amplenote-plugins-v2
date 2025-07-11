@@ -20,7 +20,7 @@ export class DuckDBNotesManager {
                 await this._resetTables(conn);
                 await this._createTables(conn);
                 await this._setConfigValue(conn, 'LOCAL_VEC_DB_INDEX_VERSION', LOCAL_VEC_DB_INDEX_VERSION);
-                await conn.send(`CHECKPOINT`);
+                await conn.query(`CHECKPOINT`);
             }
 
             await conn.close();
@@ -92,7 +92,7 @@ export class DuckDBNotesManager {
         await this._resetTables(conn);
         await this._createTables(conn);
         await this._setConfigValue(conn, 'LOCAL_VEC_DB_INDEX_VERSION', LOCAL_VEC_DB_INDEX_VERSION);
-        await conn.send(`CHECKPOINT;`);
+        await conn.query(`CHECKPOINT;`);
         conn.close();
         console.log('LocalVecDB resetDB');
     }
@@ -191,13 +191,13 @@ export class DuckDBNotesManager {
             }
         }
         if (errors.length > 0) {
-            await conn.send('ROLLBACK');
+            await conn.query('ROLLBACK');
             await stmt.close();
             conn.close();
             throw new AggregateError(errors, `Failed to insert ${errors.length} of ${noteEmbeddingObjArr.length} note embeddings.`);
         }
-        await conn.send('COMMIT');
-        await conn.send(`CHECKPOINT`);
+        await conn.query('COMMIT');
+        await conn.query(`CHECKPOINT`);
         await stmt.close();
         conn.close();
     }
@@ -543,7 +543,7 @@ export class DuckDBNotesManager {
     //       if (!isUpdated) {
     //         await conn.query(`PRAGMA create_fts_index('USER_NOTE_EMBEDDINGS', 'id', input_values:='processedNoteContent', overwrite:=1)`);
     //         await this._setConfigValue(conn, 'lastFTSIndexTime', await this._getConfigValue(conn, 'lastSyncTime'));
-    //         await conn.send(`CHECKPOINT;`);
+    //         await conn.query(`CHECKPOINT;`);
     //       }
     //     }
     //     catch (e) {
@@ -676,7 +676,7 @@ export class DuckDBNotesManager {
         try {
             conn = await this.db.connect();
             await this._setConfigValue(conn, key, value);
-            await conn.send(`CHECKPOINT;`);
+            await conn.query(`CHECKPOINT;`);
         } catch (e) {
             console.error("Failed to set config value:", e);
             throw e;

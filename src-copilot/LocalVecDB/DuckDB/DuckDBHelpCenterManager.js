@@ -9,7 +9,7 @@ export class DuckDBHelpCenterManager {
         try {
             this.db = await DuckDBConnectionController.getCollectionInstance('CopilotTempDB', {persistent: false});
             const conn = await this.db.connect();
-            await conn.send(`CHECKPOINT;`);
+            await conn.query(`CHECKPOINT;`);
             await conn.close();
         } catch (e) {
             console.error('DuckDBHelpCenterManager init error:', e);
