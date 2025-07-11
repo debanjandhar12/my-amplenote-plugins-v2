@@ -4,14 +4,14 @@ import speechtotextHTML from 'inline:./embed/speechtotext.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {generateText} from "./aisdk-wrappers/generateText.js";
 import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
-import {CopilotDB} from "./CopilotDB/CopilotDB.js";
+import {getSyncState, syncNotes, searchNotes, searchHelpCenter, clearCopilotDBData} from "./CopilotDB";
 import {getMatchedPartWithFuzzySearch} from "./plugin-backend/getMatchedPartWithFuzzySearch.jsx";
 import {validatePluginSettings} from "./validatePluginSettings.js";
 import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
 import {handleContinue} from "./plugin-backend/handleContinue.js";
 import {handleRefineSelection} from "./plugin-backend/handleRefineSelection.js";
 import {handleImageGeneration, checkImageGenerationAvailability} from "./plugin-backend/handleImageGeneration.js";
-import {clearCopilotDBData} from "./CopilotDB/clearCopilotDBData.js";
+
 
 const plugin = {
     currentNoteUUID: null,
@@ -339,16 +339,16 @@ const plugin = {
             }
         },
         "getCopilotDBSyncState": async function (app) {
-            return await new CopilotDB().getSyncState(app);
+            return await getSyncState(app);
         },
         "syncNotesWithCopilotDB": async function (app) {
-            await new CopilotDB().syncNotes(app, plugin.sendMessageToEmbed);
+            await syncNotes(app, plugin.sendMessageToEmbed);
         },
         "searchNotesInCopilotDB": async function (app, queryText, queryTextType, opts) {
-            return await new CopilotDB().searchNotes(app, queryText, queryTextType, opts);
+            return await searchNotes(app, queryText, queryTextType, opts);
         },
         "searchHelpCenter": async function (app, queryText, opts) {
-            return await new CopilotDB().searchHelpCenter(app, queryText, opts);
+            return await searchHelpCenter(app, queryText, opts);
         },
         "getMatchedPartWithFuzzySearch": async function (app, noteUUID, searchText, limit) {
             return await getMatchedPartWithFuzzySearch(app, noteUUID, searchText, limit);
