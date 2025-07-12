@@ -1,5 +1,5 @@
 import {OPFSUtils} from "./OPFSUtils.js";
-import {COPILOT_DB_INDEX_VERSION} from "../../constants.js";
+import {COPILOT_DB_INDEX_VERSION, MAX_CHAT_HISTORY_THREADS} from "../../constants.js";
 
 /**
  * This does not use duckdb. It uses a simple JSON file and stores it in OPFS.
@@ -14,23 +14,23 @@ export class CopilotChatHistoryDB {
 
     async init() {
         if (this.initialized) return;
-        
+
         // Check OPFS support once
         this.opfsSupported = await OPFSUtils.checkSupport();
-        
+
         if (!this.opfsSupported) {
             console.warn('OPFS not supported, using in-memory storage for chat history');
         } else {
             // Check and handle version changes for OPFS
             await this._handleVersionReset();
         }
-        
+
         this.initialized = true;
     }
 
     async _getThreadsData() {
         await this.init();
-        
+
         if (!this.opfsSupported) {
             // Return in-memory storage as an object
             const threadsMap = {};
@@ -44,18 +44,18 @@ export class CopilotChatHistoryDB {
         if (!data) {
             return { version: COPILOT_DB_INDEX_VERSION, threads: {} };
         }
-        
+
         // Ensure we have the version and threads structure
         if (!data.version || !data.threads) {
             return { version: COPILOT_DB_INDEX_VERSION, threads: data };
         }
-        
+
         return data;
     }
 
     async _saveThreadsData(threadsData) {
         await this.init();
-        
+
         if (!this.opfsSupported) {
             // Save to in-memory storage (only thread data, not version)
             this.inMemoryStorage.clear();
@@ -71,7 +71,7 @@ export class CopilotChatHistoryDB {
             version: COPILOT_DB_INDEX_VERSION,
             threads: threadsData.threads || threadsData
         };
-        
+
         return await OPFSUtils.writeJsonFile(this.fileName, dataToSave);
     }
 
@@ -83,15 +83,15 @@ export class CopilotChatHistoryDB {
 
     async deleteThread(threadId) {
         if (!threadId) return false;
-        
+
         try {
             const threadsData = await this._getThreadsData();
             const threads = threadsData.threads || threadsData;
-            
+
             if (!threads[threadId]) {
                 return false; // Thread doesn't exist
             }
-            
+
             delete threads[threadId];
             await this._saveThreadsData(threadsData);
             return true;
@@ -103,7 +103,7 @@ export class CopilotChatHistoryDB {
 
     async getThread(threadId) {
         if (!threadId) return null;
-        
+
         const threadsData = await this._getThreadsData();
         const threads = threadsData.threads || threadsData;
         return threads[threadId] || null;
@@ -111,10 +111,20 @@ export class CopilotChatHistoryDB {
 
     async putThread(thread) {
         this._validateThread(thread);
-        
+
         const threadsData = await this._getThreadsData();
         const threads = threadsData.threads || threadsData;
-        
+
+        // Delete other empty threads before adding/updating the current one
+        for (const threadId in threads) {
+            if (threadId === thread.remoteId) continue;
+
+            const existingThread = threads[threadId];
+            if (!existingThread.messages || !existingThread.messages.messages || existingThread.messages.messages.length === 0) {
+                delete threads[threadId];
+            }
+        }
+
         threads[thread.remoteId] = {
             remoteId: thread.remoteId,
             name: thread.name,
@@ -123,7 +133,15 @@ export class CopilotChatHistoryDB {
             status: thread.status,
             messages: thread.messages
         };
-        
+
+        // Enforce max number of threads
+        const threadList = Object.values(threads);
+        if (threadList.length > MAX_CHAT_HISTORY_THREADS) {
+            threadList.sort((a, b) => new Date(a.updated) - new Date(b.updated));
+            const oldestThread = threadList[0];
+            delete threads[oldestThread.remoteId];
+        }
+
         await this._saveThreadsData(threadsData);
     }
 
@@ -144,14 +162,14 @@ export class CopilotChatHistoryDB {
 
     async _handleVersionReset() {
         if (!this.opfsSupported) return;
-        
+
         try {
             const data = await OPFSUtils.readJsonFile(this.fileName);
-            
+
             if (!data) return;
-            
+
             const currentVersion = data.version || 0;
-            
+
             if (currentVersion !== COPILOT_DB_INDEX_VERSION) {
                 await OPFSUtils.deleteFile(this.fileName);
                 console.log(`Chat history reset completed due to version change from ${currentVersion} to ${COPILOT_DB_INDEX_VERSION}.`);

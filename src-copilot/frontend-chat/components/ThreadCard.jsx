@@ -81,7 +81,6 @@ const getThreadContent = (thread) => {
   if (thread.messages.length === 0) return 'No messages';
     let content = '';
     for (const message of thread.messages.messages) {
-      console.log(message);
         content += `${message.message.role}: ${message.message.content.map(contentPart => contentPart.text).join('')}\n`;
     }
     return content;

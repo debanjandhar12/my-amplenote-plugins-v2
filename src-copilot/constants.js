@@ -20,5 +20,6 @@ export const PLUGIN_VERSION = "0.6.0";
 export const COPILOT_DB_INDEX_VERSION = 45;
 export const COPILOT_DB_MAX_TOKENS = 1280;
 export const MAX_NOTE_BATCH_SIZE = 48;
+export const MAX_CHAT_HISTORY_THREADS = 100;
 
 
