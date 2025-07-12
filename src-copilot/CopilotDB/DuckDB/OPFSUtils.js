@@ -149,7 +149,7 @@ export class OPFSUtils {
 
     /**
      * Deletes a file from the OPFS root directory.
-     * 
+     *
      * @param {string} fileName The name of the file to delete.
      * @returns {Promise<boolean>} A promise that resolves to true if the file was deleted,
      *          false if the file didn't exist.
@@ -176,7 +176,7 @@ export class OPFSUtils {
 
     /**
      * Reads and parses a JSON file from OPFS root directory.
-     * 
+     *
      * @param {string} fileName The name of the JSON file to read.
      * @returns {Promise<Object|null>} A promise that resolves to the parsed JSON object,
      *          or null if the file doesn't exist or OPFS is not supported.
@@ -198,7 +198,7 @@ export class OPFSUtils {
             const fileHandle = await root.getFileHandle(fileName, { create: false });
             const file = await fileHandle.getFile();
             const text = await file.text();
-            
+
             return JSON.parse(text);
         } catch (error) {
             if (error.name === 'NotFoundError') {
@@ -215,7 +215,7 @@ export class OPFSUtils {
 
     /**
      * Writes a JSON object to a file in OPFS root directory.
-     * 
+     *
      * @param {string} fileName The name of the JSON file to write.
      * @param {Object} data The object to serialize and write to the file.
      * @returns {Promise<boolean>} A promise that resolves to true if successful,
@@ -237,11 +237,12 @@ export class OPFSUtils {
             const root = await OPFSUtils.getRoot();
             const fileHandle = await root.getFileHandle(fileName, { create: true });
             const writable = await fileHandle.createWritable();
-            
-            const jsonString = JSON.stringify(data, null, 2);
-            await writable.write(jsonString);
-            await writable.close();
-            
+            try {
+                const jsonString = JSON.stringify(data, null, 2);
+                await writable.write(jsonString);
+            } finally {
+                await writable.close();
+            }
             return true;
         } catch (error) {
             if (error instanceof TypeError && error.message.includes('JSON')) {
@@ -257,7 +258,7 @@ export class OPFSUtils {
     /**
      * Updates a JSON file by merging new data with existing data.
      * If the file doesn't exist, it will be created with the new data.
-     * 
+     *
      * @param {string} fileName The name of the JSON file to update.
      * @param {Object} newData The object to merge with existing data.
      * @returns {Promise<boolean>} A promise that resolves to true if successful,
@@ -278,7 +279,7 @@ export class OPFSUtils {
 
             const existingData = await OPFSUtils.readJsonFile(fileName) || {};
             const mergedData = { ...existingData, ...newData };
-            
+
             return await OPFSUtils.writeJsonFile(fileName, mergedData);
         } catch (error) {
             console.error(`Error updating JSON file '${fileName}':`, error);
