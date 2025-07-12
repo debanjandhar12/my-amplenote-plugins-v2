@@ -63,7 +63,7 @@ export const EMBED_COMMANDS_MOCK = {
     "saveChatThreadToCopilotDB": async (thread) => {
         return true;
     },
-    "searchUserTasks": async (sqlQuery) => {
+    "searchUserTasks": async (app, sqlQuery) => {
         return {
             success: true,
             taskCount: 0,

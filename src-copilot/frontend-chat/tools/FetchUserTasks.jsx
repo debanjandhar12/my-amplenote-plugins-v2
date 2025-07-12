@@ -11,16 +11,17 @@ export const FetchUserTasks =() => {
             properties: {
                 query: {
                     type: "string",
-                    description: "SQL SELECT query to search tasks from the user_tasks table.\n" +
+                    description: "DuckDB SQL SELECT statement to search tasks from user_tasks table.\n" +
                         "Available fields: " +
                         "completedAt, dismissedAt, endAt, hideUntil, startAt (TIMESTAMP)\n" +
                         "content, noteUUID, taskUUID, taskDomainUUID, taskDomainName (VARCHAR)\n" +
                         "urgent, important (BOOLEAN)\n" +
                         "score (DOUBLE)\n" +
                         "Examples:\n" +
-                        "Find tasks for 25th december: SELECT * FROM user_tasks WHERE startAt >= '2024-12-25 00:00:00' AND startAt <= '2024-12-25 23:59:59';\n" +
+                        "Find tasks for 25th december: SELECT * FROM user_tasks WHERE DATE(startAt) = '2024-12-25';\n" +
+                        "Find lapsed tasks: SELECT * FROM user_tasks WHERE endAt < NOW();\n" +
                         "Find tasks in note: SELECT * FROM user_tasks WHERE noteUUID = 'note-uuid';\n" +
-                        "Find task with content: SELECT * FROM user_tasks WHERE content ILIKE '%groceries%';\n" +
+                        "Find task with content: SELECT * FROM user_tasks WHERE regexp_matches(content, '(shop|buy)', 'i');\n" +
                         "Find urgent tasks: SELECT * FROM user_tasks WHERE urgent = true;\n" +
                         "Find incomplete tasks: SELECT * FROM user_tasks WHERE completedAt IS NULL;\n"
                 }
@@ -32,9 +33,9 @@ export const FetchUserTasks =() => {
         onInit: async ({args, formData, setFormData, setFormState}) => {
             try {
                 const result = await appConnector.searchUserTasks(args.query);
-                
+
                 if (result.success) {
-                    setFormData({...formData, queryResult: result.results, taskCount: result.taskCount});
+                    setFormData({...formData, queryResult: result.results});
                     setFormState('completed');
                 } else {
                     throw new Error(result.error || 'Failed to search tasks');
@@ -46,9 +47,9 @@ export const FetchUserTasks =() => {
             }
         },
         onCompleted: ({addResult, formData}) => {
-            const {queryResult, taskCount} = formData;
+            const {queryResult} = formData;
             addResult({
-                resultSummary: `Query completed. Synced ${taskCount || 0} tasks and found ${queryResult.length} matching results.`, 
+                resultSummary: `Query completed. Found ${queryResult.length} matching results.`,
                 resultDetail: queryResult
             });
         },
@@ -60,7 +61,7 @@ export const FetchUserTasks =() => {
             const { CheckboxIcon } = window.RadixIcons;
             return <ToolCardResultMessage
                 result={JSON.stringify(formData.queryResult)}
-                text={`${formData.queryResult.length} tasks found from ${formData.taskCount || 0} synced tasks.`}
+                text={`${formData.queryResult.length} tasks found.`}
                 icon={<CheckboxIcon />}
                 toolName={toolName}
                 input={args} />
@@ -76,4 +77,3 @@ export const FetchUserTasks =() => {
         }
     });
 }
-

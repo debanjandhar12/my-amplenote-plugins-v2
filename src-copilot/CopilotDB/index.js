@@ -143,9 +143,9 @@ export const getLastUpdatedChatThread = async () => {
  * @param {string} sqlQuery - SQL query to search tasks
  * @returns {Promise<Object>} Search results with success status and data
  */
-export const searchUserTasks = async (sqlQuery) => {
+export const searchUserTasks = async (app, sqlQuery) => {
     const manager = getUserTasksManager();
-    return await manager.searchUserTasks(sqlQuery);
+    return await manager.searchUserTasks(app, sqlQuery);
 };
 
 // Export all functions as default object for backwards compatibility

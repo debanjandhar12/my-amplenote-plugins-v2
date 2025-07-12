@@ -369,9 +369,10 @@ const plugin = {
             return await getLastUpdatedChatThread();
         },
         "searchUserTasks": async function (app, sqlQuery) {
-            return await searchUserTasks(sqlQuery);
+            return await searchUserTasks(app, sqlQuery);
         }
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
+        'getAllChatThreadsFromCopilotDB', 'saveChatThreadToCopilotDB', 'getChatThreadFromCopilotDB',
         'receiveMessageFromPlugin', 'ping'])
 }
 

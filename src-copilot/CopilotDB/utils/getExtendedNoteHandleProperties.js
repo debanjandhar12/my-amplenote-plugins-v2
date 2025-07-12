@@ -22,7 +22,7 @@ export async function getExtendedNoteHandleProperties(app, note) {
 
         await delay(1000);
 
-        const isTaskListNoteSearch = await app.filterNotes({ group: "taskList" });
+        const isTaskListNoteSearch = await app.filterNotes({ group: "taskLists" });
         if (isTaskListNoteSearch) {
             searchResultCache.isTaskListNoteUUIDs = new Set(isTaskListNoteSearch.map(n => n.uuid));
         }
