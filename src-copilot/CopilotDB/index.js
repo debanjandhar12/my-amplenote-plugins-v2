@@ -7,6 +7,7 @@ import {searchHelpCenter as _searchHelpCenter} from "./searchHelpCenter.js";
 import {getSyncState as _getSyncState} from "./getSyncState.js";
 import {clearCopilotDBData as _clearCopilotDBData} from "./clearCopilotDBData.js";
 import {CopilotChatHistoryDB} from "./DuckDB/CopilotChatHistoryDB.js";
+import {DuckDBUserTasksManager} from "./DuckDB/DuckDBUserTasksManager.js";
 
 // Singleton pattern for syncNotes - maintain global state
 let syncNotesPromise = null;
@@ -18,6 +19,15 @@ const getChatHistoryDB = () => {
         chatHistoryDB = new CopilotChatHistoryDB();
     }
     return chatHistoryDB;
+};
+
+// Singleton instance for user tasks manager
+let userTasksManager = null;
+const getUserTasksManager = () => {
+    if (!userTasksManager) {
+        userTasksManager = new DuckDBUserTasksManager();
+    }
+    return userTasksManager;
 };
 
 /**
@@ -128,6 +138,16 @@ export const getLastUpdatedChatThread = async () => {
     return await db.getLastUpdatedThread();
 };
 
+/**
+ * Search user tasks using SQL query
+ * @param {string} sqlQuery - SQL query to search tasks
+ * @returns {Promise<Object>} Search results with success status and data
+ */
+export const searchUserTasks = async (sqlQuery) => {
+    const manager = getUserTasksManager();
+    return await manager.searchUserTasks(sqlQuery);
+};
+
 // Export all functions as default object for backwards compatibility
 export default {
     searchNotes,
@@ -139,5 +159,6 @@ export default {
     deleteChatThread,
     getChatThread,
     saveChatThread,
-    getLastUpdatedChatThread
+    getLastUpdatedChatThread,
+    searchUserTasks
 };
