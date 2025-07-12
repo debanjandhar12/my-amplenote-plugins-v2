@@ -129,7 +129,7 @@ export const SearchNotesByTitleTagsContent = () => {
             }) : [];
 
             // Add matched part using fuzzy search for amplenote built-in search results
-            const amplenoteSearchResults = [...searchResults1, ...searchResults2, ...searchResults3, ...searchResults4, ...searchResults5];
+            const amplenoteSearchResults = [...searchResults1, ...searchResults2, ...searchResults3, ...searchResults4, ...searchResults5].slice(0, (args.limitSearchResults || 10)*4);
             for (const result of amplenoteSearchResults) {
                 if (!args.noteContent || args.noteContent.trim() === '') continue;
                 const matchedParts = await appConnector.getMatchedPartWithFuzzySearch(result.noteUUID || result.uuid, args.noteContent.trim());
@@ -204,7 +204,7 @@ export const SearchNotesByTitleTagsContent = () => {
                         // The note can have additional tags that are not in the search tags
                         note.tags = note.tags || [];
                         matchesTags = args.tags.every(tag =>
-                            note.tags && note.tags.some(noteTag => 
+                            note.tags && note.tags.some(noteTag =>
                                 noteTag.toLowerCase() === tag.toLowerCase()
                             )
                         );
