@@ -6,7 +6,7 @@ export const RemoteAssistantRuntimeProvider = ({ children }) => {
     const innerRuntimeHook = React.useCallback(useInnerRuntime, []);
 
     const callbacksRef = React.useRef(new Set());
-    const {setRemoteThreadLoaded} = React.useContext(getChatAppContext());
+    const {remoteThreadLoaded, setRemoteThreadLoaded} = React.useContext(getChatAppContext());
     const runtime = AssistantUI.unstable_useRemoteThreadListRuntime({
         runtimeHook: innerRuntimeHook,
         list: async () => {
@@ -38,7 +38,10 @@ export const RemoteAssistantRuntimeProvider = ({ children }) => {
                 updated: new Date().toISOString(),
                 status: "regular"
             }
-            await appConnector.saveChatThreadToCopilotDB(thread);
+            // DO NOT store the auto-generated new thread before remote thread is loaded
+            if (remoteThreadLoaded) {
+                await appConnector.saveChatThreadToCopilotDB(thread);
+            }
             return thread;
         }
     });

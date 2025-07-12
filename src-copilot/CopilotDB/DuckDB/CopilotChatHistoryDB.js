@@ -1,83 +1,65 @@
 import {OPFSUtils} from "./OPFSUtils.js";
 import {COPILOT_DB_INDEX_VERSION, MAX_CHAT_HISTORY_THREADS} from "../../constants.js";
+import { throttle } from "lodash-es";
 
 /**
- * This does not use duckdb. It uses a simple JSON file and stores it in OPFS.
+ * Manages chat history in OPFS with an in-memory cache layer to reduce latency.
+ * Reads are served directly from the cache. Writes are applied to the cache immediately
+ * and then flushed to the OPFS file asynchronously with a throttle mechanism to prevent data loss.
  */
 export class CopilotChatHistoryDB {
     constructor() {
         this.fileName = 'copilot-chat-history.json';
         this.initialized = false;
         this.opfsSupported = null;
-        this.inMemoryStorage = new Map(); // Fallback for when OPFS is not supported
+        this.threadsCache = null; // In-memory cache for all threads
+        this._scheduleSave = throttle(this._persistCache.bind(this), 1000, { leading: true, trailing: true });
     }
 
     async init() {
         if (this.initialized) return;
 
-        // Check OPFS support once
         this.opfsSupported = await OPFSUtils.checkSupport();
 
-        if (!this.opfsSupported) {
-            console.warn('OPFS not supported, using in-memory storage for chat history');
-        } else {
-            // Check and handle version changes for OPFS
+        if (this.opfsSupported) {
             await this._handleVersionReset();
+            const data = await OPFSUtils.readJsonFile(this.fileName);
+            // The data can be in the new format { version, threads } or old format (just threads object)
+            if (data && data.threads) {
+                this.threadsCache = data.threads;
+            } else {
+                this.threadsCache = data || {};
+            }
+        } else {
+            console.warn('OPFS not supported, using in-memory storage for chat history. Data will be lost on page refresh.');
+            this.threadsCache = {};
         }
 
         this.initialized = true;
     }
 
-    async _getThreadsData() {
-        await this.init();
+    /**
+     * Persists the in-memory cache to the OPFS file.
+     * This method is throttled in the constructor.
+     * @private
+     */
+    async _persistCache() {
+        if (!this.opfsSupported) return;
 
-        if (!this.opfsSupported) {
-            // Return in-memory storage as an object
-            const threadsMap = {};
-            for (const [key, value] of this.inMemoryStorage) {
-                threadsMap[key] = value;
-            }
-            return threadsMap;
+        try {
+            const dataToSave = {
+                version: COPILOT_DB_INDEX_VERSION,
+                threads: this.threadsCache,
+            };
+            await OPFSUtils.writeJsonFile(this.fileName, dataToSave);
+        } catch (error) {
+            console.error('Failed to save chat history to OPFS:', error);
         }
-
-        const data = await OPFSUtils.readJsonFile(this.fileName);
-        if (!data) {
-            return { version: COPILOT_DB_INDEX_VERSION, threads: {} };
-        }
-
-        // Ensure we have the version and threads structure
-        if (!data.version || !data.threads) {
-            return { version: COPILOT_DB_INDEX_VERSION, threads: data };
-        }
-
-        return data;
-    }
-
-    async _saveThreadsData(threadsData) {
-        await this.init();
-
-        if (!this.opfsSupported) {
-            // Save to in-memory storage (only thread data, not version)
-            this.inMemoryStorage.clear();
-            const threads = threadsData.threads || threadsData;
-            for (const [key, value] of Object.entries(threads)) {
-                this.inMemoryStorage.set(key, value);
-            }
-            return true;
-        }
-
-        // Ensure we save with version structure
-        const dataToSave = {
-            version: COPILOT_DB_INDEX_VERSION,
-            threads: threadsData.threads || threadsData
-        };
-
-        return await OPFSUtils.writeJsonFile(this.fileName, dataToSave);
     }
 
     async getAllThreads() {
-        const threadsData = await this._getThreadsData();
-        const threads = Object.values(threadsData.threads || threadsData);
+        await this.init();
+        const threads = Object.values(this.threadsCache);
         return threads.sort((a, b) => new Date(b.updated) - new Date(a.updated));
     }
 
@@ -85,15 +67,14 @@ export class CopilotChatHistoryDB {
         if (!threadId) return false;
 
         try {
-            const threadsData = await this._getThreadsData();
-            const threads = threadsData.threads || threadsData;
+            await this.init();
 
-            if (!threads[threadId]) {
+            if (!this.threadsCache[threadId]) {
                 return false; // Thread doesn't exist
             }
 
-            delete threads[threadId];
-            await this._saveThreadsData(threadsData);
+            delete this.threadsCache[threadId];
+            this._scheduleSave();
             return true;
         } catch (e) {
             console.error('Failed to delete thread:', e);
@@ -103,17 +84,15 @@ export class CopilotChatHistoryDB {
 
     async getThread(threadId) {
         if (!threadId) return null;
-
-        const threadsData = await this._getThreadsData();
-        const threads = threadsData.threads || threadsData;
-        return threads[threadId] || null;
+        await this.init();
+        return this.threadsCache[threadId] || null;
     }
 
     async putThread(thread) {
         this._validateThread(thread);
+        await this.init();
 
-        const threadsData = await this._getThreadsData();
-        const threads = threadsData.threads || threadsData;
+        const threads = this.threadsCache;
 
         // Delete other empty threads before adding/updating the current one
         for (const threadId in threads) {
@@ -131,7 +110,7 @@ export class CopilotChatHistoryDB {
             created: thread.created,
             updated: thread.updated,
             status: thread.status,
-            messages: thread.messages
+            messages: thread.messages,
         };
 
         // Enforce max number of threads
@@ -142,7 +121,7 @@ export class CopilotChatHistoryDB {
             delete threads[oldestThread.remoteId];
         }
 
-        await this._saveThreadsData(threadsData);
+        this._scheduleSave();
     }
 
     async getLastUpdatedThread() {

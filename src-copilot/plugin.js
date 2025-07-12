@@ -99,7 +99,7 @@ const plugin = {
         "Clear CopilotDB OPFS data": async function (app) {
             try {
                 const confirmed = await app.prompt(
-                    "This will permanently delete all CopilotDB data stored in your browser. You will need to sync your notes again to use the search features of this plugin. Are you sure you want to continue?",
+                    "This will permanently delete all CopilotDB data stored in your browser. You will need to sync your notes again to use the search features of this plugin. This will also delete your chat history.\nAre you sure you want to continue?",
                     {
                         inputs: []
                     }

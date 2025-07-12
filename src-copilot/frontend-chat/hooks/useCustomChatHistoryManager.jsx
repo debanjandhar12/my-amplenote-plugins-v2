@@ -21,8 +21,8 @@ export const useCustomChatHistoryManager = () => {
                         // Switching will trigger the threadListItemRuntime listener to load messages
                         await assistantRuntime.threads.switchToThread(lastThread.remoteId);
                     } else {
-                        // No threads exist yet, so we're "loaded"
-                        setChatHistoryLoaded(true);
+                        // No thread exists in remote storage, so we create a new one
+                        await assistantRuntime.threads.switchToNewThread();
                     }
                 }
             } catch (e) {
@@ -43,13 +43,12 @@ export const useCustomChatHistoryManager = () => {
     React.useEffect(() => {
         const updateRemoteThreadMessages = async () => {
             try {
-                const threadState = threadListItemRuntime.getState();
-                if (!threadState.remoteId) return;
+                const mainThreadId = assistantRuntime.threads.getState().mainThreadId;
 
-                const remoteThread = await appConnector.getChatThreadFromCopilotDB(threadState.remoteId);
+                const remoteThread = await appConnector.getChatThreadFromCopilotDB(mainThreadId);
                 if (!remoteThread) return;
 
-                const exportMessages = threadRuntime.export();
+                const exportMessages = assistantRuntime.thread.export();
 
                 // Do not update if there are no messages or if messages are identical
                 if (exportMessages.messages.length < 1 || isEqual(remoteThread.messages, exportMessages)) {
@@ -68,16 +67,16 @@ export const useCustomChatHistoryManager = () => {
         // Debounce the update function to prevent excessive writes during streaming responses.
         const debouncedUpdate = debounce(updateRemoteThreadMessages, 1000, {
             leading: true,
-            trailing: true,
+            trailing: true
         });
 
-        const unsubscribe = threadRuntime.subscribe(debouncedUpdate);
+        const unsubscribe = assistantRuntime.thread.subscribe(debouncedUpdate);
 
         return () => {
             debouncedUpdate.cancel(); // Clean up pending debounced calls
             unsubscribe();
         };
-    }, [threadRuntime, threadListItemRuntime]);
+    }, [assistantRuntime]);
 
 
     // Effect for loading messages from the database when a thread is switched.
@@ -113,8 +112,8 @@ export const useCustomChatHistoryManager = () => {
         const unsubscribe = threadListItemRuntime.subscribe(loadThreadMessages);
 
         // Initial load for the currently selected thread on mount
-        loadThreadMessages();
+        if (remoteThreadLoaded) loadThreadMessages();
 
         return () => unsubscribe();
-    }, [threadListItemRuntime, threadRuntime, setChatHistoryLoaded]);
+    }, [threadListItemRuntime, threadRuntime, remoteThreadLoaded, setChatHistoryLoaded]);
 };
