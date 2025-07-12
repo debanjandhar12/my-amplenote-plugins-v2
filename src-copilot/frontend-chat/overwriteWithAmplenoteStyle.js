@@ -190,6 +190,23 @@ export const overwriteWithAmplenoteStyle = () => {
     div.aui-user-message-content {
         border-radius: 1.25rem;
     }
+    .aui-composer-root, .aui-thread-welcome-suggestion {
+        background-color: rgb(39, 47, 53);
+    }
+    .aui-composer-cancel {
+        background-color: hsl(var(--aui-destructive));
+        color: hsl(var(--aui-destructive-foreground));
+    }
+    .aui-composer-cancel:hover,
+    .aui-composer-cancel:focus,
+    .aui-composer-cancel:active {
+        background-color: hsla(var(--aui-destructive), 0.9);
+    }
+    .aui-composer-cancel:disabled {
+        background-color: hsla(var(--aui-destructive), 0.5);
+        color: hsla(var(--aui-destructive-foreground), 0.5);
+        cursor: not-allowed;
+    }
     `.replace(/\s+/g, ' ').trim();
     body.appendChild(styleEl3);
 }
