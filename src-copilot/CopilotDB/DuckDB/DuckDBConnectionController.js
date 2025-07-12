@@ -103,4 +103,4 @@ const debouncedTerminate = debounce(() => {
     if (lock_count === 0) {
         DuckDBConnectionController.forceTerminate();
     }
-},40 * 1000); // 40 sec
+},60 * 1000); // 1 minute
