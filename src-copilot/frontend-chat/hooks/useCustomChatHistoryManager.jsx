@@ -89,20 +89,18 @@ export const useCustomChatHistoryManager = () => {
                 if (lastLoadedThreadId.current === threadId && threadId !== null) return;
                 lastLoadedThreadId.current = threadId;
 
-                if (!threadId) {
-                    threadRuntime.import({ messages: [] });
-                    setChatHistoryLoaded(true);
-                    return;
-                }
-
                 setChatHistoryLoaded(false);
                 const remoteThread = await appConnector.getChatThreadFromCopilotDB(threadId);
 
                 // To prevent race conditions, only import if the current thread is the one we fetched for.
-                if (threadListItemRuntime.getState().remoteId === threadId) {
-                    threadRuntime.import(remoteThread?.messages || { messages: [] });
-                    setChatHistoryLoaded(true);
+                if (threadListItemRuntime.getState().remoteId === threadId &&
+                    remoteThread && remoteThread.messages) {
+                    await threadRuntime.import(remoteThread.messages);
+                } else if (threadListItemRuntime.getState().status === 'new') {
+                    // Required to initialize new threads and make them regular
+                    await threadRuntime.import({ messages: [] });
                 }
+                setChatHistoryLoaded(true);
             } catch (e) {
                 console.error('Error loading thread from backend:', e);
                 setChatHistoryLoaded(true); // Unblock UI on error

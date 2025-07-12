@@ -97,5 +97,5 @@ export const useAmplenoteAttachments = () => {
         if (chatHistoryLoaded) processAttachments();
         const intervalId = setInterval(processAttachments, 300);
         return () => clearInterval(intervalId);
-    }, [composer, chatHistoryLoaded]);
+    }, [composer, threadRuntime, chatHistoryLoaded]);
 }
