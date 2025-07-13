@@ -23,15 +23,15 @@ export const UpdateUserTasks = () => {
                                 type: "string",
                                 description: "UUID of the task to update"
                             },
-                            taskContent: {
+                            content: {
                                 type: "string",
                                 description: "Short task content"
                             },
-                            taskStartAt: {
+                            startAt: {
                                 type: "string",
                                 description: "ISO format start date and time of the task"
                             },
-                            taskEndAt: {
+                            endAt: {
                                 type: "string",
                                 description: "ISO format end date and time of the task"
                             },
@@ -49,7 +49,7 @@ export const UpdateUserTasks = () => {
                                 type: "string",
                                 description: "ISO format hide until date and time of the task."
                             },
-                            taskScore: {
+                            score: {
                                 type: "number"
                             },
                             important: {
@@ -70,25 +70,25 @@ export const UpdateUserTasks = () => {
             const tasksContainerList = [];
             for (const taskItem of args.tasks) {
                 const taskUUID = taskItem.taskUUID;
-                const taskContent = taskItem.taskContent;
-                const taskStartAt = taskItem.taskStartAt;
-                const taskEndAt = taskItem.taskEndAt;
+                const content = taskItem.content;
+                const startAt = taskItem.startAt;
+                const endAt = taskItem.endAt;
                 const completedAt = taskItem.completedAt;
                 const dismissedAt = taskItem.dismissedAt;
                 const hideUntil = taskItem.hideUntil;
-                const taskScore = taskItem.taskScore;
+                const score = taskItem.score;
                 const important = taskItem.important;
                 const urgent = taskItem.urgent;
                 tasksContainerList.push({
                     item: {
                         uuid: taskUUID,
-                        content: taskContent,
-                        startAt: taskStartAt,
-                        endAt: taskEndAt,
+                        content: content,
+                        startAt: startAt,
+                        endAt: endAt,
                         completedAt: completedAt,
                         dismissedAt: dismissedAt,
                         hideUntil: hideUntil,
-                        score: taskScore,
+                        score: score,
                         important: important,
                         urgent: urgent,
                     },

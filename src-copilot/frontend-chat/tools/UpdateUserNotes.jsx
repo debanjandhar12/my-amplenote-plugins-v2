@@ -36,7 +36,7 @@ export const UpdateUserNotes = () => {
                                 items: {
                                     type: "string"
                                 },
-                                description: "New tag list (all old tags will be removed - set null to keep old tags)"
+                                description: "New tag list (all old tags will be removed - do not set to keep old tags)"
                             }
                         },
                         required: ["noteUUID"]
