@@ -1,3 +1,4 @@
+import { LLM_MAX_TOKENS_SETTING } from "../../constants.js";
 import {processCopilotDBResults} from "./processCopilotDBResults.js";
 import {debounce} from "lodash-es";
 
@@ -78,7 +79,7 @@ export const useSearch = () => {
                         + `title: ${noteTitle || 'Untitled Note'}\n`
                         + `tags: ${noteTags.join(', ')}\n`
                         + '---\n'
-                        + noteContent, "passage", searchOpts);
+                        + noteContent.substring(0, LLM_MAX_TOKENS_SETTING * 3), "passage", searchOpts);
                     // Filter out the current note from results
                     results = results.filter(result => result.noteUUID !== noteUUID);
                 } else {
