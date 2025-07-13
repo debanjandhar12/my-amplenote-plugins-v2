@@ -4,7 +4,7 @@ import speechtotextHTML from 'inline:./embed/speechtotext.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {generateText} from "./aisdk-wrappers/generateText.js";
 import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
-import {getSyncState, syncNotes, searchNotes, searchHelpCenter, clearCopilotDBData, getAllChatThreads, deleteChatThread, getChatThread, saveChatThread, getLastUpdatedChatThread, searchUserTasks} from "./CopilotDB";
+import {getSyncState, syncNotes, searchNotes, searchHelpCenter, clearCopilotDBData, getAllChatThreads, deleteChatThread, getChatThread, saveChatThread, getLastUpdatedChatThread, getLastOpenedChatThread, searchUserTasks} from "./CopilotDB";
 import {getMatchedPartWithFuzzySearch} from "./plugin-backend/getMatchedPartWithFuzzySearch.jsx";
 import {validatePluginSettings} from "./validatePluginSettings.js";
 import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
@@ -172,13 +172,9 @@ const plugin = {
                 return !(await plugin.isEmbedOpen(app));
             },
             run: async function (app) {
-                console.log('max tokens', await app.filterNotes({
-                    query: 'max tokens'}));
-                console.log('logseq', await app.filterNotes({
-                    query: 'logseq'}));
-                console.log('holiday', await app.filterNotes({
-                    query: 'holiday'}));
                 await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'new-chat', message: []});
             }
         },
         "Chat with note": {
@@ -368,11 +364,15 @@ const plugin = {
         "getLastUpdatedChatThreadFromCopilotDB": async function (app) {
             return await getLastUpdatedChatThread();
         },
+        "getLastOpenedChatThreadFromCopilotDB": async function (app) {
+            return await getLastOpenedChatThread();
+        },
         "searchUserTasks": async function (app, sqlQuery) {
             return await searchUserTasks(app, sqlQuery);
         }
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
         'getAllChatThreadsFromCopilotDB', 'saveChatThreadToCopilotDB', 'getChatThreadFromCopilotDB',
+        'getLastOpenedChatThreadFromCopilotDB',
         'receiveMessageFromPlugin', 'ping'])
 }
 

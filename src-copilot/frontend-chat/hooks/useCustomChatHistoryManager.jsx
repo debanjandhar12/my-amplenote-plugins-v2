@@ -8,14 +8,14 @@ export const useCustomChatHistoryManager = () => {
     const { remoteThreadLoaded, setChatHistoryLoaded } = React.useContext(getChatAppContext());
     const lastLoadedThreadId = React.useRef(null);
 
-    // Effect for initial thread loading: find the last updated thread and switch to it.
+    // Effect for initial thread loading: find the last opened thread and switch to it.
     React.useEffect(() => {
         if (!remoteThreadLoaded) return;
         let isMounted = true;
 
         const loadInitialThread = async () => {
             try {
-                const lastThread = await appConnector.getLastUpdatedChatThreadFromCopilotDB();
+                const lastThread = await appConnector.getLastOpenedChatThreadFromCopilotDB();
                 if (isMounted) {
                     if (lastThread) {
                         // Switching will trigger the threadListItemRuntime listener to load messages
@@ -58,6 +58,7 @@ export const useCustomChatHistoryManager = () => {
                 // Update the thread object and save it
                 remoteThread.messages = exportMessages;
                 remoteThread.updated = new Date().toISOString();
+                remoteThread.opened = new Date().toISOString();
                 await appConnector.saveChatThreadToCopilotDB(remoteThread);
             } catch (e) {
                 console.error('Error persisting thread to backend:', e);
@@ -99,6 +100,10 @@ export const useCustomChatHistoryManager = () => {
                 } else if (threadListItemRuntime.getState().status === 'new') {
                     // Required to initialize new threads and make them regular
                     await threadRuntime.import({ messages: [] });
+                }
+                if (remoteThread) {
+                    remoteThread.opened = new Date().toISOString();
+                    await appConnector.saveChatThreadToCopilotDB(remoteThread);
                 }
                 setChatHistoryLoaded(true);
             } catch (e) {

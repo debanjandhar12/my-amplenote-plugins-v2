@@ -138,6 +138,11 @@ export const getLastUpdatedChatThread = async () => {
     return await db.getLastUpdatedThread();
 };
 
+export const getLastOpenedChatThread = async () => {
+    const db = getChatHistoryDB();
+    return await db.getLastOpenedThread();
+};
+
 /**
  * Search user tasks using SQL query
  * @param {string} sqlQuery - SQL query to search tasks

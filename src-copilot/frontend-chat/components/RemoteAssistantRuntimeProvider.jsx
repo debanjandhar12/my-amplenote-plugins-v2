@@ -36,6 +36,7 @@ export const RemoteAssistantRuntimeProvider = ({ children }) => {
                 name: `Copilot Chat - ${threadId}`,
                 created: new Date().toISOString(),
                 updated: new Date().toISOString(),
+                opened: new Date().toISOString(),
                 status: "regular"
             }
             // DO NOT store the auto-generated new thread before remote thread is loaded

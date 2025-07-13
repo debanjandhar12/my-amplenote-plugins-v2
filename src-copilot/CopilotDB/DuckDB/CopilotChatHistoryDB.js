@@ -13,6 +13,7 @@ export class CopilotChatHistoryDB {
         this.initialized = false;
         this.opfsSupported = null;
         this.threadsCache = null; // In-memory cache for all threads
+
         this._scheduleSave = throttle(this._persistCache.bind(this), 1000, { leading: true, trailing: true });
     }
 
@@ -109,6 +110,7 @@ export class CopilotChatHistoryDB {
             name: thread.name,
             created: thread.created,
             updated: thread.updated,
+            opened: thread.opened || thread.updated,
             status: thread.status,
             messages: thread.messages,
         };
@@ -124,6 +126,13 @@ export class CopilotChatHistoryDB {
         this._scheduleSave();
     }
 
+    async getLastOpenedThread() {
+        await this.init();
+        const threads = Object.values(this.threadsCache);
+        if (threads.length === 0) return null;
+        return threads.sort((a, b) => new Date(b.opened) - new Date(a.opened))[0];
+    }
+
     async getLastUpdatedThread() {
         const threads = await this.getAllThreads();
         return threads[0] || null;
@@ -135,6 +144,9 @@ export class CopilotChatHistoryDB {
         }
         if (!Date.parse(thread.created) || !Date.parse(thread.updated)) {
             throw new Error('Invalid date format for created or updated');
+        }
+        if (thread.opened && !Date.parse(thread.opened)) {
+            throw new Error('Invalid date format for opened');
         }
         return true;
     }
