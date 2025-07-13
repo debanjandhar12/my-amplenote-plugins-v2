@@ -63,6 +63,7 @@ Q) [How to set up embedding API (recommended)?](https://public.amplenote.com/SZn
 - 03/03/2025: Beta v0.3.0 release
 - 12/04/2025: Beta v0.4.0 release
 - 18/05/2025: Beta v0.5.0 release
+- 16/07/2025: Beta v0.8.0 release
 
 [^1]: [Continue]()
 
