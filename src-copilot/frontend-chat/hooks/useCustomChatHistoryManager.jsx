@@ -11,31 +11,24 @@ export const useCustomChatHistoryManager = () => {
     // Effect for initial thread loading: find the last opened thread and switch to it.
     React.useEffect(() => {
         if (!remoteThreadLoaded) return;
-        let isMounted = true;
 
         const loadInitialThread = async () => {
             try {
                 const lastThread = await appConnector.getLastOpenedChatThreadFromCopilotDB();
-                if (isMounted) {
-                    if (lastThread) {
-                        // Switching will trigger the threadListItemRuntime listener to load messages
-                        await assistantRuntime.threads.switchToThread(lastThread.remoteId);
-                    } else {
-                        // No thread exists in remote storage, so we create a new one
-                        await assistantRuntime.threads.switchToNewThread();
-                    }
+                if (lastThread) {
+                    // Switching will trigger the threadListItemRuntime listener to load messages
+                    await assistantRuntime.threads.switchToThread(lastThread.remoteId);
+                } else {
+                    // No thread exists in remote storage, so we create a new one
+                    await assistantRuntime.threads.switchToNewThread();
                 }
             } catch (e) {
                 console.error('Error loading initial thread:', e);
-                if (isMounted) setChatHistoryLoaded(true); // Unblock UI on error
+                setChatHistoryLoaded(true); // Unblock UI on error
             }
         };
 
         loadInitialThread();
-
-        return () => {
-            isMounted = false;
-        };
     }, [assistantRuntime, remoteThreadLoaded, setChatHistoryLoaded]);
 
 

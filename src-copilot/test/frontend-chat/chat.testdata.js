@@ -66,7 +66,7 @@ export const EMBED_COMMANDS_MOCK = {
     "getAllChatThreadsFromCopilotDB": async () => {
         return [];
     },
-    "getLastUpdatedChatThreadFromCopilotDB": async () => {
+    "getLastOpenedChatThreadFromCopilotDB": async () => {
         return null;
     },
     "searchUserTasks": async (app, sqlQuery) => {
