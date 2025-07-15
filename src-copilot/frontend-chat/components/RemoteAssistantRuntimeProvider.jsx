@@ -1,10 +1,8 @@
 import {useInnerRuntime} from "../hooks/useInnerRuntime.jsx";
-
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
 export const RemoteAssistantRuntimeProvider = ({ children }) => {
     const innerRuntimeHook = React.useCallback(useInnerRuntime, []);
-
     const callbacksRef = React.useRef(new Set());
     const {remoteThreadLoaded, setRemoteThreadLoaded} = React.useContext(getChatAppContext());
     const runtime = AssistantUI.unstable_useRemoteThreadListRuntime({

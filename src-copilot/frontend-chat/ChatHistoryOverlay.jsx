@@ -1,11 +1,9 @@
 import {ThreadCard} from './components/ThreadCard.jsx';
-
 import {getChatAppContext} from "./context/ChatAppContext.jsx";
 import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
 
 export function ChatHistoryOverlay() {
   const assistantRuntime = AssistantUI.useAssistantRuntime();
-
   const [allRemoteThreads, setAllRemoteThreads] = React.useState([]);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [filteredThreads, setFilteredThreads] = React.useState([]);

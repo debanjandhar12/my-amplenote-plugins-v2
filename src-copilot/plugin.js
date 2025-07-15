@@ -12,7 +12,6 @@ import {handleContinue} from "./plugin-backend/handleContinue.js";
 import {handleRefineSelection} from "./plugin-backend/handleRefineSelection.js";
 import {handleImageGeneration, checkImageGenerationAvailability} from "./plugin-backend/handleImageGeneration.js";
 
-
 const plugin = {
     currentNoteUUID: null,
     validateSettings: async function (app) {

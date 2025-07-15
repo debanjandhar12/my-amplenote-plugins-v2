@@ -1,5 +1,5 @@
 import {Splitter} from "./splitter/Splitter.js";
-import {COPILOT_DB_MAX_TOKENS, MAX_NOTE_BATCH_SIZE} from "../constants.js";
+import {COPILOT_DB_INDEX_VERSION, COPILOT_DB_MAX_TOKENS, MAX_NOTE_BATCH_SIZE} from "../constants.js";
 import {chunk} from "lodash-es";
 import {getEmbeddingProviderName} from "./embeddings/getEmbeddingProviderName.js";
 import 'scheduler-polyfill';
@@ -28,7 +28,7 @@ import {OPFSUtils} from "./DuckDB/OPFSUtils.js";
 
 export const syncNotes = async (app, sendMessageToEmbed) => {
     // Generate random sync ID at the very beginning
-    const syncId = 'X6'+Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const syncId = COPILOT_DB_INDEX_VERSION + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
     try {
         // -- Initialize --
