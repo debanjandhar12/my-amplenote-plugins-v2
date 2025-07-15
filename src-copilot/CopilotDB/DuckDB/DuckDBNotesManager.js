@@ -322,7 +322,7 @@ export class DuckDBNotesManager {
             }
 
             const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
-            const ftsScanLimit = 160;
+            const ftsScanLimit = 128;
 
             stmt = await conn.prepare(`
                 WITH

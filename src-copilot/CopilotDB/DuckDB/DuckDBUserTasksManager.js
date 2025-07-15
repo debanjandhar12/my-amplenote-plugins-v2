@@ -1,5 +1,5 @@
 import DuckDBConnectionController from "./DuckDBConnectionController.js";
-import {isArray} from "lodash-es";
+import dayjs from "dayjs";
 
 export class DuckDBUserTasksManager {
     async init() {
@@ -47,16 +47,25 @@ export class DuckDBUserTasksManager {
             let allTasks = [];
 
             // Fetch tasks from notes (required to include tasks not present in any task domians)
-            const notes = await app.filterNotes({ group: "taskLists" });
+            const notesArr = [...await app.filterNotes({ group: "taskLists" }),
+            // these two are required as sometimes taskLists group is not added instantly in amplenote
+            ...await app.filterNotes({ tag: "daily-jots" }),
+            ...await app.filterNotes({ tag: "today" }),
+            ];
+            const notesMap = new Map();
+            for (const note of notesArr) {
+                notesMap.set(note.noteId, note);
+            }
+            const notes = Array.from(notesMap.values()); // unique notes
             for (const note of notes) {
                 const tasks = await app.getNoteTasks({ uuid: note.uuid }, {includeDone: true});
                 for (const task of tasks) {
                     allTasks.push({
-                        completedAt: task.completedAt ? new Date(task.completedAt * 1000) : null,
-                        dismissedAt: task.dismissedAt ? new Date(task.dismissedAt * 1000) : null,
-                        endAt: task.endAt ? new Date(task.endAt) : null,
-                        hideUntil: task.hideUntil ? new Date(task.hideUntil * 1000) : null,
-                        startAt: task.startAt ? new Date(task.startAt * 1000) : null,
+                        completedAt: typeof task.completedAt === 'number' ? dayjs(task.completedAt*1000).format() : null,
+                        dismissedAt: typeof task.dismissedAt === 'number' ? dayjs(task.dismissedAt*1000).format() : null,
+                        endAt: typeof task.endAt === 'number' ? dayjs(task.endAt*1000).format() : null,
+                        hideUntil: typeof task.hideUntil === 'number' ? dayjs(task.hideUntil*1000).format() : null,
+                        startAt: typeof task.startAt === 'number' ? dayjs(task.startAt*1000).format() : null,
                         content: task.content || null,
                         noteUUID: task.noteUUID || null,
                         taskUUID: task.uuid || null,
@@ -75,11 +84,11 @@ export class DuckDBUserTasksManager {
                 const tasks = await app.getTaskDomainTasks(taskDomain.uuid);
                 for (const task of tasks) {
                     allTasks.push({
-                        completedAt: task.completedAt ? new Date(task.completedAt * 1000) : null,
-                        dismissedAt: task.dismissedAt ? new Date(task.dismissedAt * 1000) : null,
-                        endAt: task.endAt ? new Date(task.endAt) : null,
-                        hideUntil: task.hideUntil ? new Date(task.hideUntil * 1000) : null,
-                        startAt: task.startAt ? new Date(task.startAt * 1000) : null,
+                        completedAt: typeof task.completedAt === 'number' ? dayjs(task.completedAt*1000).format() : null,
+                        dismissedAt: typeof task.dismissedAt === 'number' ? dayjs(task.dismissedAt*1000).format() : null,
+                        endAt: typeof task.endAt === 'number' ? dayjs(task.endAt*1000).format() : null,
+                        hideUntil: typeof task.hideUntil === 'number' ? dayjs(task.hideUntil*1000).format() : null,
+                        startAt: typeof task.startAt === 'number' ? dayjs(task.startAt*1000).format() : null,
                         content: task.content || null,
                         noteUUID: task.noteUUID || null,
                         taskUUID: task.uuid || null,
@@ -257,17 +266,21 @@ export class DuckDBUserTasksManager {
             const rows = result.toArray();
 
             // Convert the results to a more usable format
-            const processedResults = rows.map(row => {
-                const processedRow = {};
-                for (const key in row) {
-                    if (row[key] instanceof Date) {
-                        processedRow[key] = row[key].toISOString();
-                    } else {
-                        processedRow[key] = row[key];
-                    }
-                }
-                return processedRow;
-            });
+            const processedResults = rows.map(row => ({
+                completedAt: typeof row.completedAt === 'number' ? dayjs(row.completedAt).toISOString() : null,
+                dismissedAt: typeof row.dismissedAt === 'number' ? dayjs(row.dismissedAt).toISOString() : null,
+                endAt: typeof row.endAt === 'number' ? dayjs(row.endAt).toISOString() : null,
+                hideUntil: typeof row.hideUntil === 'number' ? dayjs(row.hideUntil).toISOString() : null,
+                startAt: typeof row.startAt === 'number' ? dayjs(row.startAt).toISOString() : null,
+                content: row.content,
+                noteUUID: row.noteUUID,
+                taskUUID: row.taskUUID,
+                taskDomainUUID: row.taskDomainUUID,
+                taskDomainName: row.taskDomainName,
+                urgent: row.urgent,
+                important: row.important,
+                score: row.score
+            }));
 
             return processedResults;
         } catch (e) {
