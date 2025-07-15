@@ -3,7 +3,7 @@ import {GoogleEmbeddingGenerator} from "../../../CopilotDB/embeddings/GoogleEmbe
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
 
 describe('Google Embedding', () => {
-    test('works with single string', async () => {
+    test.skipIf(!process.env.GOOGLE_API_KEY, 'works with single string', async () => {
         const embeddingGenerator = new GoogleEmbeddingGenerator();
         const app = mockApp();
         app.settings[EMBEDDING_API_KEY_SETTING] = process.env.GOOGLE_API_KEY;
@@ -13,7 +13,7 @@ describe('Google Embedding', () => {
         expect(result[0] instanceof Float32Array).toBe(true);
     });
 
-    test('works with array', async () => {
+    test.skipIf(!process.env.GOOGLE_API_KEY, 'works with array', async () => {
         const embeddingGenerator = new GoogleEmbeddingGenerator();
         const app = mockApp();
         app.settings[EMBEDDING_API_KEY_SETTING] = process.env.GOOGLE_API_KEY;

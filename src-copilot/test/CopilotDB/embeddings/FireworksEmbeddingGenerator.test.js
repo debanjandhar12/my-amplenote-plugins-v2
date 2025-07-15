@@ -3,7 +3,7 @@ import {FireworksEmbeddingGenerator} from "../../../CopilotDB/embeddings/Firewor
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
 
 describe('Fireworks Embedding', () => {
-    test('works with single string', async () => {
+    test.skipIf(!process.env.FIREWORKS_API_KEY, 'works with single string', async () => {
         const embeddingGenerator = new FireworksEmbeddingGenerator();
         const app = mockApp();
         app.settings[EMBEDDING_API_KEY_SETTING] = process.env.FIREWORKS_API_KEY;
@@ -13,7 +13,7 @@ describe('Fireworks Embedding', () => {
         expect(result[0] instanceof Float32Array).toBe(true);
     });
 
-    test('works with array', async () => {
+    test.skipIf(!process.env.FIREWORKS_API_KEY, 'works with array', async () => {
         const embeddingGenerator = new FireworksEmbeddingGenerator();
         const app = mockApp();
         app.settings[EMBEDDING_API_KEY_SETTING] = process.env.FIREWORKS_API_KEY;

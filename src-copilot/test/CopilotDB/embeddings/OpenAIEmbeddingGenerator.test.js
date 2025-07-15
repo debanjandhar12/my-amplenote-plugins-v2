@@ -4,7 +4,7 @@ import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
 
 
 describe('OpenAi Embedding', () => {
-    test('works with single string', async () => {
+    test.skipIf(!process.env.OPENAI_API_KEY, 'works with single string', async () => {
         const embeddingGenerator = new OpenAIEmbeddingGenerator();
         const app = mockApp();
         app.settings[EMBEDDING_API_KEY_SETTING] = process.env.OPENAI_API_KEY;
@@ -14,7 +14,7 @@ describe('OpenAi Embedding', () => {
         expect(result[0] instanceof Float32Array).toBe(true);
     });
 
-    test('works with array', async () => {
+    test.skipIf(!process.env.OPENAI_API_KEY, 'works with array', async () => {
         const embeddingGenerator = new OpenAIEmbeddingGenerator();
         const app = mockApp();
         app.settings[EMBEDDING_API_KEY_SETTING] = process.env.OPENAI_API_KEY;
