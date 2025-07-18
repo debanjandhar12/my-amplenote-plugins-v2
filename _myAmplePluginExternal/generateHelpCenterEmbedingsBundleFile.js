@@ -23,7 +23,7 @@ import {GoogleEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/Goog
  * manually set PINECONE_API_KEY, OPENAI_API_KEY, FIREWORKS_API_KEY in .env file
  * sudo service ollama stop (for linux)
  * OLLAMA_ORIGINS=https://plugins.amplenote.com ollama serve
- * ollama pull snowflake-arctic-embed:33m-s-fp16 (first time only)
+ * ollama pull jina/jina-embeddings-v2-small-en:latest (first time only)
  * npx jest --runTestsByPath ./_myAmplePluginExternal/generateHelpCenterEmbedingsBundleFile.js --passWithNoTests --testMatch "**"
  * Once parquet files are generated, it can be browsed using:
  * https://demo.duckui.com/

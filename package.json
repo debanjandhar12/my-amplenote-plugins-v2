@@ -43,7 +43,7 @@
     "luxon": "^3.4.4",
     "markdown-it": "^14.1.0",
     "mdast-util-to-string": "4.0.0",
-    "my-ample-plugin-external": "1.0.25",
+    "my-ample-plugin-external": "1.0.27",
     "nanoid": "^5.0.7",
     "ollama-ai-provider": "1.2.0",
     "parquetjs-lite": "^0.8.7",
