@@ -1,34 +1,16 @@
 // **
 // ** CopilotDB - Modular vector database implementation based on IndexedDB
 // **
-import {syncNotes as _syncNotes} from "./syncNotes.js";
-import {searchNotes as _searchNotes} from "./searchNotes.js";
-import {searchHelpCenter as _searchHelpCenter} from "./searchHelpCenter.js";
-import {getSyncState as _getSyncState} from "./getSyncState.js";
-import {clearCopilotDBData as _clearCopilotDBData} from "./clearCopilotDBData.js";
-import {CopilotChatHistoryDB} from "./DuckDB/CopilotChatHistoryDB.js";
-import {DuckDBUserTasksManager} from "./DuckDB/DuckDBUserTasksManager.js";
+import { syncNotes as _syncNotes } from "./syncNotes.js";
+import { searchNotes as _searchNotes } from "./searchNotes.js";
+import { searchHelpCenter as _searchHelpCenter } from "./searchHelpCenter.js";
+import { getSyncState as _getSyncState } from "./getSyncState.js";
+import { clearCopilotDBData as _clearCopilotDBData } from "./clearCopilotDBData.js";
+import { CopilotChatHistoryDB } from "./DuckDB/CopilotChatHistoryDB.js";
+import { DuckDBUserTasksManager } from "./DuckDB/DuckDBUserTasksManager.js";
 
-// Singleton pattern for syncNotes - maintain global state
+// Singleton pattern for syncNotes promise - maintain global state
 let syncNotesPromise = null;
-
-// Singleton instance for chat history DB
-let chatHistoryDB = null;
-const getChatHistoryDB = () => {
-    if (!chatHistoryDB) {
-        chatHistoryDB = new CopilotChatHistoryDB();
-    }
-    return chatHistoryDB;
-};
-
-// Singleton instance for user tasks manager
-let userTasksManager = null;
-const getUserTasksManager = () => {
-    if (!userTasksManager) {
-        userTasksManager = new DuckDBUserTasksManager();
-    }
-    return userTasksManager;
-};
 
 /**
  * Search notes using natural language query
@@ -95,7 +77,7 @@ export const clearCopilotDBData = async (app) => {
  * @returns {Promise<Array>} Array of thread objects sorted by updated date (newest first)
  */
 export const getAllChatThreads = async () => {
-    const db = getChatHistoryDB();
+    const db = CopilotChatHistoryDB.getInstance();
     return await db.getAllThreads();
 };
 
@@ -105,7 +87,7 @@ export const getAllChatThreads = async () => {
  * @returns {Promise<boolean>} True if deleted successfully, false if thread not found
  */
 export const deleteChatThread = async (threadId) => {
-    const db = getChatHistoryDB();
+    const db = CopilotChatHistoryDB.getInstance();
     return await db.deleteThread(threadId);
 };
 
@@ -115,7 +97,7 @@ export const deleteChatThread = async (threadId) => {
  * @returns {Promise<Object|null>} Thread object or null if not found
  */
 export const getChatThread = async (threadId) => {
-    const db = getChatHistoryDB();
+    const db = CopilotChatHistoryDB.getInstance();
     return await db.getThread(threadId);
 };
 
@@ -125,7 +107,7 @@ export const getChatThread = async (threadId) => {
  * @returns {Promise<void>}
  */
 export const saveChatThread = async (thread) => {
-    const db = getChatHistoryDB();
+    const db = CopilotChatHistoryDB.getInstance();
     return await db.putThread(thread);
 };
 
@@ -134,12 +116,12 @@ export const saveChatThread = async (thread) => {
  * @returns {Promise<Object|null>} Most recent thread object or null if no threads exist
  */
 export const getLastUpdatedChatThread = async () => {
-    const db = getChatHistoryDB();
+    const db = CopilotChatHistoryDB.getInstance();
     return await db.getLastUpdatedThread();
 };
 
 export const getLastOpenedChatThread = async () => {
-    const db = getChatHistoryDB();
+    const db = CopilotChatHistoryDB.getInstance();
     return await db.getLastOpenedThread();
 };
 
@@ -149,7 +131,7 @@ export const getLastOpenedChatThread = async () => {
  * @returns {Promise<Object>} Search results with success status and data
  */
 export const searchUserTasks = async (app, sqlQuery) => {
-    const manager = getUserTasksManager();
+    const manager = DuckDBUserTasksManager.getInstance();
     return await manager.searchUserTasks(app, sqlQuery);
 };
 

@@ -2,6 +2,8 @@ import DuckDBConnectionController from "./DuckDBConnectionController.js";
 import dayjs from "dayjs";
 
 export class DuckDBUserTasksManager {
+    static _instance = null;
+
     async init() {
         if (this.db && !DuckDBConnectionController.isTerminated()) return;
         try {
@@ -318,5 +320,12 @@ export class DuckDBUserTasksManager {
                 resultCount: 0
             };
         }
+    }
+
+    static getInstance() {
+        if (!DuckDBUserTasksManager._instance) {
+            DuckDBUserTasksManager._instance = new DuckDBUserTasksManager();
+        }
+        return DuckDBUserTasksManager._instance;
     }
 }

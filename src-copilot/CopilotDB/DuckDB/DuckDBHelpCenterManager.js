@@ -1,13 +1,15 @@
 import DuckDBConnectionController from "./DuckDBConnectionController.js";
 import { getUnPkgBundleUrl } from "../../../common-utils/dynamic-import-esm.js";
-import {isArray} from "lodash-es";
+import { isArray } from "lodash-es";
 
 
 export class DuckDBHelpCenterManager {
+    static _instance = null;
+
     async init() {
         if (this.db && !DuckDBConnectionController.isTerminated()) return;
         try {
-            this.db = await DuckDBConnectionController.getCollectionInstance('CopilotTempDB', {persistent: false});
+            this.db = await DuckDBConnectionController.getCollectionInstance('CopilotTempDB', { persistent: false });
             const conn = await this.db.connect();
             await conn.query(`CHECKPOINT;`);
             await conn.close();
@@ -17,7 +19,7 @@ export class DuckDBHelpCenterManager {
         }
     }
 
-    async searchHelpCenterRecordByEmbedding(embedding, {limit = 15, filename = 'localHelpCenterEmbeddings.parquet'} = {}) {
+    async searchHelpCenterRecordByEmbedding(embedding, { limit = 15, filename = 'localHelpCenterEmbeddings.parquet' } = {}) {
         await this.init();
         let conn;
         let stmt;
@@ -71,5 +73,12 @@ export class DuckDBHelpCenterManager {
                 await conn.close();
             }
         }
+    }
+
+    static getInstance() {
+        if (!DuckDBHelpCenterManager._instance) {
+            DuckDBHelpCenterManager._instance = new DuckDBHelpCenterManager();
+        }
+        return DuckDBHelpCenterManager._instance;
     }
 }

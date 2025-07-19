@@ -8,6 +8,8 @@ import { throttle } from "lodash-es";
  * and then flushed to the OPFS file asynchronously with a throttle mechanism to prevent data loss.
  */
 export class CopilotChatHistoryDB {
+    static _instance = null;
+
     constructor() {
         this.fileName = 'copilot-chat-history.json';
         this.initialized = false;
@@ -168,5 +170,12 @@ export class CopilotChatHistoryDB {
         } catch (error) {
             console.error('Error during chat history version check:', error);
         }
+    }
+
+    static getInstance() {
+        if (!CopilotChatHistoryDB._instance) {
+            CopilotChatHistoryDB._instance = new CopilotChatHistoryDB();
+        }
+        return CopilotChatHistoryDB._instance;
     }
 }

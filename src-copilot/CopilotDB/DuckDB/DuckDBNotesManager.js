@@ -4,8 +4,8 @@ import {OPFSUtils} from "./OPFSUtils.js";
 import {isArray, truncate} from "lodash-es";
 import { eng } from "stopword";
 
-let instance;
 export class DuckDBNotesManager {
+    static _instance = null;
     static dbFileName = 'CopilotNotesDB';
 
     async init() {
@@ -688,5 +688,12 @@ export class DuckDBNotesManager {
                 await conn.close();
             }
         }
+    }
+
+    static getInstance() {
+        if (!DuckDBNotesManager._instance) {
+            DuckDBNotesManager._instance = new DuckDBNotesManager();
+        }
+        return DuckDBNotesManager._instance;
     }
 }
