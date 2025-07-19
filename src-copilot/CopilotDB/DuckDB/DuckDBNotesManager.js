@@ -7,8 +7,9 @@ import { eng } from "stopword";
 export class DuckDBNotesManager {
     static _instance = null;
     static dbFileName = 'CopilotNotesDB';
+    _initPromise = null;
 
-    async init() {
+    async _performInit() {
         if (this.db && !DuckDBConnectionController.isTerminated()) return;
         try {
             this.db = await DuckDBConnectionController.getCollectionInstance(DuckDBNotesManager.dbFileName, {persistent: true});
@@ -87,7 +88,6 @@ export class DuckDBNotesManager {
      * @returns {Promise<void>}
      */
     async resetDB() {
-        await this.init();
         const conn = await this.db.connect();
         await this._resetTables(conn);
         await this._createTables(conn);
@@ -105,7 +105,6 @@ export class DuckDBNotesManager {
      * @returns {Promise<number>}
      */
     async getActualNoteCount() {
-        await this.init();
         let conn;
         try {
             conn = await this.db.connect();
@@ -128,7 +127,6 @@ export class DuckDBNotesManager {
      * @returns {Promise<void>}
      */
     async putMultipleNoteEmbedding(noteEmbeddingObjArr) {
-        await this.init();
         const errors = [];
         const conn = await this.db.connect();
         await conn.query('BEGIN TRANSACTION');
@@ -293,7 +291,6 @@ export class DuckDBNotesManager {
      * @param {object} options Search options.
      */
     async searchNoteRecordByRRF(query, embedding, {limit = 10, thresholdSimilarity = 0, isArchived = null, isSharedByMe = null, isSharedWithMe = null, isTaskListNote = null} = {}) {
-        await this.init();
         let conn;
         let stmt;
 
@@ -566,7 +563,6 @@ export class DuckDBNotesManager {
             return;
         }
 
-        await this.init();
         let conn;
         try {
             conn = await this.db.connect();
@@ -594,7 +590,6 @@ export class DuckDBNotesManager {
             return;
         }
 
-        await this.init();
         let conn;
         try {
             conn = await this.db.connect();
@@ -616,7 +611,6 @@ export class DuckDBNotesManager {
      * @returns {Promise<number>} Total count of items
      */
     async getNotesRecordCount() {
-        await this.init();
         let conn;
         try {
             conn = await this.db.connect();
@@ -657,7 +651,6 @@ export class DuckDBNotesManager {
     }
 
     async getConfigValue(key) {
-        await this.init();
         let conn;
         try {
             conn = await this.db.connect();
@@ -674,7 +667,6 @@ export class DuckDBNotesManager {
     }
 
     async setConfigValue(key, value) {
-        await this.init();
         let conn;
         try {
             conn = await this.db.connect();
@@ -690,10 +682,19 @@ export class DuckDBNotesManager {
         }
     }
 
-    static getInstance() {
+    static async getInstance() {
         if (!DuckDBNotesManager._instance) {
             DuckDBNotesManager._instance = new DuckDBNotesManager();
         }
+
+        if (!DuckDBNotesManager._instance._initPromise) {
+            DuckDBNotesManager._instance._initPromise = DuckDBNotesManager._instance._performInit().catch(error => {
+                DuckDBNotesManager._instance._initPromise = null; // Clear the promise on failure to allow retry
+                throw error;
+            });
+        }
+
+        await DuckDBNotesManager._instance._initPromise;
         return DuckDBNotesManager._instance;
     }
 }

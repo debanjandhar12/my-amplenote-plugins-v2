@@ -10,7 +10,7 @@ export const searchNotes = async (app, queryText, queryTextType, {limit = 64,
 
     if (!queryText || !queryText.trim()) return [];
 
-    const dbm = DuckDBNotesManager.getInstance();
+    const dbm = await DuckDBNotesManager.getInstance();
     await DuckDBConnectionController.lockAutoTerminate();
     try {
         // Get embeddings for the query text

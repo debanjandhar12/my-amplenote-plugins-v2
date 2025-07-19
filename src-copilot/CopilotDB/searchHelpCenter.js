@@ -26,7 +26,7 @@ export const searchHelpCenter = async (app, queryText, {limit = 15}) => {
     if (!queryText || !queryText.trim()) return [];
 
     await DuckDBConnectionController.lockAutoTerminate();
-    const helpCenterManager = DuckDBHelpCenterManager.getInstance();
+    const helpCenterManager = await DuckDBHelpCenterManager.getInstance();
     try {
         // Calculate filename based on embedding provider
         const embeddingProviderName = getEmbeddingProviderName(app);

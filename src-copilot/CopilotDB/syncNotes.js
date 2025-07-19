@@ -49,7 +49,7 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         }
 
         sendMessageToEmbed(app, 'syncNotesProgress', `Starting sync...`);
-        const dbm = DuckDBNotesManager.getInstance();
+        const dbm = await DuckDBNotesManager.getInstance();
         await DuckDBConnectionController.lockAutoTerminate();
 
         // Write initial log statistics

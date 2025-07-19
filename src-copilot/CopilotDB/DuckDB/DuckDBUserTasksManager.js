@@ -3,8 +3,9 @@ import dayjs from "dayjs";
 
 export class DuckDBUserTasksManager {
     static _instance = null;
+    _initPromise = null;
 
-    async init() {
+    async _performInit() {
         if (this.db && !DuckDBConnectionController.isTerminated()) return;
         try {
             this.db = await DuckDBConnectionController.getCollectionInstance('CopilotTempDB', {persistent: false});
@@ -18,7 +19,6 @@ export class DuckDBUserTasksManager {
     }
 
     async _syncUserTasks(app) {
-        await this.init();
         let conn;
 
         try {
@@ -255,7 +255,6 @@ export class DuckDBUserTasksManager {
     }
 
     async _searchUserTasks(sqlQuery) {
-        await this.init();
         let conn;
 
         try {
@@ -322,10 +321,19 @@ export class DuckDBUserTasksManager {
         }
     }
 
-    static getInstance() {
+    static async getInstance() {
         if (!DuckDBUserTasksManager._instance) {
             DuckDBUserTasksManager._instance = new DuckDBUserTasksManager();
         }
+
+        if (!DuckDBUserTasksManager._instance._initPromise) {
+            DuckDBUserTasksManager._instance._initPromise = DuckDBUserTasksManager._instance._performInit().catch(error => {
+                DuckDBUserTasksManager._instance._initPromise = null; // Clear the promise on failure to allow retry
+                throw error;
+            });
+        }
+
+        await DuckDBUserTasksManager._instance._initPromise;
         return DuckDBUserTasksManager._instance;
     }
 }

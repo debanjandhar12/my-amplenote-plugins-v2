@@ -8,7 +8,7 @@ export const getSyncState = async (app, syncNotesPromise = null) => {
         return 'Syncing';
     }
 
-    const dbm = DuckDBNotesManager.getInstance();
+    const dbm = await DuckDBNotesManager.getInstance();
     await DuckDBConnectionController.lockAutoTerminate();
     const lastPluginUUID = await dbm.getConfigValue('lastPluginUUID');
     const lastEmbeddingModel = await dbm.getConfigValue('lastEmbeddingModel');

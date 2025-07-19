@@ -9,18 +9,13 @@ import { throttle } from "lodash-es";
  */
 export class CopilotChatHistoryDB {
     static _instance = null;
+    _initPromise = null;
 
-    constructor() {
+    async _performInit() {
         this.fileName = 'copilot-chat-history.json';
-        this.initialized = false;
         this.opfsSupported = null;
         this.threadsCache = null; // In-memory cache for all threads
-
         this._scheduleSave = throttle(this._persistCache.bind(this), 1000, { leading: true, trailing: true });
-    }
-
-    async init() {
-        if (this.initialized) return;
 
         this.opfsSupported = await OPFSUtils.checkSupport();
 
@@ -37,8 +32,6 @@ export class CopilotChatHistoryDB {
             console.warn('OPFS not supported, using in-memory storage for chat history. Data will be lost on page refresh.');
             this.threadsCache = {};
         }
-
-        this.initialized = true;
     }
 
     /**
@@ -61,7 +54,6 @@ export class CopilotChatHistoryDB {
     }
 
     async getAllThreads() {
-        await this.init();
         const threads = Object.values(this.threadsCache);
         return threads.sort((a, b) => new Date(b.updated) - new Date(a.updated));
     }
@@ -70,8 +62,6 @@ export class CopilotChatHistoryDB {
         if (!threadId) return false;
 
         try {
-            await this.init();
-
             if (!this.threadsCache[threadId]) {
                 return false; // Thread doesn't exist
             }
@@ -87,13 +77,11 @@ export class CopilotChatHistoryDB {
 
     async getThread(threadId) {
         if (!threadId) return null;
-        await this.init();
         return this.threadsCache[threadId] || null;
     }
 
     async putThread(thread) {
         this._validateThread(thread);
-        await this.init();
 
         const threads = this.threadsCache;
 
@@ -129,7 +117,6 @@ export class CopilotChatHistoryDB {
     }
 
     async getLastOpenedThread() {
-        await this.init();
         const threads = Object.values(this.threadsCache);
         if (threads.length === 0) return null;
         return threads.sort((a, b) => new Date(b.opened) - new Date(a.opened))[0];
@@ -172,10 +159,19 @@ export class CopilotChatHistoryDB {
         }
     }
 
-    static getInstance() {
+    static async getInstance() {
         if (!CopilotChatHistoryDB._instance) {
             CopilotChatHistoryDB._instance = new CopilotChatHistoryDB();
         }
+
+        if (!CopilotChatHistoryDB._instance._initPromise) {
+            CopilotChatHistoryDB._instance._initPromise = CopilotChatHistoryDB._instance._performInit().catch(error => {
+                CopilotChatHistoryDB._instance._initPromise = null; // Clear the promise on failure to allow retry
+                throw error;
+            });
+        }
+
+        await CopilotChatHistoryDB._instance._initPromise;
         return CopilotChatHistoryDB._instance;
     }
 }

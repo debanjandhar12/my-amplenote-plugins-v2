@@ -77,7 +77,7 @@ export const clearCopilotDBData = async (app) => {
  * @returns {Promise<Array>} Array of thread objects sorted by updated date (newest first)
  */
 export const getAllChatThreads = async () => {
-    const db = CopilotChatHistoryDB.getInstance();
+    const db = await CopilotChatHistoryDB.getInstance();
     return await db.getAllThreads();
 };
 
@@ -87,7 +87,7 @@ export const getAllChatThreads = async () => {
  * @returns {Promise<boolean>} True if deleted successfully, false if thread not found
  */
 export const deleteChatThread = async (threadId) => {
-    const db = CopilotChatHistoryDB.getInstance();
+    const db = await CopilotChatHistoryDB.getInstance();
     return await db.deleteThread(threadId);
 };
 
@@ -97,7 +97,7 @@ export const deleteChatThread = async (threadId) => {
  * @returns {Promise<Object|null>} Thread object or null if not found
  */
 export const getChatThread = async (threadId) => {
-    const db = CopilotChatHistoryDB.getInstance();
+    const db = await CopilotChatHistoryDB.getInstance();
     return await db.getThread(threadId);
 };
 
@@ -107,7 +107,7 @@ export const getChatThread = async (threadId) => {
  * @returns {Promise<void>}
  */
 export const saveChatThread = async (thread) => {
-    const db = CopilotChatHistoryDB.getInstance();
+    const db = await CopilotChatHistoryDB.getInstance();
     return await db.putThread(thread);
 };
 
@@ -116,12 +116,12 @@ export const saveChatThread = async (thread) => {
  * @returns {Promise<Object|null>} Most recent thread object or null if no threads exist
  */
 export const getLastUpdatedChatThread = async () => {
-    const db = CopilotChatHistoryDB.getInstance();
+    const db = await CopilotChatHistoryDB.getInstance();
     return await db.getLastUpdatedThread();
 };
 
 export const getLastOpenedChatThread = async () => {
-    const db = CopilotChatHistoryDB.getInstance();
+    const db = await CopilotChatHistoryDB.getInstance();
     return await db.getLastOpenedThread();
 };
 
@@ -131,7 +131,7 @@ export const getLastOpenedChatThread = async () => {
  * @returns {Promise<Object>} Search results with success status and data
  */
 export const searchUserTasks = async (app, sqlQuery) => {
-    const manager = DuckDBUserTasksManager.getInstance();
+    const manager = await DuckDBUserTasksManager.getInstance();
     return await manager.searchUserTasks(app, sqlQuery);
 };
 

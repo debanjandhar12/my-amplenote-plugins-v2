@@ -5,8 +5,9 @@ import { isArray } from "lodash-es";
 
 export class DuckDBHelpCenterManager {
     static _instance = null;
+    _initPromise = null;
 
-    async init() {
+    async _performInit() {
         if (this.db && !DuckDBConnectionController.isTerminated()) return;
         try {
             this.db = await DuckDBConnectionController.getCollectionInstance('CopilotTempDB', { persistent: false });
@@ -20,7 +21,6 @@ export class DuckDBHelpCenterManager {
     }
 
     async searchHelpCenterRecordByEmbedding(embedding, { limit = 15, filename = 'localHelpCenterEmbeddings.parquet' } = {}) {
-        await this.init();
         let conn;
         let stmt;
 
@@ -75,10 +75,19 @@ export class DuckDBHelpCenterManager {
         }
     }
 
-    static getInstance() {
+    static async getInstance() {
         if (!DuckDBHelpCenterManager._instance) {
             DuckDBHelpCenterManager._instance = new DuckDBHelpCenterManager();
         }
+
+        if (!DuckDBHelpCenterManager._instance._initPromise) {
+            DuckDBHelpCenterManager._instance._initPromise = DuckDBHelpCenterManager._instance._performInit().catch(error => {
+                DuckDBHelpCenterManager._instance._initPromise = null; // Clear the promise on failure to allow retry
+                throw error;
+            });
+        }
+
+        await DuckDBHelpCenterManager._instance._initPromise;
         return DuckDBHelpCenterManager._instance;
     }
 }
