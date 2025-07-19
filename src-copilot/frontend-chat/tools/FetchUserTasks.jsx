@@ -1,4 +1,3 @@
-import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 import {createGenericReadTool} from "../tools-core/base/createGenericReadTool.jsx";
 import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
 import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
@@ -11,17 +10,19 @@ export const FetchUserTasks =() => {
             type: "object",
             properties: {
                 query: {
-                    type: "string", // Does not work with OpenAI when set to "object"
-                    description: "MongoDB like query object as string to find tasks.\n" +
+                    type: "string",
+                    description: "Sql Select statement (duckdb - see examples) to search tasks from user_tasks table.\n" +
                         "Available fields: " +
-                        "completedAt, dismissedAt, endAt, hideUntil, startAt (date)\n" +
-                        "content, noteUUID, taskUUID, taskDomainUUID, taskDomainName (string)\n" +
-                        "urgent, important (boolean)\n" +
-                        "score (number)\n" +
+                        "completedAt, dismissedAt, endAt, hideUntil, startAt (TIMESTAMP)\n" +
+                        "content, noteUUID, taskUUID, taskDomainUUID, taskDomainName (VARCHAR)\n" +
+                        "urgent, important (BOOLEAN)\n" +
+                        "score (DOUBLE)\n" +
                         "Examples:\n" +
-                        "Find tasks for 25th december: {\"startAt\": {\"$gte\": \"2024-12-25 00:00:00\", \"$lte\": \"2024-12-25 23:59:59\"}};\n" +
-                        "Find tasks in note: {\"noteUUID\": \"note-uuid\"};\n" +
-                        "Find task with content: {\"content\": {\"$regex\":\"groceries\",\"$options\":\"i\"}};\n"
+                        "Find tasks for 25th december: SELECT * FROM user_tasks WHERE DATE(startAt) = '2024-12-25';\n" +
+                        "Find tasks completed after 25th december 5pm: SELECT * FROM user_tasks WHERE completedAt > TIMESTAMPTZ '2025-07-16T17:00:00+05:30';\n" +
+                        "Find task by content: SELECT * FROM user_tasks WHERE regexp_matches(content, '(shop|buy)', 'i');\n" +
+                        "Find urgent tasks: SELECT * FROM user_tasks WHERE urgent = true;\n" +
+                        "Find incomplete tasks: SELECT * FROM user_tasks WHERE completedAt IS NULL;\n"
                 }
             },
             required: ["query"]
@@ -29,43 +30,27 @@ export const FetchUserTasks =() => {
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({args, formData, setFormData, setFormState}) => {
-            const Loki = (await dynamicImportESM("lokijs")).default;
-            const db = new Loki("tasks.db");
-            const tasksCollection = db.addCollection("tasks");
+            try {
+                const result = await appConnector.searchUserTasks(args.query);
 
-            let allTasks = [];
-            const taskDomains = await appConnector.getTaskDomains();
-            for (const taskDomain of taskDomains) {
-                const tasks = await appConnector.getTaskDomainTasks(taskDomain.uuid);
-                for (const task of tasks) {
-                    allTasks = [...allTasks, {
-                        completedAt: new Date(task.completedAt * 1000),
-                        content: task.content,
-                        dismissedAt: new Date(task.dismissedAt * 1000),
-                        endAt: new Date(task.endAt),
-                        hideUntil: new Date(task.hideUntil * 1000),
-                        important: task.important,
-                        noteUUID: task.noteUUID,
-                        score: task.score,
-                        startAt: new Date(task.startAt * 1000),
-                        urgent: task.urgent,
-                        taskUUID: task.uuid,
-                        taskDomainUUID: taskDomain.uuid,
-                        taskDomainName: taskDomain.name
-                    }];
+                if (result.success) {
+                    setFormData({...formData, queryResult: result.results});
+                    setFormState('completed');
+                } else {
+                    throw new Error(result.error || 'Failed to search tasks');
                 }
+            } catch (error) {
+                console.error('Error searching tasks:', error);
+                setFormData({...formData, error: error.message, queryResult: []});
+                setFormState('error');
             }
-            
-            tasksCollection.insert(allTasks);
-            window.tasksCollection = tasksCollection;
-            const queryObj = processQuery(args.query);
-            const results = tasksCollection.find(queryObj);
-            setFormData({...formData, queryResult: results});
-            setFormState('completed');
         },
         onCompleted: ({addResult, formData}) => {
             const {queryResult} = formData;
-            addResult({resultSummary: `Query completed. Fetched ${queryResult.length} tasks.`, resultDetail: queryResult});
+            addResult({
+                resultSummary: `Query completed. Found ${queryResult.length} matching results.`,
+                resultDetail: queryResult
+            });
         },
         renderInit: ({args}) => {
             const { Spinner } = window.RadixUI;
@@ -75,73 +60,19 @@ export const FetchUserTasks =() => {
             const { CheckboxIcon } = window.RadixIcons;
             return <ToolCardResultMessage
                 result={JSON.stringify(formData.queryResult)}
-                text={`${formData.queryResult.length} tasks fetched successfully.`}
+                text={`${formData.queryResult.length} tasks found.`}
                 icon={<CheckboxIcon />}
                 toolName={toolName}
                 input={args} />
+        },
+        renderError: ({formData, toolName, args}) => {
+            const { ExclamationTriangleIcon } = window.RadixIcons;
+            return <ToolCardResultMessage
+                result={formData.error || 'Unknown error occurred'}
+                text={`Error searching tasks: ${formData.error || 'Unknown error'}`}
+                icon={<ExclamationTriangleIcon />}
+                toolName={toolName}
+                input={args} />
         }
-    });
-}
-
-const processQuery = (query) => {
-    if (!query) throw new Error("Provided query cannot be empty");
-    const queryObj = typeof query === "object" ? query : JSON.parse(query);
-    // convert date strings to Date objects
-    for (const key in queryObj) {
-        if (queryObj[key].hasOwnProperty("$gte")) {
-            queryObj[key].$gte = new Date(queryObj[key].$gte);
-        }
-        if (queryObj[key].hasOwnProperty("$lte")) {
-            queryObj[key].$lte = new Date(queryObj[key].$lte);
-        }
-    }
-    // change all comparison to js ones
-    // https://github.com/techfort/LokiJS/blob/25b9a33d57509717d43b4da06d92064f2b7a6c95/src/lokijs.js#L678
-    for (const key in queryObj) {
-        if (queryObj[key].hasOwnProperty("$eq")) {
-            queryObj[key].$aeq = queryObj[key]['$eq'];
-            delete queryObj[key]['$eq'];
-        }
-        if (queryObj[key].hasOwnProperty("$gt")) {
-            queryObj[key].$jgt = queryObj[key]['$gt'];
-            delete queryObj[key]['$gt'];
-        }
-        if (queryObj[key].hasOwnProperty("$gte")) {
-            queryObj[key].$jgte = queryObj[key]['$gte'];
-            delete queryObj[key]['$gte'];
-        }
-        if (queryObj[key].hasOwnProperty("$lt")) {
-            queryObj[key].$jlt = queryObj[key]['$lt'];
-            delete queryObj[key]['$lt'];
-        }
-        if (queryObj[key].hasOwnProperty("$lte")) {
-            queryObj[key].$jlte = queryObj[key]['$lte'];
-            delete queryObj[key]['$lte'];
-        }
-        if (queryObj[key].hasOwnProperty("$between")) {
-            queryObj[key].$jbetween = queryObj[key]['$between'];
-            delete queryObj[key]['$between'];
-        }
-    }
-    return queryObj;
-}
-
-const processResults = (results) => {
-    return results.map((result) => {
-        let task = {};
-        task.completedAt = result.completedAt ? window.dayjs(result.completedAt).format() : null;
-        task.dismissedAt = result.dismissedAt ? window.dayjs(result.dismissedAt).format() : null;
-        task.endAt = result.endAt ? window.dayjs(result.endAt).format() : null;
-        task.hideUntil = result.hideUntil ? window.dayjs(result.hideUntil).format() : null;
-        task.startAt = result.startAt ? window.dayjs(result.startAt).format() : null;
-        task.content = result.content;
-        task.noteUUID = result.noteUUID;
-        task.taskUUID = result.taskUUID;
-        task.taskDomainUUID = result.taskDomainUUID;
-        task.taskDomainName = result.taskDomainName;
-        task.urgent = result.urgent;
-        task.important = result.important;
-        task.score = result.score;
-        return task;
     });
 }

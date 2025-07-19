@@ -1,23 +1,21 @@
 import {useInnerRuntime} from "../hooks/useInnerRuntime.jsx";
-import {CopilotChatHistoryDB} from '../helpers/CopilotChatHistoryDB';
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
 export const RemoteAssistantRuntimeProvider = ({ children }) => {
     const innerRuntimeHook = React.useCallback(useInnerRuntime, []);
-    const copilotChatHistoryDB = React.useMemo(() => new CopilotChatHistoryDB(), []);
     const callbacksRef = React.useRef(new Set());
-    const {setRemoteThreadLoaded} = React.useContext(getChatAppContext());
+    const {remoteThreadLoaded, setRemoteThreadLoaded} = React.useContext(getChatAppContext());
     const runtime = AssistantUI.unstable_useRemoteThreadListRuntime({
         runtimeHook: innerRuntimeHook,
         list: async () => {
-            const remoteThreads = await copilotChatHistoryDB.getAllThreads();
+            const remoteThreads = await appConnector.getAllChatThreadsFromCopilotDB();
             setRemoteThreadLoaded(true);
             return {
                 threads: remoteThreads
             };
         },
         delete: async (threadId) => {
-            await copilotChatHistoryDB.deleteThread(threadId);
+            await appConnector.deleteChatThreadFromCopilotDB(threadId);
         },
         // TODO: Implement rename, archive, unarchive
         subscribe: (handler) => {
@@ -26,7 +24,7 @@ export const RemoteAssistantRuntimeProvider = ({ children }) => {
             return () => callbacksRef.current.delete(handler);
         },
         initialize: async (threadId) => {
-            const remoteThread = await copilotChatHistoryDB.getThread(threadId);
+            const remoteThread = await appConnector.getChatThreadFromCopilotDB(threadId);
             if (remoteThread) {
                 throw "Thread already exists in remote storage. Cannot initialize as new thread.";
             }
@@ -36,9 +34,13 @@ export const RemoteAssistantRuntimeProvider = ({ children }) => {
                 name: `Copilot Chat - ${threadId}`,
                 created: new Date().toISOString(),
                 updated: new Date().toISOString(),
+                opened: new Date().toISOString(),
                 status: "regular"
             }
-            await copilotChatHistoryDB.putThread(thread);
+            // DO NOT store the auto-generated new thread before remote thread is loaded
+            if (remoteThreadLoaded) {
+                await appConnector.saveChatThreadToCopilotDB(thread);
+            }
             return thread;
         }
     });

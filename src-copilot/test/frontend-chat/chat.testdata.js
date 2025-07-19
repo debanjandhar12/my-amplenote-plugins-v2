@@ -10,7 +10,7 @@ export const EMBED_COMMANDS_MOCK = {
     "filterNotes": async (...args) => {
         return [];
     },
-    "searchNotesInLocalVecDB": async (...args) => {
+    "searchNotesInCopilotDB": async (...args) => {
         return [];
     },
     "getNoteTitleByUUID": async (noteUUID) => {
@@ -56,6 +56,26 @@ export const EMBED_COMMANDS_MOCK = {
             [MCP_SERVER_URL_LIST_SETTING]: process.env.MCP_URL,
             [USER_PROMPT_LIST_SETTING]: JSON.stringify([{uuid:'a', message: "Test A", usageCount:0},{uuid: 'b', message: "Test B", usageCount:0}]),
         }
+    },
+    "getChatThreadFromCopilotDB": async (threadId) => {
+        return null;
+    },
+    "saveChatThreadToCopilotDB": async (thread) => {
+        return true;
+    },
+    "getAllChatThreadsFromCopilotDB": async () => {
+        return [];
+    },
+    "getLastOpenedChatThreadFromCopilotDB": async () => {
+        return null;
+    },
+    "searchUserTasks": async (app, sqlQuery) => {
+        return {
+            success: true,
+            taskCount: 0,
+            results: [],
+            resultCount: 0
+        };
     }
 }
 

@@ -9,7 +9,7 @@ import {LLM_API_URL_SETTING} from "../../constants.js";
 export const UpdateUserNotes = () => {
     return createGenericCUDTool({
         toolName: "UpdateUserNotes",
-        description: "Update user notes",
+        description: "Update notes",
         parameters: {
             type: "object",
             properties: {
@@ -21,22 +21,22 @@ export const UpdateUserNotes = () => {
                         properties: {
                             noteUUID: {
                                 type: "string",
-                                description: "36 digit UUID of the note to update"
+                                description: "Note UUID"
                             },
                             noteTitle: {
                                 type: "string",
-                                description: "New title"
+                                description: "Note title"
                             },
                             noteContent: {
                                 type: "string",
-                                description: "New content"
+                                description: "Note content"
                             },
                             tags: {
                                 type: "array",
                                 items: {
                                     type: "string"
                                 },
-                                description: "New tag list (all old tags will be removed - set null to keep old tags)"
+                                description: "Tag list (replaces all existing tags - omit to keep current tags)"
                             }
                         },
                         required: ["noteUUID"]
@@ -47,20 +47,18 @@ export const UpdateUserNotes = () => {
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({setFormState, formData, setFormData, args}) => {
+            if (!args.notes || !Array.isArray(args.notes)) {
+                throw new Error('Invalid arguments: notes must be an array');
+            }
             const notesContainerList = [];
             for (const noteItem of args.notes) {
-                const noteUUID = noteItem.noteUUID;
-                // Always get title if not provided so that it can be displayed to User
-                const noteTitle = noteItem.noteTitle || await appConnector.getNoteTitleByUUID(noteUUID);
-                const noteTags = noteItem.tags;
-                const noteContent = noteItem.noteContent;
+                const item = { uuid: noteItem.noteUUID };
+                if ('noteTitle' in noteItem) item.title = noteItem.noteTitle;
+                if ('noteContent' in noteItem) item.content = noteItem.noteContent;
+                if ('tags' in noteItem) item.tags = noteItem.tags;
+
                 notesContainerList.push({
-                    item: {
-                        uuid: noteUUID,
-                        title: noteTitle,
-                        tags: noteTags,
-                        content: noteContent,
-                    },
+                    item,
                     checked: true,
                 });
             }
@@ -162,13 +160,13 @@ export const UpdateUserNotes = () => {
 
 const updateNote = async ({ item }) => {
     const oldNoteTitle = await appConnector.getNoteTitleByUUID(item.uuid);
-    if (item.title && item.title !== oldNoteTitle) {
+    if ('title' in item && item.title !== oldNoteTitle) {
         await appConnector.setNoteName({uuid: item.uuid}, item.title);
     }
-    if (item.content) {
+    if ('content' in item) {
         await appConnector.replaceNoteContent({uuid: item.uuid}, item.content);
     }
-    if (item.tags) {
+    if ('tags' in item) {
         const oldTags = await appConnector.getNoteTagsByUUID({uuid: item.uuid});
         for (const tag of item.tags) {
             if (!oldTags.includes(tag)) {

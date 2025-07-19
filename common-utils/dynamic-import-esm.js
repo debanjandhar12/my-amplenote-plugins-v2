@@ -46,6 +46,11 @@ export const dynamicImportExternalPluginBundle = async (fileName, { isESM = true
     throw new Error(`Failed to import module: ${fileName}`);
 }
 
+export const getUnPkgBundleUrl = (fileName) => {
+    const packageVersion = pkgJSON.dependencies['my-ample-plugin-external'];
+    return `https://unpkg.com/my-ample-plugin-external@${packageVersion}/bundles/${fileName}`;
+};
+
 /***
  * @deprecated - Esm.sh marked this api as deprecated. Since then, its working but unstable.
  * Dynamically imports multiple ESM modules from a CDN.

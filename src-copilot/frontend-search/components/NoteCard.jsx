@@ -1,6 +1,6 @@
 import {truncate} from "lodash-es";
 
-export const NoteCard = ({title, noteContentPart, noteUUID, headingAnchor}) => {
+export const NoteCard = ({title, actualNoteContentPart, noteUUID, headingAnchor}) => {
     const {Card, Flex, Text} = window.RadixUI;
     const {FileTextIcon} = window.RadixIcons;
     const handleClick = (e) => {
@@ -18,7 +18,7 @@ export const NoteCard = ({title, noteContentPart, noteUUID, headingAnchor}) => {
                         {title?.trim() || 'Untitled Note'}
                     </Text>
                     <p style={{margin: 0, color: '#666', fontSize: '14px', whiteSpace: 'pre-wrap'}}>
-                        {noteContentPart}
+                        {actualNoteContentPart}
                     </p>
                 </Flex>
             </a>

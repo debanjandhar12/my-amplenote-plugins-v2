@@ -37,7 +37,7 @@ export const CustomComposer = () => {
         setThreadNewMsgComposerRef(textareaRef);
     }, [textareaRef, setThreadNewMsgComposerRef]);
 
-    const {Composer} = window.AssistantUI;
+    const {ThreadPrimitive, Composer} = window.AssistantUI;
     return (
         <Composer.Root>
             {allowAttachments &&
@@ -49,7 +49,12 @@ export const CustomComposer = () => {
                     <Composer.AddAttachment />
                 </>}
             <Composer.Input ref={textareaRef} />
-            <Composer.Send />
+            <ThreadPrimitive.If running={false}>
+                <Composer.Send />
+            </ThreadPrimitive.If>
+            <ThreadPrimitive.If running>
+                <Composer.Cancel />
+            </ThreadPrimitive.If>
         </Composer.Root>
     )
 }

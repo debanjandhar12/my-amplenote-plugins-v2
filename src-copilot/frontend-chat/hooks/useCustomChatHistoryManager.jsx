@@ -1,62 +1,115 @@
-import {CopilotChatHistoryDB} from "../helpers/CopilotChatHistoryDB.js";
-import {getChatAppContext} from "../context/ChatAppContext.jsx";
-import {isEqual} from "lodash-es";
+import { getChatAppContext } from "../context/ChatAppContext.jsx";
+import { isEqual, debounce } from "lodash-es";
 
 export const useCustomChatHistoryManager = () => {
     const assistantRuntime = AssistantUI.useAssistantRuntime();
     const threadRuntime = AssistantUI.useThreadRuntime();
     const threadListItemRuntime = AssistantUI.useThreadListItemRuntime();
-    const copilotChatHistoryDB = new CopilotChatHistoryDB();
-    const {remoteThreadLoaded, setChatHistoryLoaded} = React.useContext(getChatAppContext());
+    const { remoteThreadLoaded, setChatHistoryLoaded } = React.useContext(getChatAppContext());
+    const lastLoadedThreadId = React.useRef(null);
 
+    // Effect for initial thread loading: find the last opened thread and switch to it.
     React.useEffect(() => {
         if (!remoteThreadLoaded) return;
-        (async () => {
-            const lastThread = await copilotChatHistoryDB.getLastUpdatedThread();
-            if (lastThread) {
-                await assistantRuntime.threads.switchToThread(lastThread.remoteId);
-            } else {
-                setChatHistoryLoaded(true);
-            }
-        })();
-    }, [assistantRuntime, remoteThreadLoaded]);
 
-    // Update CopilotChatHistoryDB when new messages state is modified
-    const updateRemoteThreadMessages = async () => {
-        try {
-            const remoteThread = await copilotChatHistoryDB.getThread(threadListItemRuntime.getState().remoteId);
-            if (remoteThread) {
-                const exportMessages = threadRuntime.export();
-                // Do not update when no message or during thread switching
-                if (exportMessages.messages.length < 1) return;
-                if(remoteThread.messages &&
-                    exportMessages.messages[0].message.id !== remoteThread.messages.messages[0].message.id) {
+        const loadInitialThread = async () => {
+            try {
+                const lastThread = await appConnector.getLastOpenedChatThreadFromCopilotDB();
+                if (lastThread) {
+                    // Switching will trigger the threadListItemRuntime listener to load messages
+                    await assistantRuntime.threads.switchToThread(lastThread.remoteId);
+                } else {
+                    // No thread exists in remote storage, so we create a new one
+                    await assistantRuntime.threads.switchToNewThread();
+                }
+            } catch (e) {
+                console.error('Error loading initial thread:', e);
+                setChatHistoryLoaded(true); // Unblock UI on error
+            }
+        };
+
+        loadInitialThread();
+    }, [assistantRuntime, remoteThreadLoaded, setChatHistoryLoaded]);
+
+
+    // Effect for persisting thread messages to the database when they change.
+    React.useEffect(() => {
+        const updateRemoteThreadMessages = async () => {
+            try {
+                const mainThreadId = assistantRuntime.threads.getState().mainThreadId;
+
+                const remoteThread = await appConnector.getChatThreadFromCopilotDB(mainThreadId);
+                if (!remoteThread) return;
+
+                const exportMessages = assistantRuntime.thread.export();
+
+                // Do not update if there are no messages or if messages are identical
+                if (exportMessages.messages.length < 1 || isEqual(remoteThread.messages, exportMessages)) {
                     return;
                 }
-                if (isEqual(remoteThread.messages, exportMessages)) return;
+
+                // Update the thread object and save it
                 remoteThread.messages = exportMessages;
                 remoteThread.updated = new Date().toISOString();
-                await copilotChatHistoryDB.putThread(remoteThread);
+                remoteThread.opened = new Date().toISOString();
+                await appConnector.saveChatThreadToCopilotDB(remoteThread);
+            } catch (e) {
+                console.error('Error persisting thread to backend:', e);
             }
-        } catch (e) {
-            console.error('Error persisting thread to CopilotChatHistoryDB:', e);
-        }
-    }
-    threadRuntime.subscribe(async () => {
-        await updateRemoteThreadMessages();
-    });
+        };
 
-    // Load messages from CopilotChatHistoryDB when thread is switched
-    threadListItemRuntime.subscribe(async () => {
-        try {
-            if (!threadListItemRuntime.getState().remoteId) return;
-            const remoteThread = await copilotChatHistoryDB.getThread(threadListItemRuntime.getState().remoteId);
-            if (remoteThread && remoteThread.messages) {
-                threadRuntime.import(remoteThread.messages);
+        // Debounce the update function to prevent excessive writes during streaming responses.
+        const debouncedUpdate = debounce(updateRemoteThreadMessages, 1000, {
+            leading: true,
+            trailing: true
+        });
+
+        const unsubscribe = assistantRuntime.thread.subscribe(debouncedUpdate);
+
+        return () => {
+            debouncedUpdate.cancel(); // Clean up pending debounced calls
+            unsubscribe();
+        };
+    }, [assistantRuntime]);
+
+
+    // Effect for loading messages from the database when a thread is switched.
+    React.useEffect(() => {
+        const loadThreadMessages = async () => {
+            try {
+                const threadId = threadListItemRuntime.getState().remoteId;
+
+                // Prevent re-loading the same thread unnecessarily
+                if (lastLoadedThreadId.current === threadId && threadId !== null) return;
+                lastLoadedThreadId.current = threadId;
+
+                setChatHistoryLoaded(false);
+                const remoteThread = await appConnector.getChatThreadFromCopilotDB(threadId);
+
+                // To prevent race conditions, only import if the current thread is the one we fetched for.
+                if (threadListItemRuntime.getState().remoteId === threadId &&
+                    remoteThread && remoteThread.messages) {
+                    await threadRuntime.import(remoteThread.messages);
+                } else if (threadListItemRuntime.getState().status === 'new') {
+                    // Required to initialize new threads and make them regular
+                    await threadRuntime.import({ messages: [] });
+                }
+                if (remoteThread) {
+                    remoteThread.opened = new Date().toISOString();
+                    await appConnector.saveChatThreadToCopilotDB(remoteThread);
+                }
+                setChatHistoryLoaded(true);
+            } catch (e) {
+                console.error('Error loading thread from backend:', e);
+                setChatHistoryLoaded(true); // Unblock UI on error
             }
-            setChatHistoryLoaded(true);
-        } catch (e) {
-            console.error('Error loading thread from CopilotChatHistoryDB:', e);
-        }
-    });
-}
+        };
+
+        const unsubscribe = threadListItemRuntime.subscribe(loadThreadMessages);
+
+        // Initial load for the currently selected thread on mount
+        if (remoteThreadLoaded) loadThreadMessages();
+
+        return () => unsubscribe();
+    }, [threadListItemRuntime, threadRuntime, remoteThreadLoaded, setChatHistoryLoaded]);
+};

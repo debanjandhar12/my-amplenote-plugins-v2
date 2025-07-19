@@ -7,7 +7,7 @@ import {EMBED_COMMANDS_MOCK} from "../frontend-chat/chat.testdata.js";
 
 describe('search embed', () => {
     const {getPage} = createPlaywrightHooks();
-    const commandMocks = {...EMBED_COMMANDS_MOCK, getSettings: async () => ({})};
+    const commandMocks = {...EMBED_COMMANDS_MOCK, getSettings: async () => ({}), getCopilotDBSyncState: async () => 'Fully Synced'};
     it('loads correctly', async () => {
         const htmlWithMocks = addScriptToHtmlString(html, `
             window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions(commandMocks))};
@@ -38,30 +38,30 @@ describe('search embed', () => {
 
         const commandMocksWithSearch = {
             ...commandMocks,
-            searchNotesInLocalVecDB: async () =>  [
+            searchNotesInCopilotDB: async () =>  [
                 {
-                    metadata: {
-                        noteUUID: "note1",
-                        noteTitle: "Test Note 1",
-                        noteContentPart: "test"
-                    },
-                    score: 0.95
+                    noteUUID: "note1",
+                    noteTitle: "Test Note 1",
+                    actualNoteContentPart: "test",
+                    noteTags: ["tag1"],
+                    headingAnchor: null,
+                    similarity: 0.95
                 },
                 {
-                    metadata: {
-                        noteUUID: "note2",
-                        noteTitle: "Test Note 2",
-                        noteContentPart: "test"
-                    },
-                    score: 0.85
+                    noteUUID: "note2",
+                    noteTitle: "Test Note 2",
+                    actualNoteContentPart: "test",
+                    noteTags: ["tag2"],
+                    headingAnchor: null,
+                    similarity: 0.85
                 },
                 {
-                    metadata: {
-                        noteUUID: "note2",
-                        noteTitle: "Test Note 2",
-                        noteContentPart: "hi"
-                    },
-                    score: 0.81
+                    noteUUID: "note2",
+                    noteTitle: "Test Note 2",
+                    actualNoteContentPart: "hi",
+                    noteTags: ["tag2"],
+                    headingAnchor: null,
+                    similarity: 0.81
                 }
             ]
         };

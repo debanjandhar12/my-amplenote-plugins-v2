@@ -4,7 +4,7 @@ import speechtotextHTML from 'inline:./embed/speechtotext.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {generateText} from "./aisdk-wrappers/generateText.js";
 import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
-import {LocalVecDB} from "./LocalVecDB/LocalVecDB.js";
+import {getSyncState, syncNotes, searchNotes, searchHelpCenter, clearCopilotDBData, getAllChatThreads, deleteChatThread, getChatThread, saveChatThread, getLastUpdatedChatThread, getLastOpenedChatThread, searchUserTasks} from "./CopilotDB";
 import {getMatchedPartWithFuzzySearch} from "./plugin-backend/getMatchedPartWithFuzzySearch.jsx";
 import {validatePluginSettings} from "./validatePluginSettings.js";
 import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
@@ -78,9 +78,9 @@ const plugin = {
                 await app.alert(e);
             }
         },
-        "Sync notes with LocalVecDB": async function (app) {
+        "Sync notes with CopilotDB": async function (app) {
             try {
-                await plugin.sendMessageToEmbed(app, 'startSyncToLocalVecDBInSearchInterface', true);
+                await plugin.sendMessageToEmbed(app, 'startSyncToCopilotDBInSearchInterface', true);
                 await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
             } catch (e) {
                 console.error(e);
@@ -93,6 +93,26 @@ const plugin = {
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
+            }
+        },
+        "Clear CopilotDB opfs data": async function (app) {
+            try {
+                const confirmed = await app.prompt(
+                    "This will permanently delete all CopilotDB data stored in your browser. You will need to sync your notes again to use the search features of this plugin. This will also delete your chat history.\nAre you sure you want to continue?",
+                    {
+                        inputs: []
+                    }
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                const result = await clearCopilotDBData(app);
+                await app.alert(`${result.message}`);
+            } catch (e) {
+                console.error(e);
+                await app.alert(`Error clearing CopilotDB data: ${e.message || e}`);
             }
         }
     },
@@ -152,6 +172,8 @@ const plugin = {
             },
             run: async function (app) {
                 await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.sendMessageToEmbed(app, 'attachments',
+                    {type: 'new-chat', message: []});
             }
         },
         "Chat with note": {
@@ -311,23 +333,45 @@ const plugin = {
                 throw 'Failed getUserDailyJotNote - ' + e;
             }
         },
-        "getLocalVecDBSyncState": async function (app) {
-            return await new LocalVecDB().getSyncState(app);
+        "getCopilotDBSyncState": async function (app) {
+            return await getSyncState(app);
         },
-        "syncNotesWithLocalVecDB": async function (app) {
-            await new LocalVecDB().syncNotes(app, plugin.sendMessageToEmbed);
+        "syncNotesWithCopilotDB": async function (app) {
+            await syncNotes(app, plugin.sendMessageToEmbed);
         },
-        "searchNotesInLocalVecDB": async function (app, queryText, queryTextType, opts) {
-            return await new LocalVecDB().searchNotes(app, queryText, queryTextType, opts);
+        "searchNotesInCopilotDB": async function (app, queryText, queryTextType, opts) {
+            return await searchNotes(app, queryText, queryTextType, opts);
         },
         "searchHelpCenter": async function (app, queryText, opts) {
-            await new LocalVecDB().loadHelpCenterEmbeddings(app);
-            return await new LocalVecDB().searchHelpCenter(app, queryText, opts);
+            return await searchHelpCenter(app, queryText, opts);
         },
         "getMatchedPartWithFuzzySearch": async function (app, noteUUID, searchText, limit) {
             return await getMatchedPartWithFuzzySearch(app, noteUUID, searchText, limit);
+        },
+        "getAllChatThreadsFromCopilotDB": async function (app) {
+            return await getAllChatThreads();
+        },
+        "deleteChatThreadFromCopilotDB": async function (app, threadId) {
+            return await deleteChatThread(threadId);
+        },
+        "getChatThreadFromCopilotDB": async function (app, threadId) {
+            return await getChatThread(threadId);
+        },
+        "saveChatThreadToCopilotDB": async function (app, thread) {
+            return await saveChatThread(thread);
+        },
+        "getLastUpdatedChatThreadFromCopilotDB": async function (app) {
+            return await getLastUpdatedChatThread();
+        },
+        "getLastOpenedChatThreadFromCopilotDB": async function (app) {
+            return await getLastOpenedChatThread();
+        },
+        "searchUserTasks": async function (app, sqlQuery) {
+            return await searchUserTasks(app, sqlQuery);
         }
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
+        'getAllChatThreadsFromCopilotDB', 'saveChatThreadToCopilotDB', 'getChatThreadFromCopilotDB',
+        'getLastOpenedChatThreadFromCopilotDB',
         'receiveMessageFromPlugin', 'ping'])
 }
 

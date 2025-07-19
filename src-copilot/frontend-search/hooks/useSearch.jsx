@@ -1,4 +1,5 @@
-import {processLocalVecDBResults} from "./processLocalVecDBResults.js";
+import { LLM_MAX_TOKENS_SETTING } from "../../constants.js";
+import {processCopilotDBResults} from "./processCopilotDBResults.js";
 import {debounce} from "lodash-es";
 
 // Custom hook for search functionality
@@ -14,12 +15,12 @@ export const useSearch = () => {
     const [searchOpts, setSearchOpts] = React.useState({
         isArchived: null, isSharedByMe: null, isSharedWithMe: null, isTaskListNote: null, isPublished: null
     });
-    const [syncStatus, setSyncStatus] = React.useState('');
+    const [syncStatus, setSyncStatus] = React.useState('Loading');
 
     // Fetch initial sync status
     const updateSyncStatus = async () => {
         try {
-            const status = await window.appConnector.getLocalVecDBSyncState();
+            const status = await window.appConnector.getCopilotDBSyncState();
             if (status === 'Syncing') {
                 await handleSync();
             } else {
@@ -43,7 +44,7 @@ export const useSearch = () => {
             }
 
             // Check for sync start command
-            const startSync = await window.appConnector.receiveMessageFromPlugin('startSyncToLocalVecDBInSearchInterface');
+            const startSync = await window.appConnector.receiveMessageFromPlugin('startSyncToCopilotDBInSearchInterface');
             if (startSync === true) {
                 handleSync();
             }
@@ -53,8 +54,8 @@ export const useSearch = () => {
 
     // Search functionality
     const performSearch = async (query, queryType, searchOpts = {}) => {
-        const results = await window.appConnector.searchNotesInLocalVecDB(query, queryType, searchOpts);
-        return await processLocalVecDBResults(results);
+        const results = await window.appConnector.searchNotesInCopilotDB(query, queryType, searchOpts);
+        return await processCopilotDBResults(results);
     };
 
     // Debounced search handler
@@ -78,7 +79,7 @@ export const useSearch = () => {
                         + `title: ${noteTitle || 'Untitled Note'}\n`
                         + `tags: ${noteTags.join(', ')}\n`
                         + '---\n'
-                        + noteContent, "passage", searchOpts);
+                        + noteContent.substring(0, LLM_MAX_TOKENS_SETTING * 3), "passage", searchOpts);
                     // Filter out the current note from results
                     results = results.filter(result => result.noteUUID !== noteUUID);
                 } else {
@@ -124,7 +125,7 @@ export const useSearch = () => {
             setSyncProgressText(lastSyncProgressText);
         }, 1000);
         try {
-            await window.appConnector.syncNotesWithLocalVecDB();
+            await window.appConnector.syncNotesWithCopilotDB();
             if (searchText.trim()) {
                 await handleSearch();
             }

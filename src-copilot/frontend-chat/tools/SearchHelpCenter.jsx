@@ -1,7 +1,7 @@
 import {createGenericReadTool} from "../tools-core/base/createGenericReadTool.jsx";
 import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
 import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
-import {processAndMergeLocalVecDBResults} from "../helpers/processAndMergeLocalVecDBResults.js";
+import {processAndMergeCopilotDBResults} from "../helpers/processAndMergeCopilotDBResults.js";
 
 export const SearchHelpCenter = () => {
     return createGenericReadTool({
@@ -23,7 +23,7 @@ export const SearchHelpCenter = () => {
             const results = await appConnector.searchHelpCenter(args.query, {
                 limit: 15
             });
-            const searchResults = await processAndMergeLocalVecDBResults(results);
+            const searchResults = await processAndMergeCopilotDBResults(results);
             setFormData({...formData, searchResults});
             setFormState('completed');
         },

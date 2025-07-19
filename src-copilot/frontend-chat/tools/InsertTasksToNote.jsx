@@ -20,24 +20,24 @@ export const InsertTasksToNote = () => {
                     items: {
                         type: "object",
                         properties: {
-                            taskContent: {
+                            content: {
                                 type: "string",
                                 description: "Short description of task"
                             },
-                            taskStartAt: {
+                            startAt: {
                                 type: "string",
                                 description: "Start date and time of the task in ISO format"
                             },
-                            taskEndAt: {
+                            endAt: {
                                 type: "string",
                                 description: "End date and time of the task in ISO format (Optional)"
                             },
-                            taskScore: {
+                            score: {
                                 type: "number",
                                 description: "Optional score"
                             }
                         },
-                        required: ["taskContent"]
+                        required: ["content"]
                     }
                 },
                 noteUUID: {
@@ -144,22 +144,22 @@ export const InsertTasksToNote = () => {
 
 const insertTasksToNote = async ({ selectedNoteUUID, item }) => {
     const taskUUID = await appConnector.insertTask({uuid: selectedNoteUUID}, {
-        content: item.taskContent
+        content: item.content
     });
     if (!taskUUID) throw new Error('Failed to insert task');
-    if (item.taskStartAt) {
+    if (item.startAt) {
         await appConnector.updateTask(taskUUID, {
-            startAt: (Date.parse(item.taskStartAt) / 1000) // convert to timestamp
+            startAt: (Date.parse(item.startAt) / 1000) // convert to timestamp
         });
     }
-    if (item.taskEndAt) {
+    if (item.endAt) {
         await appConnector.updateTask(taskUUID, {
-            endAt: (Date.parse(item.taskEndAt) / 1000) // convert to timestamp
+            endAt: (Date.parse(item.endAt) / 1000) // convert to timestamp
         });
     }
-    if (item.taskScore) {
+    if (item.score) {
         await appConnector.updateTask(taskUUID, {
-            score: item.taskScore
+            score: item.score
         });
     }
     return {

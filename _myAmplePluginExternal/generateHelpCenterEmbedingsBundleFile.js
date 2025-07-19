@@ -1,40 +1,42 @@
-import {Splitter} from "../src-copilot/LocalVecDB/splitter/Splitter";
-import {mockApp, mockNote} from "../common-utils/test-helpers";
-import {getCorsBypassUrl} from "../common-utils/cors-helpers";
-import {EMBEDDING_API_KEY_SETTING, EMBEDDING_API_URL_SETTING, LOCAL_VEC_DB_MAX_TOKENS} from "../src-copilot/constants";
-const { readFileSync, writeFileSync } = require('fs');
+import {Splitter} from "../src-copilot/CopilotDB/splitter/Splitter.js";
+import {mockApp, mockNote} from "../common-utils/test-helpers.js";
+import {getCorsBypassUrl} from "../common-utils/cors-helpers.js";
+import {EMBEDDING_API_KEY_SETTING, EMBEDDING_API_URL_SETTING, COPILOT_DB_MAX_TOKENS} from "../src-copilot/constants.js";
+const { existsSync } = require('fs');
 const { join } = require('path');
 const { JSDOM } = require("jsdom");
+const parquet = require('parquetjs-lite');
 import {fetch} from "cross-fetch";
 import {TransformStream} from 'stream/web';
-import {compressSync, decompressSync} from "fflate";
 import {cloneDeep} from "lodash-es";
-import {OpenAIEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/OpenAIEmbeddingGenerator";
-import {FireworksEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/FireworksEmbeddingGenerator";
-import {OllamaEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/OllamaEmbeddingGenerator";
-import {PineconeEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/PineconeEmbeddingGenerator";
-import {GoogleEmbeddingGenerator} from "../src-copilot/LocalVecDB/embeddings/GoogleEmbeddingGenerator";
+import {OpenAIEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/OpenAIEmbeddingGenerator.js";
+import {FireworksEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/FireworksEmbeddingGenerator.js";
+import {OllamaEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/OllamaEmbeddingGenerator.js";
+import {PineconeEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/PineconeEmbeddingGenerator.js";
+import {GoogleEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/GoogleEmbeddingGenerator.js";
 
 /**
- * This script is used to generate embeddings and store in bundles folder as json files.
+ * This script is used to generate embeddings and store in bundles folder as parquet files.
  * Once generated, the bundles can be published to npm.
  * This can then be imported in plugin and be used to search help center.
  * Usage:
  * manually set PINECONE_API_KEY, OPENAI_API_KEY, FIREWORKS_API_KEY in .env file
  * sudo service ollama stop (for linux)
  * OLLAMA_ORIGINS=https://plugins.amplenote.com ollama serve
- * ollama pull snowflake-arctic-embed:33m-s-fp16 (first time only)
+ * ollama pull jina/jina-embeddings-v2-small-en:latest (first time only)
  * npx jest --runTestsByPath ./_myAmplePluginExternal/generateHelpCenterEmbedingsBundleFile.js --passWithNoTests --testMatch "**"
+ * Once parquet files are generated, it can be browsed using:
+ * https://demo.duckui.com/
  */
 
 const CONFIG = {
     TEST_TIMEOUT: 6000000,
     OUTPUT_PATH: {
-        LOCAL: '/bundles/localHelpCenterEmbeddings.json.gz',
-        PINECONE: '/bundles/pineconeHelpCenterEmbeddings.json.gz',
-        OPENAI: '/bundles/openaiHelpCenterEmbeddings.json.gz',
-        FIREWORKS: '/bundles/fireworksHelpCenterEmbeddings.json.gz',
-        GOOGLE: '/bundles/googleHelpCenterEmbeddings.json.gz',
+        LOCAL: '/bundles/localHelpCenterEmbeddings.parquet',
+        PINECONE: '/bundles/pineconeHelpCenterEmbeddings.parquet',
+        OPENAI: '/bundles/openaiHelpCenterEmbeddings.parquet',
+        FIREWORKS: '/bundles/fireworksHelpCenterEmbeddings.parquet',
+        GOOGLE: '/bundles/googleHelpCenterEmbeddings.parquet',
     },
     HELP_CENTER_URLS: [
     ],
@@ -48,21 +50,89 @@ const CONFIG = {
 
 async function loadExistingRecords(filePath) {
     try {
-        const compressedContent = readFileSync(join(__dirname, filePath));
-        const decompressed = decompressSync(compressedContent);
-        const content = new TextDecoder().decode(decompressed);
-        return JSON.parse(content);
+        const fullPath = join(__dirname, filePath);
+        if (!existsSync(fullPath)) {
+            console.log(`No existing records found at ${filePath}`);
+            return [];
+        }
+
+        const reader = await parquet.ParquetReader.openFile(fullPath);
+        const cursor = reader.getCursor();
+        const records = [];
+        let record;
+        while ((record = await cursor.next())) {
+            records.push(record);
+        }
+        await reader.close();
+        console.log(`Loaded ${records.length} existing records from ${filePath}`);
+        return records;
     } catch (e) {
-        console.log(`No existing records found at ${filePath}`);
+        console.error(`Error loading existing records from ${filePath}:`, e);
         return [];
     }
 }
 
 async function saveRecords(records, filePath) {
     try {
-        const content = JSON.stringify(records);
-        const compressed = compressSync(new TextEncoder().encode(content));
-        writeFileSync(join(__dirname, filePath), compressed);
+        const fullPath = join(__dirname, filePath);
+
+        const ids = new Set();
+        for (const record of records) {
+            if (ids.has(record.id)) {
+                throw new Error(`Duplicate ID detected: ${record.id}`);
+            }
+            ids.add(record.id);
+        }
+
+        // Define parquet schema using parquetjs-lite
+        const schema = new parquet.ParquetSchema({
+            'id': { type: 'UTF8' },
+            'actualNoteContentPart': { type: 'UTF8' },
+            'processedNoteContent': { type: 'UTF8' },
+            'embedding': {
+              repeated: true,
+              type: 'FLOAT'
+            },
+            'noteUUID': { type: 'UTF8' },
+            'noteTitle': { type: 'UTF8' },
+            'noteTags': {
+              repeated: true,
+              type: 'UTF8'
+            },
+            'headingAnchor': { type: 'UTF8', optional: true },
+            'isArchived': { type: 'BOOLEAN' },
+            'isPublished': { type: 'BOOLEAN' },
+            'isSharedByMe': { type: 'BOOLEAN' },
+            'isSharedWithMe': { type: 'BOOLEAN' },
+            'isTaskListNote': { type: 'BOOLEAN' }
+        });
+
+        // Create parquet writer
+        const writer = await parquet.ParquetWriter.openFile(schema, fullPath);
+
+        // Write records
+        for (const record of records) {
+            if (!record.embedding) throw new Error('Missing embedding detected');
+            if (!record.id) throw new Error('Missing id detected');
+            if (record.embedding.length === 0) throw new Error('Empty embedding detected');
+            await writer.appendRow({
+                id: record.id,
+                actualNoteContentPart: record.actualNoteContentPart,
+                processedNoteContent: record.processedNoteContent,
+                embedding: Array.from(record.embedding),
+                noteUUID: record.noteUUID,
+                noteTitle: record.noteTitle || '',
+                noteTags: record.noteTags || [],
+                headingAnchor: record.headingAnchor || null,
+                isArchived: record.isArchived || false,
+                isPublished: record.isPublished || false,
+                isSharedByMe: record.isSharedByMe || false,
+                isSharedWithMe: record.isSharedWithMe || false,
+                isTaskListNote: record.isTaskListNote || false
+            });
+        }
+
+        await writer.close();
     } catch (e) {
         console.error(`Failed to save records to ${filePath}:`, e);
         throw e;
@@ -162,23 +232,22 @@ async function getMarkdownFromAmpleNoteUrl(url) {
 }
 
 async function generateEmbeddings(app, records, oldRecords, embedGenerator) {
-    // Reuse existing embeddings
+    // Reuse existing embeddings by matching on actualNoteContentPart
     for (const record of records) {
-        const oldRecord = oldRecords.find(old => old.metadata.noteContentPart === record.metadata.noteContentPart);
-        record.values = oldRecord ? oldRecord.values : null;
+        const oldRecord = oldRecords.find(old => old.actualNoteContentPart === record.actualNoteContentPart);
+        record.embedding = oldRecord ? oldRecord.embedding : [];
     }
 
     // Generate new embeddings for remaining records
-    const remainingRecords = records.filter(record => !record.values);
+    const remainingRecords = records.filter(record => !record.embedding || record.embedding.length === 0);
     if (remainingRecords.length > 0) {
         const embeddings = await embedGenerator.generateEmbedding(
             app,
-            remainingRecords.map(r => r.metadata.noteContentPart),
+            remainingRecords.map(r => r.processedNoteContent),
             'passage'
         );
         embeddings.forEach((embedding, index) => {
-            // Store Float32Array as a normal array so that JSON.stringify can convert it
-            remainingRecords[index].values = Array.from(embedding);
+            remainingRecords[index].embedding = embedding;
         });
     }
 
@@ -200,12 +269,22 @@ async function generateHelpCenterEmbeddings() {
     const googleEmbeddingGenerator = new GoogleEmbeddingGenerator();
     const pineconeEmbeddingGenerator = new PineconeEmbeddingGenerator();
     const fireworksEmbeddingGenerator = new FireworksEmbeddingGenerator();
+
     for (const [i, url] of CONFIG.HELP_CENTER_URLS.entries()) {
-        const splitter = new Splitter(LOCAL_VEC_DB_MAX_TOKENS);
+        const splitter = new Splitter(COPILOT_DB_MAX_TOKENS);
         const [content, title] = await getMarkdownFromAmpleNoteUrl(url);
         const mockedNote = mockNote(content, title, url);
         const app = mockApp(mockedNote);
         const splitRecords = await splitter.splitNote(app, mockedNote);
+
+        // Set help center specific properties for all records
+        splitRecords.forEach(record => {
+            record.isArchived = false;
+            record.isPublished = true;
+            record.isSharedByMe = false;
+            record.isSharedWithMe = false;
+            record.isTaskListNote = false;
+        });
 
         // Generate local embeddings
         app.settings[EMBEDDING_API_URL_SETTING] = "http://localhost:11434/api";

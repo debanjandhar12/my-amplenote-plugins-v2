@@ -9,7 +9,7 @@ import {LLM_API_URL_SETTING} from "../../constants.js";
 export const UpdateUserTasks = () => {
     return createGenericCUDTool({
         toolName: "UpdateUserTasks",
-        description: "Update user tasks",
+        description: "Update tasks",
         parameters: {
             type: "object",
             properties: {
@@ -23,33 +23,31 @@ export const UpdateUserTasks = () => {
                                 type: "string",
                                 description: "UUID of the task to update"
                             },
-                            taskContent: {
+                            content: {
                                 type: "string",
-                                description: "Short task content"
+                                description: "Task content"
                             },
-                            taskStartAt: {
+                            startAt: {
                                 type: "string",
-                                description: "ISO format start date and time of the task"
+                                description: "ISO start datetime"
                             },
-                            taskEndAt: {
+                            endAt: {
                                 type: "string",
-                                description: "ISO format end date and time of the task"
+                                description: "ISO end datetime"
                             },
                             completedAt: {
                                 type: "string",
-                                description: "ISO format completed date and time of the task." +
-                                    "Set to current time to toogle task as completed and null to toggle as uncompleted."
+                                description: "ISO completed datetime. Set to current time to mark completed, null to mark uncompleted."
                             },
                             dismissedAt: {
                                 type: "string",
-                                description: "ISO format dismissed date and time of the task." +
-                                    "Set to current time to toogle task as dismissed and null to toggle as undismissed."
+                                description: "ISO dismissed date/time. Set to current time to mark dismissed, null to mark undismissed."
                             },
                             hideUntil: {
                                 type: "string",
-                                description: "ISO format hide until date and time of the task."
+                                description: "ISO hide until date/time"
                             },
-                            taskScore: {
+                            score: {
                                 type: "number"
                             },
                             important: {
@@ -67,31 +65,24 @@ export const UpdateUserTasks = () => {
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({setFormState, formData, setFormData, args}) => {
+            if (!args.tasks || !Array.isArray(args.tasks)) {
+                throw new Error('Invalid arguments: tasks must be an array');
+            }
             const tasksContainerList = [];
             for (const taskItem of args.tasks) {
-                const taskUUID = taskItem.taskUUID;
-                const taskContent = taskItem.taskContent;
-                const taskStartAt = taskItem.taskStartAt;
-                const taskEndAt = taskItem.taskEndAt;
-                const completedAt = taskItem.completedAt;
-                const dismissedAt = taskItem.dismissedAt;
-                const hideUntil = taskItem.hideUntil;
-                const taskScore = taskItem.taskScore;
-                const important = taskItem.important;
-                const urgent = taskItem.urgent;
+                const item = { uuid: taskItem.taskUUID };
+                if ('content' in taskItem) item.content = taskItem.content;
+                if ('startAt' in taskItem) item.startAt = taskItem.startAt;
+                if ('endAt' in taskItem) item.endAt = taskItem.endAt;
+                if ('completedAt' in taskItem) item.completedAt = taskItem.completedAt;
+                if ('dismissedAt' in taskItem) item.dismissedAt = taskItem.dismissedAt;
+                if ('hideUntil' in taskItem) item.hideUntil = taskItem.hideUntil;
+                if ('score' in taskItem) item.score = taskItem.score;
+                if ('important' in taskItem) item.important = taskItem.important;
+                if ('urgent' in taskItem) item.urgent = taskItem.urgent;
+
                 tasksContainerList.push({
-                    item: {
-                        uuid: taskUUID,
-                        content: taskContent,
-                        startAt: taskStartAt,
-                        endAt: taskEndAt,
-                        completedAt: completedAt,
-                        dismissedAt: dismissedAt,
-                        hideUntil: hideUntil,
-                        score: taskScore,
-                        important: important,
-                        urgent: urgent,
-                    },
+                    item,
                     checked: true,
                 });
             }
@@ -199,47 +190,47 @@ const updateTask = async ({ item }) => {
     const oldTaskContent = await appConnector.getTask(item.uuid).then(task => task.content);
     if (!item.uuid) throw new Error('Task UUID is required.');
     console.log('taskupdateobj', item);
-    if (item.content && item.content !== oldTaskContent) {
+    if ('content' in item && item.content !== oldTaskContent) {
         await appConnector.updateTask(item.uuid, {
             content: item.content
         });
     }
-    if (item.startAt) {
+    if ('startAt' in item) {
         await appConnector.updateTask(item.uuid, {
-            startAt: (Date.parse(item.startAt) / 1000) // convert to timestamp
+            startAt: item.startAt ? (Date.parse(item.startAt) / 1000) : null
         });
     }
-    if (item.endAt) {
+    if ('endAt' in item) {
         await appConnector.updateTask(item.uuid, {
-            endAt: (Date.parse(item.endAt) / 1000) // convert to timestamp
+            endAt: item.endAt ? (Date.parse(item.endAt) / 1000) : null
         });
     }
-    if (item.completedAt) {
+    if ('completedAt' in item) {
         await appConnector.updateTask(item.uuid, {
-            completedAt: (Date.parse(item.completedAt) / 1000) // convert to timestamp
+            completedAt: item.completedAt ? (Date.parse(item.completedAt) / 1000) : null
         });
     }
-    if (item.dismissedAt) {
+    if ('dismissedAt' in item) {
         await appConnector.updateTask(item.uuid, {
-            dismissedAt: (Date.parse(item.dismissedAt) / 1000) // convert to timestamp
+            dismissedAt: item.dismissedAt ? (Date.parse(item.dismissedAt) / 1000) : null
         });
     }
-    if (item.hideUntil) {
+    if ('hideUntil' in item) {
         await appConnector.updateTask(item.uuid, {
-            hideUntil: (Date.parse(item.hideUntil) / 1000) // convert to timestamp
+            hideUntil: item.hideUntil ? (Date.parse(item.hideUntil) / 1000) : null
         });
     }
-    if (item.score) {
+    if ('score' in item) {
         await appConnector.updateTask(item.uuid, {
             score: item.score
         });
     }
-    if (item.important) {
+    if ('important' in item) {
         await appConnector.updateTask(item.uuid, {
             important: item.important
         });
     }
-    if (item.urgent) {
+    if ('urgent' in item) {
         await appConnector.updateTask(item.uuid, {
             urgent: item.urgent
         });

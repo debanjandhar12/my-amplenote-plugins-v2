@@ -14,12 +14,10 @@ export const MCP_SERVER_URL_LIST_SETTING = "MCP Server List (Optional)";
 export const PINECONE_API_KEY_SETTING = "Pinecone API Key (Optional)";
 
 // Version Config
-export const PLUGIN_VERSION = "0.5.0";
+export const PLUGIN_VERSION = "0.8.0";
 
 // Vector DB Configs
-export const LOCAL_VEC_DB_INDEX_VERSION = 21;
-export const LOCAL_VEC_DB_MAX_TOKENS = 507;
+export const COPILOT_DB_INDEX_VERSION = 46;
+export const COPILOT_DB_MAX_TOKENS = 1280;
 export const MAX_NOTE_BATCH_SIZE = 48;
-
-// Chat History DB Configs
-export const COPILOT_CHAT_HISTORY_DB_INDEX_VERSION = 6;
+export const MAX_CHAT_HISTORY_THREADS = 100;

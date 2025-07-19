@@ -1,5 +1,6 @@
 import {promises as fs} from "fs";
 import {readFile} from "fs/promises";
+import * as path from 'path';
 
 /**
  * This esbuild plugin implements custom behavior for building the plugin and writing it to dist folder.
@@ -13,9 +14,18 @@ export const DistWriterPlugin = {
         const outFolderPath = build.initialOptions.entryPoints[0].split('/').slice(0, -1).join('/')
             + '/../' + build.initialOptions.outdir;
         build.onEnd(async result => {
+            if (!outFolderPath) {
+                console.error('No outdir specified');
+                return;
+            }
             try {
-                await fs.rm(outFolderPath, {recursive: true});
-            } catch (e) { console.warn(e.message); }
+                const files = await fs.readdir(outFolderPath);
+                await Promise.all(files.map(file => fs.rm(path.join(outFolderPath, file), { recursive: true, force: true })));
+            } catch (e) {
+                if (e.code !== 'ENOENT') {
+                    console.warn(e.message);
+                }
+            }
             if (result.errors.length > 0) {
                 console.error(count === 0 ? `[${new Date()}] Build failed. - ${targetFolderName}` : `[${new Date()}] Rebuild failed. - ${targetFolderName}`);
                 return;

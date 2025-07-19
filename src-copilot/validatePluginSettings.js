@@ -5,7 +5,7 @@ import {
     LLM_API_KEY_SETTING,
     LLM_API_URL_SETTING, LLM_MAX_TOKENS_SETTING, MCP_SERVER_URL_LIST_SETTING
 } from "./constants.js";
-import {EmbeddingGeneratorFactory} from "./LocalVecDB/embeddings/EmbeddingGeneratorFactory.js";
+import {EmbeddingGeneratorFactory} from "./CopilotDB/embeddings/EmbeddingGeneratorFactory.js";
 
 export async function validatePluginSettings(app) {
     const errors = [];
@@ -28,6 +28,7 @@ export async function validatePluginSettings(app) {
     if (!settings[LLM_API_URL_SETTING].trim()) {
         errors.push('LLM API URL cannot be empty.');
     }
+
     try {
         if (isLLMApiUrlValid) {
             await getLLMModel(app.settings);
@@ -35,11 +36,11 @@ export async function validatePluginSettings(app) {
     } catch (e) {
         errors.push(e.message);
     }
-    if (appSettings[LLM_MAX_TOKENS_SETTING] &&appSettings[LLM_MAX_TOKENS_SETTING].trim() !== '') {
-        if (isNaN(appSettings[LLM_MAX_TOKENS_SETTING])) {
+    if (settings[LLM_MAX_TOKENS_SETTING] && settings[LLM_MAX_TOKENS_SETTING].trim() !== '') {
+        if (isNaN(settings[LLM_MAX_TOKENS_SETTING])) {
             errors.push('LLM Max Tokens must be a valid number.');
         }
-        if (Number(appSettings[LLM_MAX_TOKENS_SETTING]) < 4096) {
+        if (Number(settings[LLM_MAX_TOKENS_SETTING]) < 4096) {
             errors.push('LLM Max Tokens must be greater than or equal to 4096.');
         }
     }

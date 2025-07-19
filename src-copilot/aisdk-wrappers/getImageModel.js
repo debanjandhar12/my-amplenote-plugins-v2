@@ -5,6 +5,11 @@ import {createGoogleImageModel} from "./utils/GoogleImageModel.js";
 export async function getImageModel(appSettings) {
     let apiUrl = appSettings[LLM_API_URL_SETTING];
     if (!apiUrl) throw new Error('LLM API URL is not provided. Please check and configure plugin settings.');
+    
+    // Remove /chat/completion suffix if it exists
+    if (apiUrl.endsWith('/chat/completion')) {
+        apiUrl = apiUrl.slice(0, -16); // Remove '/chat/completion' (16 characters)
+    }
     if (apiUrl.includes('api.openai.com')) {
         const {createOpenAI} = await dynamicImportESM("@ai-sdk/openai");
         return createOpenAI({

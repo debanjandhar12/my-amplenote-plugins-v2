@@ -16,19 +16,23 @@ export const ItemSelectionTable = ({
                                    }) => {
     const isThisToolMessageLast = AssistantUI.useMessage((m) => m.isLast);
     const isDiffView = !!oldItemContainerList;
-    const itemsToIterate = isDiffView ? itemContainerList : itemContainerList;
+    const itemsToIterate = itemContainerList;
 
-    const allItemKeys = itemsToIterate.reduce((keys, itemContainer) => {
-        Object.keys(itemContainer.item).forEach((key) => {
-            if (!keys.includes(key) && itemContainer.item[key]) {
-                keys.push(key);
-            }
+    const keySet = new Set();
+    itemContainerList.forEach(itemContainer => {
+        Object.keys(itemContainer.item).forEach(key => keySet.add(key));
+    });
+    if (isDiffView) {
+        oldItemContainerList.forEach(itemContainer => {
+            Object.keys(itemContainer.item).forEach(key => keySet.add(key));
         });
-        return keys;
-    }, []);
+    }
+    const allItemKeys = ['uuid', ...Array.from(keySet).filter(k => k !== 'uuid')];
 
     const formatStringValue = (value, key) => {
-        if (value === null || value === undefined) return '';
+        if (value === undefined) return '';
+        if (value === null) return 'null';
+        if (typeof value === 'boolean') return value.toString();
         try {
             if (isNaN(value) && (typeof value === 'string' && isNaN(Number(value)))) {
                 const date = new Date(value);
@@ -46,29 +50,41 @@ export const ItemSelectionTable = ({
     };
 
     const renderCell = (itemContainer, index, key) => {
-        if (isDiffView &&
-            oldItemContainerList[index].item[key] !== itemContainer.item[key]) {
-            const StringDiff = window.StringDiff;
-            return (
-                <StringDiff
-                    method={'diffSentences'}
-                    styles={{
-                        added: {
-                            backgroundColor: '#0bbf7d',
-                        },
-                        removed: {
-                            backgroundColor: '#ff6b6b',
-                        }
-                    }}
-                    oldValue={formatStringValue(oldItemContainerList[index].item[key])}
-                    newValue={formatStringValue(itemContainer.item[key])}
-                    showDiff={true}
-                />
-            );
-        } else if (key.toLowerCase().includes('uuid')) {
-            return <TruncatedUUID value={itemContainer.item[key]} />;
+        let valueToDisplay = itemContainer.item[key];
+
+        if (isDiffView) {
+            const oldValue = oldItemContainerList[index].item[key];
+            const isChanged = key in itemContainer.item;
+
+            if (isChanged && oldValue !== valueToDisplay) {
+                const StringDiff = window.StringDiff;
+                return (
+                    <StringDiff
+                        method={'diffSentences'}
+                        styles={{
+                            added: {
+                                backgroundColor: '#0bbf7d',
+                            },
+                            removed: {
+                                backgroundColor: '#ff6b6b',
+                            }
+                        }}
+                        oldValue={formatStringValue(oldValue)}
+                        newValue={formatStringValue(valueToDisplay)}
+                        showDiff={true}
+                    />
+                );
+            }
+
+            if (!isChanged) {
+                valueToDisplay = oldValue;
+            }
         }
-        return formatStringValue(itemContainer.item[key]);
+
+        if (key.toLowerCase().includes('uuid')) {
+            return <TruncatedUUID value={valueToDisplay} />;
+        }
+        return formatStringValue(valueToDisplay);
     };
 
     const { Table, Checkbox } = window.RadixUI;
