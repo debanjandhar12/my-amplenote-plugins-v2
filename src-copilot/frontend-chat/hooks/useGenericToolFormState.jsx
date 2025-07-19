@@ -1,8 +1,15 @@
-import {set,get} from "lodash-es";
+import {set, get, cloneDeep} from "lodash-es";
 import {errorToString} from "../helpers/errorToString.js";
 import {ToolCardErrorMessage} from "../components/tools-ui/ToolCardErrorMessage.jsx";
 
 export const useGenericToolFormState = (states, params = {}) => {
+    // Validations
+    const stateNames = Object.keys(states);
+    if (!stateNames.includes('error') || !stateNames.includes('init') || !stateNames.includes('completed') || !stateNames.includes('booting')) {
+        throw new Error('states must have error, init, completed, and booting states');
+    }
+
+    // Tools renderer
     const [formState, setFormState] = React.useState();
     const render = (props) => {
         const { ErrorBoundary } = window.ReactErrorBoundary;
@@ -14,9 +21,11 @@ export const useGenericToolFormState = (states, params = {}) => {
             </ErrorBoundary>
         );
     };
+
     const toolCallId = params.toolCallId;
     const message = AssistantUI.useMessage();
 
+    // Handle restoring from chat history and initializing empty tools to booting state
     React.useEffect(() => {
         if (formState) return;
         if (params.status.type === 'running') return;   // wait for args to be completed from llm
@@ -27,7 +36,7 @@ export const useGenericToolFormState = (states, params = {}) => {
             params.setFormData(toolStateInChatHistory.formData);
             params.setFormError(toolStateInChatHistory.formError);
         } else {
-            setFormState(Object.keys(states)[0]);   // Initialize formState to the first state
+            setFormState('booting'); // initialize to booting state
         }
     }, [params.args, params.status]);
 
@@ -41,6 +50,42 @@ export const useGenericToolFormState = (states, params = {}) => {
                 formError: formError
         });
     }, [formState, formData, formError]);
+
+    // When previous tools complete, handle booting -> init transition
+    React.useEffect(() => {
+        const handleBootingToInit = () => {
+            if (formState !== 'booting') return;
+            const allToolCalls = message.content?.filter(c => c.type === 'tool-call') || [];
+            const toolIndex = allToolCalls.findIndex(tc => tc.toolCallId === toolCallId);
+
+            // Check if all previous tools have completed / errored
+            let allPreviousToolsCompleted = true;
+            for (let i = 0; i < toolIndex; i++) {
+                const prevToolId = allToolCalls[i].toolCallId;
+                const prevToolState = get(message, `metadata.custom.toolStateStorage.${prevToolId}`);
+                if (prevToolState?.formState !== 'completed') {
+                    allPreviousToolsCompleted = false;
+                    break;
+                }
+            }
+
+            if (allPreviousToolsCompleted) {
+                setFormState('init');
+            }
+        }
+        window.addEventListener('onToolStateChange', handleBootingToInit);
+        handleBootingToInit();
+        return () => {
+            window.removeEventListener('onToolStateChange', handleBootingToInit);
+        }
+    }, [formState, message]);
+
+    // When a tool error occurs or canceled, need to delete further tool calls
+    React.useEffect(() => {
+        if (formState !== 'error' && formState !== 'canceled') return;
+        const allToolCalls = message.content?.filter(c => c.type === 'tool-call') || [];
+        console.log('allToolCalls', allToolCalls);
+    }, [formState, message]);
 
     // Call event handler on state change
     React.useEffect(() => {

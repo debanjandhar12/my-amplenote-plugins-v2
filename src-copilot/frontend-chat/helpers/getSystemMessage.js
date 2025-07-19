@@ -30,7 +30,7 @@ export function getSystemMessage(currentMessages, toolsToAdd) {
             return `To interact with Amplenote, call tools. If tools are very much required but cannot be called, ask the user to type @tool_name to enable them. If tool prepended with @ is typed by user, it is already enabled. Only "@tasks", "@notes", "@help" and "@web" are possible.`;
         }
 
-        let toolUsageMessage = "NEVER call multiple tools in parallel as tool result needs to be awaited.";
+        let toolUsageMessage = "When multiple independent tools are needed, call them in parallel within the same response to improve efficiency.";
         if (lastMessage && (lastMessage.role === 'user' ||
             (lastMessage.role === 'assistant' && lastMessage.content.length <= 1))) {
             toolUsageMessage += "To interact with Amplenote, call tools. If tools are required, think a step-by-step plan ensuring to fetch required parameters first.";

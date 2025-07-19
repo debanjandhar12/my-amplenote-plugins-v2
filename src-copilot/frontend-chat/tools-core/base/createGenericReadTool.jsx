@@ -35,6 +35,10 @@ export const createGenericReadTool = ({
                 args, status, result, addResult});
 
             const [formState, setFormState, formRender] = useGenericToolFormState({
+                booting: {
+                    eventHandler: null,
+                    renderer: () => null
+                },
                 init: {
                     eventHandler: onInit,
                     renderer: renderInit
