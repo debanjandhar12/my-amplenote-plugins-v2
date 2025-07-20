@@ -26,10 +26,10 @@ export const useGenericToolFormState = (states, params = {}) => {
     const message = AssistantUI.useMessage();
     const threadRuntime = AssistantUI.useThreadRuntime();
 
-    // This ref is the key to preventing the infinite loop on cleanup.
+    // Use a ref to ensure the error/cancel cleanup logic runs only once.
     const cleanupHasRun = React.useRef(false);
 
-    // --- State Initialization and Restoration ---
+    // --- State Initialization and Restoration from Chat History ---
     React.useEffect(() => {
         if (formState) return;
         if (params.status.type === 'running') return;
@@ -47,7 +47,7 @@ export const useGenericToolFormState = (states, params = {}) => {
         }
     }, [params.args, params.status, message]);
 
-    // --- Sync state with message metadata ---
+    // --- Sync state with message metadata for chat history ---
     const { formData, formError } = params;
     React.useEffect(() => {
         if (!formState) return;
@@ -58,101 +58,102 @@ export const useGenericToolFormState = (states, params = {}) => {
         });
     }, [formState, formData, formError, message]);
 
-    // --- This effect *only* transitions to the 'error' state ---
-    // The actual side effects are handled by the main state machine below.
+    // --- Handle booting -> init transition by listening to other tools ---
     React.useEffect(() => {
-        if (params.formError && formState !== 'error') {
-            setFormState("error");
-        }
-    }, [params.formError]);
+        if (formState !== 'booting') return;
 
-    // --- Main State Machine Event Handler ---
+        const handleBootingToInit = () => {
+            const allToolCalls = message.content?.filter(c => c.type === 'tool-call') || [];
+            const toolIndex = allToolCalls.findIndex(tc => tc.toolCallId === toolCallId);
+
+            let allPreviousToolsCompleted = true;
+            for (let i = 0; i < toolIndex; i++) {
+                const prevToolId = allToolCalls[i].toolCallId;
+                const prevToolState = get(message, `metadata.custom.toolStateStorage.${prevToolId}`);
+                if (prevToolState?.formState !== 'completed' && prevToolState?.formState !== 'error') {
+                    allPreviousToolsCompleted = false;
+                    break;
+                }
+            }
+
+            if (allPreviousToolsCompleted) {
+                setFormState('init');
+            }
+        };
+
+        window.addEventListener('onToolStateChangeComplete', handleBootingToInit);
+        handleBootingToInit();
+
+        return () => {
+            window.removeEventListener('onToolStateChangeComplete', handleBootingToInit);
+        };
+    }, [formState, message]);
+
+    // --- Core State Machine Logic ---
     React.useEffect(() => {
         if (!formState || params.result) return;
 
-        const handleStateChange = async () => {
+        (async () => {
+            window.dispatchEvent(new CustomEvent('onToolStateChange', { detail: formState }));
+            console.log('onToolStateChange', params.toolCallId, formState);
+
             try {
-                // --- Logic for booting -> init transition ---
-                if (formState === 'booting') {
-                    const allToolCalls = message.content?.filter(c => c.type === 'tool-call') || [];
-                    const toolIndex = allToolCalls.findIndex(tc => tc.toolCallId === toolCallId);
-
-                    let allPreviousToolsCompleted = true;
-                    for (let i = 0; i < toolIndex; i++) {
-                        const prevToolId = allToolCalls[i].toolCallId;
-                        const prevToolState = get(message, `metadata.custom.toolStateStorage.${prevToolId}`);
-                        // A previous tool is "done" if it's completed
-                        if (prevToolState?.formState !== 'completed') {
-                            allPreviousToolsCompleted = false;
-                            break;
-                        }
-                    }
-
-                    if (allPreviousToolsCompleted) {
-                        setFormState('init');
-                    }
-                    return;
-                }
-
-                // --- Logic for error or cancel side effects (subsequent tool removal) ---
-                if (formState === 'error' || formState === 'canceled') {
-                    if (cleanupHasRun.current) return; // The crucial guard
-                    cleanupHasRun.current = true;      // Set the lock immediately
-
-                    console.log(`Starting one-time cleanup for ${formState} tool:`, toolCallId);
+                // --- Logic for error or cancel side effects (removal of subsequent tools) ---
+                if ((formState === 'error' || formState === 'canceled') && !cleanupHasRun.current) {
+                    cleanupHasRun.current = true; // Set lock immediately
 
                     const allToolCalls = message.content?.filter(c => c.type === 'tool-call') || [];
                     const currentToolIndex = allToolCalls.findIndex(tc => tc.toolCallId === toolCallId);
 
-                    if (currentToolIndex === -1) return;
-
-                    const subsequentToolCalls = allToolCalls.slice(currentToolIndex + 1);
-
-                    if (subsequentToolCalls.length > 0) {
-                        // Perform the message modification and re-import
-                        const modifiedMessage = cloneDeep(message);
-                        modifiedMessage.content = modifiedMessage.content.filter(c =>
-                            c.type !== 'tool-call' || !subsequentToolCalls.some(stc => stc.toolCallId === c.toolCallId)
-                        );
-                        if (modifiedMessage.metadata?.custom?.toolStateStorage) {
-                            subsequentToolCalls.forEach(stc => {
-                                delete modifiedMessage.metadata.custom.toolStateStorage[stc.toolCallId];
-                            });
+                    if (currentToolIndex !== -1) {
+                        const subsequentToolCalls = allToolCalls.slice(currentToolIndex + 1);
+                        if (subsequentToolCalls.length > 0) {
+                            const modifiedMessage = cloneDeep(message);
+                            modifiedMessage.content = modifiedMessage.content.filter(c =>
+                                c.type !== 'tool-call' || !subsequentToolCalls.some(stc => stc.toolCallId === c.toolCallId)
+                            );
+                            if (modifiedMessage.metadata?.custom?.toolStateStorage) {
+                                subsequentToolCalls.forEach(stc => delete modifiedMessage.metadata.custom.toolStateStorage[stc.toolCallId]);
+                            }
+                            const threadState = threadRuntime.export();
+                            const modifiedMessages = threadState.messages.map(msgWrapper =>
+                                msgWrapper.message.id === message.id ? { ...msgWrapper, message: modifiedMessage } : msgWrapper
+                            );
+                            threadRuntime.import({ ...threadState, messages: modifiedMessages });
+                            console.log('Removed subsequent tool calls for tool call', toolCallId);
                         }
-                        const threadState = threadRuntime.export();
-                        const modifiedMessages = threadState.messages.map(msgWrapper =>
-                            msgWrapper.message.id === message.id ? { ...msgWrapper, message: modifiedMessage } : msgWrapper
-                        );
-                        threadRuntime.import({ ...threadState, messages: modifiedMessages });
-                        console.log('Removed subsequent tool calls for:', toolCallId);
                     }
 
-                    // **** THIS IS THE RESTORED LOGIC ****
-                    // After cleanup, if the state was 'error', add the tool result.
-                    // This is the final step that signals completion to the system.
+                    // For errored tools, we must call addResult AGAIN after cleanup
+                    // to force AssistantUI to re-evaluate and trigger the LLM call.
                     if (formState === 'error') {
-                        console.log('Adding error result for tool:', toolCallId);
-                        params.addResult(`Error: ${errorToString(formError)}. Tool invocation failed.`);
+                        threadRuntime.getMesssageById(message.id).getContentPartByToolCallId(toolCallId).addToolResult(`Error: ${errorToString(formError)}. Tool invocation failed.`);
                     }
-                    return; // Stop execution for this state
                 }
 
-                // --- Generic event handler for user-defined states ---
+                // --- Run the user-defined event handler for the current state ---
                 if (states[formState]?.eventHandler) {
                     await states[formState].eventHandler({ ...params, formState, setFormState });
                 }
 
+                window.dispatchEvent(new CustomEvent('onToolStateChangeComplete', { detail: formState }));
+                console.log('onToolStateChangeComplete', params.toolCallId, formState);
+
             } catch (e) {
-                console.error("Error during state handling:", e);
-                // If any part of the state handler throws, set the error state.
-                // This will trigger the error flow on the next render.
+                console.error(e);
                 params.setFormError(e);
             }
-        };
+        })();
+    }, [formState, threadRuntime]);
 
-        handleStateChange();
-
-    }, [formState, message, threadRuntime]); // Effect dependencies
+    // --- Change state and add the INITIAL result when a form error occurs ---
+    React.useEffect(() => {
+        if (params.formError && formState !== "error") {
+            // This first call notifies the framework that *this* tool is done.
+            params.addResult(`Error: ${errorToString(params.formError)}. Tool invocation failed.`);
+            setFormState("error");
+        }
+    }, [params.formError]);
 
     return [formState, setFormState, render];
 };

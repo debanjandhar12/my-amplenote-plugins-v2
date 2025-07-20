@@ -49,7 +49,7 @@ export async function getLLMModel(appSettings) {
         return createOpenAI({
             apiKey: apiKey,
             baseURL: apiUrl    // Default: https://api.openai.com/v1
-        }).languageModel(model); // {parallelToolCalls: false} causing issues with generateText
+        }).languageModel(model);
     }
     else if (apiUrl.includes('fireworks')) {
         const {createFireworks} = await dynamicImportESM("@ai-sdk/fireworks");

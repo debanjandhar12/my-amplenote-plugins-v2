@@ -71,7 +71,7 @@ export const EMBED_COMMANDS_MOCK = {
     },
     "searchUserTasks": async (app, sqlQuery) => {
         await new Promise(resolve => setTimeout(resolve, 4000));
-        //throw new Error("Error in searchUserTasks");
+        // throw new Error("Error in searchUserTasks");
         return {
             success: true,
             taskCount: 0,
