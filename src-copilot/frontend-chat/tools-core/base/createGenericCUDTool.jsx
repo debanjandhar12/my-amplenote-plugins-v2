@@ -23,9 +23,7 @@ export const createGenericCUDTool = ({
                                                      `Input (canceled): ${JSON.stringify(args)}`);
                                                      cancelFurtherLLMReply();
                                                  },
-                                                 onError = ({formError, addResult}) => {
-                                                     addResult(`Error: ${errorToString(formError)}. Tool invocation failed.`);
-                                                 },
+                                                 onError = () => {},
                                                  renderWaitingForUserInput = () => {},
                                                  renderInit = () => {
                                                      const { Spinner } = window.RadixUI;

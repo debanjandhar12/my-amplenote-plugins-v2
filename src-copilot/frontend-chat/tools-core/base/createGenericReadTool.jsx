@@ -11,9 +11,7 @@ export const createGenericReadTool = ({
                                           triggerCondition,
                                           onInit = ({setFormState}) => {},
                                           onCompleted = () => {},
-                                          onError = ({formError, addResult, args}) => {
-                                              addResult(`Error: ${errorToString(formError)}. Tool invocation failed. Input: ${JSON.stringify(args)}`);
-                                          },
+                                          onError = () => {},
                                           renderInit = () => {
                                               const { Spinner } = window.RadixUI;
                                               return <ToolCardMessage text={`Processing...`} icon={<Spinner />} />
@@ -37,7 +35,7 @@ export const createGenericReadTool = ({
             const [formState, setFormState, formRender] = useGenericToolFormState({
                 booting: {
                     eventHandler: null,
-                    renderer: () => null
+                    renderer: () => <>Booting {toolCallId}</>
                 },
                 init: {
                     eventHandler: onInit,

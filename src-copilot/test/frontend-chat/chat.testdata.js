@@ -52,7 +52,7 @@ export const EMBED_COMMANDS_MOCK = {
     "getSettings": async () => {
         await dynamicImportEnv();
         return {
-            ...getLLMProviderSettings('google'),
+            ...getLLMProviderSettings('groq'),
             [MCP_SERVER_URL_LIST_SETTING]: process.env.MCP_URL,
             [USER_PROMPT_LIST_SETTING]: JSON.stringify([{uuid:'a', message: "Test A", usageCount:0},{uuid: 'b', message: "Test B", usageCount:0}]),
         }
@@ -70,6 +70,8 @@ export const EMBED_COMMANDS_MOCK = {
         return null;
     },
     "searchUserTasks": async (app, sqlQuery) => {
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        throw new Error("Error in searchUserTasks");
         return {
             success: true,
             taskCount: 0,
