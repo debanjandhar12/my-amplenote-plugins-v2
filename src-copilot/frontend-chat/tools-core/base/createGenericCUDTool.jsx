@@ -18,12 +18,6 @@ export const createGenericCUDTool = ({
                                                  },
                                                  onCompleted = () => {},
                                                  onSubmitted = () => {},
-                                                 onCanceled = ({addResult, args, cancelFurtherLLMReply}) => {
-                                                     addResult("Tool invocation canceled by user. No operation was performed.\n"+
-                                                     `Input (canceled): ${JSON.stringify(args)}`);
-                                                     cancelFurtherLLMReply();
-                                                 },
-                                                 onError = () => {},
                                                  renderWaitingForUserInput = () => {},
                                                  renderInit = () => {
                                                      const { Spinner } = window.RadixUI;
@@ -75,11 +69,11 @@ export const createGenericCUDTool = ({
                     renderer: renderCompleted
                 },
                 canceled: {
-                    eventHandler: onCanceled,
+                    eventHandler: null,
                     renderer: renderCanceled
                 },
                 error: {
-                    eventHandler: onError,
+                    eventHandler: null,
                     renderer: renderError
                 }
             }, allParameters);

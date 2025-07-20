@@ -11,7 +11,6 @@ export const createGenericReadTool = ({
                                           triggerCondition,
                                           onInit = ({setFormState}) => {},
                                           onCompleted = () => {},
-                                          onError = () => {},
                                           renderInit = () => {
                                               const { Spinner } = window.RadixUI;
                                               return <ToolCardMessage text={`Processing...`} icon={<Spinner />} />
@@ -46,7 +45,7 @@ export const createGenericReadTool = ({
                     renderer: renderCompleted
                 },
                 error: {
-                    eventHandler: onError,
+                    eventHandler: null,
                     renderer: renderError
                 }
             }, allParameters);

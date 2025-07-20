@@ -2,11 +2,22 @@ import { set, get, cloneDeep } from "lodash-es";
 import { errorToString } from "../helpers/errorToString.js";
 import { ToolCardErrorMessage } from "../components/tools-ui/ToolCardErrorMessage.jsx";
 
+/**
+ * This hook is used to manage the state of a generic tool form.
+ * booting, init, completed, error are mandatory special states. canceled is optional special state.
+ * Other than the above states, there can be any number of intermediate states.
+ */
 export const useGenericToolFormState = (states, params = {}) => {
     // --- Validations ---
+    if (!states || typeof states !== 'object') {
+        throw new Error('useGenericToolFormState: states must be an object');
+    }
     const stateNames = Object.keys(states);
     if (!stateNames.includes('error') || !stateNames.includes('init') || !stateNames.includes('completed') || !stateNames.includes('booting')) {
-        throw new Error('states must have error, init, completed, and booting states');
+        throw new Error('useGenericToolFormState: states must have error, init, completed, and booting states');
+    }
+    if (states?.booting.eventHandler || states.error?.eventHandler || states.canceled?.eventHandler) {
+        throw new Error('useGenericToolFormState: states.booting, states.error, and states.canceled must not have eventHandlers');
     }
 
     // --- State and Renderer ---
@@ -58,7 +69,7 @@ export const useGenericToolFormState = (states, params = {}) => {
         });
     }, [formState, formData, formError, message]);
 
-    // --- Handle booting -> init transition by listening to other tools ---
+    // --- Handle booting -> init transition ---
     React.useEffect(() => {
         if (formState !== 'booting') return;
 
@@ -81,7 +92,7 @@ export const useGenericToolFormState = (states, params = {}) => {
             }
         };
 
-        window.addEventListener('onToolStateChangeComplete', handleBootingToInit);
+        window.addEventListener('onToolStateChangeComplete', handleBootingToInit);  // listen to other tools states for metadata updates
         handleBootingToInit();
 
         return () => {
@@ -131,7 +142,7 @@ export const useGenericToolFormState = (states, params = {}) => {
                     }
                 }
 
-                // --- Run the user-defined event handler for the current state ---
+                // --- Run the event handler for the current state ---
                 if (states[formState]?.eventHandler) {
                     await states[formState].eventHandler({ ...params, formState, setFormState });
                 }
@@ -149,11 +160,17 @@ export const useGenericToolFormState = (states, params = {}) => {
     // --- Change state and add the INITIAL result when a form error occurs ---
     React.useEffect(() => {
         if (params.formError && formState !== "error") {
-            // This first call notifies the framework that *this* tool is done.
             params.addResult(`Error: ${errorToString(params.formError)}. Tool invocation failed.`);
             setFormState("error");
         }
     }, [params.formError]);
+
+    // --- Handle Canceled change state ---
+    React.useEffect(() => {
+        if (formState === "canceled") {
+            params.addResult("Tool invocation canceled by user. Please do not try again immediately.");
+        }
+    }, [formState]);
 
     return [formState, setFormState, render];
 };
