@@ -207,6 +207,10 @@ export const overwriteWithAmplenoteStyle = () => {
         color: hsla(var(--aui-destructive-foreground), 0.5);
         cursor: not-allowed;
     }
+    .aui-composer-root { 
+        padding-left: 0.325rem; 
+        padding-right: 0.325rem; 
+    }
     `.replace(/\s+/g, ' ').trim();
     body.appendChild(styleEl3);
 }
