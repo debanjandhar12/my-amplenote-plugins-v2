@@ -12,7 +12,6 @@ export const createGenericCUDTool = ({
                                                  toolName,
                                                  description,
                                                  parameters,
-                                                 triggerCondition,
                                                  category,
                                                  onInit = ({setFormState}) => {
                                                     setFormState('waitingForUserInput');
@@ -42,7 +41,6 @@ export const createGenericCUDTool = ({
         toolName,
         description,
         parameters,
-        triggerCondition,
         render: ({ args, status, result, addResult, toolCallId }) => {
             const allParameters = useGenericToolParameters({
                 toolName, toolCallId, description, parameters,

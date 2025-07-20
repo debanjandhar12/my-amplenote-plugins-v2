@@ -1,15 +1,15 @@
 import {convertUIToolsToDummyServerTools} from "../../aisdk-wrappers/utils/convertUIToolsToDummyServerTools.js";
-import {ToolRegistry} from "../tools-core/registry/ToolRegistry.js";
+import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
 import {getSystemMessage} from "../helpers/getSystemMessage.js";
-import {getEnabledToolsContext} from "../context/EnabledToolsContext.jsx";
+import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
 export function useModelContext() {
     const runtime = AssistantUI.useAssistantRuntime();
-    const enabledToolsContext = React.useContext(getEnabledToolsContext());
+    const chatAppContext = React.useContext(getChatAppContext());
     
     // Add defensive programming for context values
-    const { enabledTools, isToolEnabled } = enabledToolsContext || {};
-    const safeIsToolEnabled = typeof isToolEnabled === 'function' ? isToolEnabled : () => true;
+    const { enabledTools, isToolEnabled } = chatAppContext || {};
+    const safeIsToolEnabled = typeof isToolEnabled === 'function' ? isToolEnabled : () => false;
 
     React.useEffect(() => {
         let removeLastRegisteredModelContextProvider = () => {};
@@ -17,11 +17,16 @@ export function useModelContext() {
             const currentMessages = (runtime.thread.getState()).messages;
             removeLastRegisteredModelContextProvider();
             
-            // Filter tools based on GUI selection instead of text-based triggers
-            const toolsToAdd = ToolRegistry.getAllTools().filter(tool => {
-                const toolCategory = tool.unstable_tool.category;
-                return toolCategory && safeIsToolEnabled(toolCategory);
-            });
+            // Get tools based on enabled categories using ToolCategoryRegistry
+            const toolsToAdd = [];
+            const allCategoryNames = ToolCategoryRegistry.getAllCategoriesNames();
+            
+            for (const categoryName of allCategoryNames) {
+                if (safeIsToolEnabled(categoryName)) {
+                    const categoryTools = ToolCategoryRegistry.getToolsByCategory(categoryName);
+                    toolsToAdd.push(...categoryTools);
+                }
+            }
             
             removeLastRegisteredModelContextProvider = runtime.registerModelContextProvider({
                 getModelContext: () => {

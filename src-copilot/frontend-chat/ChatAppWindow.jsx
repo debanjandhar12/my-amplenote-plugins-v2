@@ -8,7 +8,6 @@ import {useAmplenoteAttachments} from "./hooks/useAmplenoteAttachments.jsx";
 import {useUserDataPolling} from "./hooks/useUserDataPolling.jsx";
 import {useIntervalPingPlugin} from "./hooks/useIntervalPingPlugin.jsx";
 import {getChatAppContext} from "./context/ChatAppContext.jsx";
-import {EnabledToolsContextProvider} from "./context/EnabledToolsContext.jsx";
 import {ChatHistoryOverlay} from "./ChatHistoryOverlay.jsx";
 import {useCustomChatHistoryManager} from "./hooks/useCustomChatHistoryManager.jsx";
 import {CustomEditComposer} from "./components/CustomEditComposer.jsx";
@@ -35,24 +34,22 @@ export const ChatAppWindow = () => {
             <ChatAppHeader />
             {
                 chatHistoryLoaded &&
-                    <EnabledToolsContextProvider>
-                        <Thread
-                            welcome={{
-                                suggestions: suggestions,
-                            }}
-                            assistantMessage={{components: {
-                                Text: AssistantUIMarkdownComponent,
-                                ToolFallback: CustomToolFallback
-                            }}}
-                            assistantAvatar={assistantAvatar}
-                            tools={tools}
-                            components={{
-                                Composer: CustomComposer,
-                                UserMessage: UserMessage,
-                                EditComposer: CustomEditComposer,
-                            }}
-                        />
-                    </EnabledToolsContextProvider>
+                    <Thread
+                        welcome={{
+                            suggestions: suggestions,
+                        }}
+                        assistantMessage={{components: {
+                            Text: AssistantUIMarkdownComponent,
+                            ToolFallback: CustomToolFallback
+                        }}}
+                        assistantAvatar={assistantAvatar}
+                        tools={tools}
+                        components={{
+                            Composer: CustomComposer,
+                            UserMessage: UserMessage,
+                            EditComposer: CustomEditComposer,
+                        }}
+                    />
             }
         </div>
     )

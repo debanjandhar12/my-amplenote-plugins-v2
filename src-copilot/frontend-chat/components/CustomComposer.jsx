@@ -2,7 +2,7 @@ import {useTributeSetup} from "../hooks/useTributeSetup.jsx";
 import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
 import {FileAttachmentDisplay} from "./FileAttachmentDisplay.jsx";
-import {ToolSelectionDropdown} from "./ToolSelectionDropdown.jsx";
+import {ComposerOptionsDropdown} from "./ComposerOptionsDropdown.jsx";
 
 // Based on: https://github.com/Yonom/assistant-ui/blob/main/packages/react/src/ui/composer.tsx
 export const CustomComposer = () => {
@@ -55,7 +55,7 @@ export const CustomComposer = () => {
                         components={{
                             File: FileAttachmentDisplay
                         }} />
-                    <ToolSelectionDropdown />
+                    <ComposerOptionsDropdown />
                 </>}
             <Composer.Input ref={textareaRef} />
             {!isRunning &&

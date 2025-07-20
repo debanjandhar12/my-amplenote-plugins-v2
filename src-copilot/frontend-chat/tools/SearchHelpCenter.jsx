@@ -18,8 +18,6 @@ export const SearchHelpCenter = () => {
             required: ["query"]
         },
         category: "help",
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@help")
-            || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
             const results = await appConnector.searchHelpCenter(args.query, {
                 limit: 15

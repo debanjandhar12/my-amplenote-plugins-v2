@@ -45,8 +45,6 @@ export const UpdateUserNotes = () => {
             }
         },
         category: "notes",
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({setFormState, formData, setFormData, args}) => {
             if (!args.notes || !Array.isArray(args.notes)) {
                 throw new Error('Invalid arguments: notes must be an array');

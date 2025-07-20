@@ -1,17 +1,15 @@
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
-import { getEnabledToolsContext } from "../context/EnabledToolsContext.jsx";
-import "./ToolSelectionDropdown.css";
+import "./ComposerOptionsDropdown.css";
 
-export const ToolSelectionDropdown = () => {
-    const { toolCategoryNames } = React.useContext(getChatAppContext());
-    const enabledToolsContext = React.useContext(getEnabledToolsContext());
+export const ComposerOptionsDropdown = () => {
+    const chatAppContext = React.useContext(getChatAppContext());
     const [isOpen, setIsOpen] = React.useState(false);
     const composerRuntime = AssistantUI.useComposerRuntime();
     
     // Add defensive programming for context values
-    const { enabledTools, toggleTool, isToolEnabled } = enabledToolsContext || {};
+    const { toolCategoryNames, enabledTools, toggleTool, isToolEnabled } = chatAppContext || {};
     const safeToggleTool = typeof toggleTool === 'function' ? toggleTool : () => {};
-    const safeIsToolEnabled = typeof isToolEnabled === 'function' ? isToolEnabled : () => true;
+    const safeIsToolEnabled = typeof isToolEnabled === 'function' ? isToolEnabled : () => false;
 
     const handleFileUpload = React.useCallback(() => {
         const input = document.createElement("input");

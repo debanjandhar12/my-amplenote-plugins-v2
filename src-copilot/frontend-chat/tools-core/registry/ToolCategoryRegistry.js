@@ -6,36 +6,42 @@ export class ToolCategoryRegistry {
     static updateAllCategory() {
         ToolCategoryRegistry.categories = [];   // Clear existing categories
 
-        ToolCategoryRegistry.categories.push({
-            name: "tasks",
-            description: "<b>Enables tools for amplenote tasks:</b><br />" +
-            ToolRegistry.getToolsByCategory("tasks")
-                .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
-        });
-        ToolCategoryRegistry.categories.push({
-            name: "notes",
-            description: "<b>Enables tools for amplenote notes:</b><br />" +
-            ToolRegistry.getToolsByCategory("notes")
-                .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
-        });
-        ToolCategoryRegistry.categories.push({
-            name: "web",
-            description: "<b>Enables tools for searching the web:</b><br />" +
-            ToolRegistry.getToolsByCategory("web")
-                .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
-        });
-        ToolCategoryRegistry.categories.push({
-            name: "help",
-            description: "<b>Enables tools for the help center:</b><br />" +
-            ToolRegistry.getToolsByCategory("help")
-                .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
-        });
-        ToolCategoryRegistry.categories.push({
-            name: "mcp",
-            description: "<b>Enables tools for the help center:</b><br />" +
-                ToolRegistry.getToolsByCategory("mcp")
-                    .map(tool => tool.unstable_tool.toolName).join('<br />').trim()
-        });
+        // Get all unique categories from registered tools
+        const allTools = ToolRegistry.getAllTools();
+        const uniqueCategories = [...new Set(allTools
+            .map(tool => tool.unstable_tool.category)
+            .filter(category => category))]; // Filter out undefined categories
+
+        // Create category objects with descriptions
+        for (const categoryName of uniqueCategories) {
+            const categoryTools = ToolRegistry.getToolsByCategory(categoryName);
+            const description = this.getCategoryDescription(categoryName, categoryTools);
+            
+            ToolCategoryRegistry.categories.push({
+                name: categoryName,
+                description: description,
+                toolCount: categoryTools.length
+            });
+        }
+    }
+
+    static getCategoryDescription(categoryName, tools) {
+        const toolNames = tools.map(tool => tool.unstable_tool.toolName).join('<br />');
+        
+        const descriptions = {
+            tasks: "<b>Enables tools for amplenote tasks:</b><br />",
+            notes: "<b>Enables tools for amplenote notes:</b><br />",
+            web: "<b>Enables tools for searching the web:</b><br />",
+            help: "<b>Enables tools for the help center:</b><br />",
+            mcp: "<b>Enables MCP (Model Context Protocol) tools:</b><br />"
+        };
+
+        const prefix = descriptions[categoryName] || `<b>Enables ${categoryName} tools:</b><br />`;
+        return prefix + toolNames.trim();
+    }
+
+    static getToolsByCategory(categoryName) {
+        return ToolRegistry.getToolsByCategory(categoryName);
     }
 
     static getCategory(categoryName) {
@@ -44,5 +50,9 @@ export class ToolCategoryRegistry {
 
     static getAllCategoriesNames() {
         return ToolCategoryRegistry.categories.map(category => category.name);
+    }
+
+    static getAllCategories() {
+        return ToolCategoryRegistry.categories;
     }
 }

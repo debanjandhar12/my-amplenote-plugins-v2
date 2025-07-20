@@ -8,7 +8,6 @@ export const createGenericReadTool = ({
                                           toolName,
                                           description,
                                           parameters,
-                                          triggerCondition,
                                           category,
                                           onInit = ({setFormState}) => {},
                                           onCompleted = () => {},
@@ -26,7 +25,6 @@ export const createGenericReadTool = ({
         toolName,
         description,
         parameters,
-        triggerCondition,
         render: ({args, result, addResult, status, toolCallId}) => {
             const allParameters = useGenericToolParameters({
                 toolName, toolCallId, description, parameters,

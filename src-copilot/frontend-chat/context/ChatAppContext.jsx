@@ -1,8 +1,13 @@
 import {useToolRegistries} from "../hooks/useToolRegistries.js";
+import {useEnabledTools} from "../hooks/useEnabledTools.jsx";
 
 export const getChatAppContext = () => {
     if (!window.ChatAppContext) {
-        window.ChatAppContext = React.createContext({});
+        window.ChatAppContext = React.createContext({
+            enabledTools: new Set(),
+            toggleTool: () => {},
+            isToolEnabled: () => false // Default to no tools enabled
+        });
     }
     return window.ChatAppContext;
 }
@@ -17,12 +22,23 @@ export const ChatAppContextProvider = ({ children }) => {
     
     const { toolCategoryNames, tools } = useToolRegistries();
 
+    // Get thread ID safely - this will be null if AssistantUI context is not available
+    let threadId = null;
+    try {
+        const threadRuntime = AssistantUI.useThreadRuntime();
+        threadId = threadRuntime.getState().threadId;
+    } catch (error) {
+        // AssistantUI context not available, threadId remains null
+    }
+
+    const { enabledTools, toggleTool, isToolEnabled } = useEnabledTools(threadId, toolCategoryNames || []);
+
     return (
         <ChatAppContext.Provider value={{ threadNewMsgComposerRef, setThreadNewMsgComposerRef,
             remoteThreadLoaded, setRemoteThreadLoaded,
             chatHistoryLoaded, setChatHistoryLoaded,
             isChatHistoryOverlayOpen, setIsChatHistoryOverlayOpen,
-            toolCategoryNames, tools }}>
+            toolCategoryNames, tools, enabledTools, toggleTool, isToolEnabled }}>
             {children}
         </ChatAppContext.Provider>
     );

@@ -30,8 +30,6 @@ export const EditNoteContent = () => {
             required: ["noteUUID"]
         },
         category: "notes",
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
         renderInit: () => {
             const { Spinner } = window.RadixUI;
             return <ToolCardMessage text={`Generating content...`} icon={<Spinner />} />

@@ -37,14 +37,7 @@ export class ToolRegistry {
     }
 
     static getToolsByCategory(categoryName) {
-        // Fake lastUserMessage and allUserMessages with category name and check if tool gets triggered
-        const messageWithCategoryName = {
-            message: '@'+categoryName,
-        };
-        return Object.values(ToolRegistry.tools).filter(tool => tool.unstable_tool.triggerCondition({
-            lastUserMessage: messageWithCategoryName,
-            allUserMessages: messageWithCategoryName
-        }));
+        return ToolRegistry.tools.filter(tool => tool.unstable_tool.category === categoryName);
     }
 
     static getAllTools() {
