@@ -47,6 +47,7 @@ export const InsertTasksToNote = () => {
             },
             required: ["tasks", "noteUUID"]
         },
+        category: "tasks",
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: ({setFormState, formData, setFormData, args}) => {

@@ -9,6 +9,7 @@ export const createGenericReadTool = ({
                                           description,
                                           parameters,
                                           triggerCondition,
+                                          category,
                                           onInit = ({setFormState}) => {},
                                           onCompleted = () => {},
                                           renderInit = () => {
@@ -21,7 +22,7 @@ export const createGenericReadTool = ({
                                                   text={"Error: " + errorToString(formError)} color="red" />
                                           },
 }) => {
-    return AssistantUI.makeAssistantToolUI({
+    const tool = AssistantUI.makeAssistantToolUI({
         toolName,
         description,
         parameters,
@@ -53,4 +54,11 @@ export const createGenericReadTool = ({
             return formRender ? formRender({...allParameters, formState, setFormState}) : null;
         }
     });
+    
+    // Add category property to the tool
+    if (category) {
+        tool.unstable_tool.category = category;
+    }
+    
+    return tool;
 };

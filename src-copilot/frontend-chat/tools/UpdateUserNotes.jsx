@@ -44,6 +44,7 @@ export const UpdateUserNotes = () => {
                 }
             }
         },
+        category: "notes",
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({setFormState, formData, setFormData, args}) => {

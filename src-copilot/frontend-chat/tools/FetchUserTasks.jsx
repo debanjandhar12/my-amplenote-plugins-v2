@@ -27,6 +27,7 @@ export const FetchUserTasks =() => {
             },
             required: ["query"]
         },
+        category: "tasks",
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({args, formData, setFormData, setFormState}) => {

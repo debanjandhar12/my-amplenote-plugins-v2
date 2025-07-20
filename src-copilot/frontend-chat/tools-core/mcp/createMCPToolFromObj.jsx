@@ -13,6 +13,7 @@ export function createMCPToolFromObj(mcpServerUrl, toolName, toolObj) {
             properties: toolObj.parameters?.jsonSchema?.properties,
             required: toolObj.parameters?.jsonSchema?.required
         },
+        category: "mcp",
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@mcp")
             || JSON.stringify(allUserMessages).includes("@all-tools"),
         renderWaitingForUserInput: ({args, status, setFormState}) => {

@@ -1,59 +1,7 @@
 export const useTributeSetup = (textareaRef, toolCategoryNames) => {
-    const composerRuntime = AssistantUI.useComposerRuntime();
-
+    // Tribute functionality is now disabled since we're using GUI-based tool selection
+    // This hook is kept for backward compatibility but does nothing
     React.useEffect(() => {
-        if (!textareaRef.current) return;
-        const style = document.createElement('style');
-        style.textContent = `
-            .tribute-container > ul {
-                background-color: #434A54; 
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                color: #FFFFFF; 
-                margin: 10px;
-                padding: 0;
-                list-style: none;
-            }
-            .tribute-item {
-                padding: 8px;
-                cursor: pointer;
-                border-bottom: 1px solid #333333;
-            }
-            .tribute-item:hover {
-                background-color: #2d4759;
-            }
-            .tribute-item-selected {
-                background-color: #2d4759;
-                color: #FFFFFF;
-            }
-        `;
-        document.body.append(style);
-        const tribute = new window.Tribute({
-            trigger: '@',
-            values: toolCategoryNames.map(toolCategory => { return {
-                key: toolCategory,
-                value: toolCategory
-            }}),
-            noMatchTemplate: null,
-            containerClass: 'tribute-container',
-            itemClass: 'tribute-item',
-            selectClass: 'tribute-item-selected',
-            allowSpaces: false,
-            menuItemLimit: 4,
-            replaceTextSuffix: ' '
-        });
-        tribute.attach(textareaRef.current);
-        const tributeOnReplace = (event) => {
-            const currentValue = textareaRef.current.value;
-            composerRuntime.setText(currentValue);
-        }
-        textareaRef.current
-            .addEventListener("tribute-replaced", tributeOnReplace);
-
-        return () => {  // cleanup
-            if (!textareaRef.current) return;
-            tribute.detach(textareaRef.current);
-            textareaRef.current
-                .removeEventListener("tribute-replaced", tributeOnReplace);
-        };
+        // No-op: tribute functionality replaced by ToolSelectionDropdown
     }, [textareaRef, toolCategoryNames]);
 }

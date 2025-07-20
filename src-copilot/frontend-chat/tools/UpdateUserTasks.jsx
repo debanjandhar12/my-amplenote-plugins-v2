@@ -62,6 +62,7 @@ export const UpdateUserTasks = () => {
                 }
             }
         },
+        category: "tasks",
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({setFormState, formData, setFormData, args}) => {

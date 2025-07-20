@@ -23,6 +23,7 @@ export const FetchNoteDetailByNoteUUID = () => {
             },
             required: ["noteUUIDList"]
         },
+        category: "notes",
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         onInit: async ({args, formData, setFormData, setFormState}) => {

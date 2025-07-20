@@ -51,6 +51,7 @@ export const SearchNotesByTitleTagsContent = () => {
                 }
             }
         },
+        category: "notes",
         triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
         || JSON.stringify(allUserMessages).includes("@all-tools"),
         renderInit: ({args, formData}) => {
