@@ -1,101 +1,190 @@
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
-import "./ComposerOptionsDropdown.css";
+import { ToolCategoryRegistry } from "../tools-core/registry/ToolCategoryRegistry.js";
 
 export const ComposerOptionsDropdown = () => {
     const chatAppContext = React.useContext(getChatAppContext());
     const [isOpen, setIsOpen] = React.useState(false);
     const composerRuntime = AssistantUI.useComposerRuntime();
-    
+
     // Add defensive programming for context values
     const { toolCategoryNames, enabledTools, toggleTool, isToolEnabled } = chatAppContext || {};
-    const safeToggleTool = typeof toggleTool === 'function' ? toggleTool : () => {};
+    const safeToggleTool = typeof toggleTool === 'function' ? toggleTool : () => { };
     const safeIsToolEnabled = typeof isToolEnabled === 'function' ? isToolEnabled : () => false;
+
+    // Inject styles using the same pattern as overwriteWithAmplenoteStyle
+    React.useEffect(() => {
+        const styleEl = document.createElement('style');
+        styleEl.innerText = `
+            /* Tool checkbox items with reduced padding */
+            .composer-options-checkbox-item {
+                display: flex !important;
+                align-items: center !important;
+                gap: 6px !important;
+                padding: 4px 8px !important;
+                border-radius: var(--radius-2) !important;
+                color: var(--gray-12) !important;
+                font-size: var(--font-size-2) !important;
+                line-height: var(--line-height-2) !important;
+                font-weight: var(--font-weight-regular) !important;
+                user-select: none !important;
+            }
+            
+            .composer-options-checkbox-item:hover {
+                background-color: var(--accent-a3) !important;
+            }
+
+            .composer-options-item-indicator {
+                width: 16px;
+                height: 16px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .composer-options-category-info {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex: 1;
+            }
+
+            .composer-options-category-info span {
+                user-select: none !important;
+            }
+
+            .composer-options-info-icon {
+                opacity: 0.6;
+                cursor: help;
+                transition: opacity 0.2s;
+                margin-left: auto;
+                flex-shrink: 0;
+            }
+
+            .composer-options-info-icon:hover {
+                opacity: 1;
+            }
+
+            /* Fix tooltip z-index and enable HTML rendering */
+            [data-radix-tooltip-content] {
+                z-index: 50000 !important;
+            }
+
+            /* Fix button alignment */
+            .aui-composer-add-attachment {
+                align-self: center !important;
+            }
+        `.replace(/\s+/g, ' ').trim();
+        document.body.appendChild(styleEl);
+
+        return () => {
+            if (document.body.contains(styleEl)) {
+                document.body.removeChild(styleEl);
+            }
+        };
+    }, []);
 
     const handleFileUpload = React.useCallback(() => {
         const input = document.createElement("input");
         input.type = "file";
         input.multiple = true;
         input.hidden = true;
-        
+
         const attachmentAccept = composerRuntime.getAttachmentAccept();
         if (attachmentAccept !== "*") {
             input.accept = attachmentAccept;
         }
-        
+
         document.body.appendChild(input);
-        
+
         input.onchange = (e) => {
             const fileList = e.target.files;
             if (!fileList) return;
-            
+
             for (const file of fileList) {
                 composerRuntime.addAttachment(file);
             }
             document.body.removeChild(input);
         };
-        
+
         input.oncancel = () => {
             if (!input.files || input.files.length === 0) {
                 document.body.removeChild(input);
             }
         };
-        
+
         input.click();
         setIsOpen(false);
     }, [composerRuntime]);
 
-    const { DropdownMenu } = window.RadixUI;
-    const { CheckIcon } = window.RadixIcons;
+    const { DropdownMenu, Checkbox, Tooltip, Button } = window.RadixUI;
+    const { InfoCircledIcon, PlusIcon, UploadIcon } = window.RadixIcons;
 
     return (
         <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
             <DropdownMenu.Trigger asChild>
-                <button 
-                    className="aui-button aui-button-primary aui-button-icon aui-composer-add-attachment" 
-                    type="button"
-                    data-state={isOpen ? "open" : "closed"}
+                <Button
+                    variant="ghost"
+                    size="2"
+                    className="aui-composer-add-attachment"
+                    style={{
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        padding: '0',
+                        margin: '0'
+                    }}UploadIcon
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
-                        <path fillRule="evenodd" d="M8 2a.75.75 0 0 1 .75.75v4.5h4.5a.75.75 0 0 1 0 1.5h-4.5v4.5a.75.75 0 0 1-1.5 0v-4.5h-4.5a.75.75 0 0 1 0-1.5h4.5v-4.5A.75.75 0 0 1 8 2Z" clipRule="evenodd"></path>
-                    </svg>
-                    <span className="aui-sr-only">Add attachment or select tools</span>
-                </button>
+                    <PlusIcon width="16" height="16" />
+                </Button>
             </DropdownMenu.Trigger>
 
-            <DropdownMenu.Content 
-                className="tool-selection-dropdown-content"
+            <DropdownMenu.Content
                 sideOffset={5}
                 align="start"
             >
-                <DropdownMenu.Label className="tool-selection-dropdown-label">
+                <DropdownMenu.Label style={{ padding: '4px 8px' }}>
                     Tools
                 </DropdownMenu.Label>
-                
-                <DropdownMenu.Separator />
-                
+
                 {toolCategoryNames.map((toolName) => (
-                    <DropdownMenu.Item
+                    <div
                         key={toolName}
-                        className="tool-selection-dropdown-checkbox-item"
-                        onSelect={() => safeToggleTool(toolName)}
+                        className="composer-options-checkbox-item"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            safeToggleTool(toolName);
+                        }}
+                        style={{ cursor: 'pointer' }}
                     >
-                        <div className="tool-selection-dropdown-item-indicator">
-                            {safeIsToolEnabled(toolName) && <CheckIcon width="12" height="12" />}
+                        <div className="composer-options-item-indicator">
+                            <Checkbox
+                                checked={safeIsToolEnabled(toolName)}
+                                size="1"
+                            />
                         </div>
-                        {toolName}
-                    </DropdownMenu.Item>
+                        <div className="composer-options-category-info">
+                            <span>{toolName}</span>
+                            <Tooltip content={
+                                    <div dangerouslySetInnerHTML={{__html: ToolCategoryRegistry.getCategory(toolName)?.description}} />
+                                }>
+                                <InfoCircledIcon
+                                    className="composer-options-info-icon"
+                                    width="14"
+                                    height="14"
+                                />
+                            </Tooltip>
+                        </div>
+                    </div>
                 ))}
-                
+
                 <DropdownMenu.Separator />
-                
-                <DropdownMenu.Item 
-                    className="tool-selection-dropdown-item"
+
+                <DropdownMenu.Item
                     onSelect={handleFileUpload}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
-                        <path d="M8.5 1.5A1.5 1.5 0 0 0 7 3v.5h2V3a1.5 1.5 0 0 0-1.5-1.5Z"></path>
-                        <path fillRule="evenodd" d="M6 4.5V3a3 3 0 1 1 6 0v1.5h.5A1.5 1.5 0 0 1 14 6v7a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 13V6a1.5 1.5 0 0 1 1.5-1.5H6ZM3.5 6a.5.5 0 0 0-.5.5v7a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.5-.5h-9Z" clipRule="evenodd"></path>
-                    </svg>
+                    <UploadIcon width="16" height="16" />
                     Upload attachments
                 </DropdownMenu.Item>
             </DropdownMenu.Content>

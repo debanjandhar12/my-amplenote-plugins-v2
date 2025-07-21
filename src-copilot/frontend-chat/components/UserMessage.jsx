@@ -1,9 +1,9 @@
 // Based on https://github.com/Yonom/assistant-ui/blob/70ea4a87283d9dc34965ef9d9a80504a05ab8979/packages/react/src/ui/user-message.tsx
-import {replaceParagraphTextInMarkdown} from "../../markdown/replaceParagraphTextInMarkdown.jsx";
-import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
-import {ToolCategoryMentionComponent} from "./makeCustomMarkdownText.jsx";
-import {FileAttachmentDisplay} from "./FileAttachmentDisplay.jsx";
-import {getChatAppContext} from "../context/ChatAppContext.jsx";
+import { replaceParagraphTextInMarkdown } from "../../markdown/replaceParagraphTextInMarkdown.jsx";
+import { ToolCategoryRegistry } from "../tools-core/registry/ToolCategoryRegistry.js";
+import { ToolCategoryMentionComponent } from "./makeCustomMarkdownText.jsx";
+import { FileAttachmentDisplay } from "./FileAttachmentDisplay.jsx";
+import { getChatAppContext } from "../context/ChatAppContext.jsx";
 
 const UserMessage = () => {
     const { UserMessage, MessagePrimitive, UserActionBar, BranchPicker } = window.AssistantUI;
