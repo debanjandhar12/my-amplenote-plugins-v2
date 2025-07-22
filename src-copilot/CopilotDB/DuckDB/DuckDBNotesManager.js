@@ -7,7 +7,6 @@ import { eng } from "stopword";
 export class DuckDBNotesManager {
     static _instance = null;
     static dbFileName = 'CopilotNotesDB';
-    _initPromise = null;
 
     async _performInit() {
         if (this.db && !DuckDBConnectionController.isTerminated()) return;
@@ -687,14 +686,7 @@ export class DuckDBNotesManager {
             DuckDBNotesManager._instance = new DuckDBNotesManager();
         }
 
-        if (!DuckDBNotesManager._instance._initPromise) {
-            DuckDBNotesManager._instance._initPromise = DuckDBNotesManager._instance._performInit().catch(error => {
-                DuckDBNotesManager._instance._initPromise = null; // Clear the promise on failure to allow retry
-                throw error;
-            });
-        }
-
-        await DuckDBNotesManager._instance._initPromise;
+        await DuckDBNotesManager._instance._performInit();
         return DuckDBNotesManager._instance;
     }
 }

@@ -9,9 +9,11 @@ import { throttle } from "lodash-es";
  */
 export class CopilotChatHistoryDB {
     static _instance = null;
-    _initPromise = null;
+    isInitialized = null;
 
     async _performInit() {
+        if (this.isInitialized) return;
+
         this.fileName = 'copilot-chat-history.json';
         this.opfsSupported = null;
         this.threadsCache = null; // In-memory cache for all threads
@@ -32,6 +34,8 @@ export class CopilotChatHistoryDB {
             console.warn('OPFS not supported, using in-memory storage for chat history. Data will be lost on page refresh.');
             this.threadsCache = {};
         }
+
+        this.isInitialized = true;
     }
 
     /**
@@ -164,14 +168,7 @@ export class CopilotChatHistoryDB {
             CopilotChatHistoryDB._instance = new CopilotChatHistoryDB();
         }
 
-        if (!CopilotChatHistoryDB._instance._initPromise) {
-            CopilotChatHistoryDB._instance._initPromise = CopilotChatHistoryDB._instance._performInit().catch(error => {
-                CopilotChatHistoryDB._instance._initPromise = null; // Clear the promise on failure to allow retry
-                throw error;
-            });
-        }
-
-        await CopilotChatHistoryDB._instance._initPromise;
+        await CopilotChatHistoryDB._instance._performInit();
         return CopilotChatHistoryDB._instance;
     }
 }

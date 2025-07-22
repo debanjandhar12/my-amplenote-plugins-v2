@@ -5,7 +5,6 @@ import { isArray } from "lodash-es";
 
 export class DuckDBHelpCenterManager {
     static _instance = null;
-    _initPromise = null;
 
     async _performInit() {
         if (this.db && !DuckDBConnectionController.isTerminated()) return;
@@ -80,14 +79,7 @@ export class DuckDBHelpCenterManager {
             DuckDBHelpCenterManager._instance = new DuckDBHelpCenterManager();
         }
 
-        if (!DuckDBHelpCenterManager._instance._initPromise) {
-            DuckDBHelpCenterManager._instance._initPromise = DuckDBHelpCenterManager._instance._performInit().catch(error => {
-                DuckDBHelpCenterManager._instance._initPromise = null; // Clear the promise on failure to allow retry
-                throw error;
-            });
-        }
-
-        await DuckDBHelpCenterManager._instance._initPromise;
+        await DuckDBHelpCenterManager._instance._performInit();
         return DuckDBHelpCenterManager._instance;
     }
 }

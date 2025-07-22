@@ -3,7 +3,6 @@ import dayjs from "dayjs";
 
 export class DuckDBUserTasksManager {
     static _instance = null;
-    _initPromise = null;
 
     async _performInit() {
         if (this.db && !DuckDBConnectionController.isTerminated()) return;
@@ -207,7 +206,7 @@ export class DuckDBUserTasksManager {
                     this._validateTableReferences(cte.query);
                 }
             }
-        }
+        }_initPromise
 
         // Check subqueries in SELECT list
         if (node.select_list) {
@@ -326,14 +325,7 @@ export class DuckDBUserTasksManager {
             DuckDBUserTasksManager._instance = new DuckDBUserTasksManager();
         }
 
-        if (!DuckDBUserTasksManager._instance._initPromise) {
-            DuckDBUserTasksManager._instance._initPromise = DuckDBUserTasksManager._instance._performInit().catch(error => {
-                DuckDBUserTasksManager._instance._initPromise = null; // Clear the promise on failure to allow retry
-                throw error;
-            });
-        }
-
-        await DuckDBUserTasksManager._instance._initPromise;
+        await DuckDBUserTasksManager._instance._performInit();
         return DuckDBUserTasksManager._instance;
     }
 }
