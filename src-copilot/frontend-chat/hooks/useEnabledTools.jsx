@@ -1,41 +1,31 @@
 import { getChatThread, saveChatThread } from "../../CopilotDB/index.js";
+import {getChatAppContext} from "../context/ChatAppContext.jsx";
 
-export const useEnabledTools = (threadId, toolCategoryNames) => {
-    const [enabledTools, setEnabledTools] = React.useState(new Set());
+export const useEnabledTools = () => {
+    const {enabledToolGroups, setEnabledToolGroups } = React.useContext(getChatAppContext());
 
     // Load enabled tools from ChatHistoryDB on mount
-    React.useEffect(() => {
-        const loadEnabledTools = async () => {
-            if (!threadId) return;
-            
-            try {
-                const thread = await getChatThread(threadId);
-                if (thread?.enabledTools) {
-                    setEnabledTools(new Set(thread.enabledTools));
-                } else {
-                    // Default to all tools enabled for new threads
-                    setEnabledTools(new Set(toolCategoryNames));
-                }
-            } catch (error) {
-                console.error('Failed to load enabled tools:', error);
-                // Default to all tools enabled on error
-                setEnabledTools(new Set(toolCategoryNames));
-            }
-        };
+    const loadEnabledToolGroupsFromDB = React.useCallback(async (threadId) => {
+        if (!threadId) return;
 
-        loadEnabledTools();
-    }, [threadId, toolCategoryNames]);
+        try {
+            const thread = await getChatThread(threadId);
+            if (thread?.enabledToolGroups) {
+                setEnabledToolGroups(new Set(thread.enabledToolGroups));
+            }
+        } catch (error) {
+            setEnabledToolGroups(new Set());
+        }
+    }, [setEnabledToolGroups]);
 
     // Save enabled tools to ChatHistoryDB when they change
-    const saveEnabledTools = React.useCallback(async (newEnabledTools) => {
-        if (!threadId) return;
-        
+    const saveEnabledToolGroups = React.useCallback(async (threadId, newEnabledToolGroups) => {
         try {
             const thread = await getChatThread(threadId);
             if (thread) {
                 const updatedThread = {
                     ...thread,
-                    enabledTools: Array.from(newEnabledTools),
+                    enabledToolGroups: Array.from(newEnabledToolGroups),
                     updated: new Date().toISOString()
                 };
                 await saveChatThread(updatedThread);
@@ -43,28 +33,40 @@ export const useEnabledTools = (threadId, toolCategoryNames) => {
         } catch (error) {
             console.error('Failed to save enabled tools:', error);
         }
-    }, [threadId]);
+    }, []);
 
-    const toggleTool = React.useCallback((toolName) => {
-        setEnabledTools(prev => {
+    // Util function to toggle a tool group enabled state
+    const toggleToolGroup = React.useCallback(async (toolGroup) => {
+        setEnabledToolGroups(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(toolName)) {
-                newSet.delete(toolName);
+            if (newSet.has(toolGroup)) {
+                newSet.delete(toolGroup);
             } else {
-                newSet.add(toolName);
+                newSet.add(toolGroup);
             }
-            saveEnabledTools(newSet);
+            saveEnabledToolGroups(newSet);
             return newSet;
         });
-    }, [saveEnabledTools]);
+    }, [setEnabledToolGroups, saveEnabledToolGroups]);
 
-    const isToolEnabled = React.useCallback((toolName) => {
-        return enabledTools.has(toolName);
-    }, [enabledTools]);
+    // Util function to enable a tool group
+    const enableToolGroup = React.useCallback(async (toolGroup) => {
+        setEnabledToolGroups(prev => {
+            const newSet = new Set(prev);
+            newSet.add(toolGroup);
+            saveEnabledToolGroups(newSet);
+            return newSet;
+        });
+    }, [setEnabledToolGroups, saveEnabledToolGroups]);
+
+    const isToolGroupEnabled = React.useCallback((toolGroup) => {
+        return enabledToolGroups.has(toolGroup);
+    }, [enabledToolGroups]);
 
     return {
-        enabledTools,
-        toggleTool,
-        isToolEnabled
+        loadEnabledToolGroupsFromDB,
+        toggleToolGroup,
+        enableToolGroup,
+        isToolGroupEnabled
     };
 };

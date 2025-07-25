@@ -15,23 +15,19 @@ export const useChatSuggestions = (count = 2) => {
 
 const allSuggestions = [
     {
-        prompt: "@tasks Add shopping for groceries at evening today",
+        prompt: "Create @tasks for today's shopping",
         displayCondition: () => true,
     },
     {
-        prompt: "@tasks Summarize tasks for today",
+        prompt: "Summarize @tasks for today",
         displayCondition: () => true,
     },
     {
-        prompt: "@web Search for best song of current year",
+        prompt: "Search @web for best song of current year",
         displayCondition: () => true,
     },
     {
-        prompt: "@notes Provide summary of current note",
-        displayCondition: () => window.userData.currentNoteUUID !== null,
-    },
-    {
-        prompt: "@notes Analyze & add appropriate tags to current note",
+        prompt: "Provide summary of current @notes",
         displayCondition: () => window.userData.currentNoteUUID !== null,
     },
     {

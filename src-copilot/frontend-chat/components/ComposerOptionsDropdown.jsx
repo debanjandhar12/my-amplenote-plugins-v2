@@ -1,15 +1,14 @@
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
 import { ToolCategoryRegistry } from "../tools-core/registry/ToolCategoryRegistry.js";
+import {useEnabledTools} from "../hooks/useEnabledTools.jsx";
 
 export const ComposerOptionsDropdown = () => {
-    const chatAppContext = React.useContext(getChatAppContext());
+    const { toolCategoryNames } = React.useContext(getChatAppContext());
+    const { toggleToolGroup, isToolGroupEnabled } = useEnabledTools();
     const [isOpen, setIsOpen] = React.useState(false);
     const composerRuntime = AssistantUI.useComposerRuntime();
 
     // Add defensive programming for context values
-    const { toolCategoryNames, enabledTools, toggleTool, isToolEnabled } = chatAppContext || {};
-    const safeToggleTool = typeof toggleTool === 'function' ? toggleTool : () => { };
-    const safeIsToolEnabled = typeof isToolEnabled === 'function' ? isToolEnabled : () => false;
 
     // Inject styles using the same pattern as overwriteWithAmplenoteStyle
     React.useEffect(() => {
@@ -154,13 +153,13 @@ export const ComposerOptionsDropdown = () => {
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            safeToggleTool(toolName);
+                            toggleToolGroup(toolName);
                         }}
                         style={{ cursor: 'pointer' }}
                     >
                         <div className="composer-options-item-indicator">
                             <Checkbox
-                                checked={safeIsToolEnabled(toolName)}
+                                checked={isToolGroupEnabled(toolName)}
                                 size="1"
                             />
                         </div>

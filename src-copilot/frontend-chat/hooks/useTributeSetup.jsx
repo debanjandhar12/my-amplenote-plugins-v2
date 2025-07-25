@@ -1,7 +1,8 @@
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
+import {useEnabledTools} from "./useEnabledTools.jsx";
 
 export const useTributeSetup = (textareaRef, toolCategoryNames) => {
-    const { toggleTool } = React.useContext(getChatAppContext());
+    const { enableToolGroup } = useEnabledTools();
 
     React.useEffect(() => {
         if (!textareaRef.current) return;
@@ -41,16 +42,12 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
             selectClass: 'tribute-item-selected',
             allowSpaces: false,
             menuItemLimit: 4,
-            replaceTextPrefix: '@',
-            replaceTextSuffix: ''
+            replaceTextPrefix: '@'
         });
         tribute.attach(textareaRef.current);
         const tributeOnReplace = (event) => {
-            // Instead of setting text, toggle the tool in context
             const toolCategory = event.detail.item.original.value;
-            if (toggleTool && typeof toggleTool === 'function') {
-                toggleTool(toolCategory);
-            }
+            enableToolGroup(toolCategory);
         }
         textareaRef.current
             .addEventListener("tribute-replaced", tributeOnReplace);
@@ -61,5 +58,5 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
             textareaRef.current
                 .removeEventListener("tribute-replaced", tributeOnReplace);
         };
-    }, [textareaRef, toolCategoryNames, toggleTool]);
+    }, [textareaRef, toolCategoryNames]);
 }
