@@ -2,6 +2,7 @@ import dynamicImportESM, {dynamicImportCSS} from "../../../common-utils/dynamic-
 import {visit} from "unist-util-visit";
 import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
+import { processToolCategoryMentions } from "../helpers/tool-category-mentions.js";
 
 /**
  * This returns Markdown text component with following changes:
@@ -50,20 +51,15 @@ export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
                 // component for it, but this is faster to build and works well enough.
                 const processToolCategoryMentionTags = (text) => {
                     const { toolCategoryNames } = React.useContext(getChatAppContext());
-                    const parts = text.split(' ');
-                    const result = parts.map((part, i) => {
-                        for (const categoryName of toolCategoryNames) {
-                            const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
-                            if (toolCategory && part === `@${toolCategory.name}`) {
-                                return <span key={i}>
-                                    {i === 0 ? '' : ' '}
-                                    <ToolCategoryMentionComponent {...toolCategory}>{toolCategory.name}</ToolCategoryMentionComponent>
-                                </span>
-                            }
-                        }
-                        return i === 0 ? part : ' ' + part;
+
+                    return processToolCategoryMentions(text, toolCategoryNames, (categoryName, mention) => {
+                        const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
+                        return (
+                            <ToolCategoryMentionComponent key={mention.start} {...toolCategory}>
+                                {categoryName}
+                            </ToolCategoryMentionComponent>
+                        );
                     });
-                    return result;
                 };
                 children = Array.isArray(children)
                                 ? children.map(child => {

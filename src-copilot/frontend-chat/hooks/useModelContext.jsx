@@ -6,6 +6,8 @@ import {getSystemMessage} from "../helpers/getSystemMessage.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
 import {useEnabledTools} from "./useEnabledTools.jsx";
 
+import { getMentionedCategoryNames } from "../helpers/tool-category-mentions.js";
+
 export function useModelContext() {
     const runtime = AssistantUI.useAssistantRuntime();
     const { enabledToolGroups } = React.useContext(getChatAppContext());
@@ -48,14 +50,11 @@ export function useModelContext() {
                     if (lastUserMessage && lastUserMessage.content) {
                         for (const contentPart of lastUserMessage.content) {
                             if (contentPart.type === "text" && contentPart.text) {
-                                for (const categoryName of allCategoryNames) {
-                                    // Check for @categoryName mentions
-                                    const mentionRegex = new RegExp('(^|\\s|\\n)@' + categoryName + '(\\s|\\n|\\.|$)', 'g');
-                                    if (mentionRegex.test(contentPart.text)) {
-                                        const categoryTools = ToolCategoryRegistry.getToolsByCategory(categoryName);
-                                        enabledTools.push(...categoryTools);
-                                        enableToolGroup(categoryName);
-                                    }
+                                const mentionedCategories = getMentionedCategoryNames(contentPart.text, allCategoryNames);
+                                for (const categoryName of mentionedCategories) {
+                                    const categoryTools = ToolCategoryRegistry.getToolsByCategory(categoryName);
+                                    enabledTools.push(...categoryTools);
+                                    enableToolGroup(categoryName);
                                 }
                             }
                         }

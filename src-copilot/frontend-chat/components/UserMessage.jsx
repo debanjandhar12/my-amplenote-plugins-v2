@@ -4,6 +4,7 @@ import { ToolCategoryRegistry } from "../tools-core/registry/ToolCategoryRegistr
 import { ToolCategoryMentionComponent } from "./makeCustomMarkdownText.jsx";
 import { FileAttachmentDisplay } from "./FileAttachmentDisplay.jsx";
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
+import { processToolCategoryMentions } from "../helpers/tool-category-mentions.js";
 
 const UserMessage = () => {
     const { UserMessage, MessagePrimitive, UserActionBar, BranchPicker } = window.AssistantUI;
@@ -44,24 +45,16 @@ const UserMessageText = ({ text }) => {
 
     React.useEffect(() => {
         const processText = async () => {
-            let tempText = text;
-            for (const categoryName of toolCategoryNames) {
+            const result = processToolCategoryMentions(text, toolCategoryNames, (categoryName, mention) => {
                 const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
-                tempText = await replaceParagraphTextInMarkdown(tempText, (oldVal) => {
-                    return oldVal.replace(new RegExp('@' + categoryName + '(\\s|$)', 'g'), '<toolcategorymention123XG>@' + categoryName + '</toolcategorymention123XG>$1');
-                });
-            }
-            const tempChildren = tempText.split(' ').map((part, i) => {
-                if (part.startsWith('<toolcategorymention123XG>') && part.endsWith('</toolcategorymention123XG>')) {
-                    const toolCategory = ToolCategoryRegistry.getCategory(part.substring(part.indexOf('>@') + 2, part.lastIndexOf('<')));
-                    return <span key={i}>
-                        {i === 0 ? '' : ' '}
-                        <ToolCategoryMentionComponent {...toolCategory}>{part.substring(part.indexOf('>@') + 2, part.lastIndexOf('<'))}</ToolCategoryMentionComponent>
-                    </span>
-                }
-                return i === 0 ? part : ' ' + part;
+                return (
+                    <ToolCategoryMentionComponent key={mention.start} {...toolCategory}>
+                        {categoryName}
+                    </ToolCategoryMentionComponent>
+                );
             });
-            setChildren(tempChildren);
+            
+            setChildren(result);
         };
 
         processText();

@@ -3,6 +3,7 @@ import {useEnabledTools} from "./useEnabledTools.jsx";
 
 export const useTributeSetup = (textareaRef, toolCategoryNames) => {
     const { enableToolGroup } = useEnabledTools();
+    const composerRuntime = AssistantUI.useComposerRuntime();
 
     React.useEffect(() => {
         if (!textareaRef.current) return;
@@ -42,12 +43,17 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
             selectClass: 'tribute-item-selected',
             allowSpaces: false,
             menuItemLimit: 4,
-            replaceTextPrefix: '@'
+            replaceTextSuffix: ' '
         });
         tribute.attach(textareaRef.current);
         const tributeOnReplace = (event) => {
-            const toolCategory = event.detail.item.original.value;
-            enableToolGroup(toolCategory);
+            // Enabled tool category in composer menu
+            const selectedToolCategory = event.detail.item.original.value;
+            enableToolGroup(selectedToolCategory);
+
+            // Update composer text to inform assistant-ui about textarea change
+            const currentTextAreaValue = textareaRef.current.value;
+            composerRuntime.setText(currentTextAreaValue);
         }
         textareaRef.current
             .addEventListener("tribute-replaced", tributeOnReplace);
