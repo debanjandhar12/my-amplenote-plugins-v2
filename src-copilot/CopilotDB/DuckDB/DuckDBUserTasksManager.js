@@ -206,7 +206,7 @@ export class DuckDBUserTasksManager {
                     this._validateTableReferences(cte.query);
                 }
             }
-        }_initPromise
+        }
 
         // Check subqueries in SELECT list
         if (node.select_list) {

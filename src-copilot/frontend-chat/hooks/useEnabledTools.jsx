@@ -5,17 +5,13 @@ export const useEnabledTools = () => {
     const {enabledToolGroups, setEnabledToolGroups } = React.useContext(getChatAppContext());
     const threadListItemRuntime = AssistantUI.useThreadListItemRuntime();
 
-    // Get current thread ID
-    const getCurrentThreadId = React.useCallback(() => {
-        return threadListItemRuntime.getState().remoteId;
-    }, [threadListItemRuntime]);
-
     // Load enabled tools from ChatHistoryDB on mount
     const loadEnabledToolGroupsFromDB = React.useCallback(async (threadId) => {
         if (!threadId) return;
 
         try {
             const thread = await getChatThread(threadId);
+            console.log('Loading enabled tools from DB:', thread);
             if (thread?.enabledToolGroups) {
                 setEnabledToolGroups(new Set(thread.enabledToolGroups));
             } else {
@@ -46,7 +42,7 @@ export const useEnabledTools = () => {
     // Automatically load enabled tools when thread changes
     React.useEffect(() => {
         const loadEnabledToolsForCurrentThread = async () => {
-            const threadId = getCurrentThreadId();
+            const threadId = threadListItemRuntime.getState().remoteId;
             await loadEnabledToolGroupsFromDB(threadId);
         };
 
@@ -56,11 +52,11 @@ export const useEnabledTools = () => {
         loadEnabledToolsForCurrentThread();
 
         return () => unsubscribe();
-    }, [threadListItemRuntime, getCurrentThreadId, loadEnabledToolGroupsFromDB]);
+    }, [threadListItemRuntime, loadEnabledToolGroupsFromDB]);
 
     // Util function to toggle a tool group enabled state
     const toggleToolGroup = React.useCallback(async (toolGroup) => {
-        const threadId = getCurrentThreadId();
+        const threadId = threadListItemRuntime.getState().remoteId;
         setEnabledToolGroups(prev => {
             const newSet = new Set(prev);
             if (newSet.has(toolGroup)) {
@@ -71,18 +67,18 @@ export const useEnabledTools = () => {
             saveEnabledToolGroups(threadId, newSet);
             return newSet;
         });
-    }, [setEnabledToolGroups, saveEnabledToolGroups, getCurrentThreadId]);
+    }, [setEnabledToolGroups, saveEnabledToolGroups, threadListItemRuntime]);
 
     // Util function to enable a tool group
     const enableToolGroup = React.useCallback(async (toolGroup) => {
-        const threadId = getCurrentThreadId();
+        const threadId = threadListItemRuntime.getState().remoteId;
         setEnabledToolGroups(prev => {
             const newSet = new Set(prev);
             newSet.add(toolGroup);
             saveEnabledToolGroups(threadId, newSet);
             return newSet;
         });
-    }, [setEnabledToolGroups, saveEnabledToolGroups, getCurrentThreadId]);
+    }, [setEnabledToolGroups, saveEnabledToolGroups, threadListItemRuntime]);
 
     const isToolGroupEnabled = React.useCallback((toolGroup) => {
         return enabledToolGroups.has(toolGroup);
