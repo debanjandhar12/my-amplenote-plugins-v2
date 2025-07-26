@@ -302,6 +302,10 @@ const plugin = {
             }
             return null;
         },
+        "sendMessageToEmbed": async function (app, channel, message) {
+            console.log('Sending message to embed:', message);
+            await plugin.sendMessageToEmbed(app, channel, message);
+        },
         "getUserCurrentNoteData": async (app) => {
             try {
                 let currentNoteUUID = app.context.noteUUID;

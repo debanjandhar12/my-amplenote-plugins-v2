@@ -1,6 +1,6 @@
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
 import { ToolGroupRegistry } from "../tools-core/registry/ToolGroupRegistry.js";
-import {useEnabledTools} from "../hooks/useEnabledTools.jsx";
+import { useEnabledTools } from "../hooks/useEnabledTools.jsx";
 
 export const ComposerOptionsDropdown = () => {
     const { toolGroupNames } = React.useContext(getChatAppContext());
@@ -116,8 +116,34 @@ export const ComposerOptionsDropdown = () => {
         setIsOpen(false);
     }, [composerRuntime]);
 
+    const handleAddNote = React.useCallback(async () => {
+        try {
+            const selectedNote = await window.appConnector.prompt("", {
+                inputs: [
+                    { label: "Select note to add to chat", type: "note" }
+                ]
+            });
+
+            if (!selectedNote) return;
+
+            // Get note details
+            const selectedNoteUUID = selectedNote.uuid;
+            const noteContent = await window.appConnector.getNoteContentByUUID(selectedNoteUUID);
+            if (!noteContent) return;
+
+            // Send note attachment message similar to how Add note to chat works in plugin.js
+            await window.appConnector.sendMessageToEmbed('attachments',
+                {type: 'note', noteUUID: selectedNoteUUID, noteTitle: selectedNote.name, noteContent: noteContent});
+
+            setIsOpen(false);
+        } catch (error) {
+            console.error('Error adding note:', error);
+            setIsOpen(false);
+        }
+    }, []);
+
     const { DropdownMenu, Checkbox, Tooltip, Button } = window.RadixUI;
-    const { InfoCircledIcon, PlusIcon, UploadIcon } = window.RadixIcons;
+    const { InfoCircledIcon, PlusIcon, UploadIcon, FilePlusIcon, ChevronRightIcon } = window.RadixIcons;
 
     return (
         <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -132,16 +158,13 @@ export const ComposerOptionsDropdown = () => {
                         height: '32px',
                         padding: '0',
                         margin: '0'
-                    }}UploadIcon
+                    }}
                 >
                     <PlusIcon width="16" height="16" />
                 </Button>
             </DropdownMenu.Trigger>
 
-            <DropdownMenu.Content
-                sideOffset={5}
-                align="start"
-            >
+            <DropdownMenu.Content>
                 <DropdownMenu.Label style={{ padding: '4px 8px' }}>
                     Tools
                 </DropdownMenu.Label>
@@ -166,8 +189,8 @@ export const ComposerOptionsDropdown = () => {
                         <div className="composer-options-category-info">
                             <span>{toolName}</span>
                             <Tooltip content={
-                                    <div dangerouslySetInnerHTML={{__html: ToolGroupRegistry.getGroup(toolName)?.description}} />
-                                }>
+                                <div dangerouslySetInnerHTML={{ __html: ToolGroupRegistry.getGroup(toolName)?.description }} />
+                            }>
                                 <InfoCircledIcon
                                     className="composer-options-info-icon"
                                     width="14"
@@ -180,12 +203,24 @@ export const ComposerOptionsDropdown = () => {
 
                 <DropdownMenu.Separator />
 
-                <DropdownMenu.Item
-                    onSelect={handleFileUpload}
-                >
-                    <UploadIcon width="16" height="16" />
-                    Upload attachments
-                </DropdownMenu.Item>
+                <DropdownMenu.Sub>
+                    <DropdownMenu.SubTrigger>
+                        <PlusIcon width="16" height="16" />
+                        Add context
+                    </DropdownMenu.SubTrigger>
+
+                    <DropdownMenu.SubContent>
+                        <DropdownMenu.Item onSelect={handleFileUpload}>
+                            <UploadIcon width="16" height="16" />
+                            Upload attachments
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Separator />
+                        <DropdownMenu.Item onSelect={handleAddNote}>
+                            <FilePlusIcon width="16" height="16" />
+                            Add note to chat
+                        </DropdownMenu.Item>
+                    </DropdownMenu.SubContent>
+                </DropdownMenu.Sub>
             </DropdownMenu.Content>
         </DropdownMenu.Root>
     );
