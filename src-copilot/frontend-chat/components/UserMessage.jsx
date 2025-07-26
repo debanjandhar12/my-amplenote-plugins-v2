@@ -1,10 +1,10 @@
 // Based on https://github.com/Yonom/assistant-ui/blob/70ea4a87283d9dc34965ef9d9a80504a05ab8979/packages/react/src/ui/user-message.tsx
 import { replaceParagraphTextInMarkdown } from "../../markdown/replaceParagraphTextInMarkdown.jsx";
-import { ToolCategoryRegistry } from "../tools-core/registry/ToolCategoryRegistry.js";
-import { ToolCategoryMentionComponent } from "./makeCustomMarkdownText.jsx";
+import { ToolGroupRegistry } from "../tools-core/registry/ToolGroupRegistry.js";
+import { ToolGroupMentionComponent } from "./makeCustomMarkdownText.jsx";
 import { FileAttachmentDisplay } from "./FileAttachmentDisplay.jsx";
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
-import { processToolCategoryMentions } from "../helpers/tool-category-mentions.js";
+import { processToolGroupMentions } from "../helpers/tool-group-mentions.js";
 
 const UserMessage = () => {
     const { UserMessage, MessagePrimitive, UserActionBar, BranchPicker } = window.AssistantUI;
@@ -41,16 +41,16 @@ const UserMessageContent = (props) => {
 
 const UserMessageText = ({ text }) => {
     const [children, setChildren] = React.useState(null);
-    const { toolCategoryNames } = React.useContext(getChatAppContext());
+    const { toolGroupNames } = React.useContext(getChatAppContext());
 
     React.useEffect(() => {
         const processText = async () => {
-            const result = processToolCategoryMentions(text, toolCategoryNames, (categoryName, mention) => {
-                const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
+            const result = processToolGroupMentions(text, toolGroupNames, (groupName, mention) => {
+                const toolGroup = ToolGroupRegistry.getGroup(groupName);
                 return (
-                    <ToolCategoryMentionComponent key={mention.start} {...toolCategory}>
-                        {categoryName}
-                    </ToolCategoryMentionComponent>
+                    <ToolGroupMentionComponent key={mention.start} {...toolGroup}>
+                        {groupName}
+                    </ToolGroupMentionComponent>
                 );
             });
             
@@ -58,7 +58,7 @@ const UserMessageText = ({ text }) => {
         };
 
         processText();
-    }, [text, toolCategoryNames]);
+    }, [text, toolGroupNames]);
 
     return <div className="aui-md-p">
         {children}

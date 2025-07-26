@@ -29,7 +29,7 @@ export const DeleteTasks = () => {
                 }
             }
         },
-        category: "tasks",
+        group: "tasks",
         onInit: async ({setFormState, formData, setFormData, args}) => {
             const tasksContainerList = [];
             for (const taskItem of args.tasks) {

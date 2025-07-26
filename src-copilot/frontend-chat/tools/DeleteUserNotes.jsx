@@ -29,7 +29,7 @@ export const DeleteUserNotes = () => {
                 }
             }
         },
-        category: "notes",
+        group: "notes",
         onInit: async ({setFormState, formData, setFormData, args}) => {
             const notesContainerList = [];
             for (const noteItem of args.notes) {

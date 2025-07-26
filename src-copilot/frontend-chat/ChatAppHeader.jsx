@@ -2,7 +2,7 @@ import {USER_PROMPT_LIST_SETTING} from "../constants.js";
 import {getChatAppContext} from "./context/ChatAppContext.jsx";
 import {capitalize} from "lodash-es";
 import {replaceParagraphTextInMarkdown} from "../markdown/replaceParagraphTextInMarkdown.jsx";
-import {ToolCategoryRegistry} from "./tools-core/registry/ToolCategoryRegistry.js";
+import {ToolGroupRegistry} from "./tools-core/registry/ToolGroupRegistry.js";
 
 export const ChatAppHeader = () => {
     // Fetch runtime and other assistant-ui contexts
@@ -51,7 +51,7 @@ const ChatInterfaceMenu = () => {
     const threadId = AssistantUI.useThreadListItemRuntime().getState().id;
     const [exportNoteExists, setExportNoteExists] = React.useState(false);
     const [exportNoteName, setExportNoteName] = React.useState(`Copilot chat - ${threadId}`);
-    const { setIsChatHistoryOverlayOpen, toolCategoryNames } = React.useContext(getChatAppContext());
+    const { setIsChatHistoryOverlayOpen, toolGroupNames } = React.useContext(getChatAppContext());
 
     // -- Init --
     React.useEffect(() => {
@@ -79,12 +79,12 @@ const ChatInterfaceMenu = () => {
             }"} --></mark>\n`;
             for (const contentPart of message.content) {
                 if (contentPart.type === 'text') {
-                    // Replace tool category mentions with code
+                    // Replace tool group mentions with code
                     let tempText = contentPart.text;
-                    for (const categoryName of toolCategoryNames) {
-                        const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
+                    for (const groupName of toolGroupNames) {
+                        const toolGroup = ToolGroupRegistry.getGroup(groupName);
                         tempText = await replaceParagraphTextInMarkdown(tempText, (oldVal) => {
-                            return oldVal.replaceAll('@' + categoryName, '`@' + toolCategory.name + '`');
+                            return oldVal.replaceAll('@' + groupName, '`@' + toolGroup.name + '`');
                         });
                     }
 
@@ -106,7 +106,7 @@ const ChatInterfaceMenu = () => {
         await appConnector.replaceNoteContent({uuid: note.uuid}, noteContent);
         await appConnector.navigate(`https://www.amplenote.com/notes/${note.uuid}`);
         await appConnector.alert(`Chat exported to note: ${exportNoteName}`);
-    }, [threadMessages, threadId, setExportNoteExists, exportNoteName, toolCategoryNames]);
+    }, [threadMessages, threadId, setExportNoteExists, exportNoteName, toolGroupNames]);
     const handleExportAsJSON = React.useCallback(async () => {
         const jsonContent = "data:text/json;charset=utf-8,"
             + encodeURIComponent(JSON.stringify(threadMessages, null, 2));

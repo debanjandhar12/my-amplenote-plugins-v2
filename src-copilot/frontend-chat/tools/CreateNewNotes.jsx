@@ -37,7 +37,7 @@ export const CreateNewNotes = () => {
                 }
             }
         },
-        category: "notes",
+        group: "notes",
         onInit: ({setFormState, formData, setFormData, args}) => {
             setFormData({...formData, notesContainerList: args.notes.map((note) => ({
                 item: note,

@@ -15,7 +15,7 @@ export const WebBrowser = () => {
             },
             required: ["url"]
         },
-        category: "web",
+        group: "web",
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
             const url = args.url;
             const pageContent = await getWebPageContent(url, signal);

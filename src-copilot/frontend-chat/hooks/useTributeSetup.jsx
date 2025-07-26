@@ -1,7 +1,7 @@
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
 import {useEnabledTools} from "./useEnabledTools.jsx";
 
-export const useTributeSetup = (textareaRef, toolCategoryNames) => {
+export const useTributeSetup = (textareaRef, toolGroupNames) => {
     const { enableToolGroup } = useEnabledTools();
     const composerRuntime = AssistantUI.useComposerRuntime();
 
@@ -33,9 +33,9 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
         document.body.append(style);
         const tribute = new window.Tribute({
             trigger: '@',
-            values: toolCategoryNames.map(toolCategory => { return {
-                key: toolCategory,
-                value: toolCategory
+            values: toolGroupNames.map(toolGroup => { return {
+                key: toolGroup,
+                value: toolGroup
             }}),
             noMatchTemplate: null,
             containerClass: 'tribute-container',
@@ -47,9 +47,9 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
         });
         tribute.attach(textareaRef.current);
         const tributeOnReplace = (event) => {
-            // Enabled tool category in composer menu
-            const selectedToolCategory = event.detail.item.original.value;
-            enableToolGroup(selectedToolCategory);
+            // Enabled tool group in composer menu
+            const selectedToolGroup = event.detail.item.original.value;
+            enableToolGroup(selectedToolGroup);
 
             // Update composer text to inform assistant-ui about textarea change
             const currentTextAreaValue = textareaRef.current.value;
@@ -64,5 +64,5 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
             textareaRef.current
                 .removeEventListener("tribute-replaced", tributeOnReplace);
         };
-    }, [textareaRef, toolCategoryNames]);
+    }, [textareaRef, toolGroupNames]);
 }

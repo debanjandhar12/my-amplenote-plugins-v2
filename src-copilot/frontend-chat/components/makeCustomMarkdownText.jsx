@@ -1,13 +1,13 @@
 import dynamicImportESM, {dynamicImportCSS} from "../../../common-utils/dynamic-import-esm.js";
 import {visit} from "unist-util-visit";
-import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
+import {ToolGroupRegistry} from "../tools-core/registry/ToolGroupRegistry.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
-import { processToolCategoryMentions } from "../helpers/tool-category-mentions.js";
+import { processToolGroupMentions } from "../helpers/tool-group-mentions.js";
 
 /**
  * This returns Markdown text component with following changes:
  * 1. Support for syntax highlighting
- * 2. Support for displaying tool category mentions
+ * 2. Support for displaying tool group mentions
  * TODO - Make this a generic component
  */
 export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
@@ -49,25 +49,25 @@ export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
                 // === Process children ===
                 // It may have been better to process it as a rehype plugin and have a custom
                 // component for it, but this is faster to build and works well enough.
-                const processToolCategoryMentionTags = (text) => {
-                    const { toolCategoryNames } = React.useContext(getChatAppContext());
+                const processToolGroupMentionTags = (text) => {
+                    const { toolGroupNames } = React.useContext(getChatAppContext());
 
-                    return processToolCategoryMentions(text, toolCategoryNames, (categoryName, mention) => {
-                        const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
+                    return processToolGroupMentions(text, toolGroupNames, (groupName, mention) => {
+                        const toolGroup = ToolGroupRegistry.getGroup(groupName);
                         return (
-                            <ToolCategoryMentionComponent key={mention.start} {...toolCategory}>
-                                {categoryName}
-                            </ToolCategoryMentionComponent>
+                            <ToolGroupMentionComponent key={mention.start} {...toolGroup}>
+                                {groupName}
+                            </ToolGroupMentionComponent>
                         );
                     });
                 };
                 children = Array.isArray(children)
                                 ? children.map(child => {
                                                 if (typeof child !== 'string') return child;
-                                                return processToolCategoryMentionTags(child);
+                                                return processToolGroupMentionTags(child);
                                 })
                                 : typeof children === 'string'
-                                                ? processToolCategoryMentionTags(children)
+                                                ? processToolGroupMentionTags(children)
                                                 : children;
                 return (
                     <div className="aui-md-p" {...props}>
@@ -125,13 +125,13 @@ const rehypeCompressTextNodes = () => {
     };
 };
 
-export const ToolCategoryMentionComponent = ({ children, description }) => {
+export const ToolGroupMentionComponent = ({ children, description }) => {
     const { Text, Tooltip, Popover } = window.RadixUI;
     return (
         <Popover.Root>
-            <Tooltip content="Click to open tool category documentation">
+            <Tooltip content="Click to open tool group documentation">
                 <Popover.Trigger asChild>
-                    <Text as="a" className="tool_category_mention" style={{ cursor: 'pointer' }}>
+                    <Text as="a" className="tool_group_mention" style={{ cursor: 'pointer' }}>
                         @{children}
                     </Text>
                 </Popover.Trigger>

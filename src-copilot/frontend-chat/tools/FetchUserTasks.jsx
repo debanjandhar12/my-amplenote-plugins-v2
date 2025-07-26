@@ -27,7 +27,7 @@ export const FetchUserTasks =() => {
             },
             required: ["query"]
         },
-        category: "tasks",
+        group: "tasks",
         onInit: async ({args, formData, setFormData, setFormState}) => {
             try {
                 const result = await appConnector.searchUserTasks(args.query);

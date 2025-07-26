@@ -62,7 +62,7 @@ export const UpdateUserTasks = () => {
                 }
             }
         },
-        category: "tasks",
+        group: "tasks",
         onInit: async ({setFormState, formData, setFormData, args}) => {
             if (!args.tasks || !Array.isArray(args.tasks)) {
                 throw new Error('Invalid arguments: tasks must be an array');

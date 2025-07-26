@@ -47,7 +47,7 @@ export const InsertTasksToNote = () => {
             },
             required: ["tasks", "noteUUID"]
         },
-        category: "tasks",
+        group: "tasks",
         onInit: ({setFormState, formData, setFormData, args}) => {
             setFormData({...formData, tasksContainerList: args.tasks.map((task) => ({
                 item: task,

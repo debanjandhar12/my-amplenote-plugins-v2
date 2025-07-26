@@ -1,12 +1,12 @@
 import {
     convertUIToolsToDummyServerTools
 } from "../../aisdk-wrappers/utils/convertUIToolsToDummyServerTools.js";
-import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
+import {ToolGroupRegistry} from "../tools-core/registry/ToolGroupRegistry.js";
 import {getSystemMessage} from "../helpers/getSystemMessage.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
 import {useEnabledTools} from "./useEnabledTools.jsx";
 
-import { getMentionedCategoryNames } from "../helpers/tool-category-mentions.js";
+import { getMentionedGroupNames } from "../helpers/tool-group-mentions.js";
 
 export function useModelContext() {
     const runtime = AssistantUI.useAssistantRuntime();
@@ -37,11 +37,11 @@ export function useModelContext() {
                     const enabledTools = [];
 
                     // Get tools based on enabled tools in the composer menu
-                    const allCategoryNames = ToolCategoryRegistry.getAllCategoriesNames();
-                    for (const categoryName of allCategoryNames) {
-                        if (enabledToolGroups.has(categoryName)) {
-                            const categoryTools = ToolCategoryRegistry.getToolsByCategory(categoryName);
-                            enabledTools.push(...categoryTools);
+                    const allGroupNames = ToolGroupRegistry.getAllGroupNames();
+                    for (const groupName of allGroupNames) {
+                        if (enabledToolGroups.has(groupName)) {
+                            const groupTools = ToolGroupRegistry.getToolsByGroup(groupName);
+                            enabledTools.push(...groupTools);
                         }
                     }
 
@@ -50,11 +50,11 @@ export function useModelContext() {
                     if (lastUserMessage && lastUserMessage.content) {
                         for (const contentPart of lastUserMessage.content) {
                             if (contentPart.type === "text" && contentPart.text) {
-                                const mentionedCategories = getMentionedCategoryNames(contentPart.text, allCategoryNames);
-                                for (const categoryName of mentionedCategories) {
-                                    const categoryTools = ToolCategoryRegistry.getToolsByCategory(categoryName);
-                                    enabledTools.push(...categoryTools);
-                                    enableToolGroup(categoryName);
+                                const mentionedGroups = getMentionedGroupNames(contentPart.text, allGroupNames);
+                                for (const groupName of mentionedGroups) {
+                                    const groupTools = ToolGroupRegistry.getToolsByGroup(groupName);
+                                    enabledTools.push(...groupTools);
+                                    enableToolGroup(groupName);
                                 }
                             }
                         }

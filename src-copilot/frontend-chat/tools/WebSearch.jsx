@@ -17,7 +17,7 @@ export const WebSearch = () => {
             },
             required: ["query"]
         },
-        category: "web",
+        group: "web",
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
             const searchResults = await search(args.query, signal);
             setFormData({...formData, searchResults});

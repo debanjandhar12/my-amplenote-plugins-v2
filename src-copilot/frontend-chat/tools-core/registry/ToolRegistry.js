@@ -36,8 +36,8 @@ export class ToolRegistry {
         return ToolRegistry.tools.find(tool => tool.toolName === toolName);
     }
 
-    static getToolsByCategory(categoryName) {
-        return ToolRegistry.tools.filter(tool => tool.unstable_tool.category === categoryName);
+    static getToolsByGroup(groupName) {
+        return ToolRegistry.tools.filter(tool => tool.unstable_tool.group === groupName);
     }
 
     static getAllTools() {

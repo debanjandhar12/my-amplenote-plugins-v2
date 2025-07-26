@@ -29,7 +29,7 @@ export const EditNoteContent = () => {
             },
             required: ["noteUUID"]
         },
-        category: "notes",
+        group: "notes",
         renderInit: () => {
             const { Spinner } = window.RadixUI;
             return <ToolCardMessage text={`Generating content...`} icon={<Spinner />} />

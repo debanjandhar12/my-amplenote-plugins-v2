@@ -1,5 +1,4 @@
 import {useTributeSetup} from "../hooks/useTributeSetup.jsx";
-import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
 import {FileAttachmentDisplay} from "./FileAttachmentDisplay.jsx";
 import {ComposerOptionsDropdown} from "./ComposerOptionsDropdown.jsx";
@@ -19,10 +18,10 @@ export const CustomComposer = () => {
     const isRunning = isLLMCallRunning || isToolCallRunning;
 
     // Consume registry status from context
-    const { toolCategoryNames } = React.useContext(getChatAppContext());
+    const { toolGroupNames } = React.useContext(getChatAppContext());
 
     // Pass the state to the hook
-    useTributeSetup(textareaRef, toolCategoryNames);
+    useTributeSetup(textareaRef, toolGroupNames);
 
     // Fix: Enter not working in amplenote
     React.useEffect(() => {

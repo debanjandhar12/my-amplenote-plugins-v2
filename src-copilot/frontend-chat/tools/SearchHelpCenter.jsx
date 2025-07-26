@@ -17,7 +17,7 @@ export const SearchHelpCenter = () => {
             },
             required: ["query"]
         },
-        category: "help",
+        group: "help",
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
             const results = await appConnector.searchHelpCenter(args.query, {
                 limit: 15

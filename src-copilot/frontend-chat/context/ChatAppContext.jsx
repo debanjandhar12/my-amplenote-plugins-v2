@@ -14,7 +14,7 @@ export const ChatAppContextProvider = ({ children }) => {
     const [remoteThreadLoaded, setRemoteThreadLoaded] = React.useState(false);
     const [chatHistoryLoaded, setChatHistoryLoaded] = React.useState(false);
     const [isChatHistoryOverlayOpen, setIsChatHistoryOverlayOpen] = React.useState(false);
-    const { toolCategoryNames, tools } = useToolRegistries();
+    const { toolGroupNames, tools } = useToolRegistries();
     const [enabledToolGroups, setEnabledToolGroups] = React.useState(new Set());
 
     return (
@@ -22,7 +22,7 @@ export const ChatAppContextProvider = ({ children }) => {
             remoteThreadLoaded, setRemoteThreadLoaded,
             chatHistoryLoaded, setChatHistoryLoaded,
             isChatHistoryOverlayOpen, setIsChatHistoryOverlayOpen,
-            toolCategoryNames, tools, enabledToolGroups, setEnabledToolGroups }}>
+            toolGroupNames, tools, enabledToolGroups, setEnabledToolGroups }}>
             {children}
         </ChatAppContext.Provider>
     );

@@ -51,7 +51,7 @@ export const SearchNotesByTitleTagsContent = () => {
                 }
             }
         },
-        category: "notes",
+        group: "notes",
         renderInit: ({args, formData}) => {
             const {copilotDBSearchError} = formData;
             const {Flex, Text, Spinner} = window.RadixUI;

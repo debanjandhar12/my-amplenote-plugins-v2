@@ -1,9 +1,9 @@
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
-import { ToolCategoryRegistry } from "../tools-core/registry/ToolCategoryRegistry.js";
+import { ToolGroupRegistry } from "../tools-core/registry/ToolGroupRegistry.js";
 import {useEnabledTools} from "../hooks/useEnabledTools.jsx";
 
 export const ComposerOptionsDropdown = () => {
-    const { toolCategoryNames } = React.useContext(getChatAppContext());
+    const { toolGroupNames } = React.useContext(getChatAppContext());
     const { toggleToolGroup, isToolGroupEnabled } = useEnabledTools();
     const [isOpen, setIsOpen] = React.useState(false);
     const composerRuntime = AssistantUI.useComposerRuntime();
@@ -146,7 +146,7 @@ export const ComposerOptionsDropdown = () => {
                     Tools
                 </DropdownMenu.Label>
 
-                {toolCategoryNames.map((toolName) => (
+                {toolGroupNames.map((toolName) => (
                     <div
                         key={toolName}
                         className="composer-options-checkbox-item"
@@ -166,7 +166,7 @@ export const ComposerOptionsDropdown = () => {
                         <div className="composer-options-category-info">
                             <span>{toolName}</span>
                             <Tooltip content={
-                                    <div dangerouslySetInnerHTML={{__html: ToolCategoryRegistry.getCategory(toolName)?.description}} />
+                                    <div dangerouslySetInnerHTML={{__html: ToolGroupRegistry.getGroup(toolName)?.description}} />
                                 }>
                                 <InfoCircledIcon
                                     className="composer-options-info-icon"

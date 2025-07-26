@@ -10,7 +10,7 @@ import {overwriteWithAmplenoteStyle} from "../frontend-chat/overwriteWithAmpleno
 import {ChatApp} from "../frontend-chat/ChatApp.jsx";
 import {parse} from "../markdown/markdown-parser.js";
 import {ToolRegistry} from "../frontend-chat/tools-core/registry/ToolRegistry.js";
-import {ToolCategoryRegistry} from "../frontend-chat/tools-core/registry/ToolCategoryRegistry.js";
+import {ToolGroupRegistry} from "../frontend-chat/tools-core/registry/ToolGroupRegistry.js";
 import {makeCustomMarkdownText} from "../frontend-chat/components/makeCustomMarkdownText.jsx";
 
 if(process.env.NODE_ENV === 'development') {

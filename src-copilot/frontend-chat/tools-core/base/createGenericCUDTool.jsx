@@ -12,7 +12,7 @@ export const createGenericCUDTool = ({
                                                  toolName,
                                                  description,
                                                  parameters,
-                                                 category,
+                                                 group,
                                                  onInit = ({setFormState}) => {
                                                     setFormState('waitingForUserInput');
                                                  },
@@ -40,6 +40,7 @@ export const createGenericCUDTool = ({
     const tool = AssistantUI.makeAssistantToolUI({
         toolName,
         description,
+        group,
         parameters,
         render: ({ args, status, result, addResult, toolCallId }) => {
             const allParameters = useGenericToolParameters({
@@ -80,11 +81,6 @@ export const createGenericCUDTool = ({
             return formRender ? formRender({...allParameters, formState, setFormState}) : null;
         }
     });
-    
-    // Add category property to the tool
-    if (category) {
-        tool.unstable_tool.category = category;
-    }
-    
+
     return tool;
 }

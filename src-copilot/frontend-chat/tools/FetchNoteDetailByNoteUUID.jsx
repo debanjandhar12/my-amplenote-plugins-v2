@@ -23,7 +23,7 @@ export const FetchNoteDetailByNoteUUID = () => {
             },
             required: ["noteUUIDList"]
         },
-        category: "notes",
+        group: "notes",
         onInit: async ({args, formData, setFormData, setFormState}) => {
             const noteUUIDList = args.noteUUIDList;
             const noteInfoList = [];
