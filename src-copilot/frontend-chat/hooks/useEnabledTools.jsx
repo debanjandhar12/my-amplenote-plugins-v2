@@ -1,8 +1,7 @@
-import { getChatThread, saveChatThread } from "../../CopilotDB/index.js";
-import {getChatAppContext} from "../context/ChatAppContext.jsx";
+import { getChatAppContext } from "../context/ChatAppContext.jsx";
 
 export const useEnabledTools = () => {
-    const {enabledToolGroups, setEnabledToolGroups } = React.useContext(getChatAppContext());
+    const { enabledToolGroups, setEnabledToolGroups } = React.useContext(getChatAppContext());
     const threadListItemRuntime = AssistantUI.useThreadListItemRuntime();
 
     // Load enabled tools from ChatHistoryDB on mount
@@ -10,8 +9,7 @@ export const useEnabledTools = () => {
         if (!threadId) return;
 
         try {
-            const thread = await getChatThread(threadId);
-            console.log('Loading enabled tools from DB:', thread);
+            const thread = await appConnector.getChatThreadFromCopilotDB(threadId);
             if (thread?.enabledToolGroups) {
                 setEnabledToolGroups(new Set(thread.enabledToolGroups));
             } else {
@@ -23,16 +21,15 @@ export const useEnabledTools = () => {
     }, [setEnabledToolGroups]);
 
     // Save enabled tools to ChatHistoryDB when they change
-    const saveEnabledToolGroups = React.useCallback(async (threadId, newEnabledToolGroups) => {
+    const saveEnabledToolGroups = React.useCallback(async (threadId, newEnabledToolGroupsSet) => {
         try {
-            const thread = await getChatThread(threadId);
+            const thread = await appConnector.getChatThreadFromCopilotDB(threadId);
             if (thread) {
                 const updatedThread = {
                     ...thread,
-                    enabledToolGroups: Array.from(newEnabledToolGroups),
-                    updated: new Date().toISOString()
+                    enabledToolGroups: [...newEnabledToolGroupsSet] // db needs array
                 };
-                await saveChatThread(updatedThread);
+                appConnector.saveChatThreadToCopilotDB(updatedThread);
             }
         } catch (error) {
             console.error('Failed to save enabled tools:', error);

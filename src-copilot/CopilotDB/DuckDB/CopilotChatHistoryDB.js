@@ -107,6 +107,7 @@ export class CopilotChatHistoryDB {
             opened: thread.opened || thread.updated,
             status: thread.status,
             messages: thread.messages,
+            enabledToolGroups: thread.enabledToolGroups,
         };
 
         // Enforce max number of threads
