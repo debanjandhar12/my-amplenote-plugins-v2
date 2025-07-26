@@ -43,12 +43,30 @@ export function useModelContext() {
                         }
                     }
 
+                    // Add additional tools based on last user message
+                    const lastUserMessage = currentMessages.filter(msg => msg.role === 'user').pop();
+                    if (lastUserMessage && lastUserMessage.content) {
+                        for (const contentPart of lastUserMessage.content) {
+                            if (contentPart.type === "text" && contentPart.text) {
+                                for (const categoryName of allCategoryNames) {
+                                    // Check for @categoryName mentions
+                                    const mentionRegex = new RegExp('(^|\\s|\\n)@' + categoryName + '(\\s|\\n|\\.|$)', 'g');
+                                    if (mentionRegex.test(contentPart.text)) {
+                                        const categoryTools = ToolCategoryRegistry.getToolsByCategory(categoryName);
+                                        enabledTools.push(...categoryTools);
+                                        enableToolGroup(categoryName);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     const systemMsg = getSystemMessage(currentMessages, enabledTools);
-                    // console.log('systemMsg', enabledToolGroups, currentMessages, systemMsg, toolsToAdd);
+                    // console.log('systemMsg', enabledToolGroups, currentMessages, systemMsg, enabledTools);
 
                     return {
                         priority: Date.now(),
-                        tools: enabledTools.length > 0 ? convertUIToolsToDummyServerTools([...toolsToAdd]) : null,
+                        tools: enabledTools.length > 0 ? convertUIToolsToDummyServerTools([...enabledTools]) : null,
                         system: systemMsg
                     }
                 }
