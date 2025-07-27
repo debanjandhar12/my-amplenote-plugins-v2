@@ -111,7 +111,7 @@ export const getLLMProviderSettings = (provider) => {
         return {
             [LLM_API_KEY_SETTING]: '',
             [LLM_API_URL_SETTING]: "http://localhost:11434/api",
-            [LLM_MODEL_SETTING]: "llama3.1"
+            [LLM_MODEL_SETTING]: "qwen/qwen3-32b"
         }
     }
     throw new Error(`Dummy setting data for provider not found: ${provider}`);

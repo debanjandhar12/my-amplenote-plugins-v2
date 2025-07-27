@@ -71,7 +71,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         //     RadixIcons, StringDiffModule]
         //     = await dynamicImportMultipleESM(["react", "react-dom/client", "@assistant-ui/react", "@radix-ui/themes", "@assistant-ui/react-markdown", "@radix-ui/react-icons", "react-string-diff"]);
         window.AssistantUIMarkdown = AssistantUIMarkdown;
-        window.AssistantUIMarkdownComponent = makeCustomMarkdownText();
+        window.AssistantUIMarkdownComponent = await makeCustomMarkdownText();
         window.React = React;
         window.ReactDOM = ReactDOM;
         window.AssistantUI = AssistantUI;

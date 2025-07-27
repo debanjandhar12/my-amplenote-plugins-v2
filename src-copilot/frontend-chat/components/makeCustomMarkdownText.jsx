@@ -1,4 +1,7 @@
-import dynamicImportESM, {dynamicImportCSS} from "../../../common-utils/dynamic-import-esm.js";
+import dynamicImportESM, {
+    dynamicImportCSS,
+    dynamicImportExternalPluginBundle
+} from "../../../common-utils/dynamic-import-esm.js";
 import {visit} from "unist-util-visit";
 import {ToolGroupRegistry} from "../tools-core/registry/ToolGroupRegistry.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
@@ -10,9 +13,9 @@ import { processToolGroupMentions } from "../helpers/tool-group-mentions.js";
  * 2. Support for displaying tool group mentions
  * TODO - Make this a generic component
  */
-export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
+export const makeCustomMarkdownText = async ({overrideComponents, ...rest} = {}) => {
     const {makeMarkdownText} = window.AssistantUIMarkdown;
-
+    let [remarkGfm] = await dynamicImportExternalPluginBundle('remarkBundle.js');
     return makeMarkdownText({
         components: {
             SyntaxHighlighter: ({code, components, language}) => {
@@ -94,6 +97,7 @@ export const makeCustomMarkdownText = ({overrideComponents, ...rest} = {}) => {
             },
             ...overrideComponents
         },
+        remarkPlugins:[remarkGfm.default],
         rehypePlugins: [rehypeCompressTextNodes],
         ...rest
     });
