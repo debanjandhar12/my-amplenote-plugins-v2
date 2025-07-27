@@ -136,9 +136,15 @@ export const useGenericToolFormState = (states, params = {}) => {
                     }
 
                     // For errored tools, we must call addResult AGAIN after cleanup
-                    // to force AssistantUI to re-evaluate and trigger the LLM call.
+                    // to force AssistantUI to re-evaluate internals and trigger the LLM call.
                     if (formState === 'error') {
                         threadRuntime.getMesssageById(message.id).getContentPartByToolCallId(toolCallId).addToolResult(`Error: ${errorToString(formError)}. Tool invocation failed.`);
+                    }
+                    // For canceled tools, we must call addResult AGAIN after cleanup
+                    // to force AssistantUI to re-evaluate internals
+                    if (formState === 'canceled') {
+                        threadRuntime.getMesssageById(message.id).getContentPartByToolCallId(toolCallId).addToolResult(`Tool invocation canceled by user. Please do not try again immediately.`);
+                        threadRuntime.cancelRun();
                     }
                 }
 
@@ -169,6 +175,7 @@ export const useGenericToolFormState = (states, params = {}) => {
     React.useEffect(() => {
         if (formState === "canceled") {
             params.addResult("Tool invocation canceled by user. Please do not try again immediately.");
+            threadRuntime.cancelRun();
         }
     }, [formState]);
 
