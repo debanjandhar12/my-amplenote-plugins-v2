@@ -1,13 +1,13 @@
 import chatHTML from 'inline:./embed/chat.html';
 import searchHTML from 'inline:./embed/search.html';
-import speechtotextHTML from 'inline:./embed/speechtotext.html';
+// import speechtotextHTML from 'inline:./embed/speechtotext.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {generateText} from "./aisdk-wrappers/generateText.js";
 import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
 import {getSyncState, syncNotes, searchNotes, searchHelpCenter, clearCopilotDBData, getAllChatThreads, deleteChatThread, getChatThread, saveChatThread, getLastUpdatedChatThread, getLastOpenedChatThread, searchUserTasks} from "./CopilotDB";
 import {getMatchedPartWithFuzzySearch} from "./plugin-backend/getMatchedPartWithFuzzySearch.jsx";
 import {validatePluginSettings} from "./validatePluginSettings.js";
-import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
+// import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
 import {handleContinue} from "./plugin-backend/handleContinue.js";
 import {handleRefineSelection} from "./plugin-backend/handleRefineSelection.js";
 import {handleImageGeneration, checkImageGenerationAvailability} from "./plugin-backend/handleImageGeneration.js";
@@ -72,7 +72,7 @@ const plugin = {
     appOption: {
         "Search notes using natural language": async function (app) {
             try {
-                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
+                await plugin.openEmbedStrategy(app, {trigger: 'appOption', openSearch: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -81,7 +81,7 @@ const plugin = {
         "Sync notes with CopilotDB": async function (app) {
             try {
                 await plugin.sendMessageToEmbed(app, 'startSyncToCopilotDBInSearchInterface', true);
-                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
+                await plugin.openEmbedStrategy(app, {trigger: 'appOption', openSearch: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -89,7 +89,7 @@ const plugin = {
         },
         "Chat with Copilot": async function (app) {
             try {
-                await app.openSidebarEmbed(1, {trigger: 'appOption', openChat: true});
+                await plugin.openEmbedStrategy(app, {trigger: 'appOption', openChat: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -142,7 +142,7 @@ const plugin = {
                 return !(await plugin.isEmbedOpen(app));
             },
             run: async function (app, selectionContent) {
-                await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.openEmbedStrategy(app, {openChat: true});
                 await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'selection', noteUUID: app?.context?.noteUUID, selectionContent: selectionContent});
             }
@@ -171,7 +171,7 @@ const plugin = {
                 return !(await plugin.isEmbedOpen(app));
             },
             run: async function (app) {
-                await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.openEmbedStrategy(app, {openChat: true});
                 await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'new-chat', message: []});
             }
@@ -181,7 +181,7 @@ const plugin = {
                 return !(await plugin.isEmbedOpen(app));
             },
             run: async function (app, noteUUID) {
-                await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.openEmbedStrategy(app, {openChat: true});
                 const note = await app.findNote({uuid: noteUUID});
                 const noteContent = await app.getNoteContent({uuid: noteUUID});
                 await plugin.sendMessageToEmbed(app, 'attachments',
@@ -204,7 +204,7 @@ const plugin = {
         "Related notes": async function (app, noteUUID) {
             try {
                 plugin.sendMessageToEmbed(app, 'searchForTextInSearchInterface', `<<Related: ${noteUUID}>>`);
-                await app.openSidebarEmbed(1, {trigger: 'appOption', openSearch: true});
+                await plugin.openEmbedStrategy(app, {trigger: 'appOption', openSearch: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -217,7 +217,7 @@ const plugin = {
                 return !(await plugin.isEmbedOpen(app));
             },
             run: async function (app, taskObj) {
-                await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.openEmbedStrategy(app, {openChat: true});
                 await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'new-chat', message: []});
                 await plugin.sendMessageToEmbed(app, 'attachments',
@@ -244,7 +244,7 @@ const plugin = {
                 return !(await plugin.isEmbedOpen(app));
             },
             run: async function (app, image) {
-                await app.openSidebarEmbed(1, {openChat: true});
+                await plugin.openEmbedStrategy(app, {openChat: true});
                 await plugin.sendMessageToEmbed(app, 'attachments',
                     {type: 'new-chat', message: []});
                 await plugin.sendMessageToEmbed(app, 'attachments',
@@ -261,7 +261,24 @@ const plugin = {
             }
         }
     },
-    renderEmbed: async function (app, args, source = 'embed') {
+    openEmbedStrategy: async function (app, ...args) {
+        // Open in sidebar first
+        const isOpenedInSidebar = await app.openSidebarEmbed(1, 'sidebar', ...args);
+        try {
+            app.context.updateEmbedArgs({}); // clear drawer just in case to prevent multiple instance (does not work)
+        } catch (e) {console.log(e)}
+        if (isOpenedInSidebar) return;
+
+        // Open in drawer since sidebar failed
+        await app.openEmbed('drawer', ...args);   // openEmbed returns null always so no check for isOpenedInDrawer
+        if (app.context.pluginUUID) {
+            await app.navigate("https://www.amplenote.com/notes/plugins/" + app.context.pluginUUID);
+        }
+        try {
+            await app.openSidebarEmbed(1, 'sidebar', {}); // clear sidebar just in case to prevent multiple instance
+        } catch (e) {}
+    },
+    renderEmbed: async function (app, source, args) {
         if (args.openChat) {
             return chatHTML;
         } else if (args.openSearch) {
