@@ -34,8 +34,8 @@ export default class DuckDBConnectionController {
                 }
 
                 const worker = await createWorker(worker_url);
-                // const logger = process.env.NODE_ENV === 'development' ? new ConsoleLogger() : new VoidLogger();
-                const logger = new ConsoleLogger();
+                const logger = process.env.NODE_ENV === 'development' ? new ConsoleLogger() : new VoidLogger();
+                // const logger = new ConsoleLogger();
                 db = new AsyncDuckDB(logger, worker);
                 await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
             }
@@ -51,6 +51,9 @@ export default class DuckDBConnectionController {
             await db.open({
                 path: opts.persistent ? `opfs://${collectionName}.db` : `./${collectionName}.db`,
                 accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3
+                filesystem: {
+                    forceFullHTTPReads: true
+                }
             });
             const conn = await db.connect();
             // await conn.query("INSTALL fts");

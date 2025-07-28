@@ -15,7 +15,7 @@
     "@debanjandhar12/markmap-lib": "0.17.0-mod.3",
     "@debanjandhar12/markmap-toolbar": "0.17.0-mod.3",
     "@debanjandhar12/markmap-view": "0.17.0-mod.3",
-    "@duckdb/duckdb-wasm": "1.29.1-dev260.0",
+    "@duckdb/duckdb-wasm": "1.29.1-dev269.0",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@huggingface/transformers": "3.2.4",

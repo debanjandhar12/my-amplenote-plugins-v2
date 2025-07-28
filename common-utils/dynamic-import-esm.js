@@ -29,6 +29,7 @@ export const dynamicImportExternalPluginBundle = async (fileName, { isESM = true
         url.searchParams.set('dev', true);
     }
     url.searchParams.set('bundle', true);
+    url.searchParams.set('standalone', true);
     const module = (await import(url.toString()));
     // Check if module.versions props are same as pkgJSON.dependencies
     if (Object.keys(module.versions).length !== module.default.length) {
@@ -46,9 +47,9 @@ export const dynamicImportExternalPluginBundle = async (fileName, { isESM = true
     throw new Error(`Failed to import module: ${fileName}`);
 }
 
-export const getUnPkgBundleUrl = (fileName) => {
+export const getJSDeliverBundleUrl = (fileName) => {
     const packageVersion = pkgJSON.dependencies['my-ample-plugin-external'];
-    return `https://unpkg.com/my-ample-plugin-external@${packageVersion}/bundles/${fileName}`;
+    return `https://cdn.jsdelivr.net/npm/my-ample-plugin-external@${packageVersion}/bundles/${fileName}`;
 };
 
 /***
