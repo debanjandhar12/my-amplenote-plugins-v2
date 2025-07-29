@@ -1,8 +1,8 @@
-import {USER_PROMPT_LIST_SETTING} from "../constants.js";
-import {getChatAppContext} from "./context/ChatAppContext.jsx";
-import {capitalize} from "lodash-es";
-import {replaceParagraphTextInMarkdown} from "../markdown/replaceParagraphTextInMarkdown.jsx";
-import {ToolGroupRegistry} from "./tools-core/registry/ToolGroupRegistry.js";
+import { USER_PROMPT_LIST_SETTING } from "../constants.js";
+import { getChatAppContext } from "./context/ChatAppContext.jsx";
+import { capitalize } from "lodash-es";
+import { replaceParagraphTextInMarkdown } from "../markdown/replaceParagraphTextInMarkdown.jsx";
+import { ToolGroupRegistry } from "./tools-core/registry/ToolGroupRegistry.js";
 
 export const ChatAppHeader = () => {
     // Fetch runtime and other assistant-ui contexts
@@ -11,29 +11,33 @@ export const ChatAppHeader = () => {
     // New chat button functionality
     const onClickNewChat = React.useCallback(() => runtime.threads.switchToNewThread(), [runtime]);
 
-    const {Box, Tooltip, Button, Popover} = window.RadixUI;
-    const {PlusIcon, MagicWandIcon} = window.RadixIcons;
+    const { Box, Tooltip, Button, Popover } = window.RadixUI;
+    const { PlusIcon, MagicWandIcon } = window.RadixIcons;
     return (
         <Box style={{
             display: 'flex', justifyContent: 'flex-end', paddingRight: '4px',
             position: 'sticky', top: 0, zIndex: '1000', backgroundColor: 'var(--color-background)'
         }}>
             <Popover.Root>
-                <Tooltip content="Prompt Library" style={{padding: '2px'}}>
+                <Tooltip content="Prompt Library" style={{ padding: '2px' }}>
                     <Popover.Trigger asChild>
-                        <Button variant="ghost" size="1" style={{ margin: '2px', paddingTop: '5px'}} className={'user-prompt-library-button'}>
-                                <MagicWandIcon width="13" height="13" />
+                        <Button variant="ghost" size="1" style={{ margin: '2px', paddingTop: '5px' }} className={'user-prompt-library-button'}>
+                            <MagicWandIcon width="13" height="13" />
                         </Button>
                     </Popover.Trigger>
                 </Tooltip>
-                <Popover.Content style={{width: '360px'}}>
+                <Popover.Content
+                    align="start"
+                    sideOffset={4}
+                    style={{ width: '360px' }}
+                >
                     <UserPromptLibrary />
                 </Popover.Content>
             </Popover.Root>
             <ChatInterfaceMenu />
             <Tooltip content="New chat">
-                <Button variant="ghost" size="1" style={{marginRight: '4px', margin: '2px'}}
-                        onClick={onClickNewChat}>
+                <Button variant="ghost" size="1" style={{ marginRight: '4px', margin: '2px' }}
+                    onClick={onClickNewChat}>
                     <PlusIcon />
                 </Button>
             </Tooltip>
@@ -60,13 +64,13 @@ const ChatInterfaceMenu = () => {
     React.useEffect(() => {
         (async () => {
             try {
-                let note = await window.appConnector.findNote({name: exportNoteName});
+                let note = await window.appConnector.findNote({ name: exportNoteName });
                 if (note) {
                     setExportNoteExists(true);
                 } else {
                     setExportNoteExists(false);
                 }
-            } catch (e) {}
+            } catch (e) { }
         })();
     }, [exportNoteName]);
 
@@ -74,9 +78,8 @@ const ChatInterfaceMenu = () => {
     const handleExportAsNote = React.useCallback(async () => {
         let noteContent = '';
         for (const message of threadMessages) {
-            noteContent += `<mark style="color:undefined;">**${capitalize(message.role)}**<!-- {"cycleColor":"${
-                message.role === 'assistant' ? '59' : '57'
-            }"} --></mark>\n`;
+            noteContent += `<mark style="color:undefined;">**${capitalize(message.role)}**<!-- {"cycleColor":"${message.role === 'assistant' ? '59' : '57'
+                }"} --></mark>\n`;
             for (const contentPart of message.content) {
                 if (contentPart.type === 'text') {
                     // Replace tool group mentions with code
@@ -94,27 +97,27 @@ const ChatInterfaceMenu = () => {
                 }
             }
         }
-        let note = await appConnector.findNote({name: exportNoteName});
+        let note = await appConnector.findNote({ name: exportNoteName });
         if (!note) {
             note = await appConnector.createNote(exportNoteName, []);
-            note = await appConnector.findNote({name: exportNoteName});
+            note = await appConnector.findNote({ name: exportNoteName });
             if (!note || !note.uuid) {
                 throw new Error(`Failed to create note: ${exportNoteName}`);
             }
         }
         setExportNoteExists(true);
-        await appConnector.replaceNoteContent({uuid: note.uuid}, noteContent);
+        await appConnector.replaceNoteContent({ uuid: note.uuid }, noteContent);
         await appConnector.navigate(`https://www.amplenote.com/notes/${note.uuid}`);
         await appConnector.alert(`Chat exported to note: ${exportNoteName}`);
     }, [threadMessages, threadId, setExportNoteExists, exportNoteName, toolGroupNames]);
     const handleExportAsJSON = React.useCallback(async () => {
         const jsonContent = "data:text/json;charset=utf-8,"
             + encodeURIComponent(JSON.stringify(threadMessages, null, 2));
-        await appConnector.saveFile({data: jsonContent, name: threadId + '.json'});
+        await appConnector.saveFile({ data: jsonContent, name: threadId + '.json' });
     }, [threadMessages, threadId, exportNoteName]);
 
-    const {Flex, Text, Box, Popover, DropdownMenu, Button } = window.RadixUI;
-    const {DropdownMenuIcon, CodeIcon, Share2Icon, FilePlusIcon, CounterClockwiseClockIcon} = window.RadixIcons;
+    const { Flex, Text, Box, Popover, DropdownMenu, Button } = window.RadixUI;
+    const { DropdownMenuIcon, CodeIcon, Share2Icon, FilePlusIcon, CounterClockwiseClockIcon } = window.RadixIcons;
     return (
         <Box>
             <DropdownMenu.Root>
@@ -139,7 +142,7 @@ const ChatInterfaceMenu = () => {
                                         <Flex style={{ alignItems: 'center' }}>
                                             {!exportNoteExists ? 'New Note' : 'Update Note'}
                                         </Flex>
-                                        <Text size="1" style={{ color: 'var(--gray-11)'}}>
+                                        <Text size="1" style={{ color: 'var(--gray-11)' }}>
                                             {exportNoteName}
                                         </Text>
                                     </Flex>
@@ -219,14 +222,25 @@ const UserPromptLibrary = () => {
         setUserPromptList([...userPromptList, promptObject]);
     }, [userPromptList]);
 
+    const handleEditPrompt = React.useCallback(async (e, prompt) => {
+        e.stopPropagation();
+        const editedText = await window.appConnector.prompt("Edit prompt:", {
+            inputs: [
+                { label: "Edit prompt:", type: "text", value: prompt.message }
+            ]
+        });
+        if (!editedText || editedText.trim() === prompt.message) return;
+        const updatedPromptList = userPromptList.map(p =>
+            p.uuid === prompt.uuid ? { ...p, message: editedText.trim() } : p
+        );
+        await window.appConnector.setSetting(USER_PROMPT_LIST_SETTING, JSON.stringify(updatedPromptList));
+        setUserPromptList(updatedPromptList);
+    }, [userPromptList]);
+
     const handleDeletePrompt = React.useCallback(async (e, prompt) => {
         e.stopPropagation();
         const deleteConfirmation = await window.appConnector.prompt("Are you sure you want to delete this prompt?", {
-            inputs: [{
-                label: "Yes, delete this prompt",
-                type: "checkbox",
-                value: true
-            }]
+            inputs: []
         });
         if (!deleteConfirmation) return;
         await window.appConnector.setSetting(USER_PROMPT_LIST_SETTING, JSON.stringify(userPromptList.filter(p => p.uuid !== prompt.uuid)));
@@ -235,8 +249,8 @@ const UserPromptLibrary = () => {
 
     if (!userPromptList) return null;
 
-    const {Button, Tooltip, ScrollArea, Text, Box, Card, Flex, IconButton} = window.RadixUI;
-    const { TrashIcon} = window.RadixIcons;
+    const { Button, ScrollArea, Text, Box, Card, Flex, IconButton, DropdownMenu } = window.RadixUI;
+    const { TrashIcon, DotsHorizontalIcon, Pencil1Icon } = window.RadixIcons;
     return (
         <>
             <ScrollArea style={{ maxHeight: '320px' }} type={'auto'}>
@@ -248,14 +262,30 @@ const UserPromptLibrary = () => {
                                     <Text style={{ fontSize: '11px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
                                         {prompt.message}
                                     </Text>
-                                    <IconButton
-                                        variant="ghost"
-                                        color="red"
-                                        size="1"
-                                        style={{ alignSelf: 'center' }}
-                                        onClick={(e) => handleDeletePrompt(e, prompt)}>
-                                        <TrashIcon />
-                                    </IconButton>
+                                    <DropdownMenu.Root>
+                                        <DropdownMenu.Trigger asChild>
+                                            <IconButton
+                                                variant="soft"
+                                                size="1"
+                                                onClick={(e) => e.stopPropagation()}>
+                                                <DotsHorizontalIcon />
+                                            </IconButton>
+                                        </DropdownMenu.Trigger>
+                                        <DropdownMenu.Content align="end" sideOffset={-4} size={'1'} variant={'soft'}>
+                                            <DropdownMenu.Item
+                                                onClick={(e) => handleEditPrompt(e, prompt)}
+                                            >
+                                                <Pencil1Icon width="14" height="14" /> Edit
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Separator />
+                                            <DropdownMenu.Item
+                                                onClick={(e) => handleDeletePrompt(e, prompt)}
+                                                color="red"
+                                            >
+                                                <TrashIcon width="14" height="14" /> Delete
+                                            </DropdownMenu.Item>
+                                        </DropdownMenu.Content>
+                                    </DropdownMenu.Root>
                                 </Flex>
                             </a>
                         </Card>

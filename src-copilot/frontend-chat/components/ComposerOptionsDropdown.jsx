@@ -164,7 +164,7 @@ export const ComposerOptionsDropdown = () => {
                 </Button>
             </DropdownMenu.Trigger>
 
-            <DropdownMenu.Content>
+            <DropdownMenu.Content side={'top'}>
                 <DropdownMenu.Label style={{ padding: '4px 8px' }}>
                     Tools
                 </DropdownMenu.Label>
