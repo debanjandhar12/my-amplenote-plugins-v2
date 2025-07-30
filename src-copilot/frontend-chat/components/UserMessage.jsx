@@ -1,5 +1,4 @@
 // Based on https://github.com/Yonom/assistant-ui/blob/70ea4a87283d9dc34965ef9d9a80504a05ab8979/packages/react/src/ui/user-message.tsx
-import { replaceParagraphTextInMarkdown } from "../../markdown/replaceParagraphTextInMarkdown.jsx";
 import { ToolGroupRegistry } from "../tools-core/registry/ToolGroupRegistry.js";
 import { ToolGroupMentionComponent } from "./makeCustomMarkdownText.jsx";
 import { FileAttachmentDisplay } from "./FileAttachmentDisplay.jsx";
@@ -27,7 +26,7 @@ const UserMessageContentWrapper = ({ children, ...props }) => (
 );
 
 const UserMessageContent = (props) => {
-    const { MessagePrimitive, ContentPart } = window.AssistantUI;
+    const { MessagePrimitive } = window.AssistantUI;
     return (
         <UserMessageContentWrapper {...props}>
             <MessagePrimitive.Content
@@ -60,9 +59,12 @@ const UserMessageText = ({ text }) => {
         processText();
     }, [text, toolGroupNames]);
 
-    return <div className="aui-md-p">
-        {children}
-    </div>
+    return (
+        // pre-wrap added to preserve new lines
+        <div className="aui-md-p" style={{whiteSpace: 'pre-wrap'}}>
+            {children}
+        </div>
+    )
 };
 
 export { UserMessage };

@@ -167,4 +167,65 @@ describe('makeCustomMarkdownText component', () => {
         );
         expect(toolMentions).toEqual(['@web', '@notes']);
     }, 20000);
+
+    it('preserves newlines with pre-wrap styling', async () => {
+        const multilineMessage = {
+            "id": "newline-test-123",
+            "role": "assistant",
+            "status": {
+                "type": "complete"
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Line one\nLine two"
+                }
+            ],
+            "createdAt": "2025-05-24T10:00:00.000Z"
+        };
+
+        const htmlWithMocks = addScriptToHtmlString(html, `
+            window.INJECTED_SETTINGS = ${JSON.stringify({
+            ...getLLMProviderSettings('groq'),
+            [LLM_MAX_TOKENS_SETTING]: '100'
+        })};
+
+            window.INJECT_MESSAGES = [
+                {
+                    "message": ${JSON.stringify(multilineMessage)},
+                    "parentId": null
+                }
+            ];
+
+            window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
+            ...EMBED_COMMANDS_MOCK,
+            getSettings: async () => window.INJECTED_SETTINGS,
+            receiveMessageFromPlugin: async (queue) => {
+                if (queue === 'attachments' && window.INJECT_MESSAGES) {
+                    const injectMessages = window.INJECT_MESSAGES;
+                    window.INJECT_MESSAGES = null;
+                    return { type: 'new-chat', message: injectMessages };
+                }
+                return null;
+            }
+        }))};
+        `);
+
+        const page = await getPage();
+        await page.setContent(htmlWithMocks);
+
+        await page.waitForSelector('.aui-md-p', { timeout: 10000 });
+
+        // Verify that white-space: pre-wrap is applied and newlines are preserved
+        const paragraphInfo = await page.$eval('.aui-md-p', el => {
+            const style = window.getComputedStyle(el);
+            return {
+                whiteSpace: style.whiteSpace,
+                textContent: el.textContent
+            };
+        });
+
+        expect(paragraphInfo.whiteSpace).toBe('pre-wrap');
+        expect(paragraphInfo.textContent).toBe('Line one\nLine two');
+    }, 20000);
 });

@@ -304,8 +304,8 @@ const plugin = {
         ...COMMON_EMBED_COMMANDS,
         // Embeds need to send heartbeat signals to the plugin. Used in isEmbedOpen
         "ping": async function (app) {
-          window.lastHeartbeatFromChatEmbed = Date.now();
-          return true;
+            window.lastHeartbeatFromChatEmbed = Date.now();
+            return true;
         },
         // This doesn't actually close the embed, it just sets isEmbedOpen to false
         "forceEmbedClose": async function (app) {
