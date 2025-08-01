@@ -1,6 +1,6 @@
 import dynamicImportESM, {
     dynamicImportCSS,
-    dynamicImportExternalPluginBundle, dynamicImportMultipleESM
+    dynamicImportExternalPluginBundle
 } from "../../common-utils/dynamic-import-esm.js";
 import {getLLMModel} from "../aisdk-wrappers/getLLMModel.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
@@ -65,7 +65,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
                 dynamicImportCSS("@radix-ui/themes/styles.css"),
                 dynamicImportCSS("@assistant-ui/react-markdown/dist/styles/markdown.css")]);
         const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown,
-            RadixIcons, StringDiffModule, dayjs, tributejs, ReactErrorBoundary]
+            RadixIcons, StringDiffModule, dayjs, tributejs, ReactErrorBoundary, AssistantUIUtils]
             = await dynamicImportExternalPluginBundle('assistantUIBundle.js');
         // const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown,
         //     RadixIcons, StringDiffModule]
@@ -76,9 +76,7 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
         window.ReactDOM = ReactDOM;
         window.AssistantUI = AssistantUI;
         window.RadixUI = RadixUI;
-        window.AssistantUIUtils = {};
-        window.AssistantUIUtils.DangerousInBrowserAdapter = (await dynamicImportESM("@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.ts")).DangerousInBrowserAdapter;
-        window.AssistantUIUtils.splitLocalRuntimeOptions = (await dynamicImportESM("@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.tsx")).splitLocalRuntimeOptions;
+        window.AssistantUIUtils = AssistantUIUtils;
         window.RadixIcons = RadixIcons;
         window.StringDiff = StringDiffModule.StringDiff;
         window.dayjs = dayjs.default;

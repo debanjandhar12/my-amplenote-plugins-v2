@@ -1,55 +1,72 @@
-import pkgJSON from "../package.json";
+import pkgJSON from "../package.json" with { type: "json" };
 import path from "path";
 
+
+
 /**
- * Import js packages from __importBundles__ folder in GitHub repo.
+ * Import js packages from dist/ folder in GitHub repo with multi-CDN fallback.
  * This is a workaround for dynamicImportMultipleESM which helped avoid multiple
  * copies of the same package in the bundle.
  * Note: When adding new packages, make sure to update the commit hash.
  */
-export const dynamicImportExternalPluginBundle = async (fileName, { isESM = true } = {}) => {
+export const dynamicImportExternalPluginBundle = async (fileName) => {
     if (process.env.NODE_ENV === 'test') {
         try {
-            return (require(path.resolve(__dirname, '../_myAmplePluginExternal/bundles', fileName))).default;
+            return (require(path.resolve(__dirname, '../_myAmplePluginExternal/dist', fileName))).default;
         } catch (e) {
             console.warn(`Failed to require github bundle from local: ${e.message}`);
         }
         try {
-            return (await import(path.resolve(__dirname, '../_myAmplePluginExternal/bundles', fileName))).default;
+            return (await import(path.resolve(__dirname, '../_myAmplePluginExternal/dist', fileName))).default;
         } catch (e) {
             console.warn(`Failed to import github bundle from local: ${e.message}`);
         }
     }
 
-    const url = new URL(`https://esm.sh/my-ample-plugin-external@${pkgJSON.dependencies['my-ample-plugin-external']}/bundles/${fileName}`);
-    if (!isESM) {
-        return fetch(url.toString()).then(res => res.arrayBuffer()).then(buffer => new Uint8Array(buffer));
-    }
-    if (process.env.NODE_ENV === 'development') {
-        url.searchParams.set('dev', true);
-    }
-    url.searchParams.set('bundle', true);
-    url.searchParams.set('standalone', true);
-    const module = (await import(url.toString()));
-    // Check if module.versions props are same as pkgJSON.dependencies
-    if (Object.keys(module.versions).length !== module.default.length) {
-        throw new Error(`Failed to import module: ${fileName}. Expected module count mismatch (expected: ${module.default.length}, actual: ${Object.keys(module.versions).length}). Possibly due to my-ample-plugin-external version mismatch.`);
-    }
-    for (const [key, value] of Object.entries(module.versions)) {
-        if (value !== pkgJSON.dependencies[key]) {
-            throw new Error(`Failed to import module: ${fileName}. Version mismatch for ${key} (expected: ${pkgJSON.dependencies[key]}, actual: ${value})`);
+    const packageVersion = pkgJSON.dependencies['my-ample-plugin-external'];
+    const cdnList = ['https://esm.sh/', 'https://esm.run/'];
+    let importCompleted = false;
+    
+    const importPromises = cdnList.map(async (cdn, index) => {
+        const url = buildCDNUrl(cdn, `my-ample-plugin-external/dist/${fileName}`, packageVersion);
+        if (index > 0) {
+            // wait 0.6 sec as we want the first CDN to be preferred
+            await new Promise(resolve => setTimeout(resolve, 600));
         }
-    }
-    if (module.default) {
-        console.log(`Imported module: ${fileName} from ${url.toString()}`, module.versions);
+        if (importCompleted) {
+            throw new Error(`Terminating as ${fileName} has already been imported`);
+        }
+        return import(url, { assert: { type: "json" } })
+            .then(module => ({ module, url }))
+            .catch(e => {
+                console.warn(`Failed to import ${fileName} from ${cdn}: ${e.message}`);
+                throw e;
+            });
+    });
+
+    try {
+        const result = await Promise.any(importPromises);
+        importCompleted = true;
+
+        // Validate version compatibility
+        const module = result.module;
+        if (!module.versions)
+            throw new Error(`Failed to import module: ${fileName}. Returned bundle does not have version property.`);
+        for (const [key, value] of Object.entries(module.versions)) {
+            if (value !== pkgJSON.dependencies[key]) {
+                throw new Error(`Failed to import module: ${fileName}. Version mismatch for ${key} (expected: ${pkgJSON.dependencies[key]}, actual: ${value})`);
+            }
+        }
+        console.log(`Imported ${fileName}@${packageVersion} from ${result.url}`);
         return module.default;
+    } catch {
+        throw new Error(`Failed to import ${fileName} from all available CDNs`);
     }
-    throw new Error(`Failed to import module: ${fileName}`);
 }
 
 export const getJSDeliverBundleUrl = (fileName) => {
     const packageVersion = pkgJSON.dependencies['my-ample-plugin-external'];
-    return `https://cdn.jsdelivr.net/npm/my-ample-plugin-external@${packageVersion}/bundles/${fileName}`;
+    return `https://cdn.jsdelivr.net/npm/my-ample-plugin-external@${packageVersion}/dist/${fileName}`;
 };
 
 /***
@@ -151,8 +168,6 @@ const dynamicImportESM = async (pkg, pkgVersion = null) => {
     } catch {
         throw new Error(`Failed to import ${pkg} from all available CDNs`);
     }
-
-    throw new Error(`Failed to import ${pkg} from all available CDNs`);
 };
 
 function getBasePackage(pkg) {

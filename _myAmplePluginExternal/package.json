@@ -1,6 +1,7 @@
 {
   "name": "my-ample-plugin-external",
-  "version": "1.0.27",
+  "version": "1.0.29",
+  "type": "module",
   "description": "This npm package contains files used by my plugins for amplenote",
   "dependencies": {
     "@ai-sdk/anthropic": "1.2.10",
@@ -13,7 +14,7 @@
     "@debanjandhar12/markmap-lib": "0.17.0-mod.3",
     "@debanjandhar12/markmap-toolbar": "0.17.0-mod.3",
     "@debanjandhar12/markmap-view": "0.17.0-mod.3",
-    "@duckdb/duckdb-wasm": "1.29.1-dev260.0",
+    "@duckdb/duckdb-wasm": "1.29.1-dev269.0",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@huggingface/transformers": "3.2.4",

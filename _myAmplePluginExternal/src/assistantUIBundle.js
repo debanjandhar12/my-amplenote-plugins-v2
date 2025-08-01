@@ -10,13 +10,20 @@ import * as pkg8 from "dayjs";
 import * as pkg9 from "tributejs";
 import * as pkg10 from "react-error-boundary";
 import * as pkgJson from "../package.json";
+import { splitLocalRuntimeOptions } from "../../node_modules/@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.tsx";
+import { DangerousInBrowserAdapter } from "../../node_modules/@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.ts";
 
 const modifiedPkg2 = {
     ...pkg2,
+    splitLocalRuntimeOptions,
     createPortal,
     flushSync,
     unmountComponentAtNode
 };
+
+const customPkg11 = {
+    splitLocalRuntimeOptions, DangerousInBrowserAdapter
+}
 
 export const versions = {
     "react": pkgJson.dependencies["react"],
@@ -31,4 +38,4 @@ export const versions = {
     "react-error-boundary": pkgJson.dependencies["react-error-boundary"],
 }
 
-export default [pkg1, modifiedPkg2, pkg3, pkg4, pkg5, pkg6, pkg7, pkg8, pkg9, pkg10];
+export default [pkg1, modifiedPkg2, pkg3, pkg4, pkg5, pkg6, pkg7, pkg8, pkg9, pkg10, customPkg11];
