@@ -24,29 +24,35 @@ export const dynamicImportExternalPluginBundle = async (fileName) => {
     }
 
     const packageVersion = pkgJSON.dependencies['my-ample-plugin-external'];
-    const cdnList = ['https://esm.sh/', 'https://esm.run/'];
-    let importCompleted = false;
+    const pkg = `my-ample-plugin-external/dist/${fileName}`;
+    const cdnList = getCDNList(pkg);
+    const abortController = new AbortController();
     
     const importPromises = cdnList.map(async (cdn, index) => {
-        const url = buildCDNUrl(cdn, `my-ample-plugin-external/dist/${fileName}`, packageVersion);
+        const url = buildCDNUrl(cdn, pkg, packageVersion);
         if (index > 0) {
-            // wait 0.6 sec as we want the first CDN to be preferred
-            await new Promise(resolve => setTimeout(resolve, 600));
+            // wait 1 sec as we want the first CDN to be preferred
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        if (importCompleted) {
-            throw new Error(`Terminating as ${fileName} has already been imported`);
+        if (abortController.signal.aborted) {
+            throw new Error(`Terminating as ${pkg} has already been imported`);
         }
         return import(url, { assert: { type: "json" } })
-            .then(module => ({ module, url }))
+            .then(module => {
+                if (abortController.signal.aborted) {
+                    throw new Error(`Terminating as ${pkg} has already been imported`);
+                }
+                return { module, url };
+            })
             .catch(e => {
-                console.warn(`Failed to import ${fileName} from ${cdn}: ${e.message}`);
+                console.warn(`Failed to import ${pkg} from ${cdn}: ${e.message}`);
                 throw e;
             });
     });
 
     try {
         const result = await Promise.any(importPromises);
-        importCompleted = true;
+        abortController.abort();
 
         // Validate version compatibility
         const module = result.module;
@@ -57,10 +63,10 @@ export const dynamicImportExternalPluginBundle = async (fileName) => {
                 throw new Error(`Failed to import module: ${fileName}. Version mismatch for ${key} (expected: ${pkgJSON.dependencies[key]}, actual: ${value})`);
             }
         }
-        console.log(`Imported ${fileName}@${packageVersion} from ${result.url}`);
+        console.log(`Imported ${pkg}@${packageVersion} from ${result.url}`);
         return module.default;
     } catch {
-        throw new Error(`Failed to import ${fileName} from all available CDNs`);
+        throw new Error(`Failed to import ${pkg} from all available CDNs`);
     }
 }
 
@@ -141,19 +147,24 @@ const dynamicImportESM = async (pkg, pkgVersion = null) => {
         }
     }
 
-    const cdnList = ['https://esm.sh/', 'https://legacy.esm.sh/', 'https://esm.run/'];
+    const cdnList = getCDNList(pkg);
     const resolvedVersion = resolvePackageVersion(pkg, pkgVersion);
-    let importCompleted = false;
-    const importPromises = cdnList.map(async cdn => {
+    const abortController = new AbortController();
+    const importPromises = cdnList.map(async (cdn, index) => {
         const url = buildCDNUrl(cdn, pkg, resolvedVersion);
-        if(cdn !== 'https://esm.sh/') {
-            // wait 0.6 sec as we want esm.sh to be the first to resolve preferably
-            await new Promise(resolve => setTimeout(resolve, 600));
+        if (index > 0) {
+            // wait 1 sec as we want the first CDN to be preferred
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        if (importCompleted)
+        if (abortController.signal.aborted)
             throw new Error(`Terminating as ${pkg} has already been imported`);
         return import(url, { assert: { type: "json" } })
-            .then(module => ({ module, url }))
+            .then(module => {
+                if (abortController.signal.aborted) {
+                    throw new Error(`Terminating as ${pkg} has already been imported`);
+                }
+                return { module, url };
+            })
             .catch(e => {
                 console.warn(`Failed to import ${pkg} from ${cdn}: ${e.message}`);
                 throw e;
@@ -162,7 +173,7 @@ const dynamicImportESM = async (pkg, pkgVersion = null) => {
 
     try {
         const result = await Promise.any(importPromises);
-        importCompleted = true;
+        abortController.abort();
         console.log(`Imported ${pkg}@${resolvedVersion} from ${result.url}`);
         return result.module;
     } catch {
@@ -195,14 +206,23 @@ function getPackageFolderString(pkg) {
     return folders && folders.length > 0 ? `/${folders.join('/')}` : '';
 }
 
+function getCDNList(pkg) {
+    const basePkg = getBasePackage(pkg);
+    if (basePkg.includes('react') || basePkg.includes('radix') || basePkg.includes('build')
+        || basePkg.includes('dotenv')) {
+        return ['https://esm.sh/', 'https://legacy.esm.sh/'];
+    }
+    return ['https://cdn.jsdelivr.net/npm/', 'https://esm.sh/'];
+}
+
 function buildCDNUrl(cdn, pkg, version) {
     const basePkg = getBasePackage(pkg);
     const versionString = version !== 'latest' ? `@${version}` : '';
     const folderString = getPackageFolderString(pkg);
     const url = new URL(`${cdn}${basePkg}${versionString}${folderString}`);
     if (cdn !== 'https://esm.sh/' && (basePkg.includes('react')
-        || basePkg.includes('radix'))) {
-        throw new Error(`React based packages is not supported in ${cdn}`);
+        || basePkg.includes('radix')) && !pkg.endsWith('.css')) {
+        throw new Error(`React based js packages is not supported in ${cdn}`);
     }
     if (cdn !== 'https://legacy.esm.sh/' && basePkg.includes('build')) {
         throw new Error(`Build API package is not supported in ${cdn}`);
@@ -217,7 +237,12 @@ function buildCDNUrl(cdn, pkg, version) {
         if (!pkg.endsWith('.css') && pkg !== 'build')
             url.searchParams.set('deps', `react@${pkgJSON.dependencies.react},react-dom@${pkgJSON.dependencies['react-dom']}`);
     }
-    return url.toString();
+
+    let urlString = url.toString();
+    if (cdn === 'https://cdn.jsdelivr.net/npm/' && !pkg.endsWith('.css')) {
+        urlString += '/+esm';
+    }
+    return urlString;
 }
 
 /***
@@ -228,7 +253,7 @@ function buildCDNUrl(cdn, pkg, version) {
  */
 export const dynamicImportCSS = async (pkg, pkgVersion = null) => {
     const resolvedVersion = resolvePackageVersion(pkg, pkgVersion);
-    const url = buildCDNUrl('https://esm.sh/', pkg, resolvedVersion);
+    const url = buildCDNUrl('https://cdn.jsdelivr.net/npm/', pkg, resolvedVersion);
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = url;
