@@ -26,7 +26,7 @@ export function getSystemMessage(currentMessages, enabledTools) {
         toolUsageMessage += "Tool Usage Instructions:-\n" +
         "- NEVER say the tool name and uuid string to user. For example, instead of saying that you'll use WebSearch tool, just say I'll search the web.\n" +
         "- No need to ask permission before using a tool\n"+
-        "- Formulate an internal plan for your future self at the start. However, DON'T repeat yourself after a tool call, pick up where you left off.\n"+
+        "- Formulate an plan for your future self at the start. However, DON'T repeat yourself after a tool call, pick up where you left off.\n"+
         "- Execute multiple tool calls in parallel if feasible; avoid when dependent on prior outputs (e.g. UUIDs)\n"+
         ((isNotesToolGroupEnabled || isTasksToolGroupEnabled) ? "- When requested to perform tasks, don't make assumptions. First, gather as much context as needed by calling tools." : "");
 
@@ -47,6 +47,11 @@ export function getSystemMessage(currentMessages, enabledTools) {
             }
             if (lastContentContainsSearchNote) {
                 resultDisplayInstruction +=
+                    "The search result only contains the matched portion of the note content. " +
+                    "If full context is required, use the FetchNoteDetailByNoteUUID tool to retrieve the complete note content.";
+            }
+            if (lastContentContainsSearchNote) {
+                resultDisplayInstruction +=
                     "If the user is asking a question, provide comprehensive answer using information from search results.\n" +
                     "List relevant note links in markdown at end for reference." +
                     " To link to a note, use syntax: [Page Title](https://www.amplenote.com/notes/{noteUUID}).";
@@ -63,7 +68,7 @@ export function getSystemMessage(currentMessages, enabledTools) {
 
 
     const terminology = [
-        (isTasksToolGroupEnabled || isNotesToolGroupEnabled) ? `Daily Jot: Daily note for storing thoughts and tasks.` : '',
+        (isTasksToolGroupEnabled || isNotesToolGroupEnabled) ? `Daily Jot: Note tagged with #daily-jots for storing daily thoughts.` : '',
         isNotesToolGroupEnabled ? `Note: Markdown pages stored in amplenote.` : '',
         (isTasksToolGroupEnabled || isNotesToolGroupEnabled) ? `Note / Task UUID: 36 character internal id required for some tools.` : '',
         isTasksToolGroupEnabled ? `Task: Stored in notes, viewable in Agenda and Calendar views.

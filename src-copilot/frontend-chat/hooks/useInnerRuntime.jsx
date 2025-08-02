@@ -1,12 +1,12 @@
 import {useCustomDangerousInBrowserRuntime} from "./useCustomDangerousInBrowserRuntime.jsx";
-import {LLM_MAX_TOKENS_SETTING} from "../../constants.js";
+import {LLM_MAX_STEPS, LLM_MAX_TOKENS_SETTING} from "../../constants.js";
 import {AmplenoteAttachmentAdapter} from "../components/AmplenoteAttachmentAdapter.jsx";
 import {errorToString} from "../helpers/errorToString.js";
 
 export const useInnerRuntime = () => {
     const runtime = useCustomDangerousInBrowserRuntime({
         model: window.LLM_MODEL,
-        maxSteps: 4,
+        maxSteps: LLM_MAX_STEPS,
         ...(
             appSettings[LLM_MAX_TOKENS_SETTING] &&
             String(appSettings[LLM_MAX_TOKENS_SETTING]).trim() !== '' &&

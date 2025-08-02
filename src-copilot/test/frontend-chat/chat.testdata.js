@@ -99,7 +99,7 @@ export const getLLMProviderSettings = (provider) => {
         return {
             [LLM_API_KEY_SETTING]: process.env.GOOGLE_API_KEY,
             [LLM_API_URL_SETTING]: "https://generativelanguage.googleapis.com/v1beta",
-            [LLM_MODEL_SETTING]: "gemini-2.0-flash"
+            [LLM_MODEL_SETTING]: "gemini-2.5-flash"
         }
     } else if (provider === 'fireworks') {
         return {

@@ -1,6 +1,7 @@
-import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
-import {createGenericReadTool} from "../tools-core/base/createGenericReadTool.jsx";
-import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
+import { ToolCardResultMessage } from "../components/tools-ui/ToolCardResultMessage.jsx";
+import { createGenericReadTool } from "../tools-core/base/createGenericReadTool.jsx";
+import { ToolCardMessage } from "../components/tools-ui/ToolCardMessage.jsx";
+import { MAX_TOOL_RESULT_LENGTH3 } from "../../constants.js";
 
 export const FetchNoteDetailByNoteUUID = () => {
     return createGenericReadTool({
@@ -33,18 +34,11 @@ export const FetchNoteDetailByNoteUUID = () => {
                     noteInfoList.push({error: `Note ${noteUUID} not found.`});
                     continue;
                 }
-                let noteContent = null;
-                if (args.includeContent) {
-                    noteContent = await appConnector.getNoteContentByUUID(noteUUID);
-                    if (noteContent.length > 8000) {
-                        noteContent = noteContent.trim().substring(0, 8000) + "<<too long to display>>...";
-                    }
-                }
                 const backlinks = await appConnector.getNoteBacklinksByUUID({uuid: noteUUID});
                 const tags = await appConnector.getNoteTagsByUUID({uuid: noteUUID});
                 const noteInfo = {noteUUID, noteTitle, tags, backlinks};
-                if (noteContent !== null) {
-                    noteInfo.noteContent = noteContent;
+                if (args.includeContent) {
+                    noteInfo.noteContent = await appConnector.getNoteContentByUUID(noteUUID);
                 }
                 noteInfoList.push(noteInfo);
             }
@@ -56,7 +50,7 @@ export const FetchNoteDetailByNoteUUID = () => {
         },
         onCompleted: ({addResult, formData}) => {
             const {noteInfoList} = formData;
-            addResult({resultSummary: `Note info fetched successfully.`, resultDetail: noteInfoList});
+            addResult({resultSummary: `Note info fetched successfully.`, resultDetail: noteInfoList}, MAX_TOOL_RESULT_LENGTH3);
         },
         renderInit: ({args}) => {
             const { Spinner } = window.RadixUI;

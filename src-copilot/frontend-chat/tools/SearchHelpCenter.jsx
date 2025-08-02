@@ -2,6 +2,7 @@ import {createGenericReadTool} from "../tools-core/base/createGenericReadTool.js
 import {ToolCardMessage} from "../components/tools-ui/ToolCardMessage.jsx";
 import {ToolCardResultMessage} from "../components/tools-ui/ToolCardResultMessage.jsx";
 import {processAndMergeCopilotDBResults} from "../helpers/processAndMergeCopilotDBResults.js";
+import {MAX_TOOL_RESULT_LENGTH2} from "../../constants.js";
 
 export const SearchHelpCenter = () => {
     return createGenericReadTool({
@@ -20,7 +21,7 @@ export const SearchHelpCenter = () => {
         group: "help",
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
             const results = await appConnector.searchHelpCenter(args.query, {
-                limit: 15
+                limit: 10
             });
             const searchResults = await processAndMergeCopilotDBResults(results);
             setFormData({...formData, searchResults});
@@ -28,7 +29,7 @@ export const SearchHelpCenter = () => {
         },
         onCompleted: ({addResult, formData}) => {
             const {searchResults} = formData;
-            addResult({resultSummary: `Help Center search completed.`, searchResults});
+            addResult({resultSummary: `Help Center search completed.`, searchResults}, MAX_TOOL_RESULT_LENGTH2);
         },
         renderInit: () => {
             const { Spinner } = window.RadixUI;
