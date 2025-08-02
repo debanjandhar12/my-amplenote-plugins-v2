@@ -1,5 +1,6 @@
 import {truncate} from "lodash-es";
 import { MAX_TOOL_RESULT_LENGTH1 } from "../../constants.js";
+import {truncateObjectVal} from "../helpers/truncateObjectVal.js";
 
 export const useGenericToolParameters = ({ toolName, toolCallId, description, parameters,
                                              args, status, result, addResult }) => {
@@ -23,7 +24,7 @@ export const useGenericToolParameters = ({ toolName, toolCallId, description, pa
         else if (typeof input === 'object') {
             const inputJSON = JSON.stringify(input);
             if (inputJSON.length > toolResultLengthLimit) {
-                return addResult(truncate(inputJSON, { length: toolResultLengthLimit, omission: '[truncated tool output]' }));
+                return addResult(truncateObjectVal(input, toolResultLengthLimit, '[truncated tool output]'));
             }
         }
         return addResult(input);
