@@ -261,24 +261,32 @@ const plugin = {
             }
         }
     },
-    openEmbedStrategy: async function (app, ...args) {
+    // TODO: add support for multiple args using spread syntax
+    openEmbedStrategy: async function (app, args) {
         // Open in sidebar first
-        const isOpenedInSidebar = await app.openSidebarEmbed(1, 'sidebar', ...args);
-        try {
-            app.context.updateEmbedArgs({}); // clear drawer just in case to prevent multiple instance (does not work)
-        } catch (e) {console.log(e)}
+        window.drawerEmbededArgs = {}; // clear drawer embed args to prevent multiple instance
+        const isOpenedInSidebar = await app.openSidebarEmbed(1, 'sidebar', args);
         if (isOpenedInSidebar) return;
 
         // Open in drawer since sidebar failed
-        await app.openEmbed('drawer', ...args);   // openEmbed returns null always so no check for isOpenedInDrawer
-        if (app.context.pluginUUID) {
-            await app.navigate("https://www.amplenote.com/notes/plugins/" + app.context.pluginUUID);
-        }
+        window.drawerEmbededArgs = args;
+        await app.openEmbed('drawer', args);   // openEmbed returns null always so no check for isOpenedInDrawer
         try {
             await app.openSidebarEmbed(1, 'sidebar', {}); // clear sidebar just in case to prevent multiple instance
         } catch (e) {}
+        if (app.context.pluginUUID) {
+            await app.navigate("https://www.amplenote.com/notes/plugins/" + app.context.pluginUUID);
+        }
     },
+    // TODO: add support for multiple args using spread syntax
     renderEmbed: async function (app, source, args) {
+        // Drawer embed args handling is buggy... hence handle manually.
+        if (source === 'drawer' && window.drawerEmbededArgs) {
+            try { await app.context.updateEmbedArgs(source, window.drawerEmbededArgs) }  catch (e) {console.error(e)}
+            args = window.drawerEmbededArgs;
+        }
+
+        // Return based on args
         if (args.openChat) {
             return chatHTML;
         } else if (args.openSearch) {
