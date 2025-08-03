@@ -16,7 +16,7 @@ import {CustomToolFallback} from "./tools/CustomToolFallback.jsx";
 export const ChatAppWindow = () => {
     const assistantAvatar = useAssistantAvatar();
     const suggestions = useChatSuggestions();
-    const { chatHistoryLoaded, isChatHistoryOverlayOpen, tools } = React.useContext(getChatAppContext());
+    const { chatHistoryLoaded, isChatHistoryOverlayOpen, tools, initialAttachmentProcessed } = React.useContext(getChatAppContext());
 
     useModelContext();
     useAmplenoteAttachments();
@@ -28,12 +28,12 @@ export const ChatAppWindow = () => {
     return (
         <div style={{display: 'flex', flexDirection: 'column'}}>
             {
-                chatHistoryLoaded && isChatHistoryOverlayOpen &&
+                chatHistoryLoaded && initialAttachmentProcessed && isChatHistoryOverlayOpen &&
                 <ChatHistoryOverlay />
             }
             <ChatAppHeader />
             {
-                chatHistoryLoaded &&
+                chatHistoryLoaded && initialAttachmentProcessed &&
                     <Thread
                         welcome={{
                             suggestions: suggestions,

@@ -6,13 +6,18 @@ export const useAmplenoteAttachments = () => {
     const threadRuntime = AssistantUI.useThreadRuntime();
     const composer = AssistantUI.useComposer();
     const assistantRuntime = AssistantUI.useAssistantRuntime();
-    const {chatHistoryLoaded} = React.useContext(getChatAppContext());
+    const {chatHistoryLoaded, setInitialAttachmentProcessed} = React.useContext(getChatAppContext());
     const {enableToolGroup} = useEnabledTools();
 
     React.useEffect(() => {
         const processAttachments = async () => {
+            if (!chatHistoryLoaded) return;
+
             const attachment = await window.appConnector.receiveMessageFromPlugin('attachments');
-            if (!attachment) return;
+            if (!attachment) {
+                setInitialAttachmentProcessed(true);
+                return;
+            }
 
             // Util function to check if attachment with same id already exists
             const attachmentExists = (attachmentId) => {
@@ -99,7 +104,7 @@ export const useAmplenoteAttachments = () => {
                 }
             }
         }
-        if (chatHistoryLoaded) processAttachments();
+        processAttachments();
         const intervalId = setInterval(processAttachments, 300);
         return () => clearInterval(intervalId);
     }, [composer, threadRuntime, chatHistoryLoaded]);

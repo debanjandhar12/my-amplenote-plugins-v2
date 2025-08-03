@@ -17,8 +17,7 @@ export const CustomComposer = () => {
     });
     const isRunning = isLLMCallRunning || isToolCallRunning;
 
-    // Consume registry status from context
-    const { toolGroupNames } = React.useContext(getChatAppContext());
+    const { toolGroupNames, chatHistoryLoaded } = React.useContext(getChatAppContext());
 
     // Pass the state to the hook
     useTributeSetup(textareaRef, toolGroupNames);
@@ -38,6 +37,13 @@ export const CustomComposer = () => {
             });
         }
     }, [threadRuntime, textareaRef]);
+
+    // Set focus on textarea when chat history is loaded (thread switch completed)
+    React.useEffect(() => {
+        if (chatHistoryLoaded && textareaRef.current) {
+            textareaRef.current.focus();
+        }
+    }, [chatHistoryLoaded]);
 
     // Pass textareaRef to ChatAppContext
     const {setThreadNewMsgComposerRef} = React.useContext(getChatAppContext());
