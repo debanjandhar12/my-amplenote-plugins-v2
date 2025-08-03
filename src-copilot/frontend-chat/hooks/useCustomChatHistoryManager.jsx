@@ -80,7 +80,7 @@ export const useCustomChatHistoryManager = () => {
                 const threadId = threadListItemRuntime.getState().remoteId;
 
                 // Prevent re-loading the same thread unnecessarily
-                if (lastLoadedThreadId.current === threadId && threadId !== null) return;
+                if (lastLoadedThreadId.current === threadId) return;
                 lastLoadedThreadId.current = threadId;
 
                 setChatHistoryLoaded(false);
@@ -98,7 +98,11 @@ export const useCustomChatHistoryManager = () => {
                     remoteThread.opened = new Date().toISOString();
                     await appConnector.saveChatThreadToCopilotDB(remoteThread);
                 }
-                setChatHistoryLoaded(true);
+
+                // Set ChatHistoryLoaded to true only when the thread is initialized (has remote id)
+                // and we have loaded the chat history (conversation)
+                if (threadId)
+                    setChatHistoryLoaded(true);
             } catch (e) {
                 console.error('Error loading thread from backend:', e);
                 setChatHistoryLoaded(true); // Unblock UI on error
