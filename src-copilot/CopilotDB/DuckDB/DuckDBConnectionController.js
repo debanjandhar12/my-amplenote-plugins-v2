@@ -11,8 +11,9 @@ import { Mutex } from "async-mutex";
 //         VoidLogger
 // } from "@duckdb/duckdb-wasm";
 
-let db, isTerminated = true, currentCollectionName, lock_count = 0;
+let db, isTerminated = true, currentCollectionName, lock_count = 0, copilotdb_channel;
 const mutex = new Mutex();
+
 export default class DuckDBConnectionController {
     static async getCollectionInstance(collectionName, opts = {persistent: true}) {
         return mutex.runExclusive(async () => {
@@ -46,8 +47,11 @@ export default class DuckDBConnectionController {
                 await db.flushFiles();
                 await db.dropFiles();
                 await db.reset();
-                await new Promise(resolve => setTimeout(resolve, 100));
             } catch (e) {console.log(e);}
+            try {
+                copilotdb_channel.postMessage({ type: "command", message: "forceTerminate" });
+            } catch (e) {}
+            await new Promise(resolve => setTimeout(resolve, 1000));
             await db.open({
                 path: opts.persistent ? `opfs://${collectionName}.db` : `./${collectionName}.db`,
                 accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3
@@ -102,8 +106,23 @@ export default class DuckDBConnectionController {
     }
 }
 
+// Auto terminate after 3 mins
 const debouncedTerminate = debounce(() => {
     if (lock_count === 0) {
         DuckDBConnectionController.forceTerminate();
     }
-},60 * 1000); // 1 minute
+},5 * 60 * 1000); // 5 minute
+
+// Terminate db when getCollectionInstance is called from another tab (postMessage is called)
+// This prevents OPFS lock contention errors, since OPFS files can only be accessed by one tab at a time.
+try {
+    copilotdb_channel = new BroadcastChannel('copilot_channel');
+    copilotdb_channel.onmessage = async (event) => {
+        if (event.data && typeof event.data === "object" &&
+            event.data.type === "command" && event.data.message === "forceTerminate"
+            && lock_count === 0) {
+            await DuckDBConnectionController.forceTerminate();
+            console.log("CopilotDB DuckDBConnectionController forceTerminate called from another tab");
+        }
+    }
+} catch (e) {}
