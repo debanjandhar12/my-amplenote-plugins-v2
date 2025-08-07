@@ -18,9 +18,8 @@ export const getSyncState = async (app, syncNotesPromise = null) => {
         return 'Not synced';
     }
 
-    const uniqueNoteUUIDs = await dbm.getActualNoteCount();
-    const uniqueNoteUUIDsCount = uniqueNoteUUIDs.size;
-    if (uniqueNoteUUIDsCount === 0) {
+    const actualNoteCount = await dbm.getActualNoteCount();
+    if (actualNoteCount === 0) {
         DuckDBConnectionController.unlockAutoTerminate();
         return 'Not synced';
     }
