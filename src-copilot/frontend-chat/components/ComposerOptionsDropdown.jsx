@@ -73,6 +73,25 @@ export const ComposerOptionsDropdown = () => {
             .aui-composer-add-attachment {
                 align-self: center !important;
             }
+
+            /* Tools header styling */
+            .composer-options-tools-header {
+                display: flex !important;
+                align-items: center !important;
+                gap: 6px !important;
+                padding: 6px 8px !important;
+                color: var(--gray-11) !important;
+                font-size: var(--font-size-1) !important;
+                font-weight: var(--font-weight-medium) !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.05em !important;
+            }
+
+            /* Improve dropdown content styling */
+            [data-radix-dropdown-menu-content] {
+                min-width: 200px !important;
+                padding: 4px !important;
+            }
         `.replace(/\s+/g, ' ').trim();
         document.body.appendChild(styleEl);
 
@@ -133,7 +152,7 @@ export const ComposerOptionsDropdown = () => {
 
             // Send note attachment message similar to how Add note to chat works in plugin.js
             await window.appConnector.sendMessageToEmbed('attachments',
-                {type: 'note', noteUUID: selectedNoteUUID, noteTitle: selectedNote.name, noteContent: noteContent});
+                { type: 'note', noteUUID: selectedNoteUUID, noteTitle: selectedNote.name, noteContent: noteContent });
 
             setIsOpen(false);
         } catch (error) {
@@ -143,7 +162,7 @@ export const ComposerOptionsDropdown = () => {
     }, []);
 
     const { DropdownMenu, Checkbox, Tooltip, Button } = window.RadixUI;
-    const { InfoCircledIcon, PlusIcon, UploadIcon, FilePlusIcon, ChevronRightIcon } = window.RadixIcons;
+    const { InfoCircledIcon, PlusIcon, UploadIcon, FilePlusIcon, ChevronRightIcon, MixerHorizontalIcon } = window.RadixIcons;
 
     return (
         <DropdownMenu.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -165,8 +184,9 @@ export const ComposerOptionsDropdown = () => {
             </DropdownMenu.Trigger>
 
             <DropdownMenu.Content side={'top'}>
-                <DropdownMenu.Label style={{ padding: '4px 8px' }}>
-                    Tools
+                <DropdownMenu.Label className="composer-options-tools-header">
+                    <MixerHorizontalIcon width="12" height="12" />
+                    Tool Groups
                 </DropdownMenu.Label>
 
                 {toolGroupNames.map((toolName) => (
