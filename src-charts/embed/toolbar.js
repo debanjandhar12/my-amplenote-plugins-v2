@@ -95,8 +95,8 @@ async function handleOptionsToolbarItem() {
             break;
         case 'Download as CSV': {
             const noteContent = await appConnector.getNoteContentByUUID(window.ChartData.DATA_SOURCE_NOTE_UUID);
-            const tableMarkdown = getMarkdownTableByIdx(noteContent, parseInt(window.ChartData.TABLE_INDEX_IN_NOTE));
-            const table2DArray = parseMarkdownTable(tableMarkdown);
+            const tableMarkdown = await getMarkdownTableByIdx(noteContent, parseInt(window.ChartData.TABLE_INDEX_IN_NOTE));
+            const table2DArray = await parseMarkdownTable(tableMarkdown);
 
             let csvContent = "";
             table2DArray.forEach(row => {
@@ -108,7 +108,7 @@ async function handleOptionsToolbarItem() {
         }
         case 'Download as Markdown': {
             const noteContent = await appConnector.getNoteContentByUUID(window.ChartData.DATA_SOURCE_NOTE_UUID);
-            const tableMarkdown = getMarkdownTableByIdx(noteContent, parseInt(window.ChartData.TABLE_INDEX_IN_NOTE));
+            const tableMarkdown = await getMarkdownTableByIdx(noteContent, parseInt(window.ChartData.TABLE_INDEX_IN_NOTE));
             const markdownData = "data:text/markdown;charset=utf-8," + encodeURIComponent(tableMarkdown);
             await appConnector.saveFile({data: markdownData, name: 'chart_data.md'});
             break;

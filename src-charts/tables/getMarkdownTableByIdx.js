@@ -1,16 +1,11 @@
-import {unified} from 'unified';
-import remarkParse from 'remark-parse';
 import {visit} from 'unist-util-visit';
-import remarkGfm from "remark-gfm";
+import {parse} from "../utils/parser.js";
 
-export function getMarkdownTableByIdx(markdownText, idx = 0) {
+export async function getMarkdownTableByIdx(markdownText, idx = 0) {
     let tableCount = 0;
     let targetTable = null;
 
-    const tree = unified()
-        .use(remarkParse)
-        .use(remarkGfm)
-        .parse(markdownText);
+    const tree = await parse(markdownText);
 
     visit(tree, 'table', (node) => {
         if (tableCount === idx) {

@@ -28,8 +28,8 @@ export class TableChartData extends BaseChartData {
             this.SERIES_VARIABLE_INDEXES = [];
             try {
                     const noteContent = await appConnector.getNoteContentByUUID(this.DATA_SOURCE_NOTE_UUID);
-                    const tableMarkdown = getMarkdownTableByIdx(noteContent, parseInt(this.TABLE_INDEX_IN_NOTE)) || '';
-                    const table2DArray = parseMarkdownTable(tableMarkdown);
+                    const tableMarkdown = await getMarkdownTableByIdx(noteContent, parseInt(this.TABLE_INDEX_IN_NOTE)) || '';
+                    const table2DArray = await parseMarkdownTable(tableMarkdown);
                     this.SERIES_VARIABLE_INDEXES = table2DArray[0].map((_, i) => i).filter(i => i !== this.CATEGORY_VARIABLE_INDEX);
                     console.log('inited', this.SERIES_VARIABLE_INDEXES);
             } catch (e) {}
@@ -81,13 +81,13 @@ export class TableChartData extends BaseChartData {
     /** --Chart related functionality-- */
      async _getChartDataSet() {
         const noteContent = await appConnector.getNoteContentByUUID(this.DATA_SOURCE_NOTE_UUID);
-        const tableAtIndex = getMarkdownTableByIdx(noteContent, parseInt(this.TABLE_INDEX_IN_NOTE));
+        const tableAtIndex = await getMarkdownTableByIdx(noteContent, parseInt(this.TABLE_INDEX_IN_NOTE));
         if (!tableAtIndex) {
             throw new Error(`Table not found at index ${this.TABLE_INDEX_IN_NOTE} in note ${
                 this.DATA_SOURCE_NOTE_UUID
             }`);
         }
-        const table2DArray = parseMarkdownTable(tableAtIndex);
+        const table2DArray = await parseMarkdownTable(tableAtIndex);
         await this.initSeriesVariableIndexesIfNull();
         return getChartDataFromTable(table2DArray, this.SERIES_ORIENTATION, this.CATEGORY_VARIABLE_INDEX, this.SERIES_VARIABLE_INDEXES);
     }
@@ -144,9 +144,9 @@ export class TableChartData extends BaseChartData {
         const settingContainerElement = document.getElementById('chart-settings-container');
         const allNotes = await appConnector.getAllNotes();
         const noteContent = await appConnector.getNoteContentByUUID(this.DATA_SOURCE_NOTE_UUID);
-        const tableCount = Math.max(getMarkdownTableCount(noteContent), 1);
-        const tableMarkdown = getMarkdownTableByIdx(noteContent, parseInt(this.TABLE_INDEX_IN_NOTE)) || '';
-        let variables = getSeriesVariablesFromTable(parseMarkdownTable(tableMarkdown), this.SERIES_ORIENTATION);
+        const tableCount = Math.max(await getMarkdownTableCount(noteContent), 1);
+        const tableMarkdown = await getMarkdownTableByIdx(noteContent, parseInt(this.TABLE_INDEX_IN_NOTE)) || '';
+        let variables = getSeriesVariablesFromTable(await parseMarkdownTable(tableMarkdown), this.SERIES_ORIENTATION);
         window.scrollPosSettingSeriesVariableIndexes = window.scrollPosSettingSeriesVariableIndexes == null ? 20
             : window.scrollPosSettingSeriesVariableIndexes;
         const html = `

@@ -1,15 +1,10 @@
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
 import { visit } from 'unist-util-visit';
-import remarkGfm from "remark-gfm";
+import { parse } from "../utils/parser.js";
 
-export function parseMarkdownTable(markdownText) {
+export async function parseMarkdownTable(markdownText) {
     const result = [];
 
-    const tree = unified()
-        .use(remarkParse)
-        .use(remarkGfm)
-        .parse(markdownText);
+    const tree = await parse(markdownText);
 
     visit(tree, 'table', (node) => {
         node.children.forEach((row) => {
