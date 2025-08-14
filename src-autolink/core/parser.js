@@ -1,11 +1,19 @@
-import dynamicImportESM from "../../common-utils/dynamic-import-esm.js";
-import remarkParse from 'remark-parse'; // Fails to import with dynamicImportESM
-import remarkGfm from "remark-gfm";
+import {dynamicImportExternalPluginBundle} from "../../common-utils/dynamic-import-esm.js";
 
+let remarkGfm, unified, remarkParse, pipe;
 export async function parse(markdownText) {
-    const {unified} = await dynamicImportESM("unified");
-    return await unified()
-        .use(remarkParse)
-        .use(remarkGfm)
-        .parse(markdownText);
+    if (!remarkGfm || !unified || !remarkParse) {
+        [remarkGfm, unified, , remarkParse] = await dynamicImportExternalPluginBundle('remarkBundle.js');
+        unified = unified.unified;
+        remarkGfm = remarkGfm.default;
+        remarkParse = remarkParse.default;
+    }
+
+    if (!pipe) {
+        pipe = unified()
+            .use(remarkParse)
+            .use(remarkGfm);
+    }
+
+    return await pipe.parse(markdownText);
 }
