@@ -1,5 +1,5 @@
 import DuckDBConnectionController from "./DuckDBConnectionController.js";
-import { getUnPkgBundleUrl } from "../../../common-utils/dynamic-import-esm.js";
+import { getJSDeliverBundleUrl } from "../../../common-utils/dynamic-import-esm.js";
 import { isArray } from "lodash-es";
 
 
@@ -26,7 +26,7 @@ export class DuckDBHelpCenterManager {
         try {
             conn = await this.db.connect();
 
-            const parquetUrl = getUnPkgBundleUrl(filename);
+            const parquetUrl = getJSDeliverBundleUrl(filename);
 
             stmt = await conn.prepare(`
                 SELECT

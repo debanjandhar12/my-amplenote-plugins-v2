@@ -9,7 +9,7 @@ let searchResultCache = null;
 const debouncedClearSearchResultCache = debounce(() => {
     searchResultCache = null;
     console.log("🔄 Cleared search result cache due to inactivity.");
-}, 3 * 60 * 1000); // 3 minutes
+}, 5 * 60 * 1000); // 5 minutes
 
 export async function getExtendedNoteHandleProperties(app, note) {
     if (!searchResultCache) {

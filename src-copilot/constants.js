@@ -14,10 +14,16 @@ export const MCP_SERVER_URL_LIST_SETTING = "MCP Server List (Optional)";
 export const PINECONE_API_KEY_SETTING = "Pinecone API Key (Optional)";
 
 // Version Config
-export const PLUGIN_VERSION = "0.8.0";
+export const PLUGIN_VERSION = "0.9.0";
 
 // Vector DB Configs
-export const COPILOT_DB_INDEX_VERSION = 46;
+export const COPILOT_DB_INDEX_VERSION = 53;
 export const COPILOT_DB_MAX_TOKENS = 1280;
 export const MAX_NOTE_BATCH_SIZE = 48;
 export const MAX_CHAT_HISTORY_THREADS = 100;
+
+// Chat Configs
+export const LLM_MAX_STEPS = 8;
+export const MAX_TOOL_RESULT_LENGTH1 = 15000;    // 5k tokens - all remaining tools
+export const MAX_TOOL_RESULT_LENGTH2 = 30000;    // 10k tokens - used for search notes and help center
+export const MAX_TOOL_RESULT_LENGTH3 = 42000;    // 14k tokens - used for FetchNoteDetailByNoteUUID

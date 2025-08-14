@@ -8,7 +8,7 @@ const { join } = require('path');
  * This updates the version of dependencies of _myAmplePluginExternal/package.json from main package.json
  * and publishes to npm. Then it updates the my-ample-plugin-external version in main package.json.
  * This above needs to be done whenever bundle changes or package version needs updating.
- * Usage: node ./_myAmplePluginExternal/publish.js
+ * Usage: node ./_myAmplePluginExternal/publish.cjs
  */
 
 function copyDependencies() {

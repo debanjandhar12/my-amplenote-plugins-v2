@@ -37,8 +37,7 @@ export const CreateNewNotes = () => {
                 }
             }
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
+        group: "notes",
         onInit: ({setFormState, formData, setFormData, args}) => {
             setFormData({...formData, notesContainerList: args.notes.map((note) => ({
                 item: note,

@@ -1,12 +1,12 @@
-import {Splitter} from "./splitter/Splitter.js";
-import {COPILOT_DB_INDEX_VERSION, COPILOT_DB_MAX_TOKENS, MAX_NOTE_BATCH_SIZE} from "../constants.js";
-import {chunk} from "lodash-es";
-import {getEmbeddingProviderName} from "./embeddings/getEmbeddingProviderName.js";
+import { Splitter } from "./splitter/Splitter.js";
+import { COPILOT_DB_INDEX_VERSION, COPILOT_DB_MAX_TOKENS, MAX_NOTE_BATCH_SIZE } from "../constants.js";
+import { chunk } from "lodash-es";
+import { getEmbeddingProviderName } from "./embeddings/getEmbeddingProviderName.js";
 import 'scheduler-polyfill';
-import {EmbeddingGeneratorFactory} from "./embeddings/EmbeddingGeneratorFactory.js";
+import { EmbeddingGeneratorFactory } from "./embeddings/EmbeddingGeneratorFactory.js";
 import DuckDBConnectionController from "./DuckDB/DuckDBConnectionController.js";
-import {DuckDBNotesManager} from "./DuckDB/DuckDBNotesManager.js";
-import {OPFSUtils} from "./DuckDB/OPFSUtils.js";
+import { DuckDBNotesManager } from "./DuckDB/DuckDBNotesManager.js";
+import { OPFSUtils } from "./DuckDB/OPFSUtils.js";
 
 // console.log('COPILOT_DB_INDEX_VERSION', await dbm.getConfigValue('COPILOT_DB_INDEX_VERSION'));
 // console.log('getAllNotesEmbeddingsCountBefore', await dbm.getAllNotesEmbeddingsCount());
@@ -57,13 +57,13 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         const embeddingProviderName = getEmbeddingProviderName(app);
         const embeddingGenerator = await EmbeddingGeneratorFactory.create(app);
         let lastSyncTime = await dbm.getConfigValue('lastSyncTime')
-             || new Date(0).toISOString();
+            || new Date(0).toISOString();
         const lastPluginUUID = await dbm.getConfigValue('lastPluginUUID');
         const lastEmbeddingModel = await dbm.getConfigValue('lastEmbeddingModel');
 
         // -- Reset DB if plugin UUID / embedding model has changed --
         if (lastPluginUUID !== app.context.pluginUUID ||
-          lastEmbeddingModel !== embeddingGenerator.MODEL_NAME) {
+            lastEmbeddingModel !== embeddingGenerator.MODEL_NAME) {
             await dbm.resetDB();
             lastSyncTime = new Date(0).toISOString();
         }
@@ -83,19 +83,19 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
         // Clear notes that were deleted
         sendMessageToEmbed(app, 'syncNotesProgress', `Sanitizing database...`);
         await scheduler.postTask(async () => {
-          await dbm.deleteNoteRecordByNoteUUIDNotInList(allNotes.map(note => note.uuid));
-        }, {priority: 'background'});
+            await dbm.deleteNoteRecordByNoteUUIDNotInList(allNotes.map(note => note.uuid));
+        }, { priority: 'background' });
 
         // Process each batch of notes
         for (const [batchIndex, noteBatch] of noteBatches.entries()) {
             let batchRecords = [];
             await scheduler.postTask(async () => {
                 batchRecords = await processNoteBatch(app, noteBatch, sendMessageToEmbed, processedNoteCount, totalNoteCount);
-            }, {priority: 'background'});
+            }, { priority: 'background' });
 
             // Ask for cost confirmation if this is the first batch
             if (batchIndex === 0) {
-                const shouldContinue = await confirmEmbeddingCost(app, embeddingGenerator, batchRecords.length*noteBatches.length*2, sendMessageToEmbed);
+                const shouldContinue = await confirmEmbeddingCost(app, embeddingGenerator, batchRecords.length * noteBatches.length * 2, sendMessageToEmbed);
                 if (!shouldContinue) {
                     await DuckDBConnectionController.unlockAutoTerminate();
                     return false;
@@ -120,11 +120,15 @@ export const syncNotes = async (app, sendMessageToEmbed) => {
 
                 // Update configs after each batch for resumability
                 await updateSyncConfigs(dbm, app.context.pluginUUID, embeddingGenerator.MODEL_NAME);
-            }, {priority: 'background'});
+            }, { priority: 'background' });
         }
 
-        // Final update of sync time
-        await dbm.setConfigValue('lastSyncTime', new Date().toISOString());
+        // Final update of sync time - use the last processed note's time
+        if (targetNotes.length > 0) {
+            const lastProcessedNote = targetNotes[targetNotes.length - 1];
+            const lastNoteTime = new Date(lastProcessedNote.updated || lastProcessedNote.updatedAt).toISOString();
+            await dbm.setConfigValue('lastSyncTime', lastNoteTime);
+        }
 
         // Update the fts index
         // sendMessageToEmbed(app, 'syncNotesProgress', `Updating index...`);
@@ -232,7 +236,7 @@ async function processAndStoreEmbeddings(
             `<br /><small style="opacity: 0.8;">(💡 Enter embedding api url and key in plugin settings for faster sync)</small>` : '';
         sendMessageToEmbed(app, 'syncNotesProgress',
             `Generating Embeddings: ${processedNoteCount
-            + Math.floor((noteUUIDs.length/recordsChunks.length)*chunkIndex)}/${totalNoteCount}<br />` +
+            + Math.floor((noteUUIDs.length / recordsChunks.length) * chunkIndex)}/${totalNoteCount}<br />` +
             `[using ${embeddingProviderName} embedding${gpuInfo}]${localWarning}`);
 
         // Generate embeddings
@@ -252,7 +256,7 @@ async function processAndStoreEmbeddings(
 
         // Update last sync time for resumability
         try {
-            const lastNoteInChunk = recordChunk[recordChunk.length-1];
+            const lastNoteInChunk = recordChunk[recordChunk.length - 1];
             const note = targetNotes.find(n => n.uuid === lastNoteInChunk.noteUUID);
             if (note) {
                 const parsedUpdatedAt = new Date(note.updated || note.updatedAt);
@@ -296,7 +300,7 @@ async function writeLogStats(app, noteBatches, processedNoteCount, totalNoteCoun
             fileList = await OPFSUtils.getFileList();
             if (dbm) duckDBRecordCount = await dbm.getNotesRecordCount();
             embeddingProviderName = getEmbeddingProviderName(app);
-        } catch (e) {}
+        } catch (e) { }
 
         // Console logging based on mode
         const colors = {

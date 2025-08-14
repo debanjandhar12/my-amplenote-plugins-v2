@@ -15,8 +15,7 @@ export const WebBrowser = () => {
             },
             required: ["url"]
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@web")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
+        group: "web",
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
             const url = args.url;
             const pageContent = await getWebPageContent(url, signal);

@@ -27,8 +27,7 @@ export const FetchUserTasks =() => {
             },
             required: ["query"]
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
+        group: "tasks",
         onInit: async ({args, formData, setFormData, setFormState}) => {
             try {
                 const result = await appConnector.searchUserTasks(args.query);

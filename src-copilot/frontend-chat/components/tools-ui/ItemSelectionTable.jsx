@@ -134,11 +134,11 @@ const TruncatedUUID = ({ value }) => {
     return (
         <Flex align="center" gap="2">
             <span>{truncated}</span>
-            <Flex align="center" css={{ cursor: 'help' }}>
-                <Tooltip content={value}>
+            <Tooltip content={value || 'New UUID'}>
+                <Flex align="center" css={{ cursor: 'help' }}>
                     <InfoCircledIcon />
-                </Tooltip>
-            </Flex>
+                </Flex>
+            </Tooltip>
         </Flex>
     );
 };

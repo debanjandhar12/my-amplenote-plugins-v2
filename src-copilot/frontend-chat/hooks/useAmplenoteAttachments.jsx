@@ -1,16 +1,23 @@
 import {getCorsBypassUrl} from "../../../common-utils/cors-helpers.js";
 import {getChatAppContext} from "../context/ChatAppContext.jsx";
+import {useEnabledTools} from "./useEnabledTools.jsx";
 
 export const useAmplenoteAttachments = () => {
     const threadRuntime = AssistantUI.useThreadRuntime();
     const composer = AssistantUI.useComposer();
     const assistantRuntime = AssistantUI.useAssistantRuntime();
-    const {chatHistoryLoaded} = React.useContext(getChatAppContext());
+    const {chatHistoryLoaded, setInitialAttachmentProcessed} = React.useContext(getChatAppContext());
+    const {enableToolGroup} = useEnabledTools();
 
     React.useEffect(() => {
         const processAttachments = async () => {
+            if (!chatHistoryLoaded) return;
+
             const attachment = await window.appConnector.receiveMessageFromPlugin('attachments');
-            if (!attachment) return;
+            if (!attachment) {
+                setInitialAttachmentProcessed(true);
+                return;
+            }
 
             // Util function to check if attachment with same id already exists
             const attachmentExists = (attachmentId) => {
@@ -48,28 +55,29 @@ export const useAmplenoteAttachments = () => {
                 const noteName = attachment.noteTitle || "Untitled Note";
                 const noteContent = attachment.noteContent;
                 const file = new File([
-                `@notes\n` +
                 `Attached note title: ${noteName}\n` +
                 `Attached note UUID: ${noteUUID}\n` +
                 `Attached note content: ${noteContent.length > 8000 ?
                     'Content too long. Use note detail tool to get full content if required.' : noteContent}`
                 ], noteName, {type: "text/amplenote-note"});
                 await addAttachmentIfNotExists(file);
+                await new Promise(resolve => setTimeout(resolve, 60));
+                await enableToolGroup('notes');
             }
             else if (attachment.type === 'selection') {
                 const noteUUID = attachment.noteUUID;
                 const selectionContent = attachment.selectionContent;
                 const file = new File([
-                `@notes\n` +
                 `Selection made in note with UUID: ${noteUUID}\n` +
                 `Selected text: ${selectionContent}`
                 ], selectionContent, {type: "text/amplenote-selection"});
                 await addAttachmentIfNotExists(file);
+                await new Promise(resolve => setTimeout(resolve, 60));
+                await enableToolGroup('notes');
             }
             else if (attachment.type === 'task') {
                 const taskUUID = attachment.taskUUID;
                 const file = new File([
-                `@tasks\n` +
                 `Attached task UUID: ${taskUUID}`+
                 (attachment.taskContent ? `\nTask content: ${attachment.taskContent}` : '') +
                 (attachment.taskStartAt ? `\nTask start at: ${attachment.taskStartAt}` : '') +
@@ -82,6 +90,8 @@ export const useAmplenoteAttachments = () => {
                 (attachment.urgent ? `\nTask urgent: ${attachment.urgent}` : '')
                 ], taskUUID, {type: "text/amplenote-task"});
                 await addAttachmentIfNotExists(file);
+                await new Promise(resolve => setTimeout(resolve, 60));
+                await enableToolGroup('tasks');
             }
             // This is not attachment, but a command from plugin.js to create a new chat
             else if (attachment.type === 'new-chat') {
@@ -94,7 +104,7 @@ export const useAmplenoteAttachments = () => {
                 }
             }
         }
-        if (chatHistoryLoaded) processAttachments();
+        processAttachments();
         const intervalId = setInterval(processAttachments, 300);
         return () => clearInterval(intervalId);
     }, [composer, threadRuntime, chatHistoryLoaded]);

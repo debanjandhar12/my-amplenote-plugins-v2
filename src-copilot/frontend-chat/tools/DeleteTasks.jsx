@@ -29,8 +29,7 @@ export const DeleteTasks = () => {
                 }
             }
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
+        group: "tasks",
         onInit: async ({setFormState, formData, setFormData, args}) => {
             const tasksContainerList = [];
             for (const taskItem of args.tasks) {

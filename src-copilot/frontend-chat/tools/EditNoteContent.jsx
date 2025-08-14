@@ -29,8 +29,7 @@ export const EditNoteContent = () => {
             },
             required: ["noteUUID"]
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
+        group: "notes",
         renderInit: () => {
             const { Spinner } = window.RadixUI;
             return <ToolCardMessage text={`Generating content...`} icon={<Spinner />} />
@@ -163,11 +162,6 @@ export const EditNoteContent = () => {
         renderCanceled: ({formData, toolName, args}) => {
             return <ToolCardCanceledMessage text={`${toolName} tool invocation canceled.`}
                 toolName={toolName} input={{note: args.noteUUID, newContent: formData.newContent}} />
-        },
-        onCanceled: ({addResult, args, formData, cancelFurtherLLMReply}) => {
-            addResult("Tool invocation canceled by user. No operation was performed.\n"+
-                `Input (canceled): ${JSON.stringify({noteUUID: args.noteUUID, suggestedContent: formData.newContent})}`);
-            cancelFurtherLLMReply();
         }
     });
 }

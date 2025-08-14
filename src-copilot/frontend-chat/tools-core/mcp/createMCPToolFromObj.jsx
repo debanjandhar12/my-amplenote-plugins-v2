@@ -13,8 +13,7 @@ export function createMCPToolFromObj(mcpServerUrl, toolName, toolObj) {
             properties: toolObj.parameters?.jsonSchema?.properties,
             required: toolObj.parameters?.jsonSchema?.required
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@mcp")
-            || JSON.stringify(allUserMessages).includes("@all-tools"),
+        group: "mcp",
         renderWaitingForUserInput: ({args, status, setFormState}) => {
             const { Text, ScrollArea, Separator, Code } = window.RadixUI;
             return (

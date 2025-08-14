@@ -6,6 +6,7 @@ import {errorToString} from "../helpers/errorToString.js";
 import {uniqBy} from "lodash-es";
 import {stripYAMLFromMarkdown} from "../../markdown/stripYAMLFromMarkdown.js";
 import {processAndMergeCopilotDBResults} from "../helpers/processAndMergeCopilotDBResults.js";
+import {MAX_TOOL_RESULT_LENGTH2} from "../../constants.js";
 
 export const SearchNotesByTitleTagsContent = () => {
     return createGenericReadTool({
@@ -51,8 +52,7 @@ export const SearchNotesByTitleTagsContent = () => {
                 }
             }
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
+        group: "notes",
         renderInit: ({args, formData}) => {
             const {copilotDBSearchError} = formData;
             const {Flex, Text, Spinner} = window.RadixUI;
@@ -226,7 +226,7 @@ export const SearchNotesByTitleTagsContent = () => {
         },
         onCompleted: ({addResult, formData}) => {
             const {searchResults} = formData;
-            addResult({resultSummary: `Search completed.`, searchResults});
+            addResult({resultSummary: `Search completed.`, searchResults}, MAX_TOOL_RESULT_LENGTH2);
         },
         renderCompleted: ({formData, toolName, args}) => {
             const {Flex, Text} = window.RadixUI;

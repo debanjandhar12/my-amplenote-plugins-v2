@@ -183,7 +183,7 @@ export const overwriteWithAmplenoteStyle = () => {
     // Inject some custom styles
     const styleEl3 = document.createElement('style');
     styleEl3.innerText = `
-    .tool_category_mention {
+    .tool_group_mention {
         background-color: var(--accent-a3);
         border-radius: var(--aui-radius);
     }
@@ -206,6 +206,10 @@ export const overwriteWithAmplenoteStyle = () => {
         background-color: hsla(var(--aui-destructive), 0.5);
         color: hsla(var(--aui-destructive-foreground), 0.5);
         cursor: not-allowed;
+    }
+    .aui-composer-root { 
+        padding-left: 0.325rem; 
+        padding-right: 0.325rem; 
     }
     `.replace(/\s+/g, ' ').trim();
     body.appendChild(styleEl3);

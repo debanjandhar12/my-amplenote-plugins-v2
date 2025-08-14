@@ -17,8 +17,7 @@ export const WebSearch = () => {
             },
             required: ["query"]
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@web")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
+        group: "web",
         onInit: async ({args, formData, setFormData, setFormState, signal}) => {
             const searchResults = await search(args.query, signal);
             setFormData({...formData, searchResults});

@@ -1,4 +1,8 @@
-export const useTributeSetup = (textareaRef, toolCategoryNames) => {
+import { getChatAppContext } from "../context/ChatAppContext.jsx";
+import {useEnabledTools} from "./useEnabledTools.jsx";
+
+export const useTributeSetup = (textareaRef, toolGroupNames) => {
+    const { enableToolGroup } = useEnabledTools();
     const composerRuntime = AssistantUI.useComposerRuntime();
 
     React.useEffect(() => {
@@ -29,9 +33,9 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
         document.body.append(style);
         const tribute = new window.Tribute({
             trigger: '@',
-            values: toolCategoryNames.map(toolCategory => { return {
-                key: toolCategory,
-                value: toolCategory
+            values: toolGroupNames.map(toolGroup => { return {
+                key: toolGroup,
+                value: toolGroup
             }}),
             noMatchTemplate: null,
             containerClass: 'tribute-container',
@@ -43,8 +47,13 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
         });
         tribute.attach(textareaRef.current);
         const tributeOnReplace = (event) => {
-            const currentValue = textareaRef.current.value;
-            composerRuntime.setText(currentValue);
+            // Enabled tool group in composer menu
+            const selectedToolGroup = event.detail.item.original.value;
+            enableToolGroup(selectedToolGroup);
+
+            // Update composer text to inform assistant-ui about textarea change
+            const currentTextAreaValue = textareaRef.current.value;
+            composerRuntime.setText(currentTextAreaValue);
         }
         textareaRef.current
             .addEventListener("tribute-replaced", tributeOnReplace);
@@ -55,5 +64,5 @@ export const useTributeSetup = (textareaRef, toolCategoryNames) => {
             textareaRef.current
                 .removeEventListener("tribute-replaced", tributeOnReplace);
         };
-    }, [textareaRef, toolCategoryNames]);
+    }, [textareaRef, toolGroupNames]);
 }

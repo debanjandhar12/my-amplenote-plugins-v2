@@ -1,6 +1,6 @@
 import dynamicImportESM, {
     dynamicImportCSS,
-    dynamicImportExternalPluginBundle, dynamicImportMultipleESM
+    dynamicImportExternalPluginBundle
 } from "../../common-utils/dynamic-import-esm.js";
 import {getLLMModel} from "../aisdk-wrappers/getLLMModel.js";
 import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
@@ -10,7 +10,7 @@ import {overwriteWithAmplenoteStyle} from "../frontend-chat/overwriteWithAmpleno
 import {ChatApp} from "../frontend-chat/ChatApp.jsx";
 import {parse} from "../markdown/markdown-parser.js";
 import {ToolRegistry} from "../frontend-chat/tools-core/registry/ToolRegistry.js";
-import {ToolCategoryRegistry} from "../frontend-chat/tools-core/registry/ToolCategoryRegistry.js";
+import {ToolGroupRegistry} from "../frontend-chat/tools-core/registry/ToolGroupRegistry.js";
 import {makeCustomMarkdownText} from "../frontend-chat/components/makeCustomMarkdownText.jsx";
 
 if(process.env.NODE_ENV === 'development') {
@@ -65,20 +65,18 @@ setInterval(() => window.dispatchEvent(new Event('resize')), 100);
                 dynamicImportCSS("@radix-ui/themes/styles.css"),
                 dynamicImportCSS("@assistant-ui/react-markdown/dist/styles/markdown.css")]);
         const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown,
-            RadixIcons, StringDiffModule, dayjs, tributejs, ReactErrorBoundary]
+            RadixIcons, StringDiffModule, dayjs, tributejs, ReactErrorBoundary, AssistantUIUtils]
             = await dynamicImportExternalPluginBundle('assistantUIBundle.js');
         // const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown,
         //     RadixIcons, StringDiffModule]
         //     = await dynamicImportMultipleESM(["react", "react-dom/client", "@assistant-ui/react", "@radix-ui/themes", "@assistant-ui/react-markdown", "@radix-ui/react-icons", "react-string-diff"]);
         window.AssistantUIMarkdown = AssistantUIMarkdown;
-        window.AssistantUIMarkdownComponent = makeCustomMarkdownText();
+        window.AssistantUIMarkdownComponent = await makeCustomMarkdownText();
         window.React = React;
         window.ReactDOM = ReactDOM;
         window.AssistantUI = AssistantUI;
         window.RadixUI = RadixUI;
-        window.AssistantUIUtils = {};
-        window.AssistantUIUtils.DangerousInBrowserAdapter = (await dynamicImportESM("@assistant-ui/react/src/runtimes/dangerous-in-browser/DangerousInBrowserAdapter.ts")).DangerousInBrowserAdapter;
-        window.AssistantUIUtils.splitLocalRuntimeOptions = (await dynamicImportESM("@assistant-ui/react/src/runtimes/local/LocalRuntimeOptions.tsx")).splitLocalRuntimeOptions;
+        window.AssistantUIUtils = AssistantUIUtils;
         window.RadixIcons = RadixIcons;
         window.StringDiff = StringDiffModule.StringDiff;
         window.dayjs = dayjs.default;

@@ -29,8 +29,7 @@ export const DeleteUserNotes = () => {
                 }
             }
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@notes")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
+        group: "notes",
         onInit: async ({setFormState, formData, setFormData, args}) => {
             const notesContainerList = [];
             for (const noteItem of args.notes) {

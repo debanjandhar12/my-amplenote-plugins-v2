@@ -52,7 +52,7 @@ export const EMBED_COMMANDS_MOCK = {
     "getSettings": async () => {
         await dynamicImportEnv();
         return {
-            ...getLLMProviderSettings('google'),
+            ...getLLMProviderSettings('groq'),
             [MCP_SERVER_URL_LIST_SETTING]: process.env.MCP_URL,
             [USER_PROMPT_LIST_SETTING]: JSON.stringify([{uuid:'a', message: "Test A", usageCount:0},{uuid: 'b', message: "Test B", usageCount:0}]),
         }
@@ -70,6 +70,8 @@ export const EMBED_COMMANDS_MOCK = {
         return null;
     },
     "searchUserTasks": async (app, sqlQuery) => {
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        // throw new Error("Error in searchUserTasks");
         return {
             success: true,
             taskCount: 0,
@@ -97,7 +99,7 @@ export const getLLMProviderSettings = (provider) => {
         return {
             [LLM_API_KEY_SETTING]: process.env.GOOGLE_API_KEY,
             [LLM_API_URL_SETTING]: "https://generativelanguage.googleapis.com/v1beta",
-            [LLM_MODEL_SETTING]: "gemini-2.0-flash"
+            [LLM_MODEL_SETTING]: "gemini-2.5-flash"
         }
     } else if (provider === 'fireworks') {
         return {
@@ -109,7 +111,7 @@ export const getLLMProviderSettings = (provider) => {
         return {
             [LLM_API_KEY_SETTING]: '',
             [LLM_API_URL_SETTING]: "http://localhost:11434/api",
-            [LLM_MODEL_SETTING]: "llama3.1"
+            [LLM_MODEL_SETTING]: "qwen/qwen3-32b"
         }
     }
     throw new Error(`Dummy setting data for provider not found: ${provider}`);

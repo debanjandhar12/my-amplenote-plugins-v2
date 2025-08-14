@@ -62,8 +62,7 @@ export const UpdateUserTasks = () => {
                 }
             }
         },
-        triggerCondition: ({allUserMessages}) => JSON.stringify(allUserMessages).includes("@tasks")
-        || JSON.stringify(allUserMessages).includes("@all-tools"),
+        group: "tasks",
         onInit: async ({setFormState, formData, setFormData, args}) => {
             if (!args.tasks || !Array.isArray(args.tasks)) {
                 throw new Error('Invalid arguments: tasks must be an array');

@@ -1,106 +1,98 @@
 import {CUSTOM_LLM_INSTRUCTION_SETTING, LLM_API_URL_SETTING, LLM_MODEL_SETTING} from "../../constants.js";
 
-export function getSystemMessage(currentMessages, toolsToAdd) {
+export function getSystemMessage(currentMessages, enabledTools) {
     const messagesContainImageAttachments = currentMessages.some(message => 
         message.attachments && message.attachments.length > 0 && 
         message.attachments.some(attachment => attachment.type === 'image')
     );
+    if (messagesContainImageAttachments) return null; // Some llm providers doesn't support system prompt with image attachments
+    const lastMessage = currentMessages[currentMessages.length - 1] || null;
     const messageContainsAttachments = currentMessages.some(message =>
         message.attachments && message.attachments.length > 0
     );
 
-    const lastMessage = currentMessages[currentMessages.length - 1] || null;
-    const lastLastMessage = currentMessages[currentMessages.length - 2] || null;
-    const allUserMessages = [...currentMessages].filter(message => message.role === 'user');
-    const tasksWordMentioned = JSON.stringify(allUserMessages).includes("task");
-    const notesWordMentioned = JSON.stringify(allUserMessages).includes("note") || JSON.stringify(allUserMessages).includes("page");
-    const atTheRateLetterMentioned = JSON.stringify(allUserMessages).includes("@");
-    const jotWordMentioned = JSON.stringify(allUserMessages).includes("jot");
-
-    if (messagesContainImageAttachments) {
-        return null;
-    }
+    const isNotesToolGroupEnabled = enabledTools.includes('notes');
+    const isTasksToolGroupEnabled = enabledTools.includes('tasks');
 
     function getToolUsageMessage() {
-        if (!(notesWordMentioned || tasksWordMentioned || atTheRateLetterMentioned)) {
-            return '';
+        if (enabledTools.length === 0) {
+            return `\nNo tools are enabled currently. If tools are required, ask to enable them. Tool groups that can be enabled by user: "@tasks", "@notes", "@help" and "@web".`;
         }
 
-        if (toolsToAdd.length === 0) {
-            return `To interact with Amplenote, call tools. If tools are very much required but cannot be called, ask the user to type @tool_name to enable them. If tool prepended with @ is typed by user, it is already enabled. Only "@tasks", "@notes", "@help" and "@web" are possible.`;
-        }
+        let toolUsageMessage = "";
 
-        let toolUsageMessage = "NEVER call multiple tools in parallel as tool result needs to be awaited.";
-        if (lastMessage && (lastMessage.role === 'user' ||
-            (lastMessage.role === 'assistant' && lastMessage.content.length <= 1))) {
-            toolUsageMessage += "To interact with Amplenote, call tools. If tools are required, think a step-by-step plan ensuring to fetch required parameters first.";
-            toolUsageMessage += window.appSettings[LLM_API_URL_SETTING].includes('googleapis') ?
-                'When calling tools, make reasonable assumptions for missing parameters as after tool call user confirmations will be required. DO NOT ask for confirmation separately.' : '';
-            toolUsageMessage += window.appSettings[LLM_API_URL_SETTING].includes('googleapis') && notesWordMentioned ?
-                'When using SearchNotesByTitleTagsContent, search by content unless specifically mentioned otherwise.' : '';
-        }
-        else {
-            toolUsageMessage += "To interact with Amplenote, call tools." + " " + toolUsageMessage;
-        }
+        // Add basic tool call rules
+        toolUsageMessage += "Your primary goal is to help users efficiently, adhering strictly to the following instructions and utilizing your available tools.\n";
+        toolUsageMessage += "Tool Usage Instructions:-\n" +
+        "- NEVER say the tool name and uuid string to user. For example, instead of saying that you'll use WebSearch tool, just say I'll search the web.\n" +
+        "- No need to ask permission before using a tool\n"+
+        "- Formulate an plan for your future self at the start. However, DON'T repeat yourself after a tool call, pick up where you left off.\n"+
+        "- Execute multiple tool calls in parallel if feasible; avoid when dependent on prior outputs (e.g. UUIDs)\n"+
+        ((isNotesToolGroupEnabled || isTasksToolGroupEnabled) ? "- When requested to perform tasks, don't make assumptions. First, gather as much context as needed by calling tools." : "");
 
-        let resultInstruction = "";
-        if (lastMessage || lastLastMessage) {
+        return toolUsageMessage;
+    }
+
+    function getToolResultDisplayInstruction() {
+        let resultDisplayInstruction = "Note:- ";
+        if (lastMessage) {
             const lastContentContainsWebSearch = lastMessage && lastMessage.content.some(obj => obj.toolName === 'WebSearch');
             const lastContentContainsSearchNote = lastMessage && lastMessage.content.some(obj => obj.toolName === 'SearchNotesByTitleTagsContent');
             const lastContentContainsSearchHelpCenter = lastMessage && lastMessage.content.some(obj => obj.toolName === 'SearchHelpCenter');
-            const lastLastContentContainsWebSearch = lastLastMessage && lastLastMessage.content.some(obj => obj.toolName === 'WebSearch');
-            const lastLastContentContainsSearchNote = lastLastMessage && lastLastMessage.content.some(obj => obj.toolName === 'SearchNotesByTitleTagsContent');
-            const lastLastContentContainsSearchHelpCenter = lastLastMessage && lastLastMessage.content.some(obj => obj.toolName === 'SearchHelpCenter');
-            
-            if (lastContentContainsWebSearch || lastLastContentContainsWebSearch) {
-                resultInstruction = "If the user is asking a question, provide comprehensive answer using information from search results.\n" +
-                    "Additionally, cite source links in markdown at end.";
-            }
-            if (lastContentContainsSearchNote || lastLastContentContainsSearchNote) {
-                resultInstruction =
+
+            if (lastContentContainsWebSearch) {
+                resultDisplayInstruction +=
                     "If the user is asking a question, provide comprehensive answer using information from search results.\n" +
-                    "Additionally, cite source note links in markdown at end." +
+                    "List relevant links at end for reference.";
+            }
+            if (lastContentContainsSearchNote) {
+                resultDisplayInstruction +=
+                    "The search result only contains the matched portion of the note content. " +
+                    "If full context is required, use the FetchNoteDetailByNoteUUID tool to retrieve the complete note content.";
+            }
+            if (lastContentContainsSearchNote) {
+                resultDisplayInstruction +=
+                    "If the user is asking a question, provide comprehensive answer using information from search results.\n" +
+                    "List relevant note links in markdown at end for reference." +
                     " To link to a note, use syntax: [Page Title](https://www.amplenote.com/notes/{noteUUID}).";
             }
-            if (lastContentContainsSearchHelpCenter || lastLastContentContainsSearchHelpCenter) {
-                resultInstruction =
+            if (lastContentContainsSearchHelpCenter) {
+                resultDisplayInstruction +=
                     "If the user is asking a question, provide comprehensive answer using information from search results.\n" +
                     "Use markdown image syntax to include images in your answer when relevant.\n" +
-                    "Additionally, cite source note links in markdown at end.\n" +
-                    "To link to a note, use syntax: [Page Title](https://www.amplenote.com/help/{noteUUID}).";
+                    "List relevant help center links at end for reference.";
             }
         }
-        return resultInstruction.trim() !== '' ? toolUsageMessage + " " + resultInstruction : toolUsageMessage;
+        return resultDisplayInstruction;
     }
 
+
     const terminology = [
-        (tasksWordMentioned || notesWordMentioned) ? `Daily Jot: Daily note for storing thoughts and tasks.` : '',
-        notesWordMentioned ? `Note / Page: Markdown notes in amplenote.` : '',
-        notesWordMentioned ? `Note UUID: 36 character internal id. User does not understand this. Get this by calling Search note with note name if required.` : '',
-        tasksWordMentioned ? `Task: Stored in notes, viewable in Agenda and Calendar views.
-        Task Domain: Organizational containers for tasks, pulling in tasks from external calendars and Amplenote. All tasks belong to a domain.` : ''
+        (isTasksToolGroupEnabled || isNotesToolGroupEnabled) ? `Daily Jot: Note tagged with #daily-jots for storing daily thoughts.` : '',
+        isNotesToolGroupEnabled ? `Note: Markdown pages stored in amplenote.` : '',
+        (isTasksToolGroupEnabled || isNotesToolGroupEnabled) ? `Note / Task UUID: 36 character internal id required for some tools.` : '',
+        isTasksToolGroupEnabled ? `Task: Stored in notes, viewable in Agenda and Calendar views.
+        Task Domain: Organizational containers for tasks.` : ''
     ].filter(Boolean).join('\n').trim();
 
     const userInfo = [
-        window.userData.dailyJotNoteUUID && (tasksWordMentioned || jotWordMentioned) ? `Today's daily jot note UUID: ${window.userData.dailyJotNoteUUID}` : '',
-        window.userData.currentNoteUUID && notesWordMentioned ? `Current Note UUID: ${window.userData.currentNoteUUID}` : '',
-        messageContainsAttachments && window.userData.currentNoteUUID && notesWordMentioned ? `Prefer attached note over current note unless specified otherwise.` : '',
+        window.userData.dailyJotNoteUUID ? `Today's daily jot note UUID: ${window.userData.dailyJotNoteUUID}` : '',
+        window.userData.currentNoteUUID ? `Current Note UUID: ${window.userData.currentNoteUUID}` : '',
+        messageContainsAttachments && window.userData.currentNoteUUID ? `Attached note takes priority over current note to fulfill user request.` : '',
     ].filter(Boolean).join('\n').trim();
 
     const systemMsg = `
-    You are Ample Copilot, an ai assistant inside a note-taking app called Amplenote. You help users improve productivity and provide accurate information.
-    ${getToolUsageMessage()}
-    
+    You are Ample Copilot, a automated ai agent inside note-taking productivity app - Amplenote. ${getToolUsageMessage()}
     ${terminology ? `Terminology:-\n${terminology}` : ''}
-    
-    ${userInfo ? `User info:-\n${userInfo}` : ''}
-    Current time: ${window.dayjs().format()}
-    ${Intl.DateTimeFormat().resolvedOptions().timeZone ? `Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}\n` : ''}
     ${
-        window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING] && window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING].trim() !== '' ?
-            "Additional Instruction from user:-\n"+window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING].trim().replaceAll(/\s+/gm, ' ').trim() :
-            ''
+    window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING] && window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING].trim() !== '' ?
+        "Additional Instruction from user:-\n"+window.appSettings[CUSTOM_LLM_INSTRUCTION_SETTING].trim().replaceAll(/\s+/gm, ' ').trim() :
+        ''
     }
+    ${getToolResultDisplayInstruction()}
+    ${userInfo ? `User info:-\n${userInfo}` : ''}
+    ${Intl.DateTimeFormat().resolvedOptions().timeZone ? `Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}\n` : ''}
+    Current time: ${window.dayjs().format()}
     `.trim().replaceAll(/^[ \t]+/gm, '').trim();
 
     return systemMsg;

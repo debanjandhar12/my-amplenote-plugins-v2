@@ -1,21 +1,21 @@
 import {ToolRegistry} from "../tools-core/registry/ToolRegistry.js";
-import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
+import {ToolGroupRegistry} from "../tools-core/registry/ToolGroupRegistry.js";
 import {errorToString} from "../helpers/errorToString.js";
 
 export const useToolRegistries = () => {
-    const [toolCategoryNames, setToolCategoryNames] = React.useState([]);
+    const [toolGroupNames, setToolGroupNames] = React.useState([]);
     const [tools, setTools] = React.useState([]);
     
     React.useEffect(() => {
         const initializeRegistries = async () => {
             try {
                 await ToolRegistry.registerInbuiltTools();
-                ToolCategoryRegistry.updateAllCategory();
-                setToolCategoryNames(ToolCategoryRegistry.getAllCategoriesNames());
+                ToolGroupRegistry.updateAllGroups();
+                setToolGroupNames(ToolGroupRegistry.getAllGroupNames());
                 setTools(ToolRegistry.getAllTools());
                 await ToolRegistry.registerMCPTools();
-                ToolCategoryRegistry.updateAllCategory();
-                setToolCategoryNames(ToolCategoryRegistry.getAllCategoriesNames());
+                ToolGroupRegistry.updateAllGroups();
+                setToolGroupNames(ToolGroupRegistry.getAllGroupNames());
                 setTools(ToolRegistry.getAllTools());
             } catch (e) {
                 console.error("Failed to initialize tool registries:", e);
@@ -25,5 +25,5 @@ export const useToolRegistries = () => {
         initializeRegistries();
     }, []);
     
-    return { toolCategoryNames, tools };
+    return { toolGroupNames, tools };
 }; 

@@ -29,5 +29,6 @@ export const stripYAMLFromMarkdown = async (markdownText) => {
             return 'skip';
         }
     });
+    console.log('stripYAMLFromMarkdown', markdownText, textContent.trim());
     return textContent.trim();
 }

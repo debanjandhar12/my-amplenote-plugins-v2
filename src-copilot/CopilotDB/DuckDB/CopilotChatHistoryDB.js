@@ -1,11 +1,11 @@
-import {OPFSUtils} from "./OPFSUtils.js";
+import {LocalStorageUtils} from "./LocalStorageUtils.js";
 import {COPILOT_DB_INDEX_VERSION, MAX_CHAT_HISTORY_THREADS} from "../../constants.js";
 import { throttle } from "lodash-es";
 
 /**
- * Manages chat history in OPFS with an in-memory cache layer to reduce latency.
+ * Manages chat history in LocalStorage with an in-memory cache layer to reduce latency.
  * Reads are served directly from the cache. Writes are applied to the cache immediately
- * and then flushed to the OPFS file asynchronously with a throttle mechanism to prevent data loss.
+ * and then flushed to LocalStorage asynchronously with a throttle mechanism to prevent data loss.
  */
 export class CopilotChatHistoryDB {
     static _instance = null;
@@ -15,45 +15,39 @@ export class CopilotChatHistoryDB {
         if (this.isInitialized) return;
 
         this.fileName = 'copilot-chat-history.json';
-        this.opfsSupported = null;
-        this.threadsCache = null; // In-memory cache for all threads
+        this.localStorageSupported = null;
+        this.threadsCache = {}; // In-memory cache for all threads
         this._scheduleSave = throttle(this._persistCache.bind(this), 1000, { leading: true, trailing: true });
 
-        this.opfsSupported = await OPFSUtils.checkSupport();
+        this.localStorageSupported = LocalStorageUtils.checkSupport();
 
-        if (this.opfsSupported) {
+        if (this.localStorageSupported) {
             await this._handleVersionReset();
-            const data = await OPFSUtils.readJsonFile(this.fileName);
-            // The data can be in the new format { version, threads } or old format (just threads object)
+            const data = await LocalStorageUtils.readJsonFile(this.fileName);
             if (data && data.threads) {
                 this.threadsCache = data.threads;
-            } else {
-                this.threadsCache = data || {};
             }
-        } else {
-            console.warn('OPFS not supported, using in-memory storage for chat history. Data will be lost on page refresh.');
-            this.threadsCache = {};
         }
 
         this.isInitialized = true;
     }
 
     /**
-     * Persists the in-memory cache to the OPFS file.
+     * Persists the in-memory cache to LocalStorage.
      * This method is throttled in the constructor.
      * @private
      */
     async _persistCache() {
-        if (!this.opfsSupported) return;
+        if (!this.localStorageSupported) return;
 
         try {
             const dataToSave = {
                 version: COPILOT_DB_INDEX_VERSION,
                 threads: this.threadsCache,
             };
-            await OPFSUtils.writeJsonFile(this.fileName, dataToSave);
+            await LocalStorageUtils.writeJsonFile(this.fileName, dataToSave);
         } catch (error) {
-            console.error('Failed to save chat history to OPFS:', error);
+            console.error('Failed to save chat history to LocalStorage:', error);
         }
     }
 
@@ -107,6 +101,7 @@ export class CopilotChatHistoryDB {
             opened: thread.opened || thread.updated,
             status: thread.status,
             messages: thread.messages,
+            enabledToolGroups: thread.enabledToolGroups,
         };
 
         // Enforce max number of threads
@@ -145,17 +140,18 @@ export class CopilotChatHistoryDB {
     }
 
     async _handleVersionReset() {
-        if (!this.opfsSupported) return;
+        if (!this.localStorageSupported) return;
 
         try {
-            const data = await OPFSUtils.readJsonFile(this.fileName);
+            const data = await LocalStorageUtils.readJsonFile(this.fileName);
 
             if (!data) return;
 
             const currentVersion = data.version || 0;
 
             if (currentVersion !== COPILOT_DB_INDEX_VERSION) {
-                await OPFSUtils.deleteFile(this.fileName);
+                await LocalStorageUtils.deleteFile(this.fileName);
+                this.threadsCache = {};
                 console.log(`Chat history reset completed due to version change from ${currentVersion} to ${COPILOT_DB_INDEX_VERSION}.`);
             }
         } catch (error) {

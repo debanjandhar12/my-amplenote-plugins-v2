@@ -12,20 +12,12 @@ export const createGenericCUDTool = ({
                                                  toolName,
                                                  description,
                                                  parameters,
-                                                 triggerCondition,
+                                                 group,
                                                  onInit = ({setFormState}) => {
                                                     setFormState('waitingForUserInput');
                                                  },
                                                  onCompleted = () => {},
                                                  onSubmitted = () => {},
-                                                 onCanceled = ({addResult, args, cancelFurtherLLMReply}) => {
-                                                     addResult("Tool invocation canceled by user. No operation was performed.\n"+
-                                                     `Input (canceled): ${JSON.stringify(args)}`);
-                                                     cancelFurtherLLMReply();
-                                                 },
-                                                 onError = ({formError, addResult}) => {
-                                                     addResult(`Error: ${errorToString(formError)}. Tool invocation failed.`);
-                                                 },
                                                  renderWaitingForUserInput = () => {},
                                                  renderInit = () => {
                                                      const { Spinner } = window.RadixUI;
@@ -45,17 +37,21 @@ export const createGenericCUDTool = ({
                                                          text={"Error: " + errorToString(formError)} color="red" />
                                                  },
 }) => {
-    return AssistantUI.makeAssistantToolUI({
+    const tool = AssistantUI.makeAssistantToolUI({
         toolName,
         description,
+        group,
         parameters,
-        triggerCondition,
         render: ({ args, status, result, addResult, toolCallId }) => {
             const allParameters = useGenericToolParameters({
                 toolName, toolCallId, description, parameters,
                 args, status, result, addResult});
 
             const [formState, setFormState, formRender] = useGenericToolFormState({
+                booting: {
+                    eventHandler: null,
+                    renderer: () => null
+                },
                 init: {
                     eventHandler: onInit,
                     renderer: renderInit,
@@ -73,11 +69,11 @@ export const createGenericCUDTool = ({
                     renderer: renderCompleted
                 },
                 canceled: {
-                    eventHandler: onCanceled,
+                    eventHandler: null,
                     renderer: renderCanceled
                 },
                 error: {
-                    eventHandler: onError,
+                    eventHandler: null,
                     renderer: renderError
                 }
             }, allParameters);
@@ -85,4 +81,6 @@ export const createGenericCUDTool = ({
             return formRender ? formRender({...allParameters, formState, setFormState}) : null;
         }
     });
+
+    return tool;
 }

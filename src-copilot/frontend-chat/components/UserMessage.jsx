@@ -1,9 +1,9 @@
 // Based on https://github.com/Yonom/assistant-ui/blob/70ea4a87283d9dc34965ef9d9a80504a05ab8979/packages/react/src/ui/user-message.tsx
-import {replaceParagraphTextInMarkdown} from "../../markdown/replaceParagraphTextInMarkdown.jsx";
-import {ToolCategoryRegistry} from "../tools-core/registry/ToolCategoryRegistry.js";
-import {ToolCategoryMentionComponent} from "./makeCustomMarkdownText.jsx";
-import {FileAttachmentDisplay} from "./FileAttachmentDisplay.jsx";
-import {getChatAppContext} from "../context/ChatAppContext.jsx";
+import { ToolGroupRegistry } from "../tools-core/registry/ToolGroupRegistry.js";
+import { ToolGroupMentionComponent } from "./makeCustomMarkdownText.jsx";
+import { FileAttachmentDisplay } from "./FileAttachmentDisplay.jsx";
+import { getChatAppContext } from "../context/ChatAppContext.jsx";
+import { processToolGroupMentions } from "../helpers/tool-group-mentions.js";
 
 const UserMessage = () => {
     const { UserMessage, MessagePrimitive, UserActionBar, BranchPicker } = window.AssistantUI;
@@ -26,7 +26,7 @@ const UserMessageContentWrapper = ({ children, ...props }) => (
 );
 
 const UserMessageContent = (props) => {
-    const { MessagePrimitive, ContentPart } = window.AssistantUI;
+    const { MessagePrimitive } = window.AssistantUI;
     return (
         <UserMessageContentWrapper {...props}>
             <MessagePrimitive.Content
@@ -40,36 +40,31 @@ const UserMessageContent = (props) => {
 
 const UserMessageText = ({ text }) => {
     const [children, setChildren] = React.useState(null);
-    const { toolCategoryNames } = React.useContext(getChatAppContext());
+    const { toolGroupNames } = React.useContext(getChatAppContext());
 
     React.useEffect(() => {
         const processText = async () => {
-            let tempText = text;
-            for (const categoryName of toolCategoryNames) {
-                const toolCategory = ToolCategoryRegistry.getCategory(categoryName);
-                tempText = await replaceParagraphTextInMarkdown(tempText, (oldVal) => {
-                    return oldVal.replace(new RegExp('@' + categoryName + '(\\s|$)', 'g'), '<toolcategorymention123XG>@' + categoryName + '</toolcategorymention123XG>$1');
-                });
-            }
-            const tempChildren = tempText.split(' ').map((part, i) => {
-                if (part.startsWith('<toolcategorymention123XG>') && part.endsWith('</toolcategorymention123XG>')) {
-                    const toolCategory = ToolCategoryRegistry.getCategory(part.substring(part.indexOf('>@') + 2, part.lastIndexOf('<')));
-                    return <span key={i}>
-                        {i === 0 ? '' : ' '}
-                        <ToolCategoryMentionComponent {...toolCategory}>{part.substring(part.indexOf('>@') + 2, part.lastIndexOf('<'))}</ToolCategoryMentionComponent>
-                    </span>
-                }
-                return i === 0 ? part : ' ' + part;
+            const result = processToolGroupMentions(text, toolGroupNames, (groupName, mention) => {
+                const toolGroup = ToolGroupRegistry.getGroup(groupName);
+                return (
+                    <ToolGroupMentionComponent key={mention.start} {...toolGroup}>
+                        {groupName}
+                    </ToolGroupMentionComponent>
+                );
             });
-            setChildren(tempChildren);
+            
+            setChildren(result);
         };
 
         processText();
-    }, [text, toolCategoryNames]);
+    }, [text, toolGroupNames]);
 
-    return <div className="aui-md-p">
-        {children}
-    </div>
+    return (
+        // pre-wrap added to preserve new lines
+        <div className="aui-md-p" style={{whiteSpace: 'pre-wrap'}}>
+            {children}
+        </div>
+    )
 };
 
 export { UserMessage };

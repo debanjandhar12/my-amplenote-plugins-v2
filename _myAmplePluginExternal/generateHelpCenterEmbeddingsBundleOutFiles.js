@@ -1,22 +1,26 @@
-import {Splitter} from "../src-copilot/CopilotDB/splitter/Splitter.js";
-import {mockApp, mockNote} from "../common-utils/test-helpers.js";
-import {getCorsBypassUrl} from "../common-utils/cors-helpers.js";
-import {EMBEDDING_API_KEY_SETTING, EMBEDDING_API_URL_SETTING, COPILOT_DB_MAX_TOKENS} from "../src-copilot/constants.js";
-const { existsSync } = require('fs');
-const { join } = require('path');
-const { JSDOM } = require("jsdom");
-const parquet = require('parquetjs-lite');
-import {fetch} from "cross-fetch";
-import {TransformStream} from 'stream/web';
-import {cloneDeep} from "lodash-es";
-import {OpenAIEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/OpenAIEmbeddingGenerator.js";
-import {FireworksEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/FireworksEmbeddingGenerator.js";
-import {OllamaEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/OllamaEmbeddingGenerator.js";
-import {PineconeEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/PineconeEmbeddingGenerator.js";
-import {GoogleEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/GoogleEmbeddingGenerator.js";
+import { existsSync } from 'fs';
+import { join } from 'path';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { JSDOM } from "jsdom";
+import parquet from 'parquetjs-lite';
+import { fetch } from "cross-fetch";
+import { TransformStream } from 'stream/web';
+import { cloneDeep } from "lodash-es";
+import { Splitter } from "../src-copilot/CopilotDB/splitter/Splitter.js";
+import { mockApp, mockNote } from "../common-utils/test-helpers.js";
+import { getCorsBypassUrl } from "../common-utils/cors-helpers.js";
+import { EMBEDDING_API_KEY_SETTING, EMBEDDING_API_URL_SETTING, COPILOT_DB_MAX_TOKENS } from "../src-copilot/constants.js";
+import { OpenAIEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/OpenAIEmbeddingGenerator.js";
+import { FireworksEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/FireworksEmbeddingGenerator.js";
+import { OllamaEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/OllamaEmbeddingGenerator.js";
+import { PineconeEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/PineconeEmbeddingGenerator.js";
+import { GoogleEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/GoogleEmbeddingGenerator.js";
+
+// Jest provides __dirname automatically
 
 /**
- * This script is used to generate embeddings and store in bundles folder as parquet files.
+ * This script is used to generate embeddings and store in dist folder as parquet files.
  * Once generated, the bundles can be published to npm.
  * This can then be imported in plugin and be used to search help center.
  * Usage:
@@ -24,7 +28,7 @@ import {GoogleEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/Goog
  * sudo service ollama stop (for linux)
  * OLLAMA_ORIGINS=https://plugins.amplenote.com ollama serve
  * ollama pull jina/jina-embeddings-v2-small-en:latest (first time only)
- * npx jest --runTestsByPath ./_myAmplePluginExternal/generateHelpCenterEmbedingsBundleFile.js --passWithNoTests --testMatch "**"
+ * npx jest --runTestsByPath ./_myAmplePluginExternal/generateHelpCenterEmbeddingsBundleOutFiles.js --passWithNoTests --testMatch "**"
  * Once parquet files are generated, it can be browsed using:
  * https://demo.duckui.com/
  */
@@ -32,11 +36,11 @@ import {GoogleEmbeddingGenerator} from "../src-copilot/CopilotDB/embeddings/Goog
 const CONFIG = {
     TEST_TIMEOUT: 6000000,
     OUTPUT_PATH: {
-        LOCAL: '/bundles/localHelpCenterEmbeddings.parquet',
-        PINECONE: '/bundles/pineconeHelpCenterEmbeddings.parquet',
-        OPENAI: '/bundles/openaiHelpCenterEmbeddings.parquet',
-        FIREWORKS: '/bundles/fireworksHelpCenterEmbeddings.parquet',
-        GOOGLE: '/bundles/googleHelpCenterEmbeddings.parquet',
+        LOCAL: '/dist/localHelpCenterEmbeddings.parquet',
+        PINECONE: '/dist/pineconeHelpCenterEmbeddings.parquet',
+        OPENAI: '/dist/openaiHelpCenterEmbeddings.parquet',
+        FIREWORKS: '/dist/fireworksHelpCenterEmbeddings.parquet',
+        GOOGLE: '/dist/googleHelpCenterEmbeddings.parquet',
     },
     HELP_CENTER_URLS: [
     ],
@@ -90,14 +94,14 @@ async function saveRecords(records, filePath) {
             'actualNoteContentPart': { type: 'UTF8' },
             'processedNoteContent': { type: 'UTF8' },
             'embedding': {
-              repeated: true,
-              type: 'FLOAT'
+                repeated: true,
+                type: 'FLOAT'
             },
             'noteUUID': { type: 'UTF8' },
             'noteTitle': { type: 'UTF8' },
             'noteTags': {
-              repeated: true,
-              type: 'UTF8'
+                repeated: true,
+                type: 'UTF8'
             },
             'headingAnchor': { type: 'UTF8', optional: true },
             'isArchived': { type: 'BOOLEAN' },
