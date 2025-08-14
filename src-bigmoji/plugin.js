@@ -151,7 +151,7 @@ const plugin = {
 
             // Get custom emojis from note
             const customEmojis = await app.getNoteContent({uuid: customEmojisNote.uuid});
-            const customEmojis2dArray = parseMarkdownTable(customEmojis);
+            const customEmojis2dArray = await parseMarkdownTable(customEmojis);
 
             // Transform the 2D table array into an array of emoji objects
             return customEmojis2dArray.map(row => {
@@ -182,7 +182,7 @@ const plugin = {
                 // Fetch custom emojis
                 const customEmojisNote = await plugin._findOrCreateCustomEmojisNote(app);
                 const customEmojis = await app.getNoteContent({uuid: customEmojisNote.uuid});
-                const customEmojis2dArray = parseMarkdownTable(customEmojis);
+                const customEmojis2dArray = await parseMarkdownTable(customEmojis);
                 // Add new emoji to table
                 const emojiUrl = await app.attachNoteMedia(customEmojisNote.uuid, emojiImgBase64);
                 const newEmojis2dArray = [...customEmojis2dArray, [emojiId, `![](${emojiUrl})`]];

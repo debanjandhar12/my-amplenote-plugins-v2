@@ -1,7 +1,7 @@
 import { parseMarkdownTable } from "../../markdown/parseMarkdownTable.js";
 
 describe('parseMarkdownTable', () => {
-    test('parses basic markdown table', () => {
+    test('parses basic markdown table', async () => {
         const markdown = `
 | Header 1 | Header 2 |
 |----------|----------|
@@ -13,10 +13,10 @@ describe('parseMarkdownTable', () => {
             ['Cell 1', 'Cell 2'],
             ['Cell 3', 'Cell 4']
         ];
-        expect(parseMarkdownTable(markdown)).toEqual(expected);
+        expect(await parseMarkdownTable(markdown)).toEqual(expected);
     });
 
-    test('parses table with images', () => {
+    test('parses table with images', async () => {
         const markdown = `
 | Emoji | Name |
 |-------|------|
@@ -28,10 +28,10 @@ describe('parseMarkdownTable', () => {
             ['![](https://example.com/smile.png)', 'Smile'],
             ['![](https://example.com/heart.png)', 'Heart']
         ];
-        expect(parseMarkdownTable(markdown)).toEqual(expected);
+        expect(await parseMarkdownTable(markdown)).toEqual(expected);
     });
 
-    test('parses mixed content table with text and images', () => {
+    test('parses mixed content table with text and images', async () => {
         const markdown = `
 | Mixed | Content |
 |-------|---------|
@@ -43,6 +43,6 @@ describe('parseMarkdownTable', () => {
             ['Regular text', '![](https://example.com/image.png)'],
             ['![](https://example.com/emoji.png)', 'More text']
         ];
-        expect(parseMarkdownTable(markdown)).toEqual(expected);
+        expect(await parseMarkdownTable(markdown)).toEqual(expected);
     });
 });

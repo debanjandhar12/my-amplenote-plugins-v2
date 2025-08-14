@@ -1,7 +1,5 @@
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
 import { visit } from 'unist-util-visit';
-import remarkGfm from "remark-gfm";
+import {parse} from "./parser.js";
 
 /**
  * Ths is not same one as used in charts plugin.
@@ -9,13 +7,10 @@ import remarkGfm from "remark-gfm";
  * @param markdownText
  * @returns {*[]}
  */
-export function parseMarkdownTable(markdownText) {
+export async function parseMarkdownTable(markdownText) {
     const result = [];
 
-    const tree = unified()
-        .use(remarkParse)
-        .use(remarkGfm)
-        .parse(markdownText);
+    const tree = await parse(markdownText);
 
     visit(tree, 'table', (node) => {
         node.children.forEach((row) => {
