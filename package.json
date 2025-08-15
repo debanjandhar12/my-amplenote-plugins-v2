@@ -90,9 +90,9 @@
     "playwright": "^1.49.1"
   },
   "scripts": {
-    "test": "jest --testPathPattern=src-charts",
-    "test:watch": "jest --testPathPattern=src-charts --watch",
-    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-charts",
-    "build:dev": "node esbuild.js $(pwd)/src-charts --watch --server"
+    "test": "jest --testPathPattern=src-copilot",
+    "test:watch": "jest --testPathPattern=src-copilot --watch",
+    "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-copilot",
+    "build:dev": "node esbuild.js $(pwd)/src-copilot --watch --server"
   }
 }
