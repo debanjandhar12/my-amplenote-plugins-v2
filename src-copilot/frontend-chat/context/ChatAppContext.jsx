@@ -17,6 +17,7 @@ export const ChatAppContextProvider = ({ children }) => {
     const [initialAttachmentProcessed, setInitialAttachmentProcessed] = React.useState(false);
     const { toolGroupNames, tools } = useToolRegistries();
     const [enabledToolGroups, setEnabledToolGroups] = React.useState(new Set());
+    const lastLoadedChatHistoryThreadId = React.useRef(null);
 
     return (
         <ChatAppContext.Provider value={{ threadNewMsgComposerRef, setThreadNewMsgComposerRef,
@@ -24,7 +25,8 @@ export const ChatAppContextProvider = ({ children }) => {
             chatHistoryLoaded, setChatHistoryLoaded,
             isChatHistoryOverlayOpen, setIsChatHistoryOverlayOpen,
             initialAttachmentProcessed, setInitialAttachmentProcessed,
-            toolGroupNames, tools, enabledToolGroups, setEnabledToolGroups }}>
+            toolGroupNames, tools, enabledToolGroups, setEnabledToolGroups,
+            lastLoadedChatHistoryThreadId }}>
             {children}
         </ChatAppContext.Provider>
     );

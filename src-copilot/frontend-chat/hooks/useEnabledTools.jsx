@@ -1,24 +1,8 @@
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
 
 export const useEnabledTools = () => {
-    const { enabledToolGroups, setEnabledToolGroups } = React.useContext(getChatAppContext());
+    const { enabledToolGroups, setEnabledToolGroups, lastLoadedChatHistoryThreadId } = React.useContext(getChatAppContext());
     const threadListItemRuntime = AssistantUI.useThreadListItemRuntime();
-
-    // Load enabled tools from ChatHistoryDB on mount
-    const loadEnabledToolGroupsFromDB = React.useCallback(async (threadId) => {
-        if (!threadId) return;
-
-        try {
-            const thread = await appConnector.getChatThreadFromCopilotDB(threadId);
-            if (thread?.enabledToolGroups) {
-                setEnabledToolGroups(new Set(thread.enabledToolGroups));
-            } else {
-                setEnabledToolGroups(new Set());
-            }
-        } catch (error) {
-            setEnabledToolGroups(new Set());
-        }
-    }, [setEnabledToolGroups]);
 
     // Save enabled tools to ChatHistoryDB when they change
     const saveEnabledToolGroups = React.useCallback(async (threadId, newEnabledToolGroupsSet) => {
@@ -29,7 +13,7 @@ export const useEnabledTools = () => {
                     ...thread,
                     enabledToolGroups: [...newEnabledToolGroupsSet] // db needs array
                 };
-                appConnector.saveChatThreadToCopilotDB(updatedThread);
+                await appConnector.saveChatThreadToCopilotDB(updatedThread);
             }
         } catch (error) {
             console.error('Failed to save enabled tools:', error);
@@ -38,6 +22,32 @@ export const useEnabledTools = () => {
 
     // Automatically load enabled tools when thread changes
     React.useEffect(() => {
+        const loadEnabledToolGroupsFromDB = async (threadId) => {
+            if (!threadId) return;
+            
+            // Don't reload if this is the same thread
+            if (lastLoadedChatHistoryThreadId.current === threadId) {
+                console.log('Skipping reload for same thread:', threadId);
+                return;
+            }
+
+            console.log('Loading enabled tools for thread:', threadId, 'lastLoaded:', lastLoadedChatHistoryThreadId.current);
+
+            try {
+                const thread = await appConnector.getChatThreadFromCopilotDB(threadId);
+                if (thread?.enabledToolGroups) {
+                    setEnabledToolGroups(new Set(thread.enabledToolGroups));
+                } else {
+                    setEnabledToolGroups(new Set());
+                }
+            } catch (error) {
+                setEnabledToolGroups(new Set());
+            } finally {
+                lastLoadedChatHistoryThreadId.current = threadId;
+                console.log('Set lastLoadedChatHistoryThreadId to:', threadId);
+            }
+        };
+
         const loadEnabledToolsForCurrentThread = async () => {
             const threadId = threadListItemRuntime.getState().remoteId;
             await loadEnabledToolGroupsFromDB(threadId);
@@ -49,7 +59,7 @@ export const useEnabledTools = () => {
         loadEnabledToolsForCurrentThread();
 
         return () => unsubscribe();
-    }, [threadListItemRuntime, loadEnabledToolGroupsFromDB]);
+    }, [threadListItemRuntime]);
 
     // Util function to toggle a tool group enabled state
     const toggleToolGroup = React.useCallback(async (toolGroup) => {
