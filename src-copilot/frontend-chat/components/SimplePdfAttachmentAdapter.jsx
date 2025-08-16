@@ -1,9 +1,5 @@
-/**
- * Defines attachment provider for amplenote tasks / notes / line selection
- * (this gives a gui for context from amplenote, for ex. - when user clicks add note from noteOption)
- */
-export class AmplenoteAttachmentAdapter {
-    accept = "text/amplenote-note,text/amplenote-selection,text/amplenote-task";
+export class SimplePdfAttachmentAdapter {
+    accept = "application/pdf";
 
     async add(state) {
         return {
@@ -17,14 +13,14 @@ export class AmplenoteAttachmentAdapter {
     }
 
     async send(attachment) {
-        let contentText = await getFileText(attachment.file);
         return {
             ...attachment,
             status: { type: "complete" },
             content: [
                 {
-                    type: "text",
-                    text: contentText
+                    type: "file",
+                    data: await getFileDataURL(attachment.file),
+                    mimeType: attachment.contentType,
                 },
             ],
         };
@@ -35,12 +31,12 @@ export class AmplenoteAttachmentAdapter {
     }
 }
 
-const getFileText = (file) =>
+const getFileDataURL = (file) =>
     new Promise((resolve, reject) => {
         const reader = new FileReader();
 
         reader.onload = () => resolve(reader.result);
         reader.onerror = (error) => reject(error);
 
-        reader.readAsText(file);
+        reader.readAsDataURL(file);
     });

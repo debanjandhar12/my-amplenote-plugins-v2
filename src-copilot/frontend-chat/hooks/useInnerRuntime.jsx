@@ -1,6 +1,7 @@
 import {useCustomDangerousInBrowserRuntime} from "./useCustomDangerousInBrowserRuntime.jsx";
 import {LLM_MAX_STEPS, LLM_MAX_TOKENS_SETTING} from "../../constants.js";
 import {AmplenoteAttachmentAdapter} from "../components/AmplenoteAttachmentAdapter.jsx";
+import {SimplePdfAttachmentAdapter} from "../components/SimplePdfAttachmentAdapter.jsx";
 import {errorToString} from "../helpers/errorToString.js";
 
 export const useInnerRuntime = () => {
@@ -19,6 +20,7 @@ export const useInnerRuntime = () => {
             attachments: new AssistantUI.CompositeAttachmentAdapter([
                 new AssistantUI.SimpleImageAttachmentAdapter(),
                 new AssistantUI.SimpleTextAttachmentAdapter(),
+                new SimplePdfAttachmentAdapter(),
                 new AmplenoteAttachmentAdapter()
             ]),
         },
