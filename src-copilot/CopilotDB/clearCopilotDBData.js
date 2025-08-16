@@ -1,5 +1,5 @@
 import {OPFSUtils} from "./DuckDB/OPFSUtils.js";
-import {LocalStorageUtils} from "./DuckDB/LocalStorageUtils.js";
+import {IndexedDBStorageUtils} from "./DuckDB/IndexedDBStorageUtils.js";
 import DuckDBConnectionController from "./DuckDB/DuckDBConnectionController.js";
 import {CopilotChatHistoryDB} from "./DuckDB/CopilotChatHistoryDB.js";
 
@@ -28,17 +28,17 @@ export async function clearCopilotDBData(app) {
     }
 
 
-    // Clear LocalStorage data (chat history)
-    const localStorageFiles = await LocalStorageUtils.getFileList();
-    for (const file of localStorageFiles) {
+    // Clear IndexedDB data (chat history)
+    const indexedDBFiles = await IndexedDBStorageUtils.getFileList();
+    for (const file of indexedDBFiles) {
         try {
-            const wasDeleted = await LocalStorageUtils.deleteFile(file.fileName);
+            const wasDeleted = await IndexedDBStorageUtils.deleteFile(file.fileName);
             if (wasDeleted) {
-                deletedFiles.push(`${file.fileName} (localstorage)`);
+                deletedFiles.push(`${file.fileName} (indexeddb)`);
             }
         } catch (error) {
-            console.error(`Error deleting LocalStorage key ${file.fileName}:`, error);
-            throw new Error(`Failed to delete LocalStorage key ${file.fileName}: ${error.message}`);
+            console.error(`Error deleting IndexedDB key ${file.fileName}:`, error);
+            throw new Error(`Failed to delete IndexedDB key ${file.fileName}: ${error.message}`);
         }
     }
     (await CopilotChatHistoryDB.getInstance()).threadsCache = {}; // clear chat history cache too

@@ -1,4 +1,4 @@
-import {LocalStorageUtils} from "./LocalStorageUtils.js";
+import {IndexedDBStorageUtils} from "./IndexedDBStorageUtils.js";
 import {COPILOT_DB_INDEX_VERSION, MAX_CHAT_HISTORY_THREADS} from "../../constants.js";
 import { throttle } from "lodash-es";
 
@@ -15,15 +15,15 @@ export class CopilotChatHistoryDB {
         if (this.isInitialized) return;
 
         this.fileName = 'copilot-chat-history.json';
-        this.localStorageSupported = null;
+        this.indexedDBSupported = null;
         this.threadsCache = {}; // In-memory cache for all threads
         this._scheduleSave = throttle(this._persistCache.bind(this), 1000, { leading: true, trailing: true });
 
-        this.localStorageSupported = LocalStorageUtils.checkSupport();
+        this.indexedDBSupported = IndexedDBStorageUtils.checkSupport();
 
-        if (this.localStorageSupported) {
+        if (this.indexedDBSupported) {
             await this._handleVersionReset();
-            const data = await LocalStorageUtils.readJsonFile(this.fileName);
+            const data = await IndexedDBStorageUtils.readJsonFile(this.fileName);
             if (data && data.threads) {
                 this.threadsCache = data.threads;
             }
@@ -38,16 +38,16 @@ export class CopilotChatHistoryDB {
      * @private
      */
     async _persistCache() {
-        if (!this.localStorageSupported) return;
+        if (!this.indexedDBSupported) return;
 
         try {
             const dataToSave = {
                 version: COPILOT_DB_INDEX_VERSION,
                 threads: this.threadsCache,
             };
-            await LocalStorageUtils.writeJsonFile(this.fileName, dataToSave);
+            await IndexedDBStorageUtils.writeJsonFile(this.fileName, dataToSave);
         } catch (error) {
-            console.error('Failed to save chat history to LocalStorage:', error);
+            console.error('Failed to save chat history to IndexedDB:', error);
         }
     }
 
@@ -140,17 +140,17 @@ export class CopilotChatHistoryDB {
     }
 
     async _handleVersionReset() {
-        if (!this.localStorageSupported) return;
+        if (!this.indexedDBSupported) return;
 
         try {
-            const data = await LocalStorageUtils.readJsonFile(this.fileName);
+            const data = await IndexedDBStorageUtils.readJsonFile(this.fileName);
 
             if (!data) return;
 
             const currentVersion = data.version || 0;
 
             if (currentVersion !== COPILOT_DB_INDEX_VERSION) {
-                await LocalStorageUtils.deleteFile(this.fileName);
+                await IndexedDBStorageUtils.deleteFile(this.fileName);
                 this.threadsCache = {};
                 console.log(`Chat history reset completed due to version change from ${currentVersion} to ${COPILOT_DB_INDEX_VERSION}.`);
             }
