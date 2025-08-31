@@ -45,7 +45,7 @@ export async function handleRefineSelection(app, selectionContent) {
             ]
         });
         if (shouldReplace === "replace") {
-            await app.replaceNoteContent({uuid: app.context.noteUUID}, response.text);
+            await app.context.replaceSelection(response.text);
         }
     } else {
         throw new Error('LLM response is empty');
