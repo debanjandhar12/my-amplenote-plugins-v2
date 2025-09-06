@@ -35,7 +35,8 @@ Current plugin list:
   ```
 
 ## Testing
-- Run Jest tests:
+This development template comes with several utilities to support testing. Unit tests run in jsdom, and end-to-end tests run in Playwright—both powered by Jest test-runner.Common testing helpers are available in the common-utils folder to simplify writing test cases.
+- Run tests:
   ```
   npm run test
   ```
@@ -44,16 +45,26 @@ Current plugin list:
   npm run test:watch
   ```
 
-Note: If you encounter a jsdom error, install it with:
-```
-npm install -D jest-environment-jsdom
-```
+> Note: If you run into errors with jsdom or Playwright, ensure both are installed:
+> ```
+> npm install -D jest-environment-jsdom
+> npx playwright install chromium
+> ```
 
 ## Development Environment Features
 
 #### 1. HTML Embedding Support
-- When running `npm run dev`, HTML files in the target folder's `embed` directory are built and served at `http://localhost:3000/`. This allows testing embed pages in isolation.
+- When running `npm run dev`, HTML files in the target folder's `embed` directory are built and served at `http://localhost:3000/`. This allows testing embed pages in isolation. ([Video](https://www.youtube.com/watch?v=9vVB6Bohc0k&t=49s))
 - The build command can import these HTML files as strings in your `plugin.js`. Then, you can return them inside your renderEmbed function.
+  ```
+  import chatHTML from 'inline:./embed/chat.html';
+  const plugin = {
+    renderEmbed: async function (app) {
+        return chatHTML;
+    }
+  }
+  export default plugin;
+  ```
 
 #### 2. Automatic Plugin Page Markdown Generation
 - Running `npm run build` will auto-generate plugin page markdown if the target folder contains a `plugin.about.js` file with the following structure:
