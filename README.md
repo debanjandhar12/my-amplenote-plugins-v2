@@ -9,7 +9,7 @@ Current plugin list:
 - [x] Amplenote Text2Dia Plugin
 - [x] Amplenote Autolink Plugin
 - [x] Amplenote Bigmoji Plugin
-- [ ] Amplenote Copilot Plugin
+- [x] Amplenote Copilot Plugin
 
 # Building, Testing, and Running Plugins
 
@@ -18,7 +18,7 @@ Current plugin list:
    ```
    npm install
    ```
-2. Set the target folder in `package.json` to specify the plugin you want to work with. For example:
+2. Set the target folder in `package.json` to specify the plugin you want to work with. This needs to be done before running build or tests. For example:
 
    ![Package.json configuration](https://github.com/debanjandhar12/my-amplenote-plugins-v2/assets/49021233/2f123d9b-d195-4dfd-9a00-f62bccf715b5)
 
