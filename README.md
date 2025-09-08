@@ -87,3 +87,9 @@ This development template comes with several utilities to support testing. Unit 
     `
   };
   ```
+
+
+# Contributing to Code
+Pull requests to improve the plugins are welcome. For an overview of the code structure, see:
+- Development Guide: [DEVELOPMENT.md](./DEVELOPMENT.md)
+- Copilot Development Guide: [DEVELOPMENT_COPILOT.md](./DEVELOPMENT_COPILOT.md)

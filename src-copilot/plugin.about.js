@@ -48,6 +48,7 @@ Q) [How to set up embedding API (recommended)?](https://public.amplenote.com/SZn
 
 <mark style="color:undefined;">*ℹ️ For bigger vaults, it is highly recommended to provide embedding api url and key.*<!-- {"cycleColor":"44"} --></mark>
 
+🤝 Code savvy? Check out the [Development Guide](https://github.com/debanjandhar12/my-amplenote-plugins-v2/blob/master/DEVELOPMENT.md) and [Copilot Development Guide](https://github.com/debanjandhar12/my-amplenote-plugins-v2/blob/master/DEVELOPMENT_COPILOT.md).
 -----
 <mark>💡 This plugin is currently in its beta stage. If you encounter any issues, please report them.</mark>
 `.trim().replaceAll('\n', '<br />'),
