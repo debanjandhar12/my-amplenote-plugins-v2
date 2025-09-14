@@ -2,6 +2,7 @@ import { useTributeSetup } from "../hooks/useTributeSetup.jsx";
 import { getChatAppContext } from "../context/ChatAppContext.jsx";
 import { FileAttachmentDisplay } from "./FileAttachmentDisplay.jsx";
 import { ComposerOptionsDropdown } from "./ComposerOptionsDropdown.jsx";
+import { VoiceToTextButton } from "./VoiceToTextButton.jsx";
 
 // Based on: https://github.com/Yonom/assistant-ui/blob/main/packages/react/src/ui/composer.tsx
 export const CustomComposer = () => {
@@ -69,6 +70,7 @@ export const CustomComposer = () => {
                     <ComposerOptionsDropdown />
                 </>}
             <Composer.Input ref={textareaRef} />
+            <VoiceToTextButton />
 
             {showSendButton && <Composer.Send />}
 
