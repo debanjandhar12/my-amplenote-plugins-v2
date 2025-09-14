@@ -2,7 +2,6 @@
     <head>
         <title>Speech to Text</title>
         <link rel="icon" href="data:,">
-        <link href="https://cdn.jsdelivr.net/npm/@radix-ui/themes@3.1.6/styles.min.css" rel="stylesheet">
         <style>
             /* Voice processing animation styles */
             .voice-processing-animation {
@@ -49,6 +48,25 @@
                 100% {
                     transform: scaleY(0.2);
                 }
+            }
+
+            /* Custom scrollbar for text areas */
+            textarea::-webkit-scrollbar {
+                width: 8px;
+            }
+            
+            textarea::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 4px;
+            }
+            
+            textarea::-webkit-scrollbar-thumb {
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 4px;
+            }
+            
+            textarea::-webkit-scrollbar-thumb:hover {
+                background: rgba(255, 255, 255, 0.5);
             }
         </style>
     </head>
