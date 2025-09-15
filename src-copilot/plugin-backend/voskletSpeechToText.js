@@ -1,6 +1,8 @@
+import dynamicImportESM from '../../common-utils/dynamic-import-esm.js';
+
 /**
  * Unified VoskletSpeechToText API class
- * Provides consistent speech-to-text functionality using Vosklet WebAssembly engine
+ * Provides consistent speech-to-text functionality using vosk-browser engine
  */
 export class VoskletSpeechToText {
   constructor(options = {}) {
@@ -8,18 +10,19 @@ export class VoskletSpeechToText {
       modelUrl: "https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz",
       modelName: "vosk-model-small-en-us-0.15",
       language: "English",
-      bufferSize: 128 * 150,
-      voskletLoader: null, // For dependency injection in tests
+      bufferSize: 4096,
+      sampleRate: 16000,
+      voskLoader: null, // For dependency injection in tests
       ...options
     };
     
     // Internal state
-    this.voskletModule = null;
+    this.voskModule = null;
     this.model = null;
     this.recognizer = null;
     this.audioContext = null;
     this.micNode = null;
-    this.transferer = null;
+    this.recognizerNode = null;
     this.mediaStream = null;
     this.isInitialized = false;
     this.isRecordingActive = false;
@@ -27,76 +30,30 @@ export class VoskletSpeechToText {
   }
 
   /**
-   * Ensure Vosklet script is loaded and return its module via global loadVosklet()
+   * Load vosk-browser module
    * @private
    * @returns {Promise<any>}
    */
-  async _loadVoskletModule() {
-    // If already available, use it
-    if (typeof window !== 'undefined' && typeof window.loadVosklet === 'function') {
-      return await window.loadVosklet();
+  async _loadVoskModule() {
+    if (this.options.voskLoader) {
+      return await this.options.voskLoader();
     }
-
-    const CORS_HACKY_FIX_COI = 'https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.2.1/AddCOI.js';
-    const CDN_URL = 'https://cdn.jsdelivr.net/gh/msqr1/Vosklet@1.2.1/Examples/Vosklet.js';
-
-    if (typeof document === 'undefined') {
-      throw new Error('Vosklet script loader requires a browser environment');
+    
+    try {
+      const module = await dynamicImportESM('vosk-browser');
+      
+      // Debug: Log available methods to understand the API
+      console.log('Vosk module methods:', Object.keys(module));
+      console.log('Vosk module:', module);
+      
+      return module;
+    } catch (error) {
+      throw new Error(`Failed to load vosk-browser module: ${error.message}`);
     }
-
-      // Inject the script only once
-      let script2 = document.querySelector('script[data-vosklet-loader-coi="true"]');
-      if (!script2) {
-          script2 = document.createElement('script');
-          script2.src = CORS_HACKY_FIX_COI;
-          script2.async = true;
-          script2.defer = true;
-          script2.crossOrigin = 'anonymous';
-          script2.setAttribute('data-vosklet-loader-coi', 'true');
-          document.head.appendChild(script2);
-      }
-
-    // Inject the script only once
-    let script = document.querySelector('script[data-vosklet-loader="true"]');
-    if (!script) {
-      script = document.createElement('script');
-      script.src = CDN_URL;
-      script.async = true;
-      script.defer = true;
-      script.crossOrigin = 'anonymous';
-      script.setAttribute('data-vosklet-loader', 'true');
-      document.head.appendChild(script);
-    }
-
-    // Wait for the global loader to become available
-    await new Promise((resolve, reject) => {
-      if (typeof window.loadVosklet === 'function') {
-        resolve();
-        return;
-      }
-
-      const onLoad = () => resolve();
-      const onError = () => reject(new Error('Failed to load Vosklet script'));
-      script.addEventListener('load', onLoad, { once: true });
-      script.addEventListener('error', onError, { once: true });
-
-      // Safety: resolve if the global appears within timeout even if no load event fires
-      setTimeout(() => {
-        if (typeof window.loadVosklet === 'function') {
-          resolve();
-        }
-      }, 10000);
-    });
-
-    if (typeof window.loadVosklet !== 'function') {
-      throw new Error('Vosklet global loader not available after script load');
-    }
-
-    return await window.loadVosklet();
   }
 
   /**
-   * Initialize the Vosklet speech recognition system
+   * Initialize the vosk-browser speech recognition system
    * @returns {Promise<void>}
    */
   async initialize() {
@@ -104,29 +61,39 @@ export class VoskletSpeechToText {
       if (this.isInitialized) {
         return;
       }
-      // Load Vosklet module via injected loader or global loader provided by the Vosklet script
-      if (this.options.voskletLoader) {
-        this.voskletModule = await this.options.voskletLoader();
-      } else {
-        this.voskletModule = await this._loadVoskletModule();
-      }
+
+      // Load vosk-browser module
+      this.voskModule = await this._loadVoskModule();
       
-      // Create audio context with power-saving configuration
+      // Create audio context with optimal configuration
       try {
         this.audioContext = new AudioContext({
+          sampleRate: this.options.sampleRate,
           sinkId: { type: "none" }
         });
       } catch (e) {
         // Fallback if sinkId option is unsupported
-        this.audioContext = new AudioContext();
+        this.audioContext = new AudioContext({
+          sampleRate: this.options.sampleRate
+        });
       }
 
-      // Load the Vosk model
-      this.model = await this.voskletModule.createModel(
-        this.options.modelUrl,
-        this.options.language,
-        this.options.modelName
-      );
+      // Handle different API variations
+      if (this.voskModule.createVoskClient) {
+        // Using createVoskClient API
+        this.model = await this.voskModule.createVoskClient(this.options.modelUrl);
+      } else if (this.voskModule.createModel) {
+        // Standard vosk-browser API
+        this.model = await this.voskModule.createModel(this.options.modelUrl);
+      } else if (this.voskModule.default && this.voskModule.default.createModel) {
+        // ES module with default export
+        this.model = await this.voskModule.default.createModel(this.options.modelUrl);
+      } else if (this.voskModule.default && this.voskModule.default.createVoskClient) {
+        // ES module with default export and createVoskClient
+        this.model = await this.voskModule.default.createVoskClient(this.options.modelUrl);
+      } else {
+        throw new Error(`Unknown vosk-browser API. Available methods: ${Object.keys(this.voskModule).join(', ')}`);
+      }
 
       this.isInitialized = true;
       
@@ -175,43 +142,95 @@ export class VoskletSpeechToText {
         }
       });
 
+      // Create recognizer with API variation handling
+      const effectiveSampleRate = (this.options.sampleRate || (this.audioContext && this.audioContext.sampleRate) || 16000);
+      if (typeof this.model.KaldiRecognizer === 'function') {
+        // Classic API expects sample rate as first argument
+        this.recognizer = new this.model.KaldiRecognizer(effectiveSampleRate);
+      } else if (typeof this.model.createRecognizer === 'function') {
+        // Some builds expose an async creator that accepts sample rate
+        this.recognizer = await this.model.createRecognizer(effectiveSampleRate);
+      } else {
+        throw new Error(`Cannot create recognizer. Model methods: ${Object.keys(this.model).join(', ')} | effectiveSampleRate=${effectiveSampleRate}`);
+      }
+
+      // Set up event listeners for recognition results with fallback handling
+      if (this.recognizer.on) {
+        this.recognizer.on("result", (message) => {
+          if (this.callbacks.onResult && message.result && message.result.text) {
+            this.callbacks.onResult(message.result.text);
+          }
+        });
+
+        this.recognizer.on("partialresult", (message) => {
+          if (this.callbacks.onPartialResult && message.result && message.result.partial) {
+            this.callbacks.onPartialResult(message.result.partial);
+          }
+        });
+      } else if (this.recognizer.addEventListener) {
+       
+        const resultHandler = (event) => {
+          if (this.callbacks.onResult && event && event.detail != null) {
+            const detail = event.detail;
+            const text = (typeof detail === 'string') ? detail : (detail.text ?? detail);
+            if (typeof text === 'string') this.callbacks.onResult(text);
+          }
+        };
+
+        const partialHandler = (event) => {
+          if (this.callbacks.onPartialResult && event && event.detail != null) {
+            const detail = event.detail;
+            const partialText = (typeof detail === 'string') ? detail : (detail.text ?? detail.partial ?? detail);
+            if (typeof partialText === 'string') this.callbacks.onPartialResult(partialText);
+          }
+        };
+
+        // Support multiple naming conventions
+        this.recognizer.addEventListener("result", resultHandler);
+        this.recognizer.addEventListener("partialresult", partialHandler);
+        if (this.recognizer.addEventListener) {
+          this.recognizer.addEventListener("partialResult", partialHandler);
+        }
+      } else {
+        console.warn('Unknown event handling method for recognizer');
+      }
+
       // Create microphone input node
       this.micNode = this.audioContext.createMediaStreamSource(this.mediaStream);
 
-      // Create recognizer with current sample rate
-      this.recognizer = await this.voskletModule.createRecognizer(
-        this.model, 
-        this.audioContext.sampleRate
+      // Create script processor node for audio processing
+      this.recognizerNode = this.audioContext.createScriptProcessor(
+        this.options.bufferSize, 
+        1, 
+        1
       );
 
-      // Set up event listeners for recognition results
-      this.recognizer.addEventListener("partialResult", (event) => {
-        if (this.callbacks.onPartialResult && event.detail) {
-          this.callbacks.onPartialResult(event.detail.text || event.detail);
-        }
-      });
-
-      this.recognizer.addEventListener("result", (event) => {
-        if (this.callbacks.onResult && event.detail) {
-          this.callbacks.onResult(event.detail.text || event.detail);
-        }
-      });
-
-      // Create transferer for audio data processing
-      this.transferer = await this.voskletModule.createTransferer(
-        this.audioContext, 
-        this.options.bufferSize
-      );
-
-      // Set up audio data pipeline
-      this.transferer.port.onmessage = (event) => {
-        if (this.recognizer && event.data) {
-          this.recognizer.acceptWaveform(event.data);
+      // Set up audio processing
+      this.recognizerNode.onaudioprocess = (event) => {
+        try {
+          if (this.recognizer && this.isRecordingActive) {
+            // Handle different acceptWaveform methods
+            if (this.recognizer.acceptWaveform) {
+              this.recognizer.acceptWaveform(event.inputBuffer);
+            } else if (this.recognizer.processAudio) {
+              this.recognizer.processAudio(event.inputBuffer.getChannelData(0));
+            } else {
+              console.warn('No audio processing method found on recognizer');
+            }
+          }
+        } catch (error) {
+          console.error('Audio processing failed:', error);
+          if (this.callbacks.onError) {
+            const processingError = new Error(`Audio processing failed: ${error.message}`);
+            processingError.type = 'AUDIO_PROCESSING_ERROR';
+            this.callbacks.onError(processingError);
+          }
         }
       };
 
       // Connect audio pipeline
-      this.micNode.connect(this.transferer);
+      this.micNode.connect(this.recognizerNode);
+      this.recognizerNode.connect(this.audioContext.destination);
 
       this.isRecordingActive = true;
 
@@ -274,12 +293,12 @@ export class VoskletSpeechToText {
       }
       
       // Reset all references
-      this.voskletModule = null;
+      this.voskModule = null;
       this.model = null;
       this.recognizer = null;
       this.audioContext = null;
       this.micNode = null;
-      this.transferer = null;
+      this.recognizerNode = null;
       this.mediaStream = null;
       this.isInitialized = false;
       this.callbacks = {};
@@ -303,22 +322,22 @@ export class VoskletSpeechToText {
         this.micNode = null;
       }
 
+      if (this.recognizerNode) {
+        this.recognizerNode.disconnect();
+        this.recognizerNode.onaudioprocess = null;
+        this.recognizerNode = null;
+      }
+
       // Stop media stream tracks
       if (this.mediaStream) {
         this.mediaStream.getTracks().forEach(track => track.stop());
         this.mediaStream = null;
       }
 
-      // Cleanup transferer
-      if (this.transferer) {
-        this.transferer.port.onmessage = null;
-        this.transferer = null;
-      }
-
-      // Cleanup recognizer
+      // Cleanup recognizer event listeners
       if (this.recognizer) {
-        this.recognizer.removeEventListener("partialResult", () => {});
-        this.recognizer.removeEventListener("result", () => {});
+        // Remove all event listeners by creating a new recognizer instance
+        // This is the safest way to ensure cleanup with vosk-browser
         this.recognizer = null;
       }
       
@@ -346,6 +365,9 @@ export class VoskletSpeechToText {
     }
     if (error.message.includes('AudioContext')) {
       return 'AUDIO_CONTEXT_ERROR';
+    }
+    if (error.message.includes('vosk-browser')) {
+      return 'VOSK_MODULE_ERROR';
     }
     return 'UNKNOWN_ERROR';
   }

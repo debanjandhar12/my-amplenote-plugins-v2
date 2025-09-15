@@ -124,6 +124,7 @@ export const SpeechToTextApp = () => {
 
                 {status === 'processing' && (
                     <>
+                        <>{transcriptionText}</>
                         <Box style={{ textAlign: 'center' }}>
                             {/* Animated voice processing icon */}
                             <div className="voice-processing-animation">
