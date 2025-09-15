@@ -9,6 +9,9 @@ export const SpeechToTextApp = () => {
     const { Theme, Flex, Box, Button, Text, Spinner } = window.RadixUI;
     const currentNoteUUIDRef = useRef(null);
     const initialSelectionRef = useRef('');
+    const confirmedTextRef = useRef('');
+    const partialTextRef = useRef('');
+    const lastAppliedTextRef = useRef('');
 
     useEffect(() => {
         const initializeVoskletSpeechToText = async () => {
@@ -44,7 +47,17 @@ export const SpeechToTextApp = () => {
                 // Set initial placeholder text
                 await window.appConnector.replaceSelection('Say something...');
                 initialSelectionRef.current = 'Say something...';
-                
+
+                // Flush any stale messages from previous sessions
+                try {
+                    while (await window.appConnector.receiveMessageFromPlugin('vosklet-partial') != null) {}
+                    while (await window.appConnector.receiveMessageFromPlugin('vosklet-result') != null) {}
+                    while (await window.appConnector.receiveMessageFromPlugin('vosklet-error') != null) {}
+                    while (await window.appConnector.receiveMessageFromPlugin('vosklet-ready') != null) {}
+                } catch (e) {
+                    console.warn('Failed to flush initial Vosklet messages', e);
+                }
+                 
             } catch (error) {
                 console.error('Failed to initialize Vosklet speech-to-text:', error);
                 setStatus('error');
@@ -61,32 +74,57 @@ export const SpeechToTextApp = () => {
             if (status !== 'processing') return;
 
             try {
-                // Check for partial results
-                const partialMessage = await window.appConnector.receiveMessageFromPlugin('vosklet-partial');
-                if (partialMessage && partialMessage.text) {
-                    const newText = partialMessage.text.trim();
-                    if (newText && newText !== transcriptionText) {
-                        setTranscriptionText(newText);
-                        await window.appConnector.replaceSelection(newText);
+                let updated = false;
+
+                // Drain and append all confirmed result chunks
+                while (true) {
+                    const resultMessage = await window.appConnector.receiveMessageFromPlugin('vosklet-result');
+                    if (!resultMessage) break;
+                    if (typeof resultMessage.text === 'string') {
+                        const chunk = resultMessage.text.trim();
+                        if (chunk) {
+                            confirmedTextRef.current = confirmedTextRef.current
+                                ? `${confirmedTextRef.current} ${chunk}`
+                                : chunk;
+                            // Clear partial when a result is confirmed
+                            partialTextRef.current = '';
+                            updated = true;
+                        }
                     }
                 }
 
-                // Check for final results
-                const resultMessage = await window.appConnector.receiveMessageFromPlugin('vosklet-result');
-                if (resultMessage && resultMessage.text) {
-                    const finalText = resultMessage.text.trim();
-                    if (finalText) {
-                        setTranscriptionText(finalText);
-                        await window.appConnector.replaceSelection(finalText);
-                    }
+                // Drain partials but keep only the most recent partial text
+                let latestPartial = null;
+                while (true) {
+                    const partialMessage = await window.appConnector.receiveMessageFromPlugin('vosklet-partial');
+                    if (partialMessage === null) break;
+                    latestPartial = partialMessage;
+                }
+                if (latestPartial && typeof latestPartial.text === 'string') {
+                    partialTextRef.current = latestPartial.text.trim();
+                    updated = true;
                 }
 
-                // Check for errors
+                // Drain errors and surface the first one immediately
                 const errorMessage = await window.appConnector.receiveMessageFromPlugin('vosklet-error');
                 if (errorMessage) {
                     setStatus('error');
                     setErrorObj({ message: errorMessage.error, type: errorMessage.errorType });
                     return;
+                }
+
+                if (updated) {
+                    const combined = [confirmedTextRef.current, partialTextRef.current]
+                        .filter(Boolean)
+                        .join(' ');
+
+                    if (combined !== lastAppliedTextRef.current) {
+                        setTranscriptionText(combined);
+                        await window.appConnector.replaceSelection(
+                            combined || initialSelectionRef.current || ''
+                        );
+                        lastAppliedTextRef.current = combined;
+                    }
                 }
 
             } catch (error) {

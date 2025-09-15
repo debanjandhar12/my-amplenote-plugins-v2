@@ -11,7 +11,7 @@ export class VoskletSpeechToText {
       modelName: "vosk-model-small-en-us-0.15",
       language: "English",
       bufferSize: 4096,
-      sampleRate: 16000,
+      sampleRate: 48000,
       voskLoader: null, // For dependency injection in tests
       ...options
     };
@@ -78,23 +78,7 @@ export class VoskletSpeechToText {
         });
       }
 
-      // Handle different API variations
-      if (this.voskModule.createVoskClient) {
-        // Using createVoskClient API
-        this.model = await this.voskModule.createVoskClient(this.options.modelUrl);
-      } else if (this.voskModule.createModel) {
-        // Standard vosk-browser API
-        this.model = await this.voskModule.createModel(this.options.modelUrl);
-      } else if (this.voskModule.default && this.voskModule.default.createModel) {
-        // ES module with default export
-        this.model = await this.voskModule.default.createModel(this.options.modelUrl);
-      } else if (this.voskModule.default && this.voskModule.default.createVoskClient) {
-        // ES module with default export and createVoskClient
-        this.model = await this.voskModule.default.createVoskClient(this.options.modelUrl);
-      } else {
-        throw new Error(`Unknown vosk-browser API. Available methods: ${Object.keys(this.voskModule).join(', ')}`);
-      }
-
+      this.model = await this.voskModule.createModel(this.options.modelUrl);
       this.isInitialized = true;
       
       if (this.callbacks.onReady) {
@@ -142,58 +126,22 @@ export class VoskletSpeechToText {
         }
       });
 
-      // Create recognizer with API variation handling
+      // Create recognizer
       const effectiveSampleRate = (this.options.sampleRate || (this.audioContext && this.audioContext.sampleRate) || 16000);
-      if (typeof this.model.KaldiRecognizer === 'function') {
-        // Classic API expects sample rate as first argument
-        this.recognizer = new this.model.KaldiRecognizer(effectiveSampleRate);
-      } else if (typeof this.model.createRecognizer === 'function') {
-        // Some builds expose an async creator that accepts sample rate
-        this.recognizer = await this.model.createRecognizer(effectiveSampleRate);
-      } else {
-        throw new Error(`Cannot create recognizer. Model methods: ${Object.keys(this.model).join(', ')} | effectiveSampleRate=${effectiveSampleRate}`);
-      }
+      this.recognizer = new this.model.KaldiRecognizer(effectiveSampleRate);
 
-      // Set up event listeners for recognition results with fallback handling
-      if (this.recognizer.on) {
+      // Set up event listeners for recognition results
         this.recognizer.on("result", (message) => {
-          if (this.callbacks.onResult && message.result && message.result.text) {
-            this.callbacks.onResult(message.result.text);
-          }
+            if (this.callbacks.onResult && message.result && message.result.text) {
+                this.callbacks.onResult(message.result.text);
+            }
         });
 
         this.recognizer.on("partialresult", (message) => {
-          if (this.callbacks.onPartialResult && message.result && message.result.partial) {
-            this.callbacks.onPartialResult(message.result.partial);
-          }
+            if (this.callbacks.onPartialResult && message.result && message.result.partial) {
+                this.callbacks.onPartialResult(message.result.partial);
+            }
         });
-      } else if (this.recognizer.addEventListener) {
-       
-        const resultHandler = (event) => {
-          if (this.callbacks.onResult && event && event.detail != null) {
-            const detail = event.detail;
-            const text = (typeof detail === 'string') ? detail : (detail.text ?? detail);
-            if (typeof text === 'string') this.callbacks.onResult(text);
-          }
-        };
-
-        const partialHandler = (event) => {
-          if (this.callbacks.onPartialResult && event && event.detail != null) {
-            const detail = event.detail;
-            const partialText = (typeof detail === 'string') ? detail : (detail.text ?? detail.partial ?? detail);
-            if (typeof partialText === 'string') this.callbacks.onPartialResult(partialText);
-          }
-        };
-
-        // Support multiple naming conventions
-        this.recognizer.addEventListener("result", resultHandler);
-        this.recognizer.addEventListener("partialresult", partialHandler);
-        if (this.recognizer.addEventListener) {
-          this.recognizer.addEventListener("partialResult", partialHandler);
-        }
-      } else {
-        console.warn('Unknown event handling method for recognizer');
-      }
 
       // Create microphone input node
       this.micNode = this.audioContext.createMediaStreamSource(this.mediaStream);
@@ -209,14 +157,7 @@ export class VoskletSpeechToText {
       this.recognizerNode.onaudioprocess = (event) => {
         try {
           if (this.recognizer && this.isRecordingActive) {
-            // Handle different acceptWaveform methods
-            if (this.recognizer.acceptWaveform) {
               this.recognizer.acceptWaveform(event.inputBuffer);
-            } else if (this.recognizer.processAudio) {
-              this.recognizer.processAudio(event.inputBuffer.getChannelData(0));
-            } else {
-              console.warn('No audio processing method found on recognizer');
-            }
           }
         } catch (error) {
           console.error('Audio processing failed:', error);
