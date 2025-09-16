@@ -1,4 +1,4 @@
-import {mockApp} from "../../../../common-utils/test-helpers.js";
+import {mockApp} from "../../../../common-utils/amplenote-mocks.js";
 import {PineconeEmbeddingGenerator} from "../../../CopilotDB/embeddings/PineconeEmbeddingGenerator.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
 

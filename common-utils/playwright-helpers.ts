@@ -9,7 +9,7 @@ export function createPlaywrightHooks(headless = true) {
     beforeAll(async () => {
         const app = express();
         app.get('/', (req, res) => {
-            res.send('<!DOCTYPE html><html><body></body></html>');
+            res.send('<!DOCTYPE html><html><head><link rel="icon" href="data:,"></head><body></body></html>');
         });
         server = app.listen(0);
         browser = await chromium.launch({
@@ -64,6 +64,14 @@ export async function waitForCustomEvent(page: Page, eventName: string): Promise
     );
     console.info(`waitForCustomEvent: Event ${eventName} fired with value: ${JSON.stringify(result)}`);
     return result;
+}
+
+export async function getSpyInfo(page: Page, spyName: string) {
+    return page.evaluate((name) => {
+        const spy = (window as any)[name];
+        if (!spy) return { callCount: 0, args: [] };
+        return { callCount: spy.callCount, args: spy.args };
+    }, spyName);
 }
 
 // ==== Create jest matchers from playwright matchers ====

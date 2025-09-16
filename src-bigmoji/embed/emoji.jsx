@@ -1,5 +1,5 @@
 import {dynamicImportExternalPluginBundle} from "../../common-utils/dynamic-import-esm.js";
-import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
+import {createCallAmplenotePluginMock} from "../../common-utils/embed-comunication.js";
 import {EMOJI_DATA_MOCK} from "../test/embed/emoji.testdata.js";
 import {EMBED_COMMANDS_MOCK} from "../test/embed/emoji.testdata.js";
 import {EmojiPickerPage} from "./pages/EmojiPickerPage.jsx";
@@ -7,15 +7,9 @@ import {useCustomStyles} from "./hooks/useCustomStyles.jsx";
 import {EmojiSizePage} from "./pages/EmojiSizePage.jsx";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 
-if(process.env.NODE_ENV === 'development') {
+if(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     window.emojiData = window.emojiData || EMOJI_DATA_MOCK;
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
-}
-else {
-    if (window.INJECTED_EMBED_COMMANDS_MOCK)
-        window.callAmplenotePlugin = createCallAmplenotePluginMock(deserializeWithFunctions(window.INJECTED_EMBED_COMMANDS_MOCK));
-    if (window.INJECTED_EMOJI_DATA_MOCK)
-        window.emojiData = deserializeWithFunctions(window.INJECTED_EMOJI_DATA_MOCK);
 }
 
 window.appConnector = new Proxy({}, {

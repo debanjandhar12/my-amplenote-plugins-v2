@@ -1,4 +1,4 @@
-import {mockApp} from "../../../../common-utils/test-helpers.js";
+import {mockApp} from "../../../../common-utils/amplenote-mocks.js";
 import {OpenAIEmbeddingGenerator} from "../../../CopilotDB/embeddings/OpenAIEmbeddingGenerator.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
 

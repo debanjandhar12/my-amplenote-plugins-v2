@@ -1,4 +1,4 @@
-import {mockApp} from "../../../../common-utils/test-helpers.js";
+import {mockApp} from "../../../../common-utils/amplenote-mocks.js";
 import {FireworksEmbeddingGenerator} from "../../../CopilotDB/embeddings/FireworksEmbeddingGenerator.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
 

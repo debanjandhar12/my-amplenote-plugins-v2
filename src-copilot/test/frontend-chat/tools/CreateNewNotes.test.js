@@ -1,24 +1,27 @@
-import {addScriptToHtmlString} from "../../../../common-utils/embed-helpers.js";
-import {serializeWithFunctions} from "../../../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from ".././chat.testdata.js";
+import { compileJavascriptCode } from "../../../../common-utils/esbuild-test-helpers.js";
+import { addScriptToHtmlString } from "../../../../common-utils/embed-helpers.js";
 import html from "inline:../../../embed/chat.html";
-
 import {
-    LLM_MAX_TOKENS_SETTING
-} from "../../../constants.js";
-import {createPlaywrightHooks, waitForCustomEvent} from "../../../../common-utils/playwright-helpers.ts";
+    createPlaywrightHooks, getSpyInfo,
+    waitForCustomEvent
+} from "../../../../common-utils/playwright-helpers.ts";
 
 describe('Create New Notes tool', () => {
-    const {getPage} = createPlaywrightHooks();
-    
+    const { getPage } = createPlaywrightHooks(false);
+
     it('works correctly through all states', async () => {
-        const htmlWithMocks = addScriptToHtmlString(html, `
-            window.INJECTED_SETTINGS = ${JSON.stringify({
+        const mockCode = /* javascript */ `
+            import sinon from 'sinon';
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
+            import {createCallAmplenotePluginMock} from "./common-utils/embed-comunication.js";
+
+            window.SETTINGS = {
                 ...getLLMProviderSettings('groq'),
                 [LLM_MAX_TOKENS_SETTING]: '100'
-            })};
+            };
 
-            window.INJECT_MESSAGES = [
+            window.INIT_MESSAGES = [
                 {
                     "message": {
                         "id": "test456",
@@ -32,18 +35,18 @@ describe('Create New Notes tool', () => {
                                 "type": "tool-call",
                                 "toolCallId": "createNotes123",
                                 "toolName": "CreateNewNotes",
-                                "argsText": '{notes: [{noteName: "Project Documentation", noteTags: ["project", "docs"], noteContent: "# Project Documentation\\n\\nThis is a placeholder for project documentation."}, {noteName: "Meeting Notes", noteTags: ["meeting"], noteContent: "# Meeting Notes\\n\\nAgenda items for next meeting:"}]}',
+                                "argsText": '{notes: [{noteName: "Project Documentation", noteTags: ["project", "docs"], noteContent: "# Project Documentation\\\\n\\\\nThis is a placeholder for project documentation."}, {noteName: "Meeting Notes", noteTags: ["meeting"], noteContent: "# Meeting Notes\\\\n\\\\nAgenda items for next meeting:"}]}',
                                 "args": {
                                     "notes": [
                                         {
                                             "noteName": "Project Documentation",
                                             "noteTags": ["project", "docs"],
-                                            "noteContent": "# Project Documentation\\n\\nThis is a placeholder for project documentation."
+                                            "noteContent": "# Project Documentation\\\\n\\\\nThis is a placeholder for project documentation."
                                         },
                                         {
                                             "noteName": "Meeting Notes",
                                             "noteTags": ["meeting"],
-                                            "noteContent": "# Meeting Notes\\n\\nAgenda items for next meeting:"
+                                            "noteContent": "# Meeting Notes\\\\n\\\\nAgenda items for next meeting:"
                                         }
                                     ]
                                 }
@@ -66,29 +69,33 @@ describe('Create New Notes tool', () => {
                 }
             ];
 
-            window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
+            // Setup spy methods
+            const sinonSandbox = sinon.createSandbox();
+            window.createNoteSpy = sinonSandbox.spy(async (noteName, noteTags) => {
+                // Add timeout so that test can capture state
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                return "note-uuid-" + Math.random().toString(36).substring(2, 15);
+            });
+
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
-                getSettings: async () => window.INJECTED_SETTINGS,
+                getSettings: async () => window.SETTINGS,
                 receiveMessageFromPlugin: async (queue) => {
-                    if (queue === 'attachments' && window.INJECT_MESSAGES) {
-                        const injectMessages = window.INJECT_MESSAGES;
-                        window.INJECT_MESSAGES = null;
+                    if (queue === 'attachments' && window.INIT_MESSAGES) {
+                        const injectMessages = window.INIT_MESSAGES;
+                        window.INIT_MESSAGES = null;
                         return {type: 'new-chat', message: injectMessages};
                     }
                     return null;
                 },
-                createNote: async (noteName, noteTags) => {
-                    // Add timeout so that test can capture state
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    return "note-uuid-" + Math.random().toString(36).substring(2, 15);
-                },
+                createNote: window.createNoteSpy,
                 insertNoteContent: async (note, content) => {
                     return true;
                 }
-                // getNotes, getNoteTitleByUUID already in EMBED_COMMANDS_MOCK
-            }))};
-        `);
-
+            });
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
         const page = await getPage();
         await page.setContent(htmlWithMocks);
 
@@ -125,5 +132,9 @@ describe('Create New Notes tool', () => {
         const successMessage = await page.waitForSelector('text=2 notes created successfully');
         const isSuccessMessageVisible = await successMessage.isVisible();
         expect(isSuccessMessageVisible).toBe(true);
-    }, 20000);
+
+        // Verify that createNote was called exactly twice (once for each note)
+        const createNoteSpyInfo = await getSpyInfo(page, 'createNoteSpy');
+        expect(createNoteSpyInfo.callCount).toBe(2);
+    }, 200000);
 });

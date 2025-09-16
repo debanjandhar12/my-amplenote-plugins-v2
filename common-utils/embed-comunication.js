@@ -114,34 +114,19 @@ export function createOnEmbedCallHandler(embedCommands = {}, logBlacklistedComma
 }
 
 export function createCallAmplenotePluginMock(embedCommandsMock) {
-    return async(commandName, ...args) => {
+    const mockFunction = async(commandName, ...args) => {
         if (commandName in embedCommandsMock) {
             return await embedCommandsMock[commandName](...args);
         }
         throw new Error(`Unknown command: ${commandName}`);
+    };
+    
+    // Return sinon spy in test environments
+    if (process.env.NODE_ENV === 'test') {
+        const sinon = require('sinon');
+        return sinon.spy(mockFunction);
     }
-}
-
-// @ts-ignore
-export function serializeWithFunctions(obj) {
-    // @ts-ignore
-    return JSON.stringify(obj, (key, value) => {
-        if (typeof value === 'function') {
-            return `__FUNCTION:${value.toString()}`;
-        }
-        return value;
-    });
-}
-
-export function deserializeWithFunctions(str) {
-    // @ts-ignore
-    return JSON.parse(str, (key, value) => {
-        if (typeof value === 'string' && value.startsWith('__FUNCTION:')) {
-            const functionBody = value.slice('__FUNCTION:'.length);
-            return new Function(`return ${functionBody}`)();
-        }
-        return value;
-    });
+    return mockFunction;
 }
 
 // Extracted from amplenote.com with JSON.stringify(serializeWithFunctions(app))

@@ -103,7 +103,43 @@ We use Jest (jsdom) together with Playwright to drive in-embed UI scenarios.
 
 Patterns for writing embed tests:
 - Use `inline:` imports to include embed HTML in tests (see examples under `src-*/test` folders).
-- Use `addScriptToHtmlString` from `common-utils/embed-helpers.js` to inject a `<script>` block that defines variables that may come from plugin.js
+- Use `compileJavascriptCode` from `common-utils/esbuild-amplenote-mocks.js` to compile mock code with proper ES6 imports and environment variables.
+- Use `addScriptToHtmlString` from `common-utils/embed-helpers.js` to inject the compiled mock code into HTML.
+- Use `createCallAmplenotePluginMock` from `common-utils/embed-comunication.js` to mock plugin.js calls.
 - Boot a Playwright page using `createPlaywrightHooks()` from `common-utils/playwright-helpers.ts` and call `page.setContent(htmlWithMocks)`.
 - Interact with the UI using selectors and assertions. Some embeds (Copilot Chat/Search, Speech) also emit custom events like `appLoaded`.
 - It is possible to create plugins without embed pages (just skip creating the embed folder).
+
+### Modern Test Pattern Example
+
+```javascript
+import { compileJavascriptCode } from "../../common-utils/esbuild-amplenote-mocks.js";
+import { addScriptToHtmlString } from "../../common-utils/embed-helpers.js";
+import html from "inline:../embed/chat.html";
+import { createPlaywrightHooks } from "../../common-utils/playwright-helpers.ts";
+
+const mockCode = `
+    import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+    import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
+    import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+    window.SETTINGS = {
+        ...getLLMProviderSettings('groq'),
+        [LLM_MAX_TOKENS_SETTING]: '100'
+    };
+
+    window.callAmplenotePlugin = createCallAmplenotePluginMock({
+        ...EMBED_COMMANDS_MOCK,
+        getSettings: async () => window.SETTINGS
+    });
+`;
+
+const compiledCode = await compileJavascriptCode(mockCode);
+const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+```
+
+**Benefits of the modern approach:**
+- **Environment Variables**: All `process.env` variables are automatically available
+- **Proper Imports**: Use standard ES6 import statements instead of serialization
+- **Type Safety**: Better IDE support and error messages
+- **No Serialization Issues**: Functions work natively without `serializeWithFunctions`
