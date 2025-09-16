@@ -1,3 +1,5 @@
+import serialize from "serialize-javascript";
+
 // @ts-ignore
 export const COMMON_EMBED_COMMANDS = {
     "navigate": async (app, url) => {
@@ -125,23 +127,12 @@ export function createCallAmplenotePluginMock(embedCommandsMock) {
 // @ts-ignore
 export function serializeWithFunctions(obj) {
     // @ts-ignore
-    return JSON.stringify(obj, (key, value) => {
-        if (typeof value === 'function') {
-            return `__FUNCTION:${value.toString()}`;
-        }
-        return value;
-    });
+    return serialize(obj);
 }
 
-export function deserializeWithFunctions(str) {
-    // @ts-ignore
-    return JSON.parse(str, (key, value) => {
-        if (typeof value === 'string' && value.startsWith('__FUNCTION:')) {
-            const functionBody = value.slice('__FUNCTION:'.length);
-            return new Function(`return ${functionBody}`)();
-        }
-        return value;
-    });
+export function deserializeWithFunctions(objStr) {
+    console.log(objStr);
+    return (new Function("return " + objStr))();
 }
 
 // Extracted from amplenote.com with JSON.stringify(serializeWithFunctions(app))
