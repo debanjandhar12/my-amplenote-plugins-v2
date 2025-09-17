@@ -17,8 +17,13 @@ if(process.env.NODE_ENV === 'development') {
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
 }
 else {
-    if (window.INJECTED_EMBED_COMMANDS_MOCK)
-        window.callAmplenotePlugin = createCallAmplenotePluginMock(deserializeWithFunctions(window.INJECTED_EMBED_COMMANDS_MOCK));
+    if (window.INJECTED_EMBED_COMMANDS_MOCK) {
+        // Handle both direct objects (new approach) and serialized strings (legacy)
+        const mockCommands = typeof window.INJECTED_EMBED_COMMANDS_MOCK === 'string' 
+            ? deserializeWithFunctions(window.INJECTED_EMBED_COMMANDS_MOCK)
+            : window.INJECTED_EMBED_COMMANDS_MOCK;
+        window.callAmplenotePlugin = createCallAmplenotePluginMock(mockCommands);
+    }
 }
 
 window.appConnector = new Proxy({}, {

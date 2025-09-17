@@ -1,24 +1,24 @@
-import {addScriptToHtmlString} from "../../../../common-utils/embed-helpers.js";
-import {serializeWithFunctions} from "../../../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from ".././chat.testdata.js";
+import {addCompiledMocksToHtml} from "../../../../common-utils/esbuild-test-helpers.js";
 import html from "inline:../../../embed/chat.html";
-
-import {
-    LLM_MAX_TOKENS_SETTING
-} from "../../../constants.js";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../../common-utils/playwright-helpers.ts";
 
 describe('Create New Notes tool', () => {
     const {getPage} = createPlaywrightHooks();
     
     it('works correctly through all states', async () => {
-        const htmlWithMocks = addScriptToHtmlString(html, `
-            window.INJECTED_SETTINGS = ${JSON.stringify({
+        // Mock code with imports - this will be compiled by esbuild for real
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from '../chat.testdata.js';
+            import { LLM_MAX_TOKENS_SETTING } from '../../constants.js';
+
+            // Mock settings using imports
+            const mockSettings = {
                 ...getLLMProviderSettings('groq'),
                 [LLM_MAX_TOKENS_SETTING]: '100'
-            })};
+            };
 
-            window.INJECT_MESSAGES = [
+            // Mock messages
+            const mockMessages = [
                 {
                     "message": {
                         "id": "test456",
@@ -32,18 +32,18 @@ describe('Create New Notes tool', () => {
                                 "type": "tool-call",
                                 "toolCallId": "createNotes123",
                                 "toolName": "CreateNewNotes",
-                                "argsText": '{notes: [{noteName: "Project Documentation", noteTags: ["project", "docs"], noteContent: "# Project Documentation\\n\\nThis is a placeholder for project documentation."}, {noteName: "Meeting Notes", noteTags: ["meeting"], noteContent: "# Meeting Notes\\n\\nAgenda items for next meeting:"}]}',
+                                "argsText": '{notes: [{noteName: "Project Documentation", noteTags: ["project", "docs"], noteContent: "# Project Documentation\\\\n\\\\nThis is a placeholder for project documentation."}, {noteName: "Meeting Notes", noteTags: ["meeting"], noteContent: "# Meeting Notes\\\\n\\\\nAgenda items for next meeting:"}]}',
                                 "args": {
                                     "notes": [
                                         {
                                             "noteName": "Project Documentation",
                                             "noteTags": ["project", "docs"],
-                                            "noteContent": "# Project Documentation\\n\\nThis is a placeholder for project documentation."
+                                            "noteContent": "# Project Documentation\\\\n\\\\nThis is a placeholder for project documentation."
                                         },
                                         {
                                             "noteName": "Meeting Notes",
                                             "noteTags": ["meeting"],
-                                            "noteContent": "# Meeting Notes\\n\\nAgenda items for next meeting:"
+                                            "noteContent": "# Meeting Notes\\\\n\\\\nAgenda items for next meeting:"
                                         }
                                     ]
                                 }
@@ -66,9 +66,10 @@ describe('Create New Notes tool', () => {
                 }
             ];
 
-            window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
+            // Mock embed commands using native JavaScript functions and imports
+            const mockEmbedCommands = {
                 ...EMBED_COMMANDS_MOCK,
-                getSettings: async () => window.INJECTED_SETTINGS,
+                getSettings: async () => mockSettings,
                 receiveMessageFromPlugin: async (queue) => {
                     if (queue === 'attachments' && window.INJECT_MESSAGES) {
                         const injectMessages = window.INJECT_MESSAGES;
@@ -85,9 +86,15 @@ describe('Create New Notes tool', () => {
                 insertNoteContent: async (note, content) => {
                     return true;
                 }
-                // getNotes, getNoteTitleByUUID already in EMBED_COMMANDS_MOCK
-            }))};
-        `);
+            };
+
+            // Global setup
+            window.INJECTED_SETTINGS = mockSettings;
+            window.INJECT_MESSAGES = mockMessages;
+            window.INJECTED_EMBED_COMMANDS_MOCK = mockEmbedCommands;
+        `;
+
+        const htmlWithMocks = await addCompiledMocksToHtml(html, mockCode);
 
         const page = await getPage();
         await page.setContent(htmlWithMocks);
