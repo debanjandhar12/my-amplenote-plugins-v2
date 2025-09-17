@@ -1,4 +1,12 @@
-import {addCompiledMocksToHtml} from "../../../../common-utils/esbuild-test-helpers.js";
+// Fix TextEncoder issue for esbuild in jsdom environment
+import { TextEncoder, TextDecoder } from 'util';
+if (typeof globalThis.TextEncoder === 'undefined') {
+    globalThis.TextEncoder = TextEncoder;
+    globalThis.TextDecoder = TextDecoder;
+}
+
+import {addCompiledMocksToHtml, compileMockCode} from "../../../../common-utils/esbuild-test-helpers.js";
+import {addScriptToHtmlString} from "../../../../common-utils/embed-helpers.js";
 import html from "inline:../../../embed/chat.html";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../../common-utils/playwright-helpers.ts";
 
@@ -8,8 +16,8 @@ describe('Create New Notes tool', () => {
     it('works correctly through all states', async () => {
         // Mock code with imports - this will be compiled by esbuild for real
         const mockCode = `
-            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from '../chat.testdata.js';
-            import { LLM_MAX_TOKENS_SETTING } from '../../constants.js';
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from '${process.cwd()}/src-copilot/test/frontend-chat/chat.testdata.js';
+            import { LLM_MAX_TOKENS_SETTING } from '${process.cwd()}/src-copilot/constants.js';
 
             // Mock settings using imports
             const mockSettings = {
@@ -94,10 +102,28 @@ describe('Create New Notes tool', () => {
             window.INJECTED_EMBED_COMMANDS_MOCK = mockEmbedCommands;
         `;
 
-        const htmlWithMocks = await addCompiledMocksToHtml(html, mockCode);
+        const htmlWithMocks = await addCompiledMocksToHtml(html, mockCode, {
+            external: ['path', 'fs', 'util', 'crypto', 'os', 'stream', 'events', 'buffer']
+        });
+        
+        // Debug: log the compiled HTML to see what's being injected
+        console.log('Compiled HTML length:', htmlWithMocks.length);
+        console.log('Contains INJECTED_EMBED_COMMANDS_MOCK:', htmlWithMocks.includes('INJECTED_EMBED_COMMANDS_MOCK'));
 
         const page = await getPage();
         await page.setContent(htmlWithMocks);
+        
+        // Debug: Check what's available in the browser
+        const debugInfo = await page.evaluate(() => {
+            return {
+                hasSettings: !!window.INJECTED_SETTINGS,
+                hasMessages: !!window.INJECT_MESSAGES,
+                hasCommands: !!window.INJECTED_EMBED_COMMANDS_MOCK,
+                commandsType: typeof window.INJECTED_EMBED_COMMANDS_MOCK,
+                hasCallAmplenotePlugin: !!window.callAmplenotePlugin
+            };
+        });
+        console.log('Browser debug info:', debugInfo);
 
         // Wait for the tool to initialize
         const initState = await waitForCustomEvent(page, 'onToolStateChange');
