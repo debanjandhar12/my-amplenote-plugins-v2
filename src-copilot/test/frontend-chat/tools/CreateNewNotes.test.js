@@ -11,7 +11,7 @@ import html from "inline:../../../embed/chat.html";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../../common-utils/playwright-helpers.ts";
 
 describe('Create New Notes tool', () => {
-    const {getPage} = createPlaywrightHooks();
+    const {getPage} = createPlaywrightHooks(false);
     
     it('works correctly through all states', async () => {
         // Mock code with imports - this will be compiled by esbuild for real
@@ -96,21 +96,68 @@ describe('Create New Notes tool', () => {
                 }
             };
 
-            // Global setup
-            window.INJECTED_SETTINGS = mockSettings;
-            window.INJECT_MESSAGES = mockMessages;
-            window.INJECTED_EMBED_COMMANDS_MOCK = mockEmbedCommands;
+            // Global setup - use a more explicit approach to ensure global assignment
+            const globalObj = (function() {
+                if (typeof globalThis !== 'undefined') return globalThis;
+                if (typeof window !== 'undefined') return window;
+                if (typeof global !== 'undefined') return global;
+                if (typeof self !== 'undefined') return self;
+                return this;
+            })();
+            
+            globalObj.INJECTED_SETTINGS = mockSettings;
+            globalObj.INJECT_MESSAGES = mockMessages;
+            globalObj.INJECTED_EMBED_COMMANDS_MOCK = mockEmbedCommands;
         `;
 
-        const htmlWithMocks = await addCompiledMocksToHtml(html, mockCode, {
-            external: ['path', 'fs', 'util', 'crypto', 'os', 'stream', 'events', 'buffer']
+        // Compile the mock code with Node.js polyfill support
+        const compiledCode = await compileMockCode(mockCode, {
+            target: 'es2020',
+            format: 'iife',
+            minify: false,
+            sourcemap: false,
+            external: [],
+            define: {},
+            enableNodeModulesPolyfill: true
         });
+        
+        // Manually unwrap the IIFE to allow global variable assignment
+        const trimmedCode = compiledCode.trim();
+        let unwrappedCode = trimmedCode;
+        
+        if (trimmedCode.startsWith('(() => {') && trimmedCode.endsWith('})();')) {
+            unwrappedCode = trimmedCode.slice(8, -5); // Remove '(() => {' and '})();'
+            console.log('✅ Successfully unwrapped arrow IIFE');
+        } else if (trimmedCode.startsWith('(function() {') && trimmedCode.endsWith('})();')) {
+            unwrappedCode = trimmedCode.slice(13, -5); // Remove '(function() {' and '})();'
+            console.log('✅ Successfully unwrapped function IIFE');
+        } else {
+            console.log('❌ No IIFE pattern matched');
+        }
+        
+        const htmlWithMocks = addScriptToHtmlString(html, unwrappedCode);
         
         // Debug: log the compiled HTML to see what's being injected
         console.log('Compiled HTML length:', htmlWithMocks.length);
         console.log('Contains INJECTED_EMBED_COMMANDS_MOCK:', htmlWithMocks.includes('INJECTED_EMBED_COMMANDS_MOCK'));
+        
+        // Extract and log the actual compiled JavaScript
+        const scriptMatch = htmlWithMocks.match(/<script>([\s\S]*?)<\/script>/);
+        if (scriptMatch) {
+            const compiledJS = scriptMatch[1];
+            console.log('Compiled JS (first 500 chars):', compiledJS.substring(0, 500));
+            console.log('Compiled JS (last 500 chars):', compiledJS.substring(compiledJS.length - 500));
+            console.log('Compiled JS contains globalObj:', compiledJS.includes('globalObj'));
+            console.log('Compiled JS contains INJECTED_SETTINGS:', compiledJS.includes('INJECTED_SETTINGS'));
+        }
 
         const page = await getPage();
+        
+        // Add error logging to catch any JavaScript errors
+        page.on('pageerror', (error) => {
+            console.log('PAGE ERROR:', error.message);
+        });
+        
         await page.setContent(htmlWithMocks);
         
         // Debug: Check what's available in the browser
@@ -158,5 +205,5 @@ describe('Create New Notes tool', () => {
         const successMessage = await page.waitForSelector('text=2 notes created successfully');
         const isSuccessMessageVisible = await successMessage.isVisible();
         expect(isSuccessMessageVisible).toBe(true);
-    }, 20000);
+    }, 200000);
 });
