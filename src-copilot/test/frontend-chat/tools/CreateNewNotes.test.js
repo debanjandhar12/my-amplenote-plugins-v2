@@ -5,7 +5,7 @@ if (typeof globalThis.TextEncoder === 'undefined') {
     globalThis.TextDecoder = TextDecoder;
 }
 
-import {addCompiledMocksToHtml, compileMockCode} from "../../../../common-utils/esbuild-test-helpers.js";
+import {compileMockCode} from "../../../../common-utils/esbuild-test-helpers.js";
 import {addScriptToHtmlString} from "../../../../common-utils/embed-helpers.js";
 import html from "inline:../../../embed/chat.html";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../../common-utils/playwright-helpers.ts";
@@ -111,15 +111,7 @@ describe('Create New Notes tool', () => {
         `;
 
         // Compile the mock code with Node.js polyfill support
-        const compiledCode = await compileMockCode(mockCode, {
-            target: 'es2020',
-            format: 'iife',
-            minify: false,
-            sourcemap: false,
-            external: [],
-            define: {},
-            enableNodeModulesPolyfill: true
-        });
+        const compiledCode = await compileMockCode(mockCode);
         
         // Manually unwrap the IIFE to allow global variable assignment
         const trimmedCode = compiledCode.trim();
