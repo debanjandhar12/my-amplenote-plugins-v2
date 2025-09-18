@@ -1,32 +1,22 @@
-// Fix TextEncoder issue for esbuild in jsdom environment
-import { TextEncoder, TextDecoder } from 'util';
-if (typeof globalThis.TextEncoder === 'undefined') {
-    globalThis.TextEncoder = TextEncoder;
-    globalThis.TextDecoder = TextDecoder;
-}
-
-import {compileMockCode} from "../../../../common-utils/esbuild-test-helpers.js";
-import {addScriptToHtmlString} from "../../../../common-utils/embed-helpers.js";
+import { compileTestCode } from "../../../../common-utils/esbuild-test-helpers.js";
+import { addScriptToHtmlString } from "../../../../common-utils/embed-helpers.js";
 import html from "inline:../../../embed/chat.html";
-import {createPlaywrightHooks, waitForCustomEvent} from "../../../../common-utils/playwright-helpers.ts";
+import { createPlaywrightHooks, waitForCustomEvent } from "../../../../common-utils/playwright-helpers.ts";
 
 describe('Create New Notes tool', () => {
-    const {getPage} = createPlaywrightHooks(false);
-    
-    it('works correctly through all states', async () => {
-        // Mock code with imports - this will be compiled by esbuild for real
-        const mockCode = `
-            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from '${process.cwd()}/src-copilot/test/frontend-chat/chat.testdata.js';
-            import { LLM_MAX_TOKENS_SETTING } from '${process.cwd()}/src-copilot/constants.js';
+    const { getPage } = createPlaywrightHooks(false);
 
-            // Mock settings using imports
-            const mockSettings = {
+    it('works correctly through all states', async () => {
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
+
+            window.INJECTED_SETTINGS = {
                 ...getLLMProviderSettings('groq'),
                 [LLM_MAX_TOKENS_SETTING]: '100'
             };
 
-            // Mock messages
-            const mockMessages = [
+            window.INJECT_MESSAGES = [
                 {
                     "message": {
                         "id": "test456",
@@ -74,10 +64,9 @@ describe('Create New Notes tool', () => {
                 }
             ];
 
-            // Mock embed commands using native JavaScript functions and imports
-            const mockEmbedCommands = {
+            window.INJECTED_EMBED_COMMANDS_MOCK = {
                 ...EMBED_COMMANDS_MOCK,
-                getSettings: async () => mockSettings,
+                getSettings: async () => window.INJECTED_SETTINGS,
                 receiveMessageFromPlugin: async (queue) => {
                     if (queue === 'attachments' && window.INJECT_MESSAGES) {
                         const injectMessages = window.INJECT_MESSAGES;
@@ -95,74 +84,13 @@ describe('Create New Notes tool', () => {
                     return true;
                 }
             };
-
-            // Global setup - use a more explicit approach to ensure global assignment
-            const globalObj = (function() {
-                if (typeof globalThis !== 'undefined') return globalThis;
-                if (typeof window !== 'undefined') return window;
-                if (typeof global !== 'undefined') return global;
-                if (typeof self !== 'undefined') return self;
-                return this;
-            })();
-            
-            globalObj.INJECTED_SETTINGS = mockSettings;
-            globalObj.INJECT_MESSAGES = mockMessages;
-            globalObj.INJECTED_EMBED_COMMANDS_MOCK = mockEmbedCommands;
         `;
-
-        // Compile the mock code with Node.js polyfill support
-        const compiledCode = await compileMockCode(mockCode);
-        
-        // Manually unwrap the IIFE to allow global variable assignment
-        const trimmedCode = compiledCode.trim();
-        let unwrappedCode = trimmedCode;
-        
-        if (trimmedCode.startsWith('(() => {') && trimmedCode.endsWith('})();')) {
-            unwrappedCode = trimmedCode.slice(8, -5); // Remove '(() => {' and '})();'
-            console.log('✅ Successfully unwrapped arrow IIFE');
-        } else if (trimmedCode.startsWith('(function() {') && trimmedCode.endsWith('})();')) {
-            unwrappedCode = trimmedCode.slice(13, -5); // Remove '(function() {' and '})();'
-            console.log('✅ Successfully unwrapped function IIFE');
-        } else {
-            console.log('❌ No IIFE pattern matched');
-        }
-        
-        const htmlWithMocks = addScriptToHtmlString(html, unwrappedCode);
-        
-        // Debug: log the compiled HTML to see what's being injected
-        console.log('Compiled HTML length:', htmlWithMocks.length);
-        console.log('Contains INJECTED_EMBED_COMMANDS_MOCK:', htmlWithMocks.includes('INJECTED_EMBED_COMMANDS_MOCK'));
-        
-        // Extract and log the actual compiled JavaScript
-        const scriptMatch = htmlWithMocks.match(/<script>([\s\S]*?)<\/script>/);
-        if (scriptMatch) {
-            const compiledJS = scriptMatch[1];
-            console.log('Compiled JS (first 500 chars):', compiledJS.substring(0, 500));
-            console.log('Compiled JS (last 500 chars):', compiledJS.substring(compiledJS.length - 500));
-            console.log('Compiled JS contains globalObj:', compiledJS.includes('globalObj'));
-            console.log('Compiled JS contains INJECTED_SETTINGS:', compiledJS.includes('INJECTED_SETTINGS'));
-        }
-
+        const compiledCode = await compileTestCode(mockCode, {
+            enableNodeModulesPolyfill: true
+        });
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
         const page = await getPage();
-        
-        // Add error logging to catch any JavaScript errors
-        page.on('pageerror', (error) => {
-            console.log('PAGE ERROR:', error.message);
-        });
-        
         await page.setContent(htmlWithMocks);
-        
-        // Debug: Check what's available in the browser
-        const debugInfo = await page.evaluate(() => {
-            return {
-                hasSettings: !!window.INJECTED_SETTINGS,
-                hasMessages: !!window.INJECT_MESSAGES,
-                hasCommands: !!window.INJECTED_EMBED_COMMANDS_MOCK,
-                commandsType: typeof window.INJECTED_EMBED_COMMANDS_MOCK,
-                hasCallAmplenotePlugin: !!window.callAmplenotePlugin
-            };
-        });
-        console.log('Browser debug info:', debugInfo);
 
         // Wait for the tool to initialize
         const initState = await waitForCustomEvent(page, 'onToolStateChange');
