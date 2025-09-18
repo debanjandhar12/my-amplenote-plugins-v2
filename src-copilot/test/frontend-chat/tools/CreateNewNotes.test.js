@@ -1,4 +1,4 @@
-import { compileTestCode } from "../../../../common-utils/esbuild-test-helpers.js";
+import { compileJavascriptCode } from "../../../../common-utils/esbuild-test-helpers.js";
 import { addScriptToHtmlString } from "../../../../common-utils/embed-helpers.js";
 import html from "inline:../../../embed/chat.html";
 import { createPlaywrightHooks, waitForCustomEvent } from "../../../../common-utils/playwright-helpers.ts";
@@ -85,9 +85,7 @@ describe('Create New Notes tool', () => {
                 }
             };
         `;
-        const compiledCode = await compileTestCode(mockCode, {
-            enableNodeModulesPolyfill: true
-        });
+        const compiledCode = await compileJavascriptCode(mockCode);
         const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
         const page = await getPage();
         await page.setContent(htmlWithMocks);

@@ -1,15 +1,15 @@
 import { jest } from '@jest/globals';
-import { compileTestCode } from '../esbuild-test-helpers.js';
+import { compileJavascriptCode } from '../esbuild-test-helpers.js';
 
 describe('esbuild-test-helpers', () => {
-    describe('compileTestCode', () => {
+    describe('compileJavascriptCode', () => {
         it('should compile basic JavaScript without imports', async () => {
             const code = `
                 window.TEST_VALUE = 'hello world';
                 console.log('Mock loaded');
             `;
             
-            const result = await compileTestCode(code);
+            const result = await compileJavascriptCode(code);
             
             expect(result).toContain('TEST_VALUE');
             expect(result).toContain('hello world');
@@ -24,7 +24,7 @@ describe('esbuild-test-helpers', () => {
                 window.FS_AVAILABLE = typeof readFileSync;
             `;
             
-            const result = await compileTestCode(code);
+            const result = await compileJavascriptCode(code);
             
             expect(result).toContain('TEST_IMPORT');
             expect(result).toContain('imported successfully');
@@ -43,7 +43,7 @@ describe('esbuild-test-helpers', () => {
                 };
             `;
             
-            const result = await compileTestCode(code);
+            const result = await compileJavascriptCode(code);
             
             expect(result).toContain('asyncFunction');
             expect(result).toContain('regularFunction');
@@ -55,7 +55,7 @@ describe('esbuild-test-helpers', () => {
         it('should unwrap IIFE format automatically', async () => {
             const code = `window.TEST = 'iife test';`;
             
-            const result = await compileTestCode(code);
+            const result = await compileJavascriptCode(code);
             
             // Should be unwrapped, not wrapped in IIFE
             expect(result).not.toMatch(/^\(\(\) => \{[\s\S]*\}\)\(\);?$/);
@@ -73,7 +73,7 @@ describe('esbuild-test-helpers', () => {
                 console.log('IIFE unwrapping test');
             `;
             
-            const result = await compileTestCode(code);
+            const result = await compileJavascriptCode(code);
             
             // Log the actual result to debug
             console.log('Compiled result starts with:', result.substring(0, 50));
@@ -96,9 +96,7 @@ describe('esbuild-test-helpers', () => {
                 window.EXTERNAL_REACT = React;
             `;
             
-            const result = await compileTestCode(code, {
-                external: ['react']
-            });
+            const result = await compileJavascriptCode(code);
             
             expect(result).toContain('EXTERNAL_REACT');
         });
@@ -124,7 +122,7 @@ describe('esbuild-test-helpers', () => {
                 window.COMPLEX_OBJECT = complexObject;
             `;
             
-            const result = await compileTestCode(code);
+            const result = await compileJavascriptCode(code);
             
             expect(result).toContain('asyncFn');
             expect(result).toContain('regularFn');
@@ -145,7 +143,7 @@ describe('esbuild-test-helpers', () => {
                 };
             `;
             
-            const result = await compileTestCode(code);
+            const result = await compileJavascriptCode(code);
             
             expect(result).toContain('MULTIPLE_IMPORTS');
             expect(result).toContain('readFileSync');
@@ -158,7 +156,7 @@ describe('esbuild-test-helpers', () => {
                 const invalid = {;
             `;
             
-            await expect(compileTestCode(invalidCode)).rejects.toThrow(/Code compilation failed/);
+            await expect(compileJavascriptCode(invalidCode)).rejects.toThrow(/Code compilation failed/);
         });
 
         it('should provide helpful error messages for import resolution failures', async () => {
@@ -167,7 +165,7 @@ describe('esbuild-test-helpers', () => {
                 window.TEST = nonExistentFunction();
             `;
             
-            await expect(compileTestCode(codeWithBadImport)).rejects.toThrow(/Code compilation failed/);
+            await expect(compileJavascriptCode(codeWithBadImport)).rejects.toThrow(/Code compilation failed/);
         });
 
         it('should handle Node.js modules with polyfill', async () => {
@@ -187,9 +185,7 @@ describe('esbuild-test-helpers', () => {
                 };
             `;
             
-            const result = await compileTestCode(code, {
-                enableNodeModulesPolyfill: true
-            });
+            const result = await compileJavascriptCode(code);
             
             expect(result).toContain('NODE_MODULES_TEST');
             expect(result).toContain('hashResult');
@@ -207,9 +203,7 @@ describe('esbuild-test-helpers', () => {
                 };
             `;
             
-            const result = await compileTestCode(code, {
-                enableNodeModulesPolyfill: false
-            });
+            const result = await compileJavascriptCode(code);
             
             expect(result).toContain('NODE_MODULES_EXTERNAL');
         });

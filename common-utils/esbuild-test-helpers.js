@@ -3,26 +3,16 @@ import { spawn } from 'child_process';
 /**
  * Compiles JavaScript code with imports using esbuild in an external process
  * @param {string} code - JavaScript code with import statements
- * @param {Object} [options] - Optional compilation options
- * @param {string} [options.target='es2020'] - Target ES version
- * @param {string} [options.format='iife'] - Output format
- * @param {boolean} [options.minify=false] - Whether to minify output
- * @param {boolean} [options.sourcemap=false] - Whether to generate sourcemap
- * @param {string[]} [options.external=[]] - External dependencies to exclude
- * @param {Record<string, string>} [options.define={}] - Build-time constants
- * @param {boolean} [options.enableNodeModulesPolyfill=false] - Enable Node.js modules polyfill for browser
  * @returns {Promise<string>} Compiled JavaScript code ready for browser injection
  */
-export async function compileTestCode(code, options = {}) {
-    const {
-        target = 'es2020',
-        format = 'iife',
-        minify = false,
-        sourcemap = false,
-        external = [],
-        define = {},
-        enableNodeModulesPolyfill = false
-    } = options;
+export async function compileJavascriptCode(code) {
+    const target = 'es2020';
+    const format = 'iife';
+    const minify = false;
+    const sourcemap = false;
+    const external = [];
+    const define = {};
+    const enableNodeModulesPolyfill = true;
 
     return new Promise((resolve, reject) => {
         const config = {
