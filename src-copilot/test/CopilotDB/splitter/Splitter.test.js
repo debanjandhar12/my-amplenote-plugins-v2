@@ -1,7 +1,17 @@
 import { Splitter } from '../../../CopilotDB/splitter/Splitter.js';
 import {mockApp, mockNote} from "../../../../common-utils/test-helpers.js";
+import sinon from 'sinon';
 
 describe('Splitter', () => {
+    let sandbox;
+    
+    beforeEach(() => {
+        sandbox = sinon.createSandbox();
+    });
+    
+    afterEach(() => {
+        sandbox.restore();
+    });
     test('empty input should not throw error', async () => {
         const splitter = new Splitter(100);
         const content = '';
@@ -93,7 +103,7 @@ describe('Splitter', () => {
         const content = "![](https://test.com/test.png)";
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
         const app = mockApp(mockedNote);
-        app.getNoteImages = jest.fn().mockResolvedValue([{
+        app.getNoteImages = sandbox.stub().resolves([{
             text: "Test\nPassed",
             src: "https://test.com/test.png",
         }]);

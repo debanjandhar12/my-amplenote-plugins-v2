@@ -1,9 +1,29 @@
 import dotenv from "dotenv"
-import {jest} from "@jest/globals"
+import sinon from "sinon"
 
 dotenv.config();
 
 // --------------------------------------------------------------------------------------
+/**
+ * Creates a mock plugin object with properly bound methods for testing.
+ * This function ensures that plugin methods are correctly bound to the plugin context,
+ * which is essential for proper plugin testing.
+ * 
+ * @param {Object} pluginObject - The plugin object to mock
+ * @param {Object} [pluginObject.insertText] - Insert text commands
+ * @param {Object} [pluginObject.noteOption] - Note-specific actions  
+ * @param {Object} [pluginObject.replaceText] - Replace text commands
+ * @returns {Object} Mocked plugin object with bound methods
+ * 
+ * @example
+ * const plugin = mockPlugin({
+ *   insertText: {
+ *     "Insert Hello": {
+ *       run: async (app) => "Hello World"
+ *     }
+ *   }
+ * });
+ */
 export const mockPlugin = (pluginObject) => {
   const plugin = { ... pluginObject };
   if (plugin.insertText) {
@@ -27,21 +47,55 @@ export const mockPlugin = (pluginObject) => {
 }
 
 // --------------------------------------------------------------------------------------
+/**
+ * Creates a comprehensive mock Amplenote app object using Sinon stubs.
+ * This mock app provides all the essential Amplenote API methods with Sinon-based
+ * mocking for cross-environment compatibility (Jest and browser contexts).
+ * 
+ * All mock functions are created using Sinon stubs, which work consistently
+ * across Jest and browser testing environments, unlike Jest mocks.
+ * 
+ * @param {Object} [seedNote] - Optional note to seed the app's note registry
+ * @param {string} seedNote.uuid - Unique identifier for the seed note
+ * @param {string} seedNote.name - Name/title of the seed note
+ * @param {string} seedNote.body - Content of the seed note
+ * @param {string[]} [seedNote.tags] - Tags associated with the seed note
+ * @returns {Object} Mock app object with Sinon stubs for all API methods
+ * 
+ * @example
+ * // Basic usage
+ * const app = mockApp();
+ * 
+ * // With seed note
+ * const seedNote = mockNote('Test content', 'Test Note', 'test-uuid');
+ * const app = mockApp(seedNote);
+ * 
+ * // Configure additional stubs
+ * app.getNoteImages.resolves([{ src: 'test.png', text: 'Test' }]);
+ * 
+ * @example
+ * // Browser environment usage (compiled with esbuild-test-helpers)
+ * const mockCode = `
+ *   import { mockApp } from './test-helpers.js';
+ *   window.testApp = mockApp();
+ *   window.testApp.createNote.resolves({ uuid: 'new-note' });
+ * `;
+ */
 export const mockApp = seedNote => {
   const app = {};
   app.alert = text => console.error("Alert was called", text);
   app.context = {};
   app.context.noteUUID = "abc123";
-  app.createNote = jest.fn();
-  app.getNoteContent = jest.fn();
-  app.prompt = jest.fn();
-  app.navigate = jest.fn();
+  app.createNote = sinon.stub();
+  app.getNoteContent = sinon.stub();
+  app.prompt = sinon.stub();
+  app.navigate = sinon.stub();
   app.notes = {};
-  app.notes.find = jest.fn().mockResolvedValue(null);
-  app.notes.filter = jest.fn().mockResolvedValue([]);
-  app.notes.create= jest.fn();
-  app.filterNotes = jest.fn().mockResolvedValue([]);
-  app.getNoteImages = jest.fn().mockResolvedValue([]);
+  app.notes.find = sinon.stub().resolves(null);
+  app.notes.filter = sinon.stub().resolves([]);
+  app.notes.create= sinon.stub();
+  app.filterNotes = sinon.stub().resolves([]);
+  app.getNoteImages = sinon.stub().resolves([]);
   app.settings = {};
   app._noteRegistry = {};
 
@@ -49,8 +103,8 @@ export const mockApp = seedNote => {
     app._noteRegistry[seedNote.uuid] = seedNote;
   }
 
-  const noteFunction = jest.fn();
-  noteFunction.mockImplementation(noteHandle => {
+  const noteFunction = sinon.stub();
+  noteFunction.callsFake(noteHandle => {
     if (typeof noteHandle === "string") {
       return app._noteRegistry[noteHandle];
     } else if (typeof noteHandle === "number") {
@@ -64,16 +118,16 @@ export const mockApp = seedNote => {
     }
 
   });
-  const getContent = jest.fn();
-  getContent.mockImplementation(noteHandle => {
+  const getContent = sinon.stub();
+  getContent.callsFake(noteHandle => {
     return app._noteRegistry[noteHandle.uuid].body;
   });
 
   app.findNote = noteFunction;
   app.notes.find = noteFunction;
   app.getNoteContent = getContent;
-  const mockFilterNotes = jest.fn();
-  mockFilterNotes.mockImplementation(params => {
+  const mockFilterNotes = sinon.stub();
+  mockFilterNotes.callsFake(params => {
     const tag = params.tag;
     return Object.values(app._noteRegistry).filter(note => {
       if (!note.tags) return false;
@@ -86,8 +140,8 @@ export const mockApp = seedNote => {
   app.notes.filter = mockFilterNotes;
   app.filterNotes = mockFilterNotes;
 
-  const mockCreateNote = jest.fn();
-  mockCreateNote.mockImplementation((title, tags, content, uuid) => {
+  const mockCreateNote = sinon.stub();
+  mockCreateNote.callsFake((title, tags, content, uuid) => {
     if (!uuid) uuid = String(Object.keys(app._noteRegistry).length + 1);
     const newNote = mockNote(content, title, uuid, tags);
     app._noteRegistry[newNote.uuid] = newNote;
@@ -96,8 +150,8 @@ export const mockApp = seedNote => {
   app.createNote = mockCreateNote;
   app.notes.create = mockCreateNote;
 
-  const mockSetSetting = jest.fn();
-    mockSetSetting.mockImplementation(async (key, value) => {
+  const mockSetSetting = sinon.stub();
+    mockSetSetting.callsFake(async (key, value) => {
       app.settings[key] = value;
   });
   app.setSetting = mockSetSetting;
@@ -111,6 +165,33 @@ export const mockApp = seedNote => {
 }
 
 // --------------------------------------------------------------------------------------
+/**
+ * Creates a mock Amplenote note object with all essential properties and methods.
+ * This mock note provides a complete implementation of the Amplenote note API
+ * for testing purposes, including content manipulation and section handling.
+ * 
+ * @param {string} content - The initial content/body of the note
+ * @param {string} name - The name/title of the note
+ * @param {string} uuid - Unique identifier for the note
+ * @param {string[]} [tags] - Array of tags associated with the note
+ * @returns {Object} Mock note object with all Amplenote note API methods
+ * 
+ * @example
+ * // Create a basic mock note
+ * const note = mockNote('# Test Note\nContent here', 'Test Note', 'test-uuid', ['tag1', 'tag2']);
+ * 
+ * // Use note methods
+ * await note.insertContent('\nNew content');
+ * await note.replaceContent('Replaced content');
+ * const sections = await note.sections();
+ * 
+ * @example
+ * // Browser environment usage
+ * const mockCode = `
+ *   import { mockNote } from './test-helpers.js';
+ *   window.testNote = mockNote('Test content', 'Test', 'uuid');
+ * `;
+ */
 export const mockNote = (content, name, uuid, tags) => {
   const note = {};
   note.body = content;
@@ -138,11 +219,11 @@ export const mockNote = (content, name, uuid, tags) => {
 
   // --------------------------------------------------------------------------------------
   note.sections = async () => {
-    const headingMatches = note.body.matchAll(/^#+\s*([^\n]+)/gm);
+    const headingMatches = note.body.matchAll(/^(#+)\s*([^\n]+)/gm);
     return Array.from(headingMatches).map(match => ({
-      anchor: match[1].replace(/\s/g, "_"),
-      level: /^#+/.exec(match[0]).length,
-      text: match[1],
+      anchor: match[2].replace(/\s/g, "_"),
+      level: match[1].length,
+      text: match[2],
     }));
   }
 
@@ -151,6 +232,30 @@ export const mockNote = (content, name, uuid, tags) => {
 
 // --------------------------------------------------------------------------------------
 
+/**
+ * Internal helper function to replace note content, optionally within a specific section.
+ * This function handles both full note content replacement and section-specific replacement
+ * based on markdown heading structure.
+ * 
+ * @private
+ * @param {Object} note - The note object to modify
+ * @param {string} newContent - The new content to insert
+ * @param {Object} [sectionObject] - Optional section specification for targeted replacement
+ * @param {Object} sectionObject.section - Section details
+ * @param {Object} sectionObject.section.heading - Heading information
+ * @param {string} sectionObject.section.heading.text - The heading text to find
+ * @param {number} [sectionObject.section.heading.level] - The heading level (1-6)
+ * @throws {Error} When specified section cannot be found in the note
+ * 
+ * @example
+ * // Replace entire note content
+ * _replaceNoteContent(note, 'New content');
+ * 
+ * // Replace content within a specific section
+ * _replaceNoteContent(note, 'New section content', {
+ *   section: { heading: { text: 'My Section', level: 2 } }
+ * });
+ */
 function _replaceNoteContent(note, newContent, sectionObject = null) {
   if (sectionObject) {
     const sectionHeadingText = sectionObject.section.heading.text;

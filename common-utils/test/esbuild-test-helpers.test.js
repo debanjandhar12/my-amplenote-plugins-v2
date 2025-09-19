@@ -207,5 +207,110 @@ describe('esbuild-test-helpers', () => {
             
             expect(result).toContain('NODE_MODULES_EXTERNAL');
         });
+
+        it('should properly bundle Sinon for browser environments', async () => {
+            const code = `
+                import sinon from 'sinon';
+                
+                // Create Sinon stubs and spies
+                const mockFunction = sinon.stub();
+                mockFunction.returns('test-value');
+                
+                const spy = sinon.spy();
+                
+                // Test Sinon functionality
+                const result = mockFunction();
+                spy('called');
+                
+                window.SINON_TEST = {
+                    sinonAvailable: typeof sinon !== 'undefined',
+                    stubResult: result,
+                    stubCalled: mockFunction.called,
+                    spyCalled: spy.called,
+                    stubCallCount: mockFunction.callCount,
+                    spyCallCount: spy.callCount
+                };
+            `;
+            
+            const result = await compileJavascriptCode(code);
+            
+            expect(result).toContain('SINON_TEST');
+            expect(result).toContain('sinonAvailable');
+            expect(result).toContain('stubResult');
+            expect(result).toContain('stubCalled');
+            expect(result).toContain('spyCalled');
+            expect(result).toContain('test-value');
+        });
+
+        it('should handle Sinon async stubs in browser context', async () => {
+            const code = `
+                import sinon from 'sinon';
+                
+                // Create async stubs
+                const asyncStub = sinon.stub();
+                asyncStub.resolves('async-result');
+                
+                const rejectStub = sinon.stub();
+                rejectStub.rejects(new Error('async-error'));
+                
+                window.SINON_ASYNC_TEST = {
+                    asyncStub,
+                    rejectStub,
+                    testAsync: async () => {
+                        try {
+                            const result = await asyncStub();
+                            return { success: true, result };
+                        } catch (error) {
+                            return { success: false, error: error.message };
+                        }
+                    }
+                };
+            `;
+            
+            const result = await compileJavascriptCode(code);
+            
+            expect(result).toContain('SINON_ASYNC_TEST');
+            expect(result).toContain('asyncStub');
+            expect(result).toContain('rejectStub');
+            expect(result).toContain('async-result');
+            expect(result).toContain('async-error');
+        });
+
+        it('should handle Sinon sandbox creation and cleanup', async () => {
+            const code = `
+                import sinon from 'sinon';
+                
+                // Create sandbox
+                const sandbox = sinon.createSandbox();
+                
+                // Create stubs using sandbox
+                const stub1 = sandbox.stub();
+                const stub2 = sandbox.stub();
+                
+                stub1.returns('sandbox-test-1');
+                stub2.returns('sandbox-test-2');
+                
+                // Test sandbox functionality
+                const result1 = stub1();
+                const result2 = stub2();
+                
+                window.SINON_SANDBOX_TEST = {
+                    sandboxAvailable: typeof sandbox !== 'undefined',
+                    result1,
+                    result2,
+                    stub1Called: stub1.called,
+                    stub2Called: stub2.called,
+                    restoreFunction: typeof sandbox.restore === 'function'
+                };
+            `;
+            
+            const result = await compileJavascriptCode(code);
+            
+            expect(result).toContain('SINON_SANDBOX_TEST');
+            expect(result).toContain('sandboxAvailable');
+            expect(result).toContain('sandbox-test-1');
+            expect(result).toContain('sandbox-test-2');
+            expect(result).toContain('restoreFunction');
+        });
     });
 });

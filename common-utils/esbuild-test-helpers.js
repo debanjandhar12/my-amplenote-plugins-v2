@@ -1,9 +1,30 @@
 import { spawn } from 'child_process';
 
 /**
- * Compiles JavaScript code with imports using esbuild in an external process
- * @param {string} code - JavaScript code with import statements
+ * Compiles JavaScript code with imports using esbuild in an external process.
+ * This function is specifically designed to handle test mock code that needs to run
+ * in browser environments, including proper bundling of Sinon mocking library.
+ * 
+ * The compilation process:
+ * - Bundles all imports including Sinon for cross-environment compatibility
+ * - Handles Node.js built-ins through polyfills or external declarations
+ * - Unwraps IIFE format to make code directly executable in browser context
+ * - Preserves function definitions and complex objects without serialization
+ * 
+ * @param {string} code - JavaScript code with import statements (e.g., `import sinon from 'sinon'`)
  * @returns {Promise<string>} Compiled JavaScript code ready for browser injection
+ * 
+ * @example
+ * // Compile Sinon mock code for browser testing
+ * const mockCode = `
+ *   import sinon from 'sinon';
+ *   const stub = sinon.stub().returns('test-value');
+ *   window.mockFunction = stub;
+ * `;
+ * const compiled = await compileJavascriptCode(mockCode);
+ * // Result can be injected into browser context via Playwright
+ * 
+ * @throws {Error} When compilation fails due to syntax errors or import resolution issues
  */
 export async function compileJavascriptCode(code) {
     const target = 'es2020';
