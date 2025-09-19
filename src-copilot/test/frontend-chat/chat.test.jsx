@@ -1,5 +1,6 @@
+import { compileJavascriptCode } from "../../../common-utils/esbuild-test-helpers.js";
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
-import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
+import {createCallAmplenotePluginMock} from "../../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from "./chat.testdata.js";
 import html from "inline:../../embed/chat.html";
 
@@ -14,13 +15,20 @@ describe('chat embed', () => {
     const {getPage} = createPlaywrightHooks();
     describe('handles errors correctly', () => {
         it('when empty settings', async () => {
-            const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_SETTINGS = ${JSON.stringify({})};
-            window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({...EMBED_COMMANDS_MOCK,
-                getSettings: async () => {
-                    return window.INJECTED_SETTINGS;
-                }
-            }))};
-            `);
+            const mockCode = `
+                import { EMBED_COMMANDS_MOCK } from './src-copilot/test/frontend-chat/chat.testdata.js';
+                import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+                window.SETTINGS = {};
+                window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                    ...EMBED_COMMANDS_MOCK,
+                    getSettings: async () => {
+                        return window.SETTINGS;
+                    }
+                });
+            `;
+            const compiledCode = await compileJavascriptCode(mockCode);
+            const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
             const page = await getPage();
             await page.setContent(htmlWithMocks);
 
@@ -31,16 +39,24 @@ describe('chat embed', () => {
         }, 20000);
 
         it('when wrong api key is provided', async () => {
-            const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_SETTINGS = ${JSON.stringify({
-                ...getLLMProviderSettings('groq'),
-                [LLM_API_KEY_SETTING]: "wrong-api-key"
-            })};
-            window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({...EMBED_COMMANDS_MOCK,
-                getSettings: async () => {
-                    return window.INJECTED_SETTINGS;
-                }
-            }))};
-            `);
+            const mockCode = `
+                import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+                import { LLM_API_KEY_SETTING } from './src-copilot/constants.js';
+                import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+                window.SETTINGS = {
+                    ...getLLMProviderSettings('groq'),
+                    [LLM_API_KEY_SETTING]: "wrong-api-key"
+                };
+                window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                    ...EMBED_COMMANDS_MOCK,
+                    getSettings: async () => {
+                        return window.SETTINGS;
+                    }
+                });
+            `;
+            const compiledCode = await compileJavascriptCode(mockCode);
+            const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
             const page = await getPage();
             await page.setContent(htmlWithMocks);
 
@@ -56,15 +72,21 @@ describe('chat embed', () => {
     });
 
     it('loads correctly', async () => {
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_SETTINGS = ${JSON.stringify(getLLMProviderSettings('groq'))};
-        window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
-            ...EMBED_COMMANDS_MOCK,
-            getSettings: async () => {
-                return window.INJECTED_SETTINGS;
-            }
-        }))};
-        `);
-        const page = getPage();
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.SETTINGS = getLLMProviderSettings('groq');
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                ...EMBED_COMMANDS_MOCK,
+                getSettings: async () => {
+                    return window.SETTINGS;
+                }
+            });
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
         await page.setContent(htmlWithMocks);
         await waitForCustomEvent(page, 'appLoaded');
         await page.evaluate(() => {
@@ -74,17 +96,24 @@ describe('chat embed', () => {
     }, 20000);
 
     it('works with custom max token setting', async () => {
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_SETTINGS = ${JSON.stringify({
-            ...getLLMProviderSettings('groq'),
-            [LLM_MAX_TOKENS_SETTING]: '100'
-        })};
-        window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
-            ...EMBED_COMMANDS_MOCK,
-            getSettings: async () => {
-                return window.INJECTED_SETTINGS;
-            }
-        }))};
-        `);
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.SETTINGS = {
+                ...getLLMProviderSettings('groq'),
+                [LLM_MAX_TOKENS_SETTING]: '100'
+            };
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                ...EMBED_COMMANDS_MOCK,
+                getSettings: async () => {
+                    return window.SETTINGS;
+                }
+            });
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
         const page = await getPage();
         await page.setContent(htmlWithMocks);
 

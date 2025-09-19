@@ -1,22 +1,29 @@
 import html from "inline:../../embed/index.html";
-import {chromium} from "playwright";
+import { compileJavascriptCode } from "../../../common-utils/esbuild-test-helpers.js";
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
-import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
+import {createCallAmplenotePluginMock} from "../../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK, EMBED_NOTE_UUID_MOCK} from "./embed.testdata.js";
+import {createPlaywrightHooks} from "../../../common-utils/playwright-helpers.ts";
 
 describe('mindmap embed', () => {
+    const { getPage } = createPlaywrightHooks(false);
+    
     it('renders markmap', async () => {
-        const browser = await chromium.launch({ headless: true });
-        const context = await browser.newContext();
-        const page = await context.newPage();
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
-            ...EMBED_COMMANDS_MOCK,
-            "getNoteContentByUUID": async (noteUUID) => {
-                return "# Hello World"
-            },
-        }))};
-        window.INJECTED_NOTE_UUID_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_NOTE_UUID_MOCK))};
-        `);
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK, EMBED_NOTE_UUID_MOCK } from './src-mindmap/test/embed/embed.testdata.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.noteUUID = EMBED_NOTE_UUID_MOCK;
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                ...EMBED_COMMANDS_MOCK,
+                "getNoteContentByUUID": async (noteUUID) => {
+                    return "# Hello World"
+                },
+            });
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
         await page.setContent(htmlWithMocks);
         await page.waitForSelector('.markmap-svg');
         await page.waitForFunction(() => {
@@ -25,38 +32,43 @@ describe('mindmap embed', () => {
         });
         const svgText = await page.$eval('.markmap-svg', el => el.textContent);
         expect(svgText).toContain('Hello World');
-        await browser.close();
     }, 20000);
+    
     it('loads toolbar items', async () => {
-        const browser = await chromium.launch({ headless: true });
-        const context = await browser.newContext();
-        const page = await context.newPage();
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions(
-            EMBED_COMMANDS_MOCK
-        ))};
-        window.INJECTED_NOTE_UUID_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_NOTE_UUID_MOCK))};
-        `);
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK, EMBED_NOTE_UUID_MOCK } from './src-mindmap/test/embed/embed.testdata.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.noteUUID = EMBED_NOTE_UUID_MOCK;
+            window.callAmplenotePlugin = createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
         await page.setContent(htmlWithMocks);
         await page.waitForSelector('.mm-toolbar-item');
         const toolbarItems = await page.$$('.mm-toolbar-item');
         expect(toolbarItems.length).toBeGreaterThan(1);
-        await browser.close();
     }, 20000);
+    
     it('handles error correctly', async () => {
-        const browser = await chromium.launch({ headless: true });
-        const context = await browser.newContext();
-        const page = await context.newPage();
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
-            ...EMBED_COMMANDS_MOCK,
-            "getNoteContentByUUID": async (noteUUID) => {
-                throw new Error("Note not found");
-            },
-        }))};
-        window.INJECTED_NOTE_UUID_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_NOTE_UUID_MOCK))};
-        `);
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK, EMBED_NOTE_UUID_MOCK } from './src-mindmap/test/embed/embed.testdata.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.noteUUID = EMBED_NOTE_UUID_MOCK;
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                ...EMBED_COMMANDS_MOCK,
+                "getNoteContentByUUID": async (noteUUID) => {
+                    throw new Error("Note not found");
+                },
+            });
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
         await page.setContent(htmlWithMocks);
         const content = await page.content();
         expect(content).toContain('Error: Note not found');
-        await browser.close();
     }, 20000);
 });

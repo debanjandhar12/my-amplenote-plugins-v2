@@ -12,6 +12,9 @@ export async function compileJavascriptCode(code) {
     const sourcemap = false;
     const external = [];
     const define = {};
+    Object.keys(process.env).forEach(key => {
+        define[`process.env.${key}`] = JSON.stringify(process.env[key]);
+    });
     const enableNodeModulesPolyfill = true;
 
     return new Promise((resolve, reject) => {
@@ -23,7 +26,6 @@ export async function compileJavascriptCode(code) {
             external,
             enableNodeModulesPolyfill,
             define: {
-                'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
                 ...define
             }
         };

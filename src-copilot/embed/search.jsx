@@ -1,4 +1,4 @@
-import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
+import {createCallAmplenotePluginMock} from "../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK} from "../test/frontend-chat/chat.testdata.js";
 import {overwriteWithAmplenoteStyle} from "../frontend-chat/overwriteWithAmplenoteStyle.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
@@ -11,10 +11,6 @@ import {parse} from "../markdown/markdown-parser.js";
 
 if(process.env.NODE_ENV === 'development') {
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
-}
-else {
-    if (window.INJECTED_EMBED_COMMANDS_MOCK)
-        window.callAmplenotePlugin = createCallAmplenotePluginMock(deserializeWithFunctions(window.INJECTED_EMBED_COMMANDS_MOCK));
 }
 
 window.appConnector = new Proxy({}, {

@@ -1,5 +1,5 @@
+import { compileJavascriptCode } from "../../../common-utils/esbuild-test-helpers.js";
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
-import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
 import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from "./chat.testdata.js";
 import html from "inline:../../embed/chat.html";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../common-utils/playwright-helpers.ts";
@@ -10,14 +10,20 @@ describe('chat embed', () => {
     describe('works with provider:', () => {
         ['groq', 'openai', 'google', 'fireworks'].forEach(provider => {
             it(provider, async () => {
-                const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_SETTINGS = ${JSON.stringify(getLLMProviderSettings(provider))};
-                window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
-                    ...EMBED_COMMANDS_MOCK,
-                    getSettings: async () => {
-                        return window.INJECTED_SETTINGS;
-                    }
-                }))};
-                `);
+                const mockCode = `
+                    import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+                    import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+                    const settings = getLLMProviderSettings('${provider}');
+                    window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                        ...EMBED_COMMANDS_MOCK,
+                        getSettings: async () => {
+                            return settings;
+                        }
+                    });
+                `;
+                const compiledCode = await compileJavascriptCode(mockCode);
+                const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
                 const page = await getPage();
                 await page.setContent(htmlWithMocks);
 

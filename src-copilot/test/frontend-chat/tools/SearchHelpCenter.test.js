@@ -1,24 +1,23 @@
-import {addScriptToHtmlString} from "../../../../common-utils/embed-helpers.js";
-import {serializeWithFunctions} from "../../../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from ".././chat.testdata.js";
+import { compileJavascriptCode } from "../../../../common-utils/esbuild-test-helpers.js";
+import { addScriptToHtmlString } from "../../../../common-utils/embed-helpers.js";
 import html from "inline:../../../embed/chat.html";
-
-import {
-    LLM_MAX_TOKENS_SETTING
-} from "../../../constants.js";
-import {createPlaywrightHooks, waitForCustomEvent} from "../../../../common-utils/playwright-helpers.ts";
+import { createPlaywrightHooks, waitForCustomEvent } from "../../../../common-utils/playwright-helpers.ts";
 
 describe('Search Help Center tool', () => {
     const {getPage} = createPlaywrightHooks();
     
     it('works correctly', async () => {
-        const htmlWithMocks = addScriptToHtmlString(html, `
-            window.INJECTED_SETTINGS = ${JSON.stringify({
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.SETTINGS = {
                 ...getLLMProviderSettings('groq'),
                 [LLM_MAX_TOKENS_SETTING]: '100'
-            })};
+            };
 
-            window.INJECT_MESSAGES = [
+            window.INIT_MESSAGES = [
                 {
                     "message": {
                         "id": "test456",
@@ -55,13 +54,13 @@ describe('Search Help Center tool', () => {
                 }
             ];
 
-            window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
-                getSettings: async () => window.INJECTED_SETTINGS,
+                getSettings: async () => window.SETTINGS,
                 receiveMessageFromPlugin: async (queue) => {
-                    if (queue === 'attachments' && window.INJECT_MESSAGES) {
-                        const injectMessages = window.INJECT_MESSAGES;
-                        window.INJECT_MESSAGES = null;
+                    if (queue === 'attachments' && window.INIT_MESSAGES) {
+                        const injectMessages = window.INIT_MESSAGES;
+                        window.INIT_MESSAGES = null;
                         return {type: 'new-chat', message: injectMessages};
                     }
                     return null;
@@ -73,7 +72,7 @@ describe('Search Help Center tool', () => {
                         {
                             "id": "https://www.amplenote.com/help/add-details-text-image-to-task#How_can_I_add_images%2C_text%2C_and_other_details_to_a_task%3F##3",
                             "metadata": {
-                                "noteContentPart": "---\ntitle: Creating tasks & to-do lists, and configuring t...\nheaders: # # Different ways to add new tasks> ## ## Create a task from mobile Quick Task Bar\n---\n## Create a task from mobile Quick Task Bar",
+                                "noteContentPart": "---\\ntitle: Creating tasks & to-do lists, and configuring t...\\nheaders: # # Different ways to add new tasks> ## ## Create a task from mobile Quick Task Bar\\n---\\n## Create a task from mobile Quick Task Bar",
                                 "noteUUID": "https://www.amplenote.com/help/add-details-text-image-to-task#How_can_I_add_images%2C_text%2C_and_other_details_to_a_task%3F",
                                 "noteTitle": "Creating tasks & to-do lists, and configuring task options",
                                 "noteTags": [],
@@ -89,8 +88,10 @@ describe('Search Help Center tool', () => {
                         }
                     ];
                 }
-            }))};
-        `);
+            });
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
 
         const page = await getPage();
         await page.setContent(htmlWithMocks);

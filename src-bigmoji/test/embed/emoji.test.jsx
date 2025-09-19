@@ -1,17 +1,24 @@
-import {chromium} from "playwright";
+import { compileJavascriptCode } from "../../../common-utils/esbuild-test-helpers.js";
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
-import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
+import {createCallAmplenotePluginMock} from "../../../common-utils/embed-comunication.js";
 import {EMOJI_DATA_MOCK, EMBED_COMMANDS_MOCK} from "./emoji.testdata.js";
 import html from "inline:../../embed/emoji.html";
+import {createPlaywrightHooks} from "../../../common-utils/playwright-helpers.ts";
 
 describe('emoji embed', () => {
+    const { getPage } = createPlaywrightHooks(false);
+    
     it('should initialize emoji picker page properly', async () => {
-        const browser = await chromium.launch({ headless: true });
-        const context = await browser.newContext();
-        const page = await context.newPage();
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_COMMANDS_MOCK))};
-        window.INJECTED_EMOJI_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(EMOJI_DATA_MOCK))};
-        `);
+        const mockCode = `
+            import { EMOJI_DATA_MOCK, EMBED_COMMANDS_MOCK } from './src-bigmoji/test/embed/emoji.testdata.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.emojiData = EMOJI_DATA_MOCK;
+            window.callAmplenotePlugin = createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
         await page.setContent(htmlWithMocks);
 
         // Wait for emoji picker page
@@ -23,15 +30,19 @@ describe('emoji embed', () => {
         // Verify custom emoji button is added
         await page.waitForSelector('#custom-emoji-insert');
 
-        await browser.close();
     }, 20000);
+    
     it('page navigation should work', async () => {
-        const browser = await chromium.launch({ headless: true });
-        const context = await browser.newContext();
-        const page = await context.newPage();
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_COMMANDS_MOCK))};
-        window.INJECTED_EMOJI_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(EMOJI_DATA_MOCK))};
-        `);
+        const mockCode = `
+            import { EMOJI_DATA_MOCK, EMBED_COMMANDS_MOCK } from './src-bigmoji/test/embed/emoji.testdata.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.emojiData = EMOJI_DATA_MOCK;
+            window.callAmplenotePlugin = createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
         await page.setContent(htmlWithMocks);
 
         // Wait for emoji picker page
@@ -73,6 +84,5 @@ describe('emoji embed', () => {
             return document.body.innerHTML.includes('Please close this window.');
         });
 
-        await browser.close();
     }, 20000);
 });

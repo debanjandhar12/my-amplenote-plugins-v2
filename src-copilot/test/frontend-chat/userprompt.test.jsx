@@ -1,23 +1,27 @@
+import { compileJavascriptCode } from "../../../common-utils/esbuild-test-helpers.js";
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
-import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from "./chat.testdata.js";
 import html from "inline:../../embed/chat.html";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../common-utils/playwright-helpers.ts";
-import {USER_PROMPT_LIST_SETTING} from "../../constants.js";
 
 describe('chat embed user prompts', () => {
     const {getPage} = createPlaywrightHooks();
 
     it('loads with empty user prompt list setting', async () => {
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_SETTINGS = ${JSON.stringify(getLLMProviderSettings('groq'))};
-        window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
-            ...EMBED_COMMANDS_MOCK,
-            getSettings: async () => {
-                return window.INJECTED_SETTINGS;
-            }
-        }))};
-        `);
-        const page = getPage();
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            const settings = getLLMProviderSettings('groq');
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                ...EMBED_COMMANDS_MOCK,
+                getSettings: async () => {
+                    return settings;
+                }
+            });
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
         await page.setContent(htmlWithMocks);
         await waitForCustomEvent(page, 'appLoaded');
         await expect(page.locator('.user-prompt-library-button')).toBeVisible();
@@ -26,18 +30,25 @@ describe('chat embed user prompts', () => {
     }, 20000);
 
     it('loads with non-empty user prompt list setting and works', async () => {
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_SETTINGS = ${JSON.stringify({
-            ...getLLMProviderSettings('groq'),
-            [USER_PROMPT_LIST_SETTING]: JSON.stringify([{uuid:'a', message: "Test A", usageCount:0},{uuid: 'b', message: "Test B", usageCount:0}])
-        })};
-        window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
-            ...EMBED_COMMANDS_MOCK,
-            getSettings: async () => {
-                return window.INJECTED_SETTINGS;
-            }
-        }))};
-        `);
-        const page = getPage();
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { USER_PROMPT_LIST_SETTING } from './src-copilot/constants.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            const settings = {
+                ...getLLMProviderSettings('groq'),
+                [USER_PROMPT_LIST_SETTING]: JSON.stringify([{uuid:'a', message: "Test A", usageCount:0},{uuid: 'b', message: "Test B", usageCount:0}])
+            };
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                ...EMBED_COMMANDS_MOCK,
+                getSettings: async () => {
+                    return settings;
+                }
+            });
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
         await page.setContent(htmlWithMocks);
         await waitForCustomEvent(page, 'appLoaded');
         await expect(page.locator('.user-prompt-library-button')).toBeVisible();

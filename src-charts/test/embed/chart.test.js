@@ -1,17 +1,24 @@
-import {chromium} from "playwright";
+import { compileJavascriptCode } from "../../../common-utils/esbuild-test-helpers.js";
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
-import {serializeWithFunctions} from "../../../common-utils/embed-comunication.js";
+import {createCallAmplenotePluginMock} from "../../../common-utils/embed-comunication.js";
 import {CHART_DATA_MOCK, CHART_FORMULA_DATA_MOCK, EMBED_COMMANDS_MOCK} from "./chart.testdata.js";
 import html from "inline:../../embed/chart.html";
+import {createPlaywrightHooks} from "../../../common-utils/playwright-helpers.ts";
 
 describe('chart embed', () => {
+    const { getPage } = createPlaywrightHooks(false);
+    
     it('should initialize (table data source)', async () => {
-        const browser = await chromium.launch({ headless: true });
-        const context = await browser.newContext();
-        const page = await context.newPage();
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_COMMANDS_MOCK))};
-        window.INJECTED_CHART_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(CHART_DATA_MOCK))};
-        `);
+        const mockCode = `
+            import { CHART_DATA_MOCK, EMBED_COMMANDS_MOCK } from './src-charts/test/embed/chart.testdata.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.ChartData = CHART_DATA_MOCK;
+            window.callAmplenotePlugin = createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
         await page.setContent(htmlWithMocks);
         await page.waitForSelector('#chart');
         const canvas = await page.$('#chart');
@@ -22,16 +29,19 @@ describe('chart embed', () => {
         });
         expect(canvas).not.toBeNull();
         expect((await chartData.jsonValue()).length).toBeGreaterThan(0);
-        await browser.close();
     }, 20000);
 
     it('should initialize (formula data source)', async () => {
-        const browser = await chromium.launch({ headless: true });
-        const context = await browser.newContext();
-        const page = await context.newPage();
-        const htmlWithMocks = addScriptToHtmlString(html, `window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions(EMBED_COMMANDS_MOCK))};
-        window.INJECTED_CHART_DATA_MOCK = ${JSON.stringify(serializeWithFunctions(CHART_FORMULA_DATA_MOCK))};
-        `);
+        const mockCode = `
+            import { CHART_FORMULA_DATA_MOCK, EMBED_COMMANDS_MOCK } from './src-charts/test/embed/chart.testdata.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.ChartData = CHART_FORMULA_DATA_MOCK;
+            window.callAmplenotePlugin = createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
+        `;
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
         await page.setContent(htmlWithMocks);
         await page.waitForSelector('#chart');
         const canvas = await page.$('#chart');
@@ -42,6 +52,5 @@ describe('chart embed', () => {
         });
         expect(canvas).not.toBeNull();
         expect((await chartData.jsonValue()).length).toBeGreaterThan(0);
-        await browser.close();
     }, 20000);
 });
