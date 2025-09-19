@@ -10,13 +10,14 @@ describe('Create New Notes tool', () => {
         const mockCode = `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
+            import {createCallAmplenotePluginMock} from "./common-utils/embed-comunication.js";
 
-            window.INJECTED_SETTINGS = {
+            window.SETTINGS = {
                 ...getLLMProviderSettings('groq'),
                 [LLM_MAX_TOKENS_SETTING]: '100'
             };
 
-            window.INJECT_MESSAGES = [
+            window.INIT_MESSAGES = [
                 {
                     "message": {
                         "id": "test456",
@@ -64,13 +65,13 @@ describe('Create New Notes tool', () => {
                 }
             ];
 
-            window.INJECTED_EMBED_COMMANDS_MOCK = {
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
-                getSettings: async () => window.INJECTED_SETTINGS,
+                getSettings: async () => window.SETTINGS,
                 receiveMessageFromPlugin: async (queue) => {
-                    if (queue === 'attachments' && window.INJECT_MESSAGES) {
-                        const injectMessages = window.INJECT_MESSAGES;
-                        window.INJECT_MESSAGES = null;
+                    if (queue === 'attachments' && window.INIT_MESSAGES) {
+                        const injectMessages = window.INIT_MESSAGES;
+                        window.INIT_MESSAGES = null;
                         return {type: 'new-chat', message: injectMessages};
                     }
                     return null;
@@ -83,7 +84,7 @@ describe('Create New Notes tool', () => {
                 insertNoteContent: async (note, content) => {
                     return true;
                 }
-            };
+            });
         `;
         const compiledCode = await compileJavascriptCode(mockCode);
         const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
