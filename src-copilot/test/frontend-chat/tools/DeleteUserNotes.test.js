@@ -78,6 +78,8 @@ describe('Delete User Notes tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
+                    // Add timeout so that test can capture state
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     if (uuid === "12345678-1234-1234-1234-123456789012") {
                         return "Test Note 1";
                     } else if (uuid === "87654321-4321-4321-4321-210987654321") {
@@ -86,6 +88,8 @@ describe('Delete User Notes tool', () => {
                     return null;
                 },
                 getNoteTagsByUUID: async ({uuid}) => {
+                    // Add timeout so that test can capture state
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     if (uuid === "12345678-1234-1234-1234-123456789012") {
                         return ["tag1", "tag2"];
                     } else if (uuid === "87654321-4321-4321-4321-210987654321") {

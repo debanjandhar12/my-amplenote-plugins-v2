@@ -66,8 +66,9 @@ describe('Search Help Center tool', () => {
                     return null;
                 },
                 searchHelpCenter: async (query, options) => {
+                    // Add timeout so that test can capture state
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     // Mock search results
-                    await new Promise(resolve => setTimeout(resolve, 1000));
                     return [
                         {
                             "id": "https://www.amplenote.com/help/add-details-text-image-to-task#How_can_I_add_images%2C_text%2C_and_other_details_to_a_task%3F##3",
