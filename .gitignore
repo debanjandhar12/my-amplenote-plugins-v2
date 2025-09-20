@@ -8,3 +8,5 @@ coverage/
 .kiro
 package-lock.json
 .vscode
+allure-results/
+allure-report/

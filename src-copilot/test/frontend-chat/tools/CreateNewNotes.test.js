@@ -3,13 +3,22 @@ import { addScriptToHtmlString } from "../../../../common-utils/embed-helpers.js
 import html from "inline:../../../embed/chat.html";
 import {
     createPlaywrightHooks, getSpyInfo,
-    waitForCustomEvent
+    waitForCustomEvent, takeScreenshot
 } from "../../../../common-utils/playwright-helpers.ts";
+import { allure } from 'jest-allure2-reporter/api';
 
 describe('Create New Notes tool', () => {
     const { getPage } = createPlaywrightHooks(false);
 
     it('works correctly through all states', async () => {
+        allure.epic('Copilot Plugin');
+        allure.feature('Chat Tools');
+        allure.story('Create New Notes');
+        allure.description('Tests the complete flow of creating new notes through the chat interface');
+        allure.tag('frontend');
+        allure.tag('integration');
+        allure.severity('critical');
+        
         const mockCode = /* javascript */ `
             import sinon from 'sinon';
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
@@ -94,47 +103,52 @@ describe('Create New Notes tool', () => {
                 }
             });
         `;
+        
         const compiledCode = await compileJavascriptCode(mockCode);
         const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
         const page = await getPage();
         await page.setContent(htmlWithMocks);
 
-        // Wait for the tool to initialize
-        const initState = await waitForCustomEvent(page, 'onToolStateChange');
-        expect(initState).toEqual('init');
+        await allure.step('Verify tool initialization', async () => {
+            const initState = await waitForCustomEvent(page, 'onToolStateChange');
+            expect(initState).toEqual('init');
+            await takeScreenshot(page, 'Tool initialized');
+        });
 
-        // Cannot check waiting state as it is instantly changed
-        // const waitingState = await waitForCustomEvent(page, 'onToolStateChange');
-        // expect(waitingState).toEqual('waitingForUserInput');
+        await allure.step('Verify UI elements are visible', async () => {
+            // Check if the submit button exists and is visible
+            const submitButton = await page.waitForSelector('button:has-text("Create Notes")');
+            const isSubmitButtonVisible = await submitButton.isVisible();
+            expect(isSubmitButtonVisible).toBe(true);
 
-        // Check if the submit button exists and is visible
-        const submitButton = await page.waitForSelector('button:has-text("Create Notes")');
-        const isSubmitButtonVisible = await submitButton.isVisible();
-        expect(isSubmitButtonVisible).toBe(true);
+            // Check if the cancel button exists and is visible
+            const cancelButton = await page.waitForSelector('button:has-text("Cancel")');
+            const isCancelButtonVisible = await cancelButton.isVisible();
+            expect(isCancelButtonVisible).toBe(true);
+        });
 
-        // Check if the cancel button exists and is visible
-        const cancelButton = await page.waitForSelector('button:has-text("Cancel")');
-        const isCancelButtonVisible = await cancelButton.isVisible();
-        expect(isCancelButtonVisible).toBe(true);
+        await allure.step('Submit note creation', async () => {
+            const submitButton = await page.waitForSelector('button:has-text("Create Notes")');
+            await submitButton.click();
+        });
 
-        // Simulate user clicking the submit button
-        await submitButton.click();
+        await allure.step('Verify tool completion', async () => {
+            const completedState = await waitForCustomEvent(page, 'onToolStateChange');
+            expect(completedState).toEqual('completed');
+        });
 
-        // Cannot check submitted state as it is instantly changed
-        // const submittedState = await waitForCustomEvent(page, 'onToolStateChange');
-        // expect(submittedState).toEqual('submitted');
+        await allure.step('Verify success message', async () => {
+            console.log('Checking for success message');
+            const successMessage = await page.waitForSelector('text=2 notes created successfully');
+            const isSuccessMessageVisible = await successMessage.isVisible();
+            expect(isSuccessMessageVisible).toBe(true);
+            console.log('Success message is visible: "2 notes created successfully"');
+            await takeScreenshot(page, 'Success message displayed');
+        });
 
-        // Wait for the tool to complete
-        const completedState = await waitForCustomEvent(page, 'onToolStateChange');
-        expect(completedState).toEqual('completed');
-
-        // Check if the success message is visible
-        const successMessage = await page.waitForSelector('text=2 notes created successfully');
-        const isSuccessMessageVisible = await successMessage.isVisible();
-        expect(isSuccessMessageVisible).toBe(true);
-
-        // Verify that createNote was called exactly twice (once for each note)
-        const createNoteSpyInfo = await getSpyInfo(page, 'createNoteSpy');
-        expect(createNoteSpyInfo.callCount).toBe(2);
+        await allure.step('Verify API call count', async () => {
+            const createNoteSpyInfo = await getSpyInfo(page, 'createNoteSpy');
+            expect(createNoteSpyInfo.callCount).toBe(2);
+        });
     }, 200000);
 });
