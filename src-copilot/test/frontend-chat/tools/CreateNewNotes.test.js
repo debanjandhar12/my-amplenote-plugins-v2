@@ -10,15 +10,10 @@ import { allure } from 'jest-allure2-reporter/api';
 describe('Create New Notes tool', () => {
     const { getPage } = createPlaywrightHooks();
 
-    it('works correctly through all states', async () => {
-        allure.epic('Copilot Plugin');
-        allure.feature('Chat Tools');
-        allure.story('Create New Notes');
+    it('should transition from init to completed state and create notes upon user confirmation', async () => {
+        allure.epic('src-copilot');
         allure.description('Tests the complete flow of creating new notes through the chat interface');
-        allure.tag('frontend');
-        allure.tag('integration');
-        allure.severity('critical');
-        
+
         const mockCode = /* javascript */ `
             import sinon from 'sinon';
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
@@ -127,6 +122,11 @@ describe('Create New Notes tool', () => {
             expect(isCancelButtonVisible).toBe(true);
         });
 
+        await allure.step('Verify API is not called', async () => {
+            const createNoteSpyInfo = await getSpyInfo(page, 'createNoteSpy');
+            expect(createNoteSpyInfo.callCount).toBe(0);
+        });
+
         await allure.step('Submit note creation', async () => {
             const submitButton = await page.waitForSelector('button:has-text("Create Notes")');
             await submitButton.click();
@@ -138,17 +138,19 @@ describe('Create New Notes tool', () => {
         });
 
         await allure.step('Verify success message', async () => {
-            console.log('Checking for success message');
             const successMessage = await page.waitForSelector('text=2 notes created successfully');
             const isSuccessMessageVisible = await successMessage.isVisible();
             expect(isSuccessMessageVisible).toBe(true);
-            console.log('Success message is visible: "2 notes created successfully"');
             await takeScreenshot(page, 'Success message displayed');
         });
 
-        await allure.step('Verify API call count', async () => {
+        await allure.step('Verify API is called', async () => {
             const createNoteSpyInfo = await getSpyInfo(page, 'createNoteSpy');
-            expect(createNoteSpyInfo.callCount).toBe(2);
+            expect(createNoteSpyInfo.callCount).toBe(2);    // called twice for 2 notes created
         });
+    }, 20000);
+
+    it('should transition from init to completed state without creating notes upon user cancellation', async () => {
+        // implement this
     }, 20000);
 });

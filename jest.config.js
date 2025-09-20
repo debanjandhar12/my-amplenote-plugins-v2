@@ -23,7 +23,7 @@ export default {
     reporters: [
         "default",
         ["jest-allure2-reporter", {
-            "resultsDir": "./dist/allure-results",
+            "resultsDir": "./test-result/allure-results",
             "overwrite": false,
             "suiteNameTemplate": "{displayName} {filepath}",
             "testNameTemplate": "{title}",
