@@ -18,6 +18,8 @@ describe('Create New Notes tool', () => {
         allure.tag('frontend');
         allure.tag('integration');
         allure.severity('critical');
+        
+        console.log('Starting Create New Notes tool test');
         const mockCode = /* javascript */ `
             import sinon from 'sinon';
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
@@ -112,51 +114,68 @@ describe('Create New Notes tool', () => {
         const page = await getPage();
         
         await allure.step('Setup test environment and mocks', async () => {
+            console.log('Setting up test HTML content with mocks');
             await page.setContent(htmlWithMocks);
             await allure.attachment('Test HTML Content', htmlWithMocks, 'text/html');
+            console.log('Test environment setup completed');
         });
 
         await allure.step('Verify tool initialization', async () => {
+            console.log('Waiting for tool to initialize');
             const initState = await waitForCustomEvent(page, 'onToolStateChange');
             expect(initState).toEqual('init');
+            console.log(`Tool initialized with state: ${initState}`);
             await takeScreenshot(page, 'Tool initialized');
         });
 
         await allure.step('Verify UI elements are visible', async () => {
+            console.log('Checking UI elements visibility');
+            
             // Check if the submit button exists and is visible
             const submitButton = await page.waitForSelector('button:has-text("Create Notes")');
             const isSubmitButtonVisible = await submitButton.isVisible();
             expect(isSubmitButtonVisible).toBe(true);
+            console.log('Create Notes button is visible');
             
             // Check if the cancel button exists and is visible
             const cancelButton = await page.waitForSelector('button:has-text("Cancel")');
             const isCancelButtonVisible = await cancelButton.isVisible();
             expect(isCancelButtonVisible).toBe(true);
+            console.log('Cancel button is visible');
             
             await takeScreenshot(page, 'UI elements visible');
         });
 
         await allure.step('Submit note creation', async () => {
+            console.log('Clicking Create Notes button to submit');
             await clickWithScreenshot(page, 'button:has-text("Create Notes")', 'Click Create Notes button');
+            console.log('Create Notes button clicked successfully');
         });
 
         await allure.step('Verify tool completion', async () => {
+            console.log('Waiting for tool to complete');
             const completedState = await waitForCustomEvent(page, 'onToolStateChange');
             expect(completedState).toEqual('completed');
+            console.log(`Tool completed with state: ${completedState}`);
         });
 
         await allure.step('Verify success message', async () => {
+            console.log('Checking for success message');
             const successMessage = await page.waitForSelector('text=2 notes created successfully');
             const isSuccessMessageVisible = await successMessage.isVisible();
             expect(isSuccessMessageVisible).toBe(true);
+            console.log('Success message is visible: "2 notes created successfully"');
             await takeScreenshot(page, 'Success message displayed');
         });
 
         await allure.step('Verify API calls', async () => {
+            console.log('Verifying API call counts');
             const createNoteSpyInfo = await getSpyInfo(page, 'createNoteSpy');
             expect(createNoteSpyInfo.callCount).toBe(2);
+            console.log(`createNote was called ${createNoteSpyInfo.callCount} times as expected`);
             
             await allure.attachment('Spy Call Details', JSON.stringify(createNoteSpyInfo, null, 2), 'application/json');
+            console.log('Test completed successfully');
         });
     }, 200000);
 });

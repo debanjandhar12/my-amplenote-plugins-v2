@@ -96,8 +96,7 @@
   "scripts": {
     "test": "jest --testPathPattern=src-copilot",
     "test:watch": "jest --testPathPattern=src-copilot --watch",
-    "test:allure": "jest --testPathPattern=src-copilot && npx allure generate ./dist/allure-results --clean -o ./dist/allure-report",
-    "test:allure:serve": "npm run test:allure && npx allure open ./dist/allure-report",
+    "allure:serve": "npx allure generate ./dist/allure-results --clean -o ./dist/allure-report && npx allure open ./dist/allure-report",
     "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-copilot",
     "build:dev": "node esbuild.js $(pwd)/src-copilot --watch --server"
   }
