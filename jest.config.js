@@ -33,5 +33,5 @@ export default {
         }]
     ],
     setupFiles: ['<rootDir>/jest.setup.js'],
-    setupFilesAfterEnv: ["./common-utils/jest.sinon.js", "./common-utils/playwright-helpers.ts", "./common-utils/jest.extend.js"]
+    setupFilesAfterEnv: ["./common-utils/jest.sinon.js", "./common-utils/jest.logging.js", "./common-utils/playwright-helpers.ts", "./common-utils/jest.extend.js"]
 };
