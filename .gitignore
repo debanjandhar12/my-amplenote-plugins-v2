@@ -10,3 +10,4 @@ package-lock.json
 .vscode
 allure-results/
 allure-report/
+test-result/

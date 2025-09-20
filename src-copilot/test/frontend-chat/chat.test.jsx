@@ -8,14 +8,22 @@ import {
     LLM_API_KEY_SETTING,
     LLM_MAX_TOKENS_SETTING,
 } from "../../constants.js";
-import {createPlaywrightHooks, waitForCustomEvent} from "../../../common-utils/playwright-helpers.ts";
+import {
+    createPlaywrightHooks, 
+    waitForCustomEvent, 
+    takeScreenshot
+} from "../../../common-utils/playwright-helpers.ts";
+import { allure } from 'jest-allure2-reporter/api';
 
 
 describe('chat embed', () => {
     const {getPage} = createPlaywrightHooks();
     describe('handles errors correctly', () => {
         it('when empty settings', async () => {
-            const mockCode = `
+            allure.epic('src-copilot');
+            allure.description('Tests error handling when chat embed is loaded with empty settings');
+            
+            const mockCode = /* javascript */ `
                 import { EMBED_COMMANDS_MOCK } from './src-copilot/test/frontend-chat/chat.testdata.js';
                 import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
 
@@ -27,19 +35,29 @@ describe('chat embed', () => {
                     }
                 });
             `;
+
             const compiledCode = await compileJavascriptCode(mockCode);
             const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
             const page = await getPage();
-            await page.setContent(htmlWithMocks);
 
-            await waitForCustomEvent(page, 'appLoaded');
+            await allure.step('Setup and load chat embed with empty settings', async () => {
+                await page.setContent(htmlWithMocks);
+                await waitForCustomEvent(page, 'appLoaded');
+                await takeScreenshot(page, 'Chat embed loaded with empty settings');
+            });
 
-            await expect(page.locator('.error')).toBeVisible();
-            await expect(page.locator('.error')).toContainText('Error');
+            await allure.step('Verify error message is displayed', async () => {
+                await expect(page.locator('.error')).toBeVisible();
+                await expect(page.locator('.error')).toContainText('Error');
+                await takeScreenshot(page, 'Error message displayed for empty settings');
+            });
         }, 20000);
 
         it('when wrong api key is provided', async () => {
-            const mockCode = `
+            allure.epic('src-copilot');
+            allure.description('Tests error handling when chat embed is provided with invalid API key');
+            
+            const mockCode = /* javascript */ `
                 import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
                 import { LLM_API_KEY_SETTING } from './src-copilot/constants.js';
                 import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
@@ -55,24 +73,37 @@ describe('chat embed', () => {
                     }
                 });
             `;
+
             const compiledCode = await compileJavascriptCode(mockCode);
             const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
             const page = await getPage();
-            await page.setContent(htmlWithMocks);
 
-            await waitForCustomEvent(page, 'appLoaded');
-            await page.waitForSelector('.aui-composer-input');
-            await page.locator('.aui-composer-input').fill('Say one word');
-            await page.getByRole('button', { name: 'Send' }).click();
+            await allure.step('Setup and load chat embed with wrong API key', async () => {
+                await page.setContent(htmlWithMocks);
+                await waitForCustomEvent(page, 'appLoaded');
+                await takeScreenshot(page, 'Chat embed loaded with wrong API key');
+            });
 
-            const [funcName, ...args] = await waitForCustomEvent(page, 'callAmplenotePlugin');
-            expect(funcName).toBe('alert');
-            await expect(args[0].toLowerCase()).toContain('invalid');
+            await allure.step('Send a test message', async () => {
+                await page.waitForSelector('.aui-composer-input');
+                await page.locator('.aui-composer-input').fill('Say one word');
+                await takeScreenshot(page, 'Test message typed');
+                await page.getByRole('button', { name: 'Send' }).click();
+            });
+
+            await allure.step('Verify invalid API key error is shown', async () => {
+                const [funcName, ...args] = await waitForCustomEvent(page, 'callAmplenotePlugin');
+                expect(funcName).toBe('alert');
+                await expect(args[0].toLowerCase()).toContain('invalid');
+            });
         }, 20000);
     });
 
     it('loads correctly', async () => {
-        const mockCode = `
+        allure.epic('src-copilot');
+        allure.description('Tests basic loading and initialization of chat embed');
+        
+        const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
 
@@ -84,19 +115,31 @@ describe('chat embed', () => {
                 }
             });
         `;
+
         const compiledCode = await compileJavascriptCode(mockCode);
         const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
         const page = await getPage();
-        await page.setContent(htmlWithMocks);
-        await waitForCustomEvent(page, 'appLoaded');
-        await page.evaluate(() => {
-            window.scrollTo(0, document.body.scrollHeight);
+
+        await allure.step('Setup and load chat embed', async () => {
+            await page.setContent(htmlWithMocks);
+            await waitForCustomEvent(page, 'appLoaded');
+            await takeScreenshot(page, 'Chat embed loaded successfully');
         });
-        await expect(page.locator('.aui-composer-input')).toBeVisible();
+
+        await allure.step('Scroll to bottom and verify composer input is visible', async () => {
+            await page.evaluate(() => {
+                window.scrollTo(0, document.body.scrollHeight);
+            });
+            await expect(page.locator('.aui-composer-input')).toBeVisible();
+            await takeScreenshot(page, 'Composer input visible after scrolling');
+        });
     }, 20000);
 
     it('works with custom max token setting', async () => {
-        const mockCode = `
+        allure.epic('src-copilot');
+        allure.description('Tests chat functionality with custom max token settings');
+        
+        const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
@@ -112,19 +155,32 @@ describe('chat embed', () => {
                 }
             });
         `;
+
         const compiledCode = await compileJavascriptCode(mockCode);
         const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
         const page = await getPage();
-        await page.setContent(htmlWithMocks);
 
-        await page.waitForSelector('.aui-composer-input');
-        await page.locator('.aui-composer-input').fill('Say the five letter word: "Apple". Do not say anything else. Only 5 letters.');
-        await page.getByRole('button', {name: 'Send'}).click();
+        await allure.step('Setup and load chat embed with custom max token setting', async () => {
+            await page.setContent(htmlWithMocks);
+            await takeScreenshot(page, 'Chat embed loaded with custom max token setting');
+        });
 
-        const {messages} = await waitForCustomEvent(page, 'onLLMCallFinish');
-        expect(messages[1].content[0].text).toContain('Apple');
+        await allure.step('Send message and wait for response', async () => {
+            await page.waitForSelector('.aui-composer-input');
+            await page.locator('.aui-composer-input').fill('Say the five letter word: "Apple". Do not say anything else. Only 5 letters.');
+            await takeScreenshot(page, 'Message typed with custom max token setting');
+            await page.getByRole('button', {name: 'Send'}).click();
+        });
 
-        await expect(page.locator('.aui-assistant-message-content')).toBeVisible();
-        await expect(page.locator('.aui-assistant-message-content')).toContainText('Apple');
+        await allure.step('Verify LLM response contains expected content', async () => {
+            const {messages} = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(messages[1].content[0].text).toContain('Apple');
+        });
+
+        await allure.step('Verify assistant message is displayed correctly', async () => {
+            await expect(page.locator('.aui-assistant-message-content')).toBeVisible();
+            await expect(page.locator('.aui-assistant-message-content')).toContainText('Apple');
+            await takeScreenshot(page, 'Assistant response displayed with custom max token setting');
+        });
     }, 20000);
 });

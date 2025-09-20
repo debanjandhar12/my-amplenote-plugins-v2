@@ -65,7 +65,7 @@ export const mockPlugin = (pluginObject) => {
  * @param {Object} [seedNote] - Optional note to seed the app's note registry
  * @param {string} seedNote.uuid - Unique identifier for the seed note
  * @param {string} seedNote.name - Name/title of the seed note
- * @param {string} seedNote.body - Content of the seed note
+ * @param {string} seednote._content - Content of the seed note
  * @param {string[]} [seedNote.tags] - Tags associated with the seed note
  * @returns {Object} Mock app object with Sinon stubs for all API methods
  * 
@@ -124,7 +124,7 @@ export const mockApp = seedNote => {
     const note = typeof noteHandle === 'string' ?
       app._noteRegistry[noteHandle] :
       app._noteRegistry[noteHandle?.uuid];
-    return note ? note.body : null;
+    return note ? note._content : null;
   });
 
   app.findNote = noteFindFunction;
@@ -150,7 +150,7 @@ export const mockApp = seedNote => {
     }
     // Filter by content
     if (params.content) {
-      notes = notes.filter(note => note.body && note.body.includes(params.content));
+      notes = notes.filter(note => note._content && note._content.includes(params.content));
     }
     return notes;
   })
@@ -262,6 +262,17 @@ export const mockApp = seedNote => {
   });
   app.insertNoteContent = mockInsertNoteContent;
 
+  const mockDeleteNote = sinon.stub();
+  mockDeleteNote.callsFake(async (noteHandle) => {
+    const note = app.findNote(noteHandle);
+    if (note) {
+      delete app._noteRegistry[note.uuid];
+      return true;
+    }
+    return false;
+  });
+  app.deleteNote = mockDeleteNote;
+
   // Add getTask method to notes object
   app.notes.getTask = mockGetTask;
 
@@ -282,7 +293,7 @@ export const mockApp = seedNote => {
  * - Timestamps (created, updated)
  * - Note deletion
  * 
- * @param {string} content - The initial content/body of the note
+ * @param {string} content - The initial content of the note
  * @param {string} name - The name/title of the note
  * @param {string} uuid - Unique identifier for the note
  * @param {string[]} [tags] - Array of tags associated with the note
@@ -306,11 +317,11 @@ export const mockApp = seedNote => {
  */
 export const mockNote = (content, name, uuid, tags) => {
   const note = {};
-  note.body = content;
+  note._content = content;
   note.name = name;
   note.uuid = uuid;
   note.tags = tags || [];
-  note.content = () => note.body;
+  note.content = () => note._content;
   note.created = new Date();
   note.updated = new Date();
   note.lastUpdated = new Date();
@@ -319,9 +330,9 @@ export const mockNote = (content, name, uuid, tags) => {
   // --------------------------------------------------------------------------------------
   note.insertContent = async (newContent, options = {}) => {
     if (options.atEnd) {
-      note.body += newContent;
+      note._content += newContent;
     } else {
-      note.body = `${note.body}\n${newContent}`;
+      note._content = `${note._content}\n${newContent}`;
     }
     note.lastUpdated = new Date();
     note.updated = new Date();
@@ -336,7 +347,7 @@ export const mockNote = (content, name, uuid, tags) => {
 
   // --------------------------------------------------------------------------------------
   note.sections = async () => {
-    const headingMatches = note.body.matchAll(/^(#+)\s*([^\n]+)/gm);
+    const headingMatches = note._content.matchAll(/^(#+)\s*([^\n]+)/gm);
     return Array.from(headingMatches).map(match => ({
       anchor: match[2].replace(/\s/g, "_"),
       level: match[1].length,
@@ -373,7 +384,7 @@ export const mockNote = (content, name, uuid, tags) => {
     let match;
     let index = 0;
 
-    while ((match = imageRegex.exec(note.body)) !== null) {
+    while ((match = imageRegex.exec(note._content)) !== null) {
       images.push({
         caption: match[1] || '',
         captionindex: index,
@@ -397,7 +408,7 @@ export const mockNote = (content, name, uuid, tags) => {
     if (taskObject.startAt) metadata.startAt = taskObject.startAt;
 
     taskMarkdown += `<!-- ${JSON.stringify(metadata)} -->`;
-    note.body += `\n${taskMarkdown}`;
+    note._content += `\n${taskMarkdown}`;
     note.updated = new Date();
 
     return taskUUID;
@@ -409,7 +420,7 @@ export const mockNote = (content, name, uuid, tags) => {
     const tasks = [];
     let match;
 
-    while ((match = taskRegex.exec(note.body)) !== null) {
+    while ((match = taskRegex.exec(note._content)) !== null) {
       const isCompleted = match[1] === 'x';
       const content = match[2].trim();
       const taskUUID = match[3];
@@ -475,7 +486,7 @@ function _replaceNoteContent(note, newContent, sectionObject = null) {
     if (!throughLevel) throughLevel = sectionHeadingText.match(/^#*/)[0].length;
     if (!throughLevel) throughLevel = 1;
 
-    const indexes = Array.from(note.body.matchAll(/^#+\s*([^#\n\r]+)/gm));
+    const indexes = Array.from(note._content.matchAll(/^#+\s*([^#\n\r]+)/gm));
     const sectionMatch = indexes.find(m => m[1].trim() === sectionHeadingText.trim());
     let startIndex, endIndex;
     if (!sectionMatch) {
@@ -483,17 +494,17 @@ function _replaceNoteContent(note, newContent, sectionObject = null) {
     } else {
       const level = sectionMatch[0].match(/^#+/)[0].length;
       const nextMatch = indexes.find(m => m.index > sectionMatch.index && m[0].match(/^#+/)[0].length <= level);
-      endIndex = nextMatch ? nextMatch.index : note.body.length;
+      endIndex = nextMatch ? nextMatch.index : note._content.length;
       startIndex = sectionMatch.index + sectionMatch[0].length + 1;
     }
 
     if (Number.isInteger(startIndex)) {
-      note.body = `${note.body.slice(0, startIndex)}${newContent.trim()}\n${note.body.slice(endIndex)}`;
+      note._content = `${note._content.slice(0, startIndex)}${newContent.trim()}\n${note._content.slice(endIndex)}`;
     } else {
       throw new Error(`Could not find section ${sectionObject.section.heading.text} in note ${note.name}`);
     }
   } else {
-    note.body = newContent;
+    note._content = newContent;
   }
   note.lastUpdated = new Date();
   note.updated = new Date();

@@ -91,12 +91,13 @@
     "playwright": "^1.49.1",
     "sinon": "21.0.0",
     "jest-allure2-reporter": "2.2.6",
-    "allure-commandline": "^2.32.0"
+    "allure-commandline": "^2.32.0",
+    "open": "^10.2.0"
   },
   "scripts": {
     "test": "jest --testPathPattern=src-copilot",
     "test:watch": "jest --testPathPattern=src-copilot --watch",
-    "allure:serve": "npx allure generate ./dist/allure-results --clean -o ./dist/allure-report && npx allure open ./dist/allure-report",
+    "test:report": "npx allure generate --single-file ./test-result/allure-results --clean -o ./test-result/allure-report && node --input-type=module -e \"import('open').then(o => o.default('./test-result/allure-report/index.html'))\"",
     "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-copilot",
     "build:dev": "node esbuild.js $(pwd)/src-copilot --watch --server"
   }

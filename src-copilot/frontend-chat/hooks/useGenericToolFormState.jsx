@@ -166,7 +166,6 @@ export const useGenericToolFormState = (states, params = {}) => {
     // --- Change state and add the INITIAL result when a form error occurs ---
     React.useEffect(() => {
         if (params.formError && formState !== "error") {
-            params.addResult(`Error: ${errorToString(params.formError)}. Tool invocation failed.`);
             setFormState("error");
         }
     }, [params.formError]);
