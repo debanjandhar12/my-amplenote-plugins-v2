@@ -1,4 +1,4 @@
-import { mockApp, mockNote, mockPlugin } from '../test-helpers.js';
+import { mockApp, mockNote, mockPlugin } from '../amplenote-mocks.js';
 
 describe('Sinon-based test helpers', () => {
 

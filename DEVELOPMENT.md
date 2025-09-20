@@ -103,7 +103,7 @@ We use Jest (jsdom) together with Playwright to drive in-embed UI scenarios.
 
 Patterns for writing embed tests:
 - Use `inline:` imports to include embed HTML in tests (see examples under `src-*/test` folders).
-- Use `compileJavascriptCode` from `common-utils/esbuild-test-helpers.js` to compile mock code with proper ES6 imports and environment variables.
+- Use `compileJavascriptCode` from `common-utils/esbuild-amplenote-mocks.js` to compile mock code with proper ES6 imports and environment variables.
 - Use `addScriptToHtmlString` from `common-utils/embed-helpers.js` to inject the compiled mock code into HTML.
 - Use `createCallAmplenotePluginMock` from `common-utils/embed-comunication.js` to mock plugin.js calls.
 - Boot a Playwright page using `createPlaywrightHooks()` from `common-utils/playwright-helpers.ts` and call `page.setContent(htmlWithMocks)`.
@@ -113,7 +113,7 @@ Patterns for writing embed tests:
 ### Modern Test Pattern Example
 
 ```javascript
-import { compileJavascriptCode } from "../../common-utils/esbuild-test-helpers.js";
+import { compileJavascriptCode } from "../../common-utils/esbuild-amplenote-mocks.js";
 import { addScriptToHtmlString } from "../../common-utils/embed-helpers.js";
 import html from "inline:../embed/chat.html";
 import { createPlaywrightHooks } from "../../common-utils/playwright-helpers.ts";

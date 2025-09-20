@@ -10,7 +10,7 @@ describe('Create New Notes tool', () => {
     const { getPage } = createPlaywrightHooks(false);
 
     it('works correctly through all states', async () => {
-        const mockCode = `
+        const mockCode = /* javascript */ `
             import sinon from 'sinon';
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';

@@ -1,5 +1,5 @@
 import sinon from 'sinon';
-import { mockApp, mockNote } from '../test-helpers.js';
+import { mockApp, mockNote } from '../amplenote-mocks.js';
 
 describe('Sinon performance validation', () => {
 

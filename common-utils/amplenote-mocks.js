@@ -103,8 +103,8 @@ export const mockApp = seedNote => {
     app._noteRegistry[seedNote.uuid] = seedNote;
   }
 
-  const noteFunction = sinon.stub();
-  noteFunction.callsFake(noteHandle => {
+  const noteFindFunction = sinon.stub();
+  noteFindFunction.callsFake(noteHandle => {
     if (typeof noteHandle === "string") {
       return app._noteRegistry[noteHandle];
     } else if (typeof noteHandle === "number") {
@@ -123,8 +123,8 @@ export const mockApp = seedNote => {
     return app._noteRegistry[noteHandle.uuid].body;
   });
 
-  app.findNote = noteFunction;
-  app.notes.find = noteFunction;
+  app.findNote = noteFindFunction;
+  app.notes.find = noteFindFunction;
   app.getNoteContent = getContent;
   const mockFilterNotes = sinon.stub();
   mockFilterNotes.callsFake(params => {

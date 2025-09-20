@@ -1,5 +1,5 @@
 import { Splitter } from '../../../CopilotDB/splitter/Splitter.js';
-import {mockApp, mockNote} from "../../../../common-utils/test-helpers.js";
+import {mockApp, mockNote} from "../../../../common-utils/amplenote-mocks.js";
 import sinon from 'sinon';
 
 describe('Splitter', () => {

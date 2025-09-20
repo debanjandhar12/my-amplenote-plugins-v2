@@ -1,4 +1,4 @@
-import {mockApp, mockNote, mockPlugin} from "../../common-utils/test-helpers.js";
+import {mockApp, mockNote, mockPlugin} from "../../common-utils/amplenote-mocks.js";
 import pluginObject from "../plugin.js"
 import {deleteOmnivoreItem, saveOmnivoreItem} from "../omnivore/api-extended.js";
 import 'cross-fetch/polyfill';
