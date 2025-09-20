@@ -1,5 +1,3 @@
-import serialize from "serialize-javascript";
-
 // @ts-ignore
 export const COMMON_EMBED_COMMANDS = {
     "navigate": async (app, url) => {
@@ -116,12 +114,19 @@ export function createOnEmbedCallHandler(embedCommands = {}, logBlacklistedComma
 }
 
 export function createCallAmplenotePluginMock(embedCommandsMock) {
-    return async(commandName, ...args) => {
+    const mockFunction = async(commandName, ...args) => {
         if (commandName in embedCommandsMock) {
             return await embedCommandsMock[commandName](...args);
         }
         throw new Error(`Unknown command: ${commandName}`);
+    };
+    
+    // Return sinon spy in test environments
+    if (process.env.NODE_ENV === 'test') {
+        const sinon = require('sinon');
+        return sinon.spy(mockFunction);
     }
+    return mockFunction;
 }
 
 // Extracted from amplenote.com with JSON.stringify(serializeWithFunctions(app))

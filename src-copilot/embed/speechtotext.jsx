@@ -8,7 +8,7 @@ import {
 } from "../../common-utils/dynamic-import-esm.js";
 import {SpeechToTextApp} from "../frontend-speechtotext/SpeechToTextApp.jsx";
 
-if(process.env.NODE_ENV === 'development') {
+if(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
 }
 

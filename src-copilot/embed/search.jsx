@@ -9,7 +9,7 @@ import dynamicImportESM, {
 import {SearchApp} from "../frontend-search/SearchApp.jsx";
 import {parse} from "../markdown/markdown-parser.js";
 
-if(process.env.NODE_ENV === 'development') {
+if(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
 }
 
