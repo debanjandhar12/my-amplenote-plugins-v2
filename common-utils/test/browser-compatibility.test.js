@@ -5,14 +5,17 @@ describe('Sinon browser compatibility validation', () => {
         const browserTestCode = `
             import sinon from 'sinon';
             
+            // Create Sinon sandbox for isolation
+            const sinonSandbox = sinon.createSandbox();
+            
             // Test that Sinon works in browser context
-            const testStub = sinon.stub();
+            const testStub = sinonSandbox.stub();
             testStub.returns('browser-test-result');
             
             // Test async functionality without top-level await
             const testAsyncFunction = async () => {
                 // Test basic Sinon functionality
-                const asyncStub = sinon.stub();
+                const asyncStub = sinonSandbox.stub();
                 asyncStub.resolves('async-result');
                 
                 const result = await asyncStub();
@@ -32,6 +35,8 @@ describe('Sinon browser compatibility validation', () => {
             // Execute test and store results
             testAsyncFunction().then(results => {
                 window.BROWSER_TEST_RESULTS = results;
+                // Clean up Sinon sandbox
+                sinonSandbox.restore();
             });
         `;
         
@@ -47,12 +52,12 @@ describe('Sinon browser compatibility validation', () => {
         const sandboxTestCode = `
             import sinon from 'sinon';
             
-            // Create sandbox
-            const sandbox = sinon.createSandbox();
+            // Create Sinon sandbox for browser environment
+            const sinonSandbox = sinon.createSandbox();
             
             // Create stubs using sandbox
-            const stub1 = sandbox.stub();
-            const stub2 = sandbox.stub();
+            const stub1 = sinonSandbox.stub();
+            const stub2 = sinonSandbox.stub();
             
             stub1.returns('sandbox-result-1');
             stub2.resolves('sandbox-async-result');
@@ -63,8 +68,8 @@ describe('Sinon browser compatibility validation', () => {
                 const result2 = await stub2();
                 
                 return {
-                    sandboxCreated: typeof sandbox !== 'undefined',
-                    restoreAvailable: typeof sandbox.restore === 'function',
+                    sandboxCreated: typeof sinonSandbox !== 'undefined',
+                    restoreAvailable: typeof sinonSandbox.restore === 'function',
                     result1,
                     result2,
                     stub1Called: stub1.calledOnce,
@@ -76,7 +81,7 @@ describe('Sinon browser compatibility validation', () => {
                 window.SANDBOX_TEST_RESULTS = results;
                 
                 // Test cleanup
-                sandbox.restore();
+                sinonSandbox.restore();
                 window.SANDBOX_CLEANUP_VERIFIED = true;
             });
         `;
@@ -93,9 +98,12 @@ describe('Sinon browser compatibility validation', () => {
         const errorTestCode = `
             import sinon from 'sinon';
             
-            // Create stubs directly without importing test helpers
-            const createNoteStub = sinon.stub();
-            const promptStub = sinon.stub();
+            // Create Sinon sandbox for error testing
+            const sinonSandbox = sinon.createSandbox();
+            
+            // Create stubs using sandbox
+            const createNoteStub = sinonSandbox.stub();
+            const promptStub = sinonSandbox.stub();
             
             // Test error handling with Sinon stubs
             createNoteStub.rejects(new Error('Creation failed'));
@@ -127,6 +135,8 @@ describe('Sinon browser compatibility validation', () => {
             
             testErrorHandling().then(results => {
                 window.ERROR_TEST_RESULTS = results;
+                // Clean up Sinon sandbox
+                sinonSandbox.restore();
             });
         `;
         

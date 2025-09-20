@@ -66,6 +66,14 @@ export async function waitForCustomEvent(page: Page, eventName: string): Promise
     return result;
 }
 
+export async function getSpyInfo(page: Page, spyName: string) {
+    return page.evaluate((name) => {
+        const spy = (window as any)[name];
+        if (!spy) return { callCount: 0, args: [] };
+        return { callCount: spy.callCount, args: spy.args };
+    }, spyName);
+}
+
 // ==== Create jest matchers from playwright matchers ====
 // https://playwright.dev/docs/test-assertions#list-of-assertions
 const matcherNames= [

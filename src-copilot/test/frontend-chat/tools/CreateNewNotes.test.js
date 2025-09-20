@@ -1,13 +1,17 @@
 import { compileJavascriptCode } from "../../../../common-utils/esbuild-test-helpers.js";
 import { addScriptToHtmlString } from "../../../../common-utils/embed-helpers.js";
 import html from "inline:../../../embed/chat.html";
-import { createPlaywrightHooks, waitForCustomEvent } from "../../../../common-utils/playwright-helpers.ts";
+import {
+    createPlaywrightHooks, getSpyInfo,
+    waitForCustomEvent
+} from "../../../../common-utils/playwright-helpers.ts";
 
 describe('Create New Notes tool', () => {
     const { getPage } = createPlaywrightHooks(false);
 
     it('works correctly through all states', async () => {
         const mockCode = `
+            import sinon from 'sinon';
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import {createCallAmplenotePluginMock} from "./common-utils/embed-comunication.js";
@@ -65,6 +69,14 @@ describe('Create New Notes tool', () => {
                 }
             ];
 
+            // Setup spy methods
+            const sinonSandbox = sinon.createSandbox();
+            window.createNoteSpy = sinonSandbox.spy(async (noteName, noteTags) => {
+                // Add timeout so that test can capture state
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                return "note-uuid-" + Math.random().toString(36).substring(2, 15);
+            });
+
             window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
                 getSettings: async () => window.SETTINGS,
@@ -76,11 +88,7 @@ describe('Create New Notes tool', () => {
                     }
                     return null;
                 },
-                createNote: async (noteName, noteTags) => {
-                    // Add timeout so that test can capture state
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    return "note-uuid-" + Math.random().toString(36).substring(2, 15);
-                },
+                createNote: window.createNoteSpy,
                 insertNoteContent: async (note, content) => {
                     return true;
                 }
@@ -124,5 +132,9 @@ describe('Create New Notes tool', () => {
         const successMessage = await page.waitForSelector('text=2 notes created successfully');
         const isSuccessMessageVisible = await successMessage.isVisible();
         expect(isSuccessMessageVisible).toBe(true);
+
+        // Verify that createNote was called exactly twice (once for each note)
+        const createNoteSpyInfo = await getSpyInfo(page, 'createNoteSpy');
+        expect(createNoteSpyInfo.callCount).toBe(2);
     }, 200000);
 });

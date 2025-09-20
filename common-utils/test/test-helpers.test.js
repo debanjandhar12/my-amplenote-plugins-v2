@@ -1,16 +1,6 @@
-import sinon from 'sinon';
 import { mockApp, mockNote, mockPlugin } from '../test-helpers.js';
 
 describe('Sinon-based test helpers', () => {
-    let sandbox;
-
-    beforeEach(() => {
-        sandbox = sinon.createSandbox();
-    });
-
-    afterEach(() => {
-        sandbox.restore();
-    });
 
     describe('mockApp', () => {
         it('should create app with Sinon stubs instead of Jest mocks', () => {
@@ -342,7 +332,7 @@ describe('Sinon-based test helpers', () => {
 
         it('should properly restore stubs in sandbox', () => {
             const testObject = { method: () => 'original' };
-            const spy = sandbox.spy(testObject, 'method');
+            const spy = sinonSandbox.spy(testObject, 'method');
             
             // Call the method
             testObject.method();
@@ -350,7 +340,7 @@ describe('Sinon-based test helpers', () => {
             
             // Restore should happen in afterEach
             // This test verifies the sandbox is working
-            expect(typeof sandbox.restore).toBe('function');
+            expect(typeof sinonSandbox.restore).toBe('function');
         });
     });
 

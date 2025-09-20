@@ -2,15 +2,6 @@ import sinon from 'sinon';
 import { mockApp, mockNote } from '../test-helpers.js';
 
 describe('Sinon performance validation', () => {
-    let sandbox;
-
-    beforeEach(() => {
-        sandbox = sinon.createSandbox();
-    });
-
-    afterEach(() => {
-        sandbox.restore();
-    });
 
     it('should create mock apps efficiently', () => {
         const startTime = performance.now();
