@@ -76,6 +76,8 @@ describe('Insert Tasks To Note tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
+                    // Add timeout so that test can capture state
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     return "Test Note";
                 },
                 insertTask: async (note, task) => {

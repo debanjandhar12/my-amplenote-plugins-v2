@@ -8,7 +8,7 @@ import {
 import { allure } from 'jest-allure2-reporter/api';
 
 describe('Create New Notes tool', () => {
-    const { getPage } = createPlaywrightHooks(false);
+    const { getPage } = createPlaywrightHooks();
 
     it('works correctly through all states', async () => {
         allure.epic('Copilot Plugin');
@@ -150,5 +150,5 @@ describe('Create New Notes tool', () => {
             const createNoteSpyInfo = await getSpyInfo(page, 'createNoteSpy');
             expect(createNoteSpyInfo.callCount).toBe(2);
         });
-    }, 200000);
+    }, 20000);
 });

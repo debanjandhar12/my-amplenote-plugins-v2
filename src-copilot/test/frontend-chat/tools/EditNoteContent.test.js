@@ -82,12 +82,16 @@ describe('Edit Note Content tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
+                    // Add timeout so that test can capture state
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     if (uuid === "12345678-1234-1234-1234-123456789012") {
                         return "Test Note";
                     }
                     return null;
                 },
                 getNoteContentByUUID: async (uuid) => {
+                    // Add timeout so that test can capture state
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     if (uuid === "12345678-1234-1234-1234-123456789012") {
                         return "# Test Note\\n\\nThis is the original content.";
                     }

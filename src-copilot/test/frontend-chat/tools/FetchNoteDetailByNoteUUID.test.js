@@ -87,7 +87,7 @@ describe('Fetch Note Detail By Note UUID tool', () => {
                 },
                 getNoteBacklinksByUUID: async ({uuid}) => {
                     // Add small delay to simulate async operation
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     if (uuid === "12345678-1234-1234-1234-123456789012") {
                         return ["backlink-uuid-1", "backlink-uuid-2"];
                     } else if (uuid === "87654321-4321-4321-4321-210987654321") {
@@ -97,7 +97,7 @@ describe('Fetch Note Detail By Note UUID tool', () => {
                 },
                 getNoteTagsByUUID: async ({uuid}) => {
                     // Add small delay to simulate async operation
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await new Promise(resolve => setTimeout(resolve, 2000));
                     if (uuid === "12345678-1234-1234-1234-123456789012") {
                         return ["tag1", "tag2"];
                     } else if (uuid === "87654321-4321-4321-4321-210987654321") {
