@@ -154,47 +154,14 @@ export async function getSpyInfo(page: Page, spyName: string) {
     });
 }
 
-// New helper function for taking screenshots with steps
 export async function takeScreenshot(page: Page, name: string): Promise<void> {
-    await allure.step(`Take screenshot: ${name}`, async () => {
-        console.log(`Taking screenshot: ${name}`);
-        try {
-            const screenshot = await page.screenshot({ 
-                fullPage: true, 
-                timeout: 5000 // 5 second timeout instead of default 30s
-            });
-            await allure.attachment(name, screenshot, 'image/png');
-            console.log(`Screenshot taken successfully: ${name}`);
-        } catch (error) {
-            console.warn(`Failed to take screenshot ${name}:`, error.message);
-        }
-    });
+    try {
+        const screenshot = await page.screenshot({fullPage: true});
+        await allure.attachment(name, screenshot, 'image/png');
+    } catch (error) {
+        console.warn(`Failed to take screenshot ${name}:`, error.message);
+    }
 }
-
-// Enhanced click helper with screenshot
-export async function clickWithScreenshot(page: Page, selector: string, description?: string): Promise<void> {
-    const stepName = description || `Click element: ${selector}`;
-    await allure.step(stepName, async () => {
-        console.log(`Preparing to click: ${selector}`);
-        
-        // Screenshot before click
-        await takeScreenshot(page, `Before ${stepName}`);
-        
-        const element = await page.waitForSelector(selector);
-        console.log(`Element found, clicking: ${selector}`);
-        await element.click();
-        console.log(`Element clicked successfully: ${selector}`);
-        
-        // Screenshot after click
-        await takeScreenshot(page, `After ${stepName}`);
-    });
-}
-
-
-
-
-
-
 
 // ==== Create jest matchers from playwright matchers ====
 // https://playwright.dev/docs/test-assertions#list-of-assertions
