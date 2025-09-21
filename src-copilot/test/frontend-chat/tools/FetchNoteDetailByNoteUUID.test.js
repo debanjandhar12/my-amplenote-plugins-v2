@@ -9,9 +9,11 @@ import { allure } from 'jest-allure2-reporter/api';
 
 describe('Fetch Note Detail By Note UUID tool', () => {
     const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
 
     it('should transition from init to completed state correctly', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests the complete flow of fetching note details by UUID through the chat interface');
 
         const mockCode = /* javascript */ `
@@ -141,7 +143,6 @@ describe('Fetch Note Detail By Note UUID tool', () => {
     }, 20000);
 
     it('should handle API error correctly', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests error handling when fetch note detail API throws an error');
 
         const mockCode = /* javascript */ `

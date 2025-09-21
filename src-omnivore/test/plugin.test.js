@@ -8,8 +8,13 @@ import {SAMPLE_OMNIVORE_STATE_DATA} from "./test-data.js";
 import MarkdownIt from "markdown-it";
 import {sortOmnivoreItemHighlights, sortOmnivoreItems} from "../amplenote/util.js";
 import {getOmnivoreApiUrl} from "../omnivore/getOmnivoreUrl.js";
+import { allure } from 'jest-allure2-reporter/api';
 
 describe("_syncStateWithOmnivore", () => {
+    beforeEach(() => {
+        allure.epic('src-omnivore');
+    });
+
     it('when adding / deleting articles, correct ' +
         'omnivoreItemsState, omnivoreItemsStateDelta and omnivoreDeletedItems needs to be returned', async function() {
         if(process.env.OMNIVORE_KEY === undefined || process.env.OMNIVORE_KEY === '') {

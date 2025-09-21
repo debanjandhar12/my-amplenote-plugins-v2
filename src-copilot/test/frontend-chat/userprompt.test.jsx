@@ -9,10 +9,12 @@ import {
 import { allure } from 'jest-allure2-reporter/api';
 
 describe('chat embed user prompts', () => {
-    const {getPage} = createPlaywrightHooks();
+    const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
 
     it('loads with empty user prompt list setting', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests loading user prompt library with empty user prompt list setting');
         const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
@@ -50,7 +52,6 @@ describe('chat embed user prompts', () => {
     }, 20000);
 
     it('loads with non-empty user prompt list setting and works', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests loading user prompt library with existing prompts and verifying functionality');
         const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';

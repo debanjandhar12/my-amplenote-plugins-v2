@@ -1,8 +1,6 @@
 import html from "inline:../../embed/index.html";
 import { compileJavascriptCode } from "../../../common-utils/esbuild-test-helpers.js";
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
-import {createCallAmplenotePluginMock} from "../../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, EMBED_NOTE_UUID_MOCK} from "./embed.testdata.js";
 import {
     createPlaywrightHooks, 
     takeScreenshot
@@ -11,9 +9,11 @@ import { allure } from 'jest-allure2-reporter/api';
 
 describe('mindmap embed', () => {
     const { getPage } = createPlaywrightHooks(false);
-    
-    it('renders markmap', async () => {
+    beforeEach(() => {
         allure.epic('src-mindmap');
+    });
+
+    it('renders markmap', async () => {
         allure.description('Tests mindmap rendering and SVG generation from note content');
         
         const mockCode = /* javascript */ `
@@ -55,7 +55,6 @@ describe('mindmap embed', () => {
     }, 20000);
     
     it('loads toolbar items', async () => {
-        allure.epic('src-mindmap');
         allure.description('Tests loading and display of mindmap toolbar items');
         
         const mockCode = /* javascript */ `
@@ -88,7 +87,6 @@ describe('mindmap embed', () => {
     }, 20000);
     
     it('handles error correctly', async () => {
-        allure.epic('src-mindmap');
         allure.description('Tests error handling when note content cannot be retrieved');
         
         const mockCode = /* javascript */ `

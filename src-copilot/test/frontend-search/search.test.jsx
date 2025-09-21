@@ -1,15 +1,16 @@
 import { compileJavascriptCode } from "../../../common-utils/esbuild-test-helpers.js";
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
-import {createCallAmplenotePluginMock} from "../../../common-utils/embed-comunication.js";
 import html from "inline:../../embed/search.html";
 import {createPlaywrightHooks, waitForCustomEvent} from "../../../common-utils/playwright-helpers.ts";
 import {EMBED_COMMANDS_MOCK} from "../frontend-chat/chat.testdata.js";
-
+import { allure } from 'jest-allure2-reporter/api';
 
 describe('search embed', () => {
-    const {getPage} = createPlaywrightHooks();
-    const commandMocks = {...EMBED_COMMANDS_MOCK, getSettings: async () => ({}), getCopilotDBSyncState: async () => 'Fully Synced'};
-    
+    const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
+
     it('loads correctly', async () => {
         const mockCode = `
             import { EMBED_COMMANDS_MOCK } from './src-copilot/test/frontend-chat/chat.testdata.js';
@@ -49,37 +50,6 @@ describe('search embed', () => {
     }, 20000);
 
     it('search works with mocked results', async () => {
-
-        const commandMocksWithSearch = {
-            ...commandMocks,
-            searchNotesInCopilotDB: async () =>  [
-                {
-                    noteUUID: "note1",
-                    noteTitle: "Test Note 1",
-                    actualNoteContentPart: "test",
-                    noteTags: ["tag1"],
-                    headingAnchor: null,
-                    similarity: 0.95
-                },
-                {
-                    noteUUID: "note2",
-                    noteTitle: "Test Note 2",
-                    actualNoteContentPart: "test",
-                    noteTags: ["tag2"],
-                    headingAnchor: null,
-                    similarity: 0.85
-                },
-                {
-                    noteUUID: "note2",
-                    noteTitle: "Test Note 2",
-                    actualNoteContentPart: "hi",
-                    noteTags: ["tag2"],
-                    headingAnchor: null,
-                    similarity: 0.81
-                }
-            ]
-        };
-
         const mockCode = `
             import { EMBED_COMMANDS_MOCK } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";

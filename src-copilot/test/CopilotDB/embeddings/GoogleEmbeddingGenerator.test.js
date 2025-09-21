@@ -1,8 +1,13 @@
 import {mockApp} from "../../../../common-utils/amplenote-mocks.js";
 import {GoogleEmbeddingGenerator} from "../../../CopilotDB/embeddings/GoogleEmbeddingGenerator.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
+import { allure } from 'jest-allure2-reporter/api';
 
 describe('Google Embedding', () => {
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
+
     test.skipIf(!process.env.GOOGLE_API_KEY, 'works with single string', async () => {
         const embeddingGenerator = new GoogleEmbeddingGenerator();
         const app = mockApp();

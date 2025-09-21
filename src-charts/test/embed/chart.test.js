@@ -11,9 +11,11 @@ import { allure } from 'jest-allure2-reporter/api';
 
 describe('chart embed', () => {
     const { getPage } = createPlaywrightHooks(false);
-    
-    it('should initialize (table data source)', async () => {
+    beforeEach(() => {
         allure.epic('src-charts');
+    });
+
+    it('should initialize (table data source)', async () => {
         allure.description('Tests chart initialization and rendering with table data source');
         
         const mockCode = /* javascript */ `
@@ -52,7 +54,6 @@ describe('chart embed', () => {
     }, 20000);
 
     it('should initialize (formula data source)', async () => {
-        allure.epic('src-charts');
         allure.description('Tests chart initialization and rendering with formula data source');
         
         const mockCode = /* javascript */ `

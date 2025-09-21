@@ -1,6 +1,11 @@
 import { parseMarkdownTable } from "../../markdown/parseMarkdownTable.js";
+import { allure } from 'jest-allure2-reporter/api';
 
 describe('parseMarkdownTable', () => {
+    beforeEach(() => {
+        allure.epic('src-bigmoji');
+    });
+
     test('parses basic markdown table', async () => {
         const markdown = `
 | Header 1 | Header 2 |

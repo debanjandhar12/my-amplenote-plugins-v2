@@ -1,3 +1,4 @@
+import { allure } from 'jest-allure2-reporter/api';
 import { truncateObjectVal } from "../../../frontend-chat/helpers/truncateObjectVal.js";
 
 /**
@@ -19,9 +20,12 @@ import { truncateObjectVal } from "../../../frontend-chat/helpers/truncateObject
  */
 
 describe('truncateObjectVal', () => {
-    const defaultSuffix = '...';
-    
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
+
     // Test data constants
+    const defaultSuffix = '...';
     const LONG_STRING = 'This is a very long string that should definitely be truncated when size limits are applied';
     const MEDIUM_STRING = 'This is a medium length string';
     const SHORT_STRING = 'Short';

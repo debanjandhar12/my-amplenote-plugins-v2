@@ -10,12 +10,14 @@ import {
 import { allure } from 'jest-allure2-reporter/api';
 
 describe('chat embed', () => {
-    const {getPage} = createPlaywrightHooks();
+    const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
 
     describe('works with provider:', () => {
         ['groq', 'openai', 'google', 'fireworks'].forEach(provider => {
             it(provider, async () => {
-                allure.epic('src-copilot');
                 allure.description(`Tests chat functionality with ${provider} provider`);
                 
                 const mockCode = /* javascript */ `

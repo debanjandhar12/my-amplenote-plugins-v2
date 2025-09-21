@@ -1,8 +1,13 @@
 import {mockApp} from "../../../../common-utils/amplenote-mocks.js";
 import {PineconeEmbeddingGenerator} from "../../../CopilotDB/embeddings/PineconeEmbeddingGenerator.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
+import { allure } from 'jest-allure2-reporter/api';
 
 describe('Pinecone Embedding', () => {
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
+
     test.skipIf(!process.env.PINECONE_API_KEY, 'works with single string', async () => {
         const embeddingGenerator = new PineconeEmbeddingGenerator();
         const app = mockApp();
