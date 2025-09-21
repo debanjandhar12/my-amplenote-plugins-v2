@@ -234,6 +234,7 @@ describe('Edit Note Content tool', () => {
                     }
                 },
                 replaceNoteContent: async (note, content) => {
+                    // Add timeout so that test can capture state
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     return await window.mockApp.replaceNoteContent(note.uuid || note, content);
                 }
