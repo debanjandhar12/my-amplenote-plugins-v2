@@ -1,9 +1,11 @@
 import {addPageLinksToMarkdown, addSectionLinksToMarkdown, processReplacementMap} from "../../core/linker.js";
+import { allure } from 'jest-allure2-reporter/api';
 
 describe('addPageLinksToMarkdown and processReplacementMap works correctly', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        allure.epic("src-autolink");
     });
+
     it('should link text nodes with page names', async () => {
         const markdownText = 'This is a note about JavaScript.';
         const pages = [{ name: 'JavaScript', uuid: '123' }];

@@ -9,9 +9,11 @@ import { allure } from 'jest-allure2-reporter/api';
 
 describe('Create New Notes tool', () => {
     const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
 
     it('should transition from init to completed state and create notes upon user confirmation', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests the complete flow of creating new notes through the chat interface');
 
         const mockCode = /* javascript */ `
@@ -172,7 +174,6 @@ describe('Create New Notes tool', () => {
     }, 20000);
 
     it('should transition from init to canceled state without creating notes upon user cancellation', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests that the tool correctly handles user cancellation and does not create notes');
 
         const mockCode = /* javascript */ `

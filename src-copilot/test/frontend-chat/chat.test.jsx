@@ -17,10 +17,13 @@ import { allure } from 'jest-allure2-reporter/api';
 
 
 describe('chat embed', () => {
-    const {getPage} = createPlaywrightHooks();
+    const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
+
     describe('handles errors correctly', () => {
         it('when empty settings', async () => {
-            allure.epic('src-copilot');
             allure.description('Tests error handling when chat embed is loaded with empty settings');
             
             const mockCode = /* javascript */ `
@@ -54,7 +57,6 @@ describe('chat embed', () => {
         }, 20000);
 
         it('when wrong api key is provided', async () => {
-            allure.epic('src-copilot');
             allure.description('Tests error handling when chat embed is provided with invalid API key');
             
             const mockCode = /* javascript */ `
@@ -100,7 +102,6 @@ describe('chat embed', () => {
     });
 
     it('loads correctly', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests basic loading and initialization of chat embed');
         
         const mockCode = /* javascript */ `
@@ -136,7 +137,6 @@ describe('chat embed', () => {
     }, 20000);
 
     it('works with custom max token setting', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests chat functionality with custom max token settings');
         
         const mockCode = /* javascript */ `

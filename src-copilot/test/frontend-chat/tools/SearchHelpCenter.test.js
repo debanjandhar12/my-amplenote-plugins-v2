@@ -9,9 +9,11 @@ import { allure } from 'jest-allure2-reporter/api';
 
 describe('Search Help Center tool', () => {
     const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
     
     it('should transition from init to completed state correctly', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests the complete flow of searching help center through the chat interface');
 
         const mockCode = /* javascript */ `
@@ -128,7 +130,6 @@ describe('Search Help Center tool', () => {
     }, 20000);
 
     it('should handle API error correctly', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests error handling when search help center API throws an error');
 
         const mockCode = /* javascript */ `

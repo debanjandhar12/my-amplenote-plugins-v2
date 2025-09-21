@@ -1,8 +1,13 @@
 import {getMarkdownTableByIdx} from "../../tables/getMarkdownTableByIdx.js";
 import {SAMPLE_MARKDOWN_DATA} from "./markdown.testdata.js";
 import {parseMarkdownTable} from "../../tables/parseMarkdownTable.js";
+import { allure } from 'jest-allure2-reporter/api';
 
 describe('getMarkdownTableByIdx', () => {
+    beforeEach(() => {
+        allure.epic('src-charts');
+    });
+
     test('returns the first table when idx is 0', async () => {
         const result = await getMarkdownTableByIdx(SAMPLE_MARKDOWN_DATA, 0);
         expect(result).toContain('| Header 1 | Header 2 |');

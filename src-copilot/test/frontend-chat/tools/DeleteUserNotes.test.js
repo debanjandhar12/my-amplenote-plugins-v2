@@ -10,9 +10,11 @@ import { mockApp, mockNote } from "../../../../common-utils/amplenote-mocks.js";
 
 describe('Delete User Notes tool', () => {
     const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
 
     it('should transition from init to completed state and delete notes upon user confirmation', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests the complete flow of deleting notes through the chat interface');
 
         const mockCode = /* javascript */ `
@@ -146,7 +148,6 @@ describe('Delete User Notes tool', () => {
     }, 20000);
 
     it('should transition from init to canceled state without deleting notes upon user cancellation', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests that the tool correctly handles user cancellation and does not delete notes');
 
         const mockCode = /* javascript */ `

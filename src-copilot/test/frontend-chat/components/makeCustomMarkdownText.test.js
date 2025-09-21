@@ -2,9 +2,13 @@ import { compileJavascriptCode } from "../../../../common-utils/esbuild-test-hel
 import { addScriptToHtmlString } from "../../../../common-utils/embed-helpers.js";
 import html from "inline:../../../embed/chat.html";
 import { createPlaywrightHooks } from "../../../../common-utils/playwright-helpers.ts";
+import { allure } from 'jest-allure2-reporter/api';
 
 describe('makeCustomMarkdownText component', () => {
     const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
 
     it('displays code blocks correctly', async () => {
         const codeBlockMessage = {

@@ -8,10 +8,12 @@ import {
 import { allure } from 'jest-allure2-reporter/api';
 
 describe('Edit Note Content tool', () => {
-    const { getPage } = createPlaywrightHooks(false);
+    const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
 
     it('should transition from init to completed state and edit note content upon user confirmation', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests the complete flow of editing note content through the chat interface');
 
         const mockCode = /* javascript */ `
@@ -154,7 +156,6 @@ describe('Edit Note Content tool', () => {
     }, 20000);
 
     it('should transition from init to canceled state without editing note content upon user cancellation', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests that the tool correctly handles user cancellation and does not edit note content');
 
         const mockCode = /* javascript */ `

@@ -11,9 +11,11 @@ import { allure } from 'jest-allure2-reporter/api';
 
 describe('emoji embed', () => {
     const { getPage } = createPlaywrightHooks(false);
-    
-    it('should initialize emoji picker page properly', async () => {
+    beforeEach(() => {
         allure.epic('src-bigmoji');
+    });
+
+    it('should initialize emoji picker page properly', async () => {
         allure.description('Tests initialization of emoji picker page with proper setup and custom emoji button');
         
         const mockCode = /* javascript */ `
@@ -47,7 +49,6 @@ describe('emoji embed', () => {
     }, 20000);
     
     it('page navigation should work', async () => {
-        allure.epic('src-bigmoji');
         allure.description('Tests page navigation functionality including emoji selection, back button, and submit functionality');
         
         const mockCode = /* javascript */ `

@@ -10,9 +10,11 @@ import sinon from 'sinon';
 
 describe('Web Search tool', () => {
     const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
     
     it('should transition from init to completed state correctly', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests the complete flow of web search through the chat interface');
 
         const mockCode = /* javascript */ `
@@ -122,7 +124,6 @@ describe('Web Search tool', () => {
     }, 20000);
 
     it('should handle API error correctly', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests error handling when web search API throws an error');
 
         const mockCode = /* javascript */ `

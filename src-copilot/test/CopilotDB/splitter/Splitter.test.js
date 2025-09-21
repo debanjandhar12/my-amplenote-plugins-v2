@@ -1,17 +1,12 @@
 import { Splitter } from '../../../CopilotDB/splitter/Splitter.js';
 import {mockApp, mockNote} from "../../../../common-utils/amplenote-mocks.js";
-import sinon from 'sinon';
+import { allure } from 'jest-allure2-reporter/api';
 
 describe('Splitter', () => {
-    let sandbox;
-    
     beforeEach(() => {
-        sandbox = sinon.createSandbox();
+        allure.epic('src-copilot');
     });
-    
-    afterEach(() => {
-        sandbox.restore();
-    });
+
     test('empty input should not throw error', async () => {
         const splitter = new Splitter(100);
         const content = '';
@@ -103,7 +98,7 @@ describe('Splitter', () => {
         const content = "![](https://test.com/test.png)";
         const mockedNote = mockNote(content, 'Test Note', 'mock-uuid');
         const app = mockApp(mockedNote);
-        app.getNoteImages = sandbox.stub().resolves([{
+        app.getNoteImages = sinonSandbox.stub().resolves([{
             text: "Test\nPassed",
             src: "https://test.com/test.png",
         }]);

@@ -9,9 +9,11 @@ import { allure } from 'jest-allure2-reporter/api';
 
 describe('Insert Tasks To Note tool', () => {
     const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
 
     it('should transition from init to completed state and insert tasks upon user confirmation', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests the complete flow of inserting tasks into a note through the chat interface');
 
         const mockCode = /* javascript */ `
@@ -158,7 +160,6 @@ describe('Insert Tasks To Note tool', () => {
     }, 20000);
 
     it('should transition from init to canceled state without inserting tasks upon user cancellation', async () => {
-        allure.epic('src-copilot');
         allure.description('Tests that the tool correctly handles user cancellation and does not insert tasks');
 
         const mockCode = /* javascript */ `
