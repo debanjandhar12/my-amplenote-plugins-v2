@@ -161,12 +161,12 @@ describe('Create New Notes tool', () => {
 
             const note1 = allNotes.find(note => note.name === 'Project Documentation');
             expect(note1).toBeDefined();
-            expect(note1.body).toBe('\n# Project Documentation\n\nThis is a placeholder for project documentation.');
+            expect(note1._content).toBe('\n# Project Documentation\n\nThis is a placeholder for project documentation.');
             expect(note1.tags).toEqual(['project', 'docs']);
 
             const note2 = allNotes.find(note => note.name === 'Meeting Notes');
             expect(note2).toBeDefined();
-            expect(note2.body).toBe('\n# Meeting Notes\n\nAgenda items for next meeting:');
+            expect(note2._content).toBe('\n# Meeting Notes\n\nAgenda items for next meeting:');
             expect(note2.tags).toEqual(['meeting']);
         });
     }, 20000);
@@ -261,7 +261,7 @@ describe('Create New Notes tool', () => {
         await allure.step('Verify tool init state', async () => {
             const initState = await waitForCustomEvent(page, 'onToolStateChange');
             expect(initState).toEqual('init');
-            await takeScreenshot(page, 'Tool initialized for cancellation test');
+            await takeScreenshot(page, 'Tool initialized');
         });
 
         await allure.step('Click cancel button', async () => {

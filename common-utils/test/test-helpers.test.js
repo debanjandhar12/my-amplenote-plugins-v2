@@ -82,7 +82,7 @@ describe('Sinon-based test helpers', () => {
             // Verify note was created and added to registry
             expect(newNote.name).toBe('New Note');
             expect(newNote.tags).toEqual(['tag1', 'tag2']);
-            expect(newNote.body).toBe('Note content');
+            expect(newNote._content).toBe('Note content');
             expect(app._noteRegistry[newNote.uuid]).toBe(newNote);
             
             // Verify stub was called
@@ -139,7 +139,7 @@ describe('Sinon-based test helpers', () => {
         it('should create note with all required properties', () => {
             const note = mockNote('# Test Note\nContent here', 'Test Note', 'test-uuid', ['tag1', 'tag2']);
             
-            expect(note.body).toBe('# Test Note\nContent here');
+            expect(note._content).toBe('# Test Note\nContent here');
             expect(note.name).toBe('Test Note');
             expect(note.uuid).toBe('test-uuid');
             expect(note.tags).toEqual(['tag1', 'tag2']);
@@ -161,7 +161,7 @@ describe('Sinon-based test helpers', () => {
             
             await note.insertContent('\nNew content');
             
-            expect(note.body).toBe('Initial content\n\nNew content');
+            expect(note._content).toBe('Initial content\n\nNew content');
             expect(note.lastUpdated.getTime()).toBeGreaterThan(initialTime.getTime());
         });
 
@@ -170,7 +170,7 @@ describe('Sinon-based test helpers', () => {
             
             await note.insertContent('Appended', { atEnd: true });
             
-            expect(note.body).toBe('Initial contentAppended');
+            expect(note._content).toBe('Initial contentAppended');
         });
 
         it('should handle full content replacement', async () => {
@@ -182,7 +182,7 @@ describe('Sinon-based test helpers', () => {
             
             await note.replaceContent('New content');
             
-            expect(note.body).toBe('New content');
+            expect(note._content).toBe('New content');
             expect(note.lastUpdated.getTime()).toBeGreaterThan(initialTime.getTime());
         });
 
@@ -197,9 +197,9 @@ describe('Sinon-based test helpers', () => {
                 section: { heading: { text: 'Section 1', level: 2 } }
             });
             
-            expect(note.body).toContain('New section 1 content');
-            expect(note.body).toContain('## Section 1');
-            expect(note.body).toContain('## Section 2\nSection 2 content');
+            expect(note._content).toContain('New section 1 content');
+            expect(note._content).toContain('## Section 1');
+            expect(note._content).toContain('## Section 2\nSection 2 content');
         });
 
         it('should throw error for non-existent section', async () => {
