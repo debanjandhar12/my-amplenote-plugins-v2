@@ -283,4 +283,129 @@ describe('Edit Note Content tool', () => {
             expect(note._content).toBe('# Test Note\n\nThis is the original content.');
         });
     }, 20000);
+
+    it('should handle API error correctly', async () => {
+        allure.description('Tests error handling when edit note content API throws an error');
+
+        const mockCode = /* javascript */ `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+            import { mockApp, mockNote } from "./common-utils/amplenote-mocks.js";
+
+            window.SETTINGS = {
+                ...getLLMProviderSettings('groq'),
+                [LLM_MAX_TOKENS_SETTING]: '100'
+            };
+
+            window.INIT_MESSAGES = [
+                {
+                    "message": {
+                        "id": "test456",
+                        "role": "assistant",
+                        "status": {
+                            "type": "requires-action",
+                            "reason": "tool-calls"
+                        },
+                        "content": [
+                            {
+                                "type": "tool-call",
+                                "toolCallId": "editNote123",
+                                "toolName": "EditNoteContent",
+                                "args": {
+                                    "noteUUID": "note-uuid-1",
+                                    "editInstruction": "Add a conclusion section"
+                                }
+                            }
+                        ],
+                        "metadata": {
+                            "custom": {
+                                "toolStateStorage": {
+                                    "editNote123": {
+                                        "formState": "init",
+                                        "formData": {},
+                                        "formError": null
+                                    }
+                                }
+                            }
+                        },
+                        "createdAt": "2025-05-24T10:00:00.000Z"
+                    },
+                    "parentId": null
+                }
+            ];
+
+            window.mockApp = mockApp(mockNote("# Test Note\\n\\nThis is the original content.", "Test Note", "note-uuid-1"));
+
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                ...EMBED_COMMANDS_MOCK,
+                getSettings: async () => window.SETTINGS,
+                receiveMessageFromPlugin: async (queue) => {
+                    if (queue === 'attachments' && window.INIT_MESSAGES) {
+                        const injectMessages = window.INIT_MESSAGES;
+                        window.INIT_MESSAGES = null;
+                        return {type: 'new-chat', message: injectMessages};
+                    }
+                    return null;
+                },
+                getNoteTitleByUUID: async (uuid) => {
+                    const note = await window.mockApp.findNote(uuid);
+                    return note ? note.name : null;
+                },
+                getNoteContentByUUID: async (uuid) => {
+                    const note = await window.mockApp.findNote(uuid);
+                    return note ? note.content() : null;
+                },
+                "getUserCurrentNoteData": async () => {
+                    return {
+                        currentNoteUUID: window.mockApp.context.noteUUID
+                    }
+                },
+                replaceNoteContent: async (note, content) => {
+                    // Add timeout so that test can capture state
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    // Throw an error to simulate API failure
+                    throw new Error('Failed to update note content');
+                }
+            });
+        `;
+
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
+        await page.setContent(htmlWithMocks);
+
+        await allure.step('Verify tool init state', async () => {
+            const initState = await waitForCustomEvent(page, 'onToolStateChange');
+            expect(initState).toEqual('init');
+            await takeScreenshot(page, 'Tool initialized');
+        });
+
+        await allure.step('Click submit button to trigger error', async () => {
+            const submitButton = await page.waitForSelector('button:has-text("Update Content")');
+            await submitButton.click();
+        });
+
+        await allure.step('Verify tool transitions to error state', async () => {
+            const errorState = await waitForCustomEvent(page, 'onToolStateChange');
+            expect(errorState).toEqual('error');
+        });
+
+        await allure.step('Verify error message is displayed', async () => {
+            const errorMessage = await page.waitForSelector('text=Failed to update note content');
+            const isErrorMessageVisible = await errorMessage.isVisible();
+            expect(isErrorMessageVisible).toBe(true);
+            await takeScreenshot(page, 'Error message displayed');
+        });
+
+        await allure.step('Verify API was called despite error', async () => {
+            const replaceNoteContentSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
+            expect(replaceNoteContentSpyInfo.callCount).toBeGreaterThan(0);
+        });
+
+        await allure.step('Verify note content was not updated due to error', async () => {
+            const note = await page.evaluate(() => window.mockApp.findNote("note-uuid-1"));
+            expect(note._content).toBe('# Test Note\n\nThis is the original content.');
+        });
+    }, 20000);
 });
