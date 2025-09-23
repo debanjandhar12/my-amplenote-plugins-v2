@@ -21,7 +21,11 @@ describe('Create New Notes tool', () => {
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
             import { mockApp } from "./common-utils/amplenote-mocks.js";
-            import {dynamicImportEnv} from "./common-utils/dynamic-import-env.js";
+
+            window.SETTINGS = {
+                ...getLLMProviderSettings('groq'),
+                [LLM_MAX_TOKENS_SETTING]: '100'
+            };
 
             window.INIT_MESSAGES = [
                 {
@@ -75,13 +79,7 @@ describe('Create New Notes tool', () => {
 
             window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
-                getSettings: async () => {
-                    await dynamicImportEnv();
-                    return {
-                        ...getLLMProviderSettings('groq'),
-                            [LLM_MAX_TOKENS_SETTING]: '100'
-                    }
-                },
+                getSettings: async () => window.SETTINGS,
                 receiveMessageFromPlugin: async (queue) => {
                     if (queue === 'attachments' && window.INIT_MESSAGES) {
                         const injectMessages = window.INIT_MESSAGES;

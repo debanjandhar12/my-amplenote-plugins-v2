@@ -3,10 +3,11 @@ import { spawn } from 'child_process';
 /**
  * Compiles JavaScript code with imports using esbuild in an external process.
  * This function is specifically designed to be used in jest environment during testing.
+ * (Code based on esbuild-options.js, inlineJSLoader.js)
  *
  * @param {string} code - JavaScript code
  * @returns {Promise<string>} Compiled JavaScript code
- * 
+ *
  * @example
  * const mockCode = `
  *   import sinon from 'sinon';
@@ -23,11 +24,14 @@ export async function compileJavascriptCode(code) {
     const minify = false;
     const sourcemap = false;
     const external = [];
-    const define = {};
-    // For including process.env inside the compiled code (commented out for now due to security reasons)
-    // Object.keys(process.env).forEach(key => {
-    //     define[`process.env.${key}`] = JSON.stringify(process.env[key]);
-    // });
+    const defineObj = {};
+    // In development and test environments, include all environment variables
+    // In production, only include process.env.NODE_ENV for security
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        Object.keys(process.env).forEach(key => {
+            defineObj[`process.env.${key}`] = JSON.stringify(process.env[key]);
+        });
+    }
     const enableNodeModulesPolyfill = true;
 
     return new Promise((resolve, reject) => {
@@ -39,7 +43,7 @@ export async function compileJavascriptCode(code) {
             external,
             enableNodeModulesPolyfill,
             define: {
-                ...define
+                ...defineObj
             }
         };
 
@@ -186,13 +190,13 @@ export async function compileJavascriptCode(code) {
                 // Extract error message
                 const errorMatch = stderr.match(/COMPILATION_ERROR:(.*)$/s);
                 const errorMessage = errorMatch ? errorMatch[1] : stderr || 'Unknown compilation error';
-                
+
                 let enhancedMessage = errorMessage;
-                
+
                 if (errorMessage.includes('Could not resolve')) {
                     enhancedMessage += '\n\nHint: Make sure all import paths are correct and dependencies are available.';
                 }
-                
+
                 if (errorMessage.includes('Unexpected')) {
                     enhancedMessage += '\n\nHint: Check for syntax errors in your mock code.';
                 }
