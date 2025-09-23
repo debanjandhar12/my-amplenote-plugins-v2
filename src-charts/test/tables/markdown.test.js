@@ -35,6 +35,10 @@ describe('getMarkdownTableByIdx', () => {
 
 
 describe('parseMarkdownTable', () => {
+    beforeEach(() => {
+        allure.epic('src-charts');
+    });
+
     test('parses a simple table correctly', async () => {
         const markdown = `
 | Header 1 | Header 2 |

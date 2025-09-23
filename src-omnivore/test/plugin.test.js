@@ -82,6 +82,10 @@ describe("_syncStateWithOmnivore", () => {
 
 
 describe('generateDashboardTable - Optional Columns', () => {
+    beforeEach(() => {
+        allure.epic('src-omnivore');
+    });
+
     function countColumnsInMarkdownTable(markdown) {
         const md = new MarkdownIt();
         const tokens = md.parse(markdown);
@@ -129,6 +133,10 @@ describe('generateDashboardTable - Optional Columns', () => {
 });
 
 describe('Util Function Test', () => {
+    beforeEach(() => {
+        allure.epic('src-omnivore');
+    });
+
     const sampleOmnivoreItems = SAMPLE_OMNIVORE_STATE_DATA;
 
     it('should sort omnivore items by updatedAt in ascending order', () => {
