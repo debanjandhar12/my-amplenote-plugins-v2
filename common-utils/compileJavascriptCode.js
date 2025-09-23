@@ -2,28 +2,19 @@ import { spawn } from 'child_process';
 
 /**
  * Compiles JavaScript code with imports using esbuild in an external process.
- * This function is specifically designed to handle test mock code that needs to run
- * in browser environments, including proper bundling of Sinon mocking library.
- * 
- * The compilation process:
- * - Bundles all imports including Sinon for cross-environment compatibility
- * - Handles Node.js built-ins through polyfills or external declarations
- * - Unwraps IIFE format to make code directly executable in browser context
- * - Preserves function definitions and complex objects without serialization
- * 
- * @param {string} code - JavaScript code with import statements (e.g., `import sinon from 'sinon'`)
- * @returns {Promise<string>} Compiled JavaScript code ready for browser injection
+ * This function is specifically designed to be used in jest environment during testing.
+ *
+ * @param {string} code - JavaScript code
+ * @returns {Promise<string>} Compiled JavaScript code
  * 
  * @example
- * // Compile Sinon mock code for browser testing
  * const mockCode = `
  *   import sinon from 'sinon';
  *   const stub = sinon.stub().returns('test-value');
  *   window.mockFunction = stub;
  * `;
- * const compiled = await compileJavascriptCode(mockCode);
- * // Result can be injected into browser context via Playwright
- * 
+ * const compiled = await compileJavascriptCode(mockCode); // Result can be injected into browser context
+ *
  * @throws {Error} When compilation fails due to syntax errors or import resolution issues
  */
 export async function compileJavascriptCode(code) {
@@ -33,9 +24,10 @@ export async function compileJavascriptCode(code) {
     const sourcemap = false;
     const external = [];
     const define = {};
-    Object.keys(process.env).forEach(key => {
-        define[`process.env.${key}`] = JSON.stringify(process.env[key]);
-    });
+    // For including process.env inside the compiled code (commented out for now due to security reasons)
+    // Object.keys(process.env).forEach(key => {
+    //     define[`process.env.${key}`] = JSON.stringify(process.env[key]);
+    // });
     const enableNodeModulesPolyfill = true;
 
     return new Promise((resolve, reject) => {

@@ -1,4 +1,4 @@
-import { compileJavascriptCode } from "../../../../common-utils/esbuild-test-helpers.js";
+import { compileJavascriptCode } from "../../../../common-utils/compileJavascriptCode.js";
 import { addScriptToHtmlString } from "../../../../common-utils/embed-helpers.js";
 import html from "inline:../../../embed/chat.html";
 import {
@@ -21,11 +21,7 @@ describe('Create New Notes tool', () => {
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
             import { mockApp } from "./common-utils/amplenote-mocks.js";
-
-            window.SETTINGS = {
-                ...getLLMProviderSettings('groq'),
-                [LLM_MAX_TOKENS_SETTING]: '100'
-            };
+            import {dynamicImportEnv} from "./common-utils/dynamic-import-env.js";
 
             window.INIT_MESSAGES = [
                 {
@@ -79,7 +75,13 @@ describe('Create New Notes tool', () => {
 
             window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
-                getSettings: async () => window.SETTINGS,
+                getSettings: async () => {
+                    await dynamicImportEnv();
+                    return {
+                        ...getLLMProviderSettings('groq'),
+                            [LLM_MAX_TOKENS_SETTING]: '100'
+                    }
+                },
                 receiveMessageFromPlugin: async (queue) => {
                     if (queue === 'attachments' && window.INIT_MESSAGES) {
                         const injectMessages = window.INIT_MESSAGES;

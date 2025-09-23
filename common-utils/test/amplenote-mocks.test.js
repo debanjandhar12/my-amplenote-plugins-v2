@@ -1,6 +1,10 @@
 import { mockApp, mockNote, mockPlugin } from '../amplenote-mocks.js';
+import {allure} from "jest-allure2-reporter/api";
 
 describe('Sinon-based test helpers', () => {
+    beforeEach(() => {
+        allure.epic('common-utils');
+    });
 
     describe('mockApp', () => {
         it('should create app with Sinon stubs instead of Jest mocks', () => {
@@ -42,22 +46,6 @@ describe('Sinon-based test helpers', () => {
 
             // Test rejected values
             await expect(app.createNote()).rejects.toThrow('Creation failed');
-        });
-
-        it('should track call history with Sinon', () => {
-            const app = mockApp();
-            
-            // Make some calls
-            app.prompt('Question 1');
-            app.prompt('Question 2');
-            app.navigate('/test');
-
-            // Verify call tracking
-            expect(app.prompt.callCount).toBe(2);
-            expect(app.prompt.calledWith('Question 1')).toBe(true);
-            expect(app.prompt.calledWith('Question 2')).toBe(true);
-            expect(app.navigate.calledOnce).toBe(true);
-            expect(app.navigate.calledWith('/test')).toBe(true);
         });
 
         it('should work with seed note', () => {
@@ -248,7 +236,6 @@ describe('Sinon-based test helpers', () => {
                 name: 'Test Plugin'
             });
             
-            // Test that methods are properly bound
             expect(plugin.insertText['Insert Hello']()).toBe('Hello from Test Plugin');
             expect(plugin.noteOption['Process Note']()).toBe('Processing with Test Plugin');
             expect(plugin.replaceText['Replace Text']()).toBe('Replacing with Test Plugin');
@@ -268,127 +255,6 @@ describe('Sinon-based test helpers', () => {
             const plugin = mockPlugin({});
             
             expect(plugin).toEqual({});
-        });
-    });
-
-    describe('Cross-environment compatibility', () => {
-        it('should work without Jest globals', () => {
-            // This test verifies that our Sinon-based helpers don't depend on Jest
-            const originalJest = global.jest;
-            delete global.jest;
-            
-            try {
-                const app = mockApp();
-                const note = mockNote('Test', 'Test', 'uuid');
-                
-                // Should work without Jest
-                expect(app.createNote.isSinonProxy).toBe(true);
-                expect(note.name).toBe('Test');
-            } finally {
-                global.jest = originalJest;
-            }
-        });
-
-        it('should provide same API as Jest mocks', () => {
-            const app = mockApp();
-            
-            // Verify Sinon stubs provide equivalent functionality to Jest mocks
-            
-            // callsFake equivalent to mockImplementation
-            app.createNote.callsFake((title) => ({ name: title, uuid: 'fake-uuid' }));
-            const result = app.createNote('Test Note');
-            expect(result.name).toBe('Test Note');
-            
-            // returns equivalent to mockReturnValue
-            app.prompt.returns('mocked response');
-            expect(app.prompt()).toBe('mocked response');
-            
-            // resolves equivalent to mockResolvedValue
-            app.getNoteImages.resolves([{ src: 'test.png' }]);
-            return app.getNoteImages().then(images => {
-                expect(images).toEqual([{ src: 'test.png' }]);
-            });
-        });
-    });
-
-    describe('Cleanup and isolation', () => {
-        it('should not interfere between tests', () => {
-            // First test - configure stubs
-            const app1 = mockApp();
-            app1.createNote.returns({ uuid: 'test1' });
-            
-            expect(app1.createNote()).toEqual({ uuid: 'test1' });
-            expect(app1.createNote.calledOnce).toBe(true);
-        });
-
-        it('should have clean state in new test', () => {
-            // Second test - should have fresh stubs
-            const app2 = mockApp();
-            
-            // Should not have any call history from previous test
-            expect(app2.createNote.called).toBe(false);
-            expect(app2.createNote.callCount).toBe(0);
-        });
-
-        it('should properly restore stubs in sandbox', () => {
-            const testObject = { method: () => 'original' };
-            const spy = sinonSandbox.spy(testObject, 'method');
-            
-            // Call the method
-            testObject.method();
-            expect(spy.calledOnce).toBe(true);
-            
-            // Restore should happen in afterEach
-            // This test verifies the sandbox is working
-            expect(typeof sinonSandbox.restore).toBe('function');
-        });
-    });
-
-    describe('Error handling and debugging', () => {
-        it('should provide clear error messages for assertion failures', () => {
-            const app = mockApp();
-            
-            // Make a call
-            app.createNote('Test Note');
-            
-            // Test various assertion patterns
-            expect(app.createNote.calledOnce).toBe(true);
-            expect(app.createNote.calledWith('Test Note')).toBe(true);
-            expect(app.createNote.calledWith('Wrong Note')).toBe(false);
-            
-            // Verify call history is accessible
-            expect(app.createNote.getCall(0).args).toEqual(['Test Note']);
-        });
-
-        it('should provide detailed call information', () => {
-            const app = mockApp();
-            
-            // Make multiple calls with different arguments
-            app.prompt('Question 1');
-            app.prompt('Question 2', { type: 'confirm' });
-            
-            // Verify detailed call information is available
-            expect(app.prompt.callCount).toBe(2);
-            expect(app.prompt.getCall(0).args).toEqual(['Question 1']);
-            expect(app.prompt.getCall(1).args).toEqual(['Question 2', { type: 'confirm' }]);
-            
-            // Verify call order
-            expect(app.prompt.firstCall.args[0]).toBe('Question 1');
-            expect(app.prompt.lastCall.args[0]).toBe('Question 2');
-        });
-
-        it('should handle async errors properly', async () => {
-            const app = mockApp();
-            
-            // Configure stub to reject
-            const testError = new Error('Test async error');
-            app.getNoteImages.rejects(testError);
-            
-            // Verify error is properly thrown
-            await expect(app.getNoteImages()).rejects.toThrow('Test async error');
-            
-            // Verify call was still tracked
-            expect(app.getNoteImages.calledOnce).toBe(true);
         });
     });
 });

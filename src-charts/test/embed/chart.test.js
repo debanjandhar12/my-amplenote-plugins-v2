@@ -1,4 +1,4 @@
-import { compileJavascriptCode } from "../../../common-utils/esbuild-test-helpers.js";
+import { compileJavascriptCode } from "../../../common-utils/compileJavascriptCode.js";
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
 import {createCallAmplenotePluginMock} from "../../../common-utils/embed-comunication.js";
 import {CHART_DATA_MOCK, CHART_FORMULA_DATA_MOCK, EMBED_COMMANDS_MOCK} from "./chart.testdata.js";

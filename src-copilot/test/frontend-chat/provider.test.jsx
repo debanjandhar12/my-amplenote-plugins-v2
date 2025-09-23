@@ -1,4 +1,4 @@
-import { compileJavascriptCode } from "../../../common-utils/esbuild-test-helpers.js";
+import { compileJavascriptCode } from "../../../common-utils/compileJavascriptCode.js";
 import {addScriptToHtmlString} from "../../../common-utils/embed-helpers.js";
 import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from "./chat.testdata.js";
 import html from "inline:../../embed/chat.html";
