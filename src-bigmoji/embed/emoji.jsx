@@ -7,7 +7,7 @@ import {useCustomStyles} from "./hooks/useCustomStyles.jsx";
 import {EmojiSizePage} from "./pages/EmojiSizePage.jsx";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 
-if(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+if(process.env.NODE_ENV === 'development') {
     window.emojiData = window.emojiData || EMOJI_DATA_MOCK;
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
 }

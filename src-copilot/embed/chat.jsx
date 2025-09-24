@@ -11,7 +11,7 @@ import {ChatApp} from "../frontend-chat/ChatApp.jsx";
 import {parse} from "../markdown/markdown-parser.js";
 import {makeCustomMarkdownText} from "../frontend-chat/components/makeCustomMarkdownText.jsx";
 
-if(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+if(process.env.NODE_ENV === 'development') {
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
 }
 

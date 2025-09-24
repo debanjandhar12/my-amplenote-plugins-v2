@@ -10,7 +10,7 @@ import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import {EMBED_COMMANDS_MOCK, EMBED_NOTE_UUID_MOCK} from "../test/embed/embed.testdata.js";
 import {createCallAmplenotePluginMock} from "../../common-utils/embed-comunication.js";
 
-if(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+if(process.env.NODE_ENV === 'development') {
     window.noteUUID = window.noteUUID || EMBED_NOTE_UUID_MOCK;
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
 }

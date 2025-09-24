@@ -6,7 +6,7 @@ import {createCallAmplenotePluginMock} from "../../common-utils/embed-comunicati
 import {EMBED_COMMANDS_MOCK} from "../test/embed/chart.testdata.js";
 import {ChartDataFactory} from "../chart/ChartDataFactory.js";
 
-if(process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+if(process.env.NODE_ENV === 'development') {
     window.ChartData = window.ChartData || CHART_DATA_MOCK;
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
 }
