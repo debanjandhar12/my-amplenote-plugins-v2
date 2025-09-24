@@ -96,7 +96,7 @@
   "scripts": {
     "test": "jest --testPathPattern=src-copilot",
     "test:watch": "jest --testPathPattern=src-copilot --watch",
-    "test:report": "npx allure generate --single-file ./test-result/allure-results --clean -o ./test-result/allure-report && node --input-type=module -e \"import('open').then(o => o.default('./test-result/allure-report/index.html'))\"",
+    "allure:serve": "npx allure generate --single-file ./allure/results --clean -o ./allure/report && node --input-type=module -e \"import('open').then(o => o.default('./allure/report/index.html'))\"",
     "build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-copilot",
     "build:dev": "node esbuild.js $(pwd)/src-copilot --watch --server"
   }

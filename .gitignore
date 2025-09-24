@@ -7,4 +7,4 @@ dist/
 .kiro
 package-lock.json
 .vscode
-test-result/
+allure/

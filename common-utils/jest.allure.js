@@ -1,5 +1,6 @@
 import { allure } from 'jest-allure2-reporter/api';
 
+// -- Modify console.log to capture console logs in allure report --
 const originalConsole = {
     log: console.log,
     info: console.info,

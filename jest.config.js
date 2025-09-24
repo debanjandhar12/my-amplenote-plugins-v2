@@ -23,7 +23,7 @@ export default {
     reporters: [
         "default",
         ["jest-allure2-reporter", {
-            "resultsDir": "./test-result/allure-results",
+            "resultsDir": "./allure/results",
             "overwrite": false,
             "suiteNameTemplate": "{displayName} {filepath}",
             "testNameTemplate": "{title}",
@@ -32,6 +32,7 @@ export default {
             }
         }]
     ],
+    globalSetup: "<rootDir>/jest.global-setup.js",
     setupFiles: ['<rootDir>/jest.setup.js'],
-    setupFilesAfterEnv: ["./common-utils/jest.sinon.js", "./common-utils/jest.logging.js", "./common-utils/playwright-helpers.ts", "./common-utils/jest.extend.js"]
+    setupFilesAfterEnv: ["./common-utils/jest.sinon.js", "./common-utils/jest.allure.js", "./common-utils/playwright-helpers.ts", "./common-utils/jest.extend.js"]
 };
