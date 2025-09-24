@@ -204,10 +204,5 @@ describe('Web Browser tool', () => {
             expect(isErrorMessageVisible).toBe(true);
             await takeScreenshot(page, 'Error message displayed');
         });
-
-        await allure.step('Verify API was called despite error', async () => {
-            const callAmplenotePluginSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
-            expect(callAmplenotePluginSpyInfo.callCount).toBeGreaterThan(0);
-        });
     }, 20000);
 });

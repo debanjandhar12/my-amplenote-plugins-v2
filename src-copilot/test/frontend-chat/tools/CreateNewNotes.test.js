@@ -171,6 +171,21 @@ describe('Create New Notes tool', () => {
             expect(note2._content).toBe('\n# Meeting Notes\n\nAgenda items for next meeting:');
             expect(note2.tags).toEqual(['meeting']);
         });
+
+        await allure.step('Verify llm is called with tool results to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result.resultDetail).toBeDefined();
+            expect(llmCallData.messages[0].content[0].result.resultDetail.length).toBe(2);
+            
+            const resultDetail = llmCallData.messages[0].content[0].result.resultDetail;
+            expect(resultDetail[0].noteName).toBe('Project Documentation');
+            expect(resultDetail[0].noteTags).toEqual(['project', 'docs']);
+            expect(resultDetail[0].noteUUID).toBeDefined();
+            
+            expect(resultDetail[1].noteName).toBe('Meeting Notes');
+            expect(resultDetail[1].noteTags).toEqual(['meeting']);
+            expect(resultDetail[1].noteUUID).toBeDefined();
+        });
     }, 20000);
 
     it('should transition from init to canceled state without creating notes upon user cancellation', async () => {
@@ -289,6 +304,12 @@ describe('Create New Notes tool', () => {
 
             const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
             expect(allNotes.length).toBe(0);
+        });
+
+        await allure.step('Verify llm not called when tool is canceled', async () => {
+            const sendButton = page.getByRole('button', { name: 'Send' });
+            const isSendButtonVisible = await sendButton.isVisible();
+            expect(isSendButtonVisible).toBe(true);
         });
     }, 20000);
 

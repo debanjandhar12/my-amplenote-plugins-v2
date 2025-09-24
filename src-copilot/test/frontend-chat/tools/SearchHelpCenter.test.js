@@ -213,6 +213,11 @@ describe('Search Help Center tool', () => {
             const isErrorMessageVisible = await errorMessage.isVisible();
             expect(isErrorMessageVisible).toBe(true);
             await takeScreenshot(page, 'Error message displayed');
-        });;
+        });
+
+        await allure.step('Verify llm is called with tool error to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result).toContain('Failed to search help center');
+        });
     }, 200000);
 });

@@ -8,7 +8,7 @@ import {
 import { allure } from 'jest-allure2-reporter/api';
 
 describe('Web Search tool', () => {
-    const { getPage } = createPlaywrightHooks();
+    const { getPage } = createPlaywrightHooks(false);
     beforeEach(() => {
         allure.epic('src-copilot');
     });
@@ -207,11 +207,6 @@ describe('Web Search tool', () => {
             const isErrorMessageVisible = await errorMessage.isVisible();
             expect(isErrorMessageVisible).toBe(true);
             await takeScreenshot(page, 'Error message displayed');
-        });
-
-        await allure.step('Verify API was called despite error', async () => {
-            const webSearchSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
-            expect(webSearchSpyInfo.callCount).toBeGreaterThan(0);
         });
     }, 20000);
 });

@@ -279,5 +279,10 @@ describe('Fetch Note Detail By Note UUID tool', () => {
             const getNoteTitleSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
             expect(getNoteTitleSpyInfo.callCount).toBeGreaterThan(0);
         });
+
+        await allure.step('Verify llm is called with tool error to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result).toContain('Failed to fetch note title');
+        });
     }, 20000);
 });

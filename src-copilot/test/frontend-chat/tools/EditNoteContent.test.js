@@ -146,12 +146,22 @@ describe('Edit Note Content tool', () => {
             await takeScreenshot(page, 'Success message displayed');
         });
 
-        await allure.step('Verify API is called and note content is updated', async () => {
+        await allure.step('Verify API is called and note content is edited', async () => {
             const replaceNoteContentSpyInfo = await getSpyInfo(page, 'mockApp.replaceNoteContent');
             expect(replaceNoteContentSpyInfo.callCount).toBe(1);
 
             const note = await page.evaluate(() => window.mockApp.findNote("note-uuid-1"));
             expect(note._content).not.toBe('# Test Note\n\nThis is the original content.');
+        });
+
+        await allure.step('Verify llm is called with tool results to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result.newContent).toBeDefined();
+            
+            const newContent = llmCallData.messages[0].content[0].result.newContent;
+            expect(newContent).toContain('# Test Note');
+            expect(newContent).toContain('This is the original content.');
+            expect(newContent).toContain('## Conclusion');
         });
     }, 20000);
 
@@ -282,6 +292,12 @@ describe('Edit Note Content tool', () => {
             const note = await page.evaluate(() => window.mockApp.findNote("note-uuid-1"));
             expect(note._content).toBe('# Test Note\n\nThis is the original content.');
         });
+
+        await allure.step('Verify llm not called when tool is canceled', async () => {
+            const sendButton = page.getByRole('button', { name: 'Send' });
+            const isSendButtonVisible = await sendButton.isVisible();
+            expect(isSendButtonVisible).toBe(true);
+        });
     }, 20000);
 
     it('should handle API error correctly', async () => {
@@ -401,6 +417,11 @@ describe('Edit Note Content tool', () => {
         await allure.step('Verify API was called despite error', async () => {
             const replaceNoteContentSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
             expect(replaceNoteContentSpyInfo.callCount).toBeGreaterThan(0);
+        });
+
+        await allure.step('Verify llm is called with tool error to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result).toContain('Failed to update note content');
         });
 
         await allure.step('Verify note content was not updated due to error', async () => {

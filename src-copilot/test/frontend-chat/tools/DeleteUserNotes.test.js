@@ -145,6 +145,13 @@ describe('Delete User Notes tool', () => {
             const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
             expect(allNotes.length).toBe(0);
         });
+
+        await allure.step('Verify llm is called with tool results to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result.resultDetail).toBeDefined();
+            expect(llmCallData.messages[0].content[0].result.resultDetail.length).toBe(2);
+            expect(llmCallData.messages[0].content[0].result.resultDetail).toEqual([true, true]);
+        });
     }, 20000);
 
     it('should transition from init to canceled state without deleting notes upon user cancellation', async () => {
@@ -256,6 +263,12 @@ describe('Delete User Notes tool', () => {
 
             const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
             expect(allNotes.length).toBe(1);
+        });
+
+        await allure.step('Verify llm not called when tool is canceled', async () => {
+            const sendButton = page.getByRole('button', { name: 'Send' });
+            const isSendButtonVisible = await sendButton.isVisible();
+            expect(isSendButtonVisible).toBe(true);
         });
     }, 20000);
 
@@ -379,6 +392,11 @@ describe('Delete User Notes tool', () => {
         await allure.step('Verify note was not deleted due to error', async () => {
             const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
             expect(allNotes.length).toBe(1);
+        });
+
+        await allure.step('Verify llm is called with tool error to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result).toContain('Failed to delete note');
         });
     }, 20000);
 });

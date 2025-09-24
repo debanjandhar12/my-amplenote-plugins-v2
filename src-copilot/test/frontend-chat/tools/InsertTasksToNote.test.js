@@ -157,6 +157,21 @@ describe('Insert Tasks To Note tool', () => {
             expect(note._content).toContain('- [ ] Complete project documentation');
             expect(note._content).toContain('- [ ] Review code changes');
         });
+
+        await allure.step('Verify llm is called with tool results to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result.resultDetails).toBeDefined();
+            expect(llmCallData.messages[0].content[0].result.resultDetails.length).toBe(2);
+            
+            const resultDetails = llmCallData.messages[0].content[0].result.resultDetails;
+            expect(resultDetails[0].content).toBe('Complete project documentation');
+            expect(resultDetails[0].startAt).toBe('2025-06-01T10:00:00.000Z');
+            expect(resultDetails[0].taskUUID).toBeDefined();
+            
+            expect(resultDetails[1].content).toBe('Review code changes');
+            expect(resultDetails[1].startAt).toBe('2025-06-02T14:00:00.000Z');
+            expect(resultDetails[1].taskUUID).toBeDefined();
+        });
     }, 20000);
 
     it('should transition from init to canceled state without inserting tasks upon user cancellation', async () => {
@@ -286,6 +301,12 @@ describe('Insert Tasks To Note tool', () => {
             const note = await page.evaluate(() => window.mockApp.findNote("12345678-1234-1234-1234-123456789012"));
             expect(note._content).toBe('# Test Note\n\nThis is the original content.');
         });
+
+        await allure.step('Verify llm not called when tool is canceled', async () => {
+            const sendButton = page.getByRole('button', { name: 'Send' });
+            const isSendButtonVisible = await sendButton.isVisible();
+            expect(isSendButtonVisible).toBe(true);
+        });
     }, 20000);
 
     it('should handle API error correctly', async () => {
@@ -410,6 +431,11 @@ describe('Insert Tasks To Note tool', () => {
         await allure.step('Verify API was called despite error', async () => {
             const insertTaskSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
             expect(insertTaskSpyInfo.callCount).toBeGreaterThan(0);
+        });
+
+        await allure.step('Verify llm is called with tool error to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result).toContain('Failed to insert task');
         });
 
         await allure.step('Verify no tasks were inserted due to error', async () => {
