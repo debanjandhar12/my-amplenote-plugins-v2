@@ -20,7 +20,8 @@ describe('Fetch Note Detail By Note UUID tool', () => {
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
-            import { mockApp } from "./common-utils/amplenote-mocks.js";
+                        import { mockApp } from "./common-utils/amplenote-mocks.js";
+                        import sinon from 'sinon';
 
             window.SETTINGS = {
                 ...getLLMProviderSettings('groq'),
@@ -74,6 +75,31 @@ describe('Fetch Note Detail By Note UUID tool', () => {
             const note1 = window.mockApp.createNote("Test Note 1", ["tag1", "tag2"], "# Test Note 1\\n\\nThis is the content of test note 1.", "12345678-1234-1234-1234-123456789012");
             const note2 = window.mockApp.createNote("Test Note 2", ["tag3"], "# Test Note 2\\n\\nThis is the content of test note 2.", "87654321-4321-4321-4321-210987654321");
 
+            // Create spy functions for each API method
+            window.getNoteTitleByUUID = sinon.spy(async (uuid) => {
+                const note = window.mockApp.findNote({ uuid });
+                return note ? note.name : null;
+            });
+
+            window.getNoteContentByUUID = sinon.spy(async (uuid) => {
+                const note = window.mockApp.findNote({ uuid });
+                return note ? note._content || "" : "";
+            });
+
+            window.getNoteBacklinksByUUID = sinon.spy(async ({ uuid }) => {
+                // Add small delay to simulate async operation
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Return empty array as backlinks API doesn't exist in note
+                return [];
+            });
+
+            window.getNoteTagsByUUID = sinon.spy(async ({ uuid }) => {
+                // Add small delay to simulate async operation
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                const note = window.mockApp.findNote({ uuid });
+                return note ? note.tags || [] : [];
+            });
+
             window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
                 getSettings: async () => window.SETTINGS,
@@ -85,26 +111,10 @@ describe('Fetch Note Detail By Note UUID tool', () => {
                     }
                     return null;
                 },
-                getNoteTitleByUUID: async (uuid) => {
-                    const note = window.mockApp.findNote({ uuid });
-                    return note ? note.name : null;
-                },
-                getNoteContentByUUID: async (uuid) => {
-                    const note = window.mockApp.findNote({ uuid });
-                    return note ? note._content || "" : "";
-                },
-                getNoteBacklinksByUUID: async ({ uuid }) => {
-                    // Add small delay to simulate async operation
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    // Return empty array as backlinks API doesn't exist in note
-                    return [];
-                },
-                getNoteTagsByUUID: async ({ uuid }) => {
-                    // Add small delay to simulate async operation
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    const note = window.mockApp.findNote({ uuid });
-                    return note ? note.tags || [] : [];
-                }
+                getNoteTitleByUUID: window.getNoteTitleByUUID,
+                getNoteContentByUUID: window.getNoteContentByUUID,
+                getNoteBacklinksByUUID: window.getNoteBacklinksByUUID,
+                getNoteTagsByUUID: window.getNoteTagsByUUID
             });
         `;
 
@@ -132,13 +142,25 @@ describe('Fetch Note Detail By Note UUID tool', () => {
         });
 
         await allure.step('Verify API calls were made', async () => {
-            const getNoteTitleSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
-            expect(getNoteTitleSpyInfo.callCount).toBeGreaterThan(0);
+            const getNoteTitleSpyInfo = await getSpyInfo(page, 'getNoteTitleByUUID');
+            expect(getNoteTitleSpyInfo.callCount).toBe(2); // Called for both notes
+
+            const getNoteContentSpyInfo = await getSpyInfo(page, 'getNoteContentByUUID');
+            expect(getNoteContentSpyInfo.callCount).toBe(2);
+
+            const getNoteBacklinksSpyInfo = await getSpyInfo(page, 'getNoteBacklinksByUUID');
+            expect(getNoteBacklinksSpyInfo.callCount).toBe(2);
+
+            const getNoteTagsSpyInfo = await getSpyInfo(page, 'getNoteTagsByUUID');
+            expect(getNoteTagsSpyInfo.callCount).toBe(2);
         });
 
-        await allure.step('Verify test completed successfully', async () => {
-            // Test has completed successfully with all API calls verified
-            expect(true).toBe(true);
+        await allure.step('Verify llm is called with tool results to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result.resultDetail).toBeDefined();
+            expect(llmCallData.messages[0].content[0].result.resultDetail.length).toBe(2);
+            expect(llmCallData.messages[0].content[0].result.resultDetail[0].noteTitle).toEqual('Test Note 1');
+            expect(llmCallData.messages[0].content[0].result.resultDetail[1].noteTitle).toEqual('Test Note 2');
         });
     }, 20000);
 

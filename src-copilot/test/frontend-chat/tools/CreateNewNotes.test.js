@@ -367,10 +367,6 @@ describe('Create New Notes tool', () => {
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     // Throw an error to simulate API failure
                     throw new Error('Failed to create note');
-                },
-                insertNoteContent: async (note, content) => {
-                    // Throw an error to simulate API failure
-                    throw new Error('Failed to insert note content');
                 }
             });
         `;
@@ -411,6 +407,11 @@ describe('Create New Notes tool', () => {
         await allure.step('Verify no notes were created due to error', async () => {
             const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
             expect(allNotes.length).toBe(0);
+        });
+
+        await allure.step('Verify llm is called with tool error to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result).toContain('Failed to create note');
         });
     }, 20000);
 });

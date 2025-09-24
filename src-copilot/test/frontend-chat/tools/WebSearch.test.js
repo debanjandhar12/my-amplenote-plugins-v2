@@ -6,7 +6,6 @@ import {
     waitForCustomEvent, takeScreenshot
 } from "../../../../common-utils/playwright-helpers.ts";
 import { allure } from 'jest-allure2-reporter/api';
-import sinon from 'sinon';
 
 describe('Web Search tool', () => {
     const { getPage } = createPlaywrightHooks();
@@ -21,6 +20,7 @@ describe('Web Search tool', () => {
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+            import sinon from 'sinon';
 
             window.SETTINGS = {
                 ...getLLMProviderSettings('groq'),
@@ -66,6 +66,8 @@ describe('Web Search tool', () => {
                 }
             ];
             
+            window.fetch = sinon.spy(window.fetch);
+            
             window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
                 getSettings: async () => {
@@ -78,19 +80,6 @@ describe('Web Search tool', () => {
                         return {type: 'new-chat', message: injectMessages};
                     }
                     return null;
-                },
-                webSearch: async (query, options) => {
-                    // Add timeout so that test can capture state
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    // Mock search results
-                    return [
-                        {
-                            title: "Best Pokemon of All Time",
-                            url: "https://example.com/best-pokemon",
-                            snippet: "Discover the most powerful and popular Pokemon...",
-                            content: "Detailed content about the best Pokemon characters..."
-                        }
-                    ];
                 }
             });
         `;
@@ -110,8 +99,8 @@ describe('Web Search tool', () => {
             const completedState = await waitForCustomEvent(page, 'onToolStateChange');
             expect(completedState).toEqual('completed');
 
-            const webSearchSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
-            expect(webSearchSpyInfo.callCount).toBeGreaterThan(0);
+            const fetchSpyInfo = await getSpyInfo(page, 'fetch');
+            expect(fetchSpyInfo.callCount).toBeGreaterThan(0);
         });
 
         await allure.step('Verify search results are displayed', async () => {

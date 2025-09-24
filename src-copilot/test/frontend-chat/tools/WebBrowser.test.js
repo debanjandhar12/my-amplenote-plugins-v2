@@ -21,6 +21,7 @@ describe('Web Browser tool', () => {
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+            import sinon from 'sinon';
 
             window.SETTINGS = {
                 ...getLLMProviderSettings('groq'),
@@ -64,6 +65,8 @@ describe('Web Browser tool', () => {
                 }
             ];
 
+            window.fetch = sinon.spy(window.fetch);
+            
             window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
                 getSettings: async () => window.SETTINGS,
@@ -103,8 +106,8 @@ describe('Web Browser tool', () => {
         });
 
         await allure.step('Verify API was called', async () => {
-            const callAmplenotePluginSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
-            expect(callAmplenotePluginSpyInfo.callCount).toBeGreaterThan(0);
+            const fetchSpyInfo = await getSpyInfo(page, 'fetch');
+            expect(fetchSpyInfo.callCount).toBeGreaterThan(0);
         });
     }, 20000);
 
