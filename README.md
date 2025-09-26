@@ -35,7 +35,8 @@ Current plugin list:
   ```
 
 ## Testing
-This development template comes with several utilities to support testing. Unit tests run in jsdom, and end-to-end tests run in Playwright—both powered by Jest test-runner.Common testing helpers are available in the common-utils folder to simplify writing test cases.
+This development template comes with a comprehensive testing framework. Unit tests run in jsdom with Sinon mocking, end-to-end tests use Playwright, and Allure generates detailed reports—all powered by Jest test-runner. Amplenote mocks are available in `common-utils/amplenote-mocks.js` to simplify writing test cases.
+
 - Run tests:
   ```
   npm run test
@@ -44,10 +45,13 @@ This development template comes with several utilities to support testing. Unit 
   ```
   npm run test:watch
   ```
+- Generate and view Allure test reports:
+  ```
+  npm run allure:serve
+  ```
 
-> Note: If you run into errors with jsdom or Playwright, ensure both are installed:
+> Note: If you run into errors with Playwright, ensure chromium is installed:
 > ```
-> npm install -D jest-environment-jsdom
 > npx playwright install chromium
 > ```
 

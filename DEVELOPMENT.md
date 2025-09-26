@@ -38,20 +38,20 @@ Shared code used across plugins (dynamic imports, test helpers, utilities) lives
 There are two ways to target a specific plugin folder: via one-off CLI or via the npm scripts.
 
 - One-off CLI (no edits required):
-  - `node esbuild.js $(pwd)/src-charts`
-  - `node esbuild.js $(pwd)/src-bigmoji`
-  - `node esbuild.js $(pwd)/src-copilot`
-  - Watch and serve: `node esbuild.js $(pwd)/src-charts --watch --server`
+    - `node esbuild.js $(pwd)/src-charts`
+    - `node esbuild.js $(pwd)/src-bigmoji`
+    - `node esbuild.js $(pwd)/src-copilot`
+    - Watch and serve: `node esbuild.js $(pwd)/src-charts --watch --server`
 
 - Using npm scripts (recommended):
-  1) Open `package.json` and replace the absolute path used by the scripts with your target plugin. For example, change:
-     - `"build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-copilot"`
-     - `"build:dev": "node esbuild.js $(pwd)/src-copilot --watch --server"`
-     to point to your plugin, e.g. `$(pwd)/src-charts` or `$(pwd)/src-bigmoji`.
-     <img width="658" height="180" alt="image" src="https://github.com/user-attachments/assets/114715d7-2a51-4bc9-a1c4-1663a3fa9c74" />
-  2) Then run:
-     - Production build: `npm run build:prod`
-     - Dev/watch and serve: `npm run build:dev`
+    1) Open `package.json` and replace the absolute path used by the scripts with your target plugin. For example, change:
+        - `"build:prod": "NODE_ENV=production node esbuild.js $(pwd)/src-copilot"`
+        - `"build:dev": "node esbuild.js $(pwd)/src-copilot --watch --server"`
+          to point to your plugin, e.g. `$(pwd)/src-charts` or `$(pwd)/src-bigmoji`.
+          <img width="658" height="180" alt="image" src="https://github.com/user-attachments/assets/114715d7-2a51-4bc9-a1c4-1663a3fa9c74" />
+    2) Then run:
+        - Production build: `npm run build:prod`
+        - Dev/watch and serve: `npm run build:dev`
 
 What the build does:
 - Uses `esbuild` to bundle `plugin.js`, any `embed/*.html` pages, and `plugin.about.js` when present (see `esbuild.js` and `build/esbuild-options.js`).
@@ -62,9 +62,9 @@ What the build does:
 Embed pages are standalone HTML + JS apps loaded in an iframe by Amplenote. For local iteration, the `--server` mode above lets you open the compiled embed in a normal browser. Typical flow inside an embed entry (e.g., `src-charts/embed/chart.js`, `src-bigmoji/embed/emoji.jsx`, `src-copilot/embed/chat.jsx`):
 
 - A plugin.js call proxy is created:
-  - `window.appConnector = new Proxy({}, { get: (...) => async (...args) => window.callAmplenotePlugin(prop, ...args) });`
-  - The embed calls `appConnector.<method>(...)` which is forwarded to plugin.js running inside amplenote via `callAmplenotePlugin`.
-  - During embed local dev or tests, plugin.js needs to be mocked using `createCallAmplenotePluginMock` from `common-utils/embed-comunication.js`.
+    - `window.appConnector = new Proxy({}, { get: (...) => async (...args) => window.callAmplenotePlugin(prop, ...args) });`
+    - The embed calls `appConnector.<method>(...)` which is forwarded to plugin.js running inside amplenote via `callAmplenotePlugin`.
+    - During embed local dev or tests, plugin.js needs to be mocked using `createCallAmplenotePluginMock` from `common-utils/embed-comunication.js`.
 - Embeds may optionally emit custom events like `appLoaded` (used by some tests). This pattern is common in Copilot Chat/Search embeds (`src-copilot/embed/chat.jsx`, `src-copilot/embed/search.jsx`). Other plugins often rely on DOM readiness/selectors instead of events.
 - UI style/loader helpers are available in `common-utils/embed-ui.js` (e.g., `showEmbedLoader()`, `hideEmbedLoader()`).
 
@@ -73,15 +73,15 @@ Embed pages are standalone HTML + JS apps loaded in an iframe by Amplenote. For 
 To avoid multiple React instance errors across iframes and embedded pages, we load framework-level libraries (React, Radix UI, Assistant UI, etc.) from a single external bundle and attach them to `window`. This ensures one React/DOM stack instance and prevents hooks/context mismatches.
 
 - Load a pre-built bundle once and attach globals
-  - Function: `dynamicImportExternalPluginBundle(fileName)` from `common-utils/dynamic-import-esm.js`.
-  - Example (Chat embed): `src-copilot/embed/chat.jsx`
-    - `const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown, RadixIcons, StringDiff, dayjs, tributejs, ReactErrorBoundary, AssistantUIUtils] = await dynamicImportExternalPluginBundle('assistantUIBundle.js');`
-    - Then: `window.React = React; window.ReactDOM = ReactDOM; ...`
-  - Example (Search embed): `src-copilot/embed/search.jsx` uses `searchUIBundle.js` similarly.
+    - Function: `dynamicImportExternalPluginBundle(fileName)` from `common-utils/dynamic-import-esm.js`.
+    - Example (Chat embed): `src-copilot/embed/chat.jsx`
+        - `const [React, ReactDOM, AssistantUI, RadixUI, AssistantUIMarkdown, RadixIcons, StringDiff, dayjs, tributejs, ReactErrorBoundary, AssistantUIUtils] = await dynamicImportExternalPluginBundle('assistantUIBundle.js');`
+        - Then: `window.React = React; window.ReactDOM = ReactDOM; ...`
+    - Example (Search embed): `src-copilot/embed/search.jsx` uses `searchUIBundle.js` similarly.
 
 - Load individual packages (non-React or small libs) only when necessary
-  - Functions: `dynamicImportESM(pkg, version?)`, `dynamicImportCSS(pkg, version?)` from `common-utils/dynamic-import-esm.js`.
-  - Use these for stylesheets or small ESM packages that are safe to load independently.
+    - Functions: `dynamicImportESM(pkg, version?)`, `dynamicImportCSS(pkg, version?)` from `common-utils/dynamic-import-esm.js`.
+    - Use these for stylesheets or small ESM packages that are safe to load independently.
 
 Rule of thumb:
 - Prefer the external bundle for React-based UI frameworks to guarantee a single React instance.
@@ -90,56 +90,67 @@ Rule of thumb:
 
 ## Environment Variables
 
-- Use `.env` (see `.env.example`) for settings consumed by local build/tests.
+- `.env` (see `.env.example`) file properties can be accessed from `process.env` in dev and test environments.
+- `.env` properties are not present in production build.
 
 ## Testing Overview
 
-We use Jest (jsdom) together with Playwright to drive in-embed UI scenarios.
+We use Jest (jsdom) with Sinon for mocking, together with Playwright to drive in-embed UI scenarios. Allure generates comprehensive test reports with screenshots and console logs.
 
-- Run all tests:
-  - `npm test`
-- Watch mode:
-  - `npm run test:watch`
+### Test Commands
+- Run tests for current plugin: `npm test`
+- Watch mode: `npm run test:watch`
+- Generate Allure reports: `npm run allure:serve`
 
-Patterns for writing embed tests:
-- Use `inline:` imports to include embed HTML in tests (see examples under `src-*/test` folders).
-- Use `compileJavascriptCode` from `common-utils/esbuild-amplenote-mocks.js` to compile mock code with proper ES6 imports and environment variables.
-- Use `addScriptToHtmlString` from `common-utils/embed-helpers.js` to inject the compiled mock code into HTML.
-- Use `createCallAmplenotePluginMock` from `common-utils/embed-comunication.js` to mock plugin.js calls.
-- Boot a Playwright page using `createPlaywrightHooks()` from `common-utils/playwright-helpers.ts` and call `page.setContent(htmlWithMocks)`.
-- Interact with the UI using selectors and assertions. Some embeds (Copilot Chat/Search, Speech) also emit custom events like `appLoaded`.
-- It is possible to create plugins without embed pages (just skip creating the embed folder).
+Note: Generate allure test report will contain result from last execution command only.
 
-### Modern Test Pattern Example
+### Patterns for Writing Tests
+
+**Embed Tests:**
+- Use `inline:` imports to include embed HTML in tests (see examples under `src-*/test` folders)
+- Use `compileJavascriptCode` from `common-utils/compileJavascriptCode.js` to compile mock code with proper ES6 imports and environment variables
+- Use `addScriptToHtmlString` from `common-utils/embed-helpers.js` to inject the compiled mock code into HTML
+- Use `createCallAmplenotePluginMock` from `common-utils/embed-comunication.js` to mock plugin.js calls
+- Boot a Playwright page using `createPlaywrightHooks()` from `common-utils/playwright-helpers.ts` and call `page.setContent(htmlWithMocks)`
+- Interact with the UI using selectors and assertions. Some embeds (Copilot Chat/Search) emit custom events like `appLoaded`
+- Use `mockApp()` and `mockNote()` from `common-utils/amplenote-mocks.js` for Amplenote API mocks
+
+### Test Pattern Example
 
 ```javascript
-import { compileJavascriptCode } from "../../common-utils/esbuild-amplenote-mocks.js";
+import { compileJavascriptCode } from "../../common-utils/compileJavascriptCode.js";
 import { addScriptToHtmlString } from "../../common-utils/embed-helpers.js";
 import html from "inline:../embed/chat.html";
 import { createPlaywrightHooks } from "../../common-utils/playwright-helpers.ts";
+import { allure } from 'jest-allure2-reporter/api';
 
-const mockCode = `
-    import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
-    import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
-    import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+describe('chat embed', () => {
+    const { getPage } = createPlaywrightHooks();
 
-    window.SETTINGS = {
-        ...getLLMProviderSettings('groq'),
-        [LLM_MAX_TOKENS_SETTING]: '100'
-    };
-
-    window.callAmplenotePlugin = createCallAmplenotePluginMock({
-        ...EMBED_COMMANDS_MOCK,
-        getSettings: async () => window.SETTINGS
+    beforeEach(() => {
+        allure.epic('src-copilot');
     });
-`;
 
-const compiledCode = await compileJavascriptCode(mockCode);
-const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+    it('handles user interactions', async () => {
+        allure.description('Tests chat functionality with user input');
+
+        const mockCode = `
+            import { EMBED_COMMANDS_MOCK } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+
+            window.callAmplenotePlugin = createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
+        `;
+
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
+
+        await allure.step('Load chat embed', async () => {
+            await page.setContent(htmlWithMocks);
+            await waitForCustomEvent(page, 'appLoaded');
+        });
+
+        // Test interactions...
+    });
+});
 ```
-
-**Benefits of the modern approach:**
-- **Environment Variables**: All `process.env` variables are automatically available
-- **Proper Imports**: Use standard ES6 import statements instead of serialization
-- **Type Safety**: Better IDE support and error messages
-- **No Serialization Issues**: Functions work natively without `serializeWithFunctions`

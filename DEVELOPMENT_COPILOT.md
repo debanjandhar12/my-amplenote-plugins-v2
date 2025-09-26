@@ -42,22 +42,72 @@ Video walkthrough of codebase: [https://www.youtube.com/watch?v=9vVB6Bohc0k](htt
 
 ## Test Suite
 
-Tests are under `src-copilot/test/`.
+Tests are under `src-copilot/test/` and use Jest with Sinon mocking, Playwright for UI testing, and Allure for comprehensive reporting.
 
-- `frontend-chat/chat.test.jsx`
-  - Loads the Chat embed with mocked host/settings. Verifies boot, basic LLM path, and error handling.
+### Frontend Chat Tests (`frontend-chat/`)
 
-- `frontend-chat/provider.test.jsx`
-  - Checks all supported LLM providers are working correctly.
+- **`chat.test.jsx`** - Core chat embed functionality
+  - Loads the Chat embed with mocked host/settings
+  - Verifies boot sequence, basic LLM interaction paths, and error handling
+  - Tests empty settings scenarios and UI state management
 
-- `frontend-chat/userprompt.test.jsx`
-  - Checks user custom prompt handling is working correctly.
+- **`provider.test.jsx`** - LLM Provider Integration
+  - Validates all supported LLM providers (OpenAI, Anthropic, Groq, Fireworks, Google)
+  - Tests provider-specific configuration and API interactions
+  - Ensures consistent behavior across different AI models
 
-- `frontend-chat/tools/`
-  - End-to-end tests for tool behavior (e.g., CreateNewNotes, DeleteUserNotes, InsertTasksToNote, EditNoteContent). These confirm state-based execution and require explicit user confirmation for any write, preventing unintended edits or deletions.
+- **`userprompt.test.jsx`** - Custom Prompt Handling
+  - Tests user custom prompt injection and processing
+  - Validates prompt template rendering and variable substitution
+  - Ensures proper prompt sanitization and security
 
-- Embedding provider tests
-  - `CopilotDB/embeddings/` — Checks embedding generators/providers.
-  - `CopilotDB/splitter/` — Checks note splitting into chunks suitable for embedding and search.
+- **`tools/` Directory** - Tool System Tests
+  - **`CreateNewNotes.test.js`** - Note creation tool with user confirmation UI
+  - **`DeleteUserNotes.test.js`** - Note deletion with safety confirmations
+  - **`EditNoteContent.test.js`** - Content editing with diff preview
+  - **`UpdateUserNotes.test.js`** - Note metadata updates (tags, titles)
+  - **`InsertTasksToNote.test.js`** - Task insertion with scheduling options
+  - **`UpdateUserTasks.test.js`** - Task modification and completion
+  - **`FetchNoteDetailByNoteUUID.test.js`** - Note retrieval and display
+  - **`SearchHelpCenter.test.js`** - Help center search integration
+  - **`WebBrowser.test.js`** - Web browsing tool functionality
+  - **`WebSearch.test.js`** - Web search integration
+  
+  All tool tests confirm state-based execution lifecycle and require explicit user confirmation for write operations, preventing unintended edits or deletions. Tests ensure user notes and tasks are correctly updated by verifying state changes in `mockApp()` and `mockNote()`.
 
-For how to run tests and generate coverage, see the root `DEVELOPMENT.md` Testing section.
+- **`components/` Directory** - UI Component Tests
+  - **`makeCustomMarkdownText.test.js`** - Markdown rendering and customization
+
+- **`helpers/` Directory** - Utility Function Tests
+  - **`truncateObjectVal.test.js`** - Object value truncation for display
+
+### Frontend Search Tests (`frontend-search/`)
+
+- **`search.test.jsx`** - Search embed functionality
+  - Tests natural language search interface
+  - Validates search result rendering and interaction
+  - Ensures proper integration with CopilotDB search APIs
+
+### CopilotDB Tests (`CopilotDB/`)
+
+- **`embeddings/` Directory** - Embedding Provider Tests
+  - **`OpenAIEmbeddingGenerator.test.js`** - OpenAI embedding generation
+  - **`GoogleEmbeddingGenerator.test.js`** - Google embedding integration
+  - **`FireworksEmbeddingGenerator.test.js`** - Fireworks AI embeddings
+  - **`PineconeEmbeddingGenerator.test.js`** - Pinecone vector database integration
+  
+  Tests validate embedding generation, vector storage, and retrieval accuracy.
+
+- **`splitter/` Directory** - Content Processing Tests
+  - **`Splitter.test.js`** - Note content splitting into chunks suitable for embedding and search
+  - Tests chunk size optimization, overlap handling, and semantic boundary preservation
+
+### Plugin Integration Tests
+
+- **`plugin.test.js`** - Core plugin functionality
+  - Tests plugin initialization and configuration
+  - Validates embed rendering and communication
+  - Ensures proper integration with Amplenote APIs
+
+
+For detailed testing commands and patterns, see the root `DEVELOPMENT.md` Testing section.
