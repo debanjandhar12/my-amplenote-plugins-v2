@@ -59,6 +59,19 @@ export function createPlaywrightHooks(headless = true) {
             });
         };
 
+        // Throttle network speed for non-cdn requests
+        await context.route('**/*', async (route) => {
+            const url = new URL(route.request().url());
+            const hostname = url.hostname;
+
+            if (['cdn.jsdelivr.net', 'esm.sh'].some(domain => hostname.includes(domain))) {
+                return route.continue();
+            }
+
+            await new Promise(r => setTimeout(r, 60));
+            return route.continue();
+        });
+
         await page.goto(`http://localhost:${server.address().port}`);
     });
 
