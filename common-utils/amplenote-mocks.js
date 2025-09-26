@@ -5,24 +5,7 @@ dotenv.config();
 
 // --------------------------------------------------------------------------------------
 /**
- * Creates a mock plugin object with properly bound methods for testing.
- * This function ensures that plugin methods are correctly bound to the plugin context,
- * which is essential for proper plugin testing.
- *
- * @param {Object} pluginObject - The plugin object to mock
- * @param {Object} [pluginObject.insertText] - Insert text commands
- * @param {Object} [pluginObject.noteOption] - Note-specific actions
- * @param {Object} [pluginObject.replaceText] - Replace text commands
- * @returns {Object} Mocked plugin object with bound methods
- *
- * @example
- * const plugin = mockPlugin({
- *   insertText: {
- *     "Insert Hello": {
- *       run: async (app) => "Hello World"
- *     }
- *   }
- * });
+ * Creates a mock plugin object for plugin testing.
  */
 export const mockPlugin = (pluginObject) => {
     const plugin = { ...pluginObject };
@@ -48,26 +31,10 @@ export const mockPlugin = (pluginObject) => {
 
 // --------------------------------------------------------------------------------------
 /**
- * Creates a comprehensive mock Amplenote app object using Sinon stubs.
- * This mock app provides all the essential Amplenote API methods with Sinon-based
- * mocking for cross-environment compatibility (Jest and browser contexts).
- *
- * All mock functions are created using Sinon stubs, which work consistently
- * across Jest and browser testing environments, unlike Jest mocks.
- *
- * Includes support for:
- * - Note management (create, find, filter, navigate)
- * - Task operations (get, insert)
- * - Tag management (add, remove)
- * - Image handling
- * - Current note context operations
+ * Creates a comprehensive mock Amplenote app object.
  *
  * @param {Object} [seedNote] - Optional note to seed the app's note registry
- * @param {string} seedNote.uuid - Unique identifier for the seed note
- * @param {string} seedNote.name - Name/title of the seed note
- * @param {string} seednote._content - Content of the seed note
- * @param {string[]} [seedNote.tags] - Tags associated with the seed note
- * @returns {Object} Mock app object with Sinon stubs for all API methods
+ * @returns {Object} Mock app object with Sinon stubs
  *
  * @example
  * // Basic usage
@@ -79,14 +46,6 @@ export const mockPlugin = (pluginObject) => {
  *
  * // Configure additional stubs
  * app.getNoteImages.resolves([{ src: 'test.png', text: 'Test' }]);
- *
- * @example
- * // Browser environment usage (compiled with esbuild-test-helpers)
- * const mockCode = `
- *   import { mockApp } from './test-helpers.js';
- *   window.testApp = mockApp();
- *   window.testApp.createNote.resolves({ uuid: 'new-note' });
- * `;
  */
 export const mockApp = seedNote => {
     const app = {};
@@ -150,7 +109,7 @@ export const mockApp = seedNote => {
     app.findNote = appFindNote;
     app.notes.find = notesFindFunction;
     app.getNoteContent = getContent;
-    // app.filterNotes returns note handles
+
     const mockFilterNotes = sinon.stub();
     mockFilterNotes.callsFake(params => {
         let notes = Object.values(app._noteRegistry);
@@ -173,10 +132,10 @@ export const mockApp = seedNote => {
         if (params.content) {
             notes = notes.filter(note => note._content && note._content.includes(params.content));
         }
-        return notes.map(note => ({ uuid: note.uuid, name: note.name, tags: note.tags }));
+        return notes.map(note => ({ uuid: note.uuid, name: note.name, tags: note.tags })); // app.filterNotes returns note handles
     })
 
-    // app.notes.filter returns note interfaces
+
     const mockNotesFilter = sinon.stub();
     mockNotesFilter.callsFake(params => {
         let notes = Object.values(app._noteRegistry);
@@ -199,7 +158,7 @@ export const mockApp = seedNote => {
         if (params.content) {
             notes = notes.filter(note => note._content && note._content.includes(params.content));
         }
-        return notes;
+        return notes; // app.notes.filter returns note interfaces
     })
 
     app.notes.filter = mockNotesFilter;
@@ -443,17 +402,7 @@ export const mockApp = seedNote => {
 
 // --------------------------------------------------------------------------------------
 /**
- * Creates a mock Amplenote note object with all essential properties and methods.
- * This mock note provides a complete implementation of the Amplenote note API
- * for testing purposes, including content manipulation and section handling.
- *
- * Includes support for:
- * - Content manipulation (insert, replace)
- * - Tag management (add, remove)
- * - Task operations (insert, list)
- * - Image handling
- * - Timestamps (created, updated)
- * - Note deletion
+ * Creates a mock Amplenote note object
  *
  * @param {string} content - The initial content of the note
  * @param {string} name - The name/title of the note
@@ -461,21 +410,6 @@ export const mockApp = seedNote => {
  * @param {string[]} [tags] - Array of tags associated with the note
  * @returns {Object} Mock note object with all Amplenote note API methods
  *
- * @example
- * // Create a basic mock note
- * const note = mockNote('# Test Note\nContent here', 'Test Note', 'test-uuid', ['tag1', 'tag2']);
- *
- * // Use note methods
- * await note.insertContent('\nNew content');
- * await note.replaceContent('Replaced content');
- * const sections = await note.sections();
- *
- * @example
- * // Browser environment usage
- * const mockCode = `
- *   import { mockNote } from './test-helpers.js';
- *   window.testNote = mockNote('Test content', 'Test', 'uuid');
- * `;
  */
 export const mockNote = (content, name, uuid, tags) => {
     const note = {};
