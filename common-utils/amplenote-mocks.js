@@ -27,18 +27,18 @@ dotenv.config();
 export const mockPlugin = (pluginObject) => {
   const plugin = { ...pluginObject };
   if (plugin.insertText) {
-    Object.entries(plugin.insertText).forEach(([key, fn]) => {
+    Object.entries(plugin.insertText).forEach(([key]) => {
       plugin.insertText[key] = plugin.insertText[key].run?.bind(plugin) || plugin.insertText[key].bind(plugin); // .insertText
     });
   }
   if (plugin.noteOption) {
-    Object.entries(plugin.noteOption).forEach(([key, fn]) => {
+    Object.entries(plugin.noteOption).forEach(([key]) => {
       plugin.noteOption[key] = plugin.noteOption[key].run?.bind(plugin) || plugin.noteOption[key].bind(plugin);
     });
   }
 
   if (plugin.replaceText) {
-    Object.entries(plugin.replaceText).forEach(([key, fn]) => {
+    Object.entries(plugin.replaceText).forEach(([key]) => {
       plugin.replaceText[key] = plugin.replaceText[key].run?.bind(plugin) || plugin.replaceText[key].bind(plugin);
     });
   }
@@ -110,8 +110,25 @@ export const mockApp = seedNote => {
     app._noteRegistry[seedNote.uuid] = seedNote;
   }
 
-  const noteFindFunction = sinon.stub();
-  noteFindFunction.callsFake(noteHandle => {
+  // app.findNote returns note handles (not note interface)
+  const appFindNote = sinon.stub();
+  appFindNote.callsFake(noteHandle => {
+    if (typeof noteHandle === "string") {
+      const note = app._noteRegistry[noteHandle];
+      return note ? { uuid: note.uuid, name: note.name, tags: note.tags } : null;
+    } else if (noteHandle && noteHandle.uuid) {
+      const note = app._noteRegistry[noteHandle.uuid];
+      return note ? { uuid: note.uuid, name: note.name, tags: note.tags } : null;
+    } else if (noteHandle && noteHandle.name) {
+      const note = Object.values(app._noteRegistry).find(n => n.name === noteHandle.name);
+      return note ? { uuid: note.uuid, name: note.name, tags: note.tags } : null;
+    }
+    return null;
+  });
+
+  // app.notes.find returns note interface
+  const notesFindFunction = sinon.stub();
+  notesFindFunction.callsFake(noteHandle => {
     if (typeof noteHandle === "string") {
       return app._noteRegistry[noteHandle] || null;
     } else if (noteHandle && noteHandle.uuid) {
@@ -121,6 +138,7 @@ export const mockApp = seedNote => {
     }
     return null;
   });
+
   const getContent = sinon.stub();
   getContent.callsFake(noteHandle => {
     const note = typeof noteHandle === 'string' ?
@@ -129,11 +147,38 @@ export const mockApp = seedNote => {
     return note ? note._content : null;
   });
 
-  app.findNote = noteFindFunction;
-  app.notes.find = noteFindFunction;
+  app.findNote = appFindNote;
+  app.notes.find = notesFindFunction;
   app.getNoteContent = getContent;
+  // app.filterNotes returns note handles
   const mockFilterNotes = sinon.stub();
   mockFilterNotes.callsFake(params => {
+    let notes = Object.values(app._noteRegistry);
+    // If no params provided, return all notes
+    if (!params || Object.keys(params).length === 0) {
+      return notes.map(note => ({ uuid: note.uuid, name: note.name, tags: note.tags }));
+    }
+    // Filter by tag
+    if (params.tag) {
+      notes = notes.filter(note => {
+        if (!note.tags) return false;
+        return note.tags.some(noteTag => noteTag.includes(params.tag));
+      });
+    }
+    // Filter by name
+    if (params.name) {
+      notes = notes.filter(note => note.name && note.name.includes(params.name));
+    }
+    // Filter by content
+    if (params.content) {
+      notes = notes.filter(note => note._content && note._content.includes(params.content));
+    }
+    return notes.map(note => ({ uuid: note.uuid, name: note.name, tags: note.tags }));
+  })
+
+  // app.notes.filter returns note interfaces
+  const mockNotesFilter = sinon.stub();
+  mockNotesFilter.callsFake(params => {
     let notes = Object.values(app._noteRegistry);
     // If no params provided, return all notes
     if (!params || Object.keys(params).length === 0) {
@@ -156,7 +201,8 @@ export const mockApp = seedNote => {
     }
     return notes;
   })
-  app.notes.filter = mockFilterNotes;
+
+  app.notes.filter = mockNotesFilter;
   app.filterNotes = mockFilterNotes;
 
   const mockCreateNote = sinon.stub();
@@ -164,10 +210,18 @@ export const mockApp = seedNote => {
     if (!uuid) uuid = _generateUUID();
     const newNote = mockNote(content || '', title || 'Untitled', uuid, tags || []);
     app._noteRegistry[newNote.uuid] = newNote;
-    return newNote;
+    return newNote.uuid; // app.createNote returns UUID
   })
   app.createNote = mockCreateNote;
-  app.notes.create = mockCreateNote;
+
+  const mockNotesCreate = sinon.stub();
+  mockNotesCreate.callsFake((title, tags, content, uuid) => {
+    if (!uuid) uuid = _generateUUID();
+    const newNote = mockNote(content || '', title || 'Untitled', uuid, tags || []);
+    app._noteRegistry[newNote.uuid] = newNote;
+    return newNote; // app.notes.create returns note interface
+  })
+  app.notes.create = mockNotesCreate;
 
   const mockSetSetting = sinon.stub();
   mockSetSetting.callsFake(async (key, value) => {
@@ -199,7 +253,7 @@ export const mockApp = seedNote => {
 
   const mockGetNoteImages = sinon.stub();
   mockGetNoteImages.callsFake(async (noteHandle) => {
-    const note = app.findNote(noteHandle);
+    const note = notesFindFunction(noteHandle);
     if (!note) return [];
     return await note.images();
   });
@@ -226,7 +280,7 @@ export const mockApp = seedNote => {
 
   const mockRemoveNoteTag = sinon.stub();
   mockRemoveNoteTag.callsFake(async (noteHandle, tag) => {
-    const note = app.findNote(noteHandle);
+    const note = notesFindFunction(noteHandle);
     if (!note) throw new Error(`Note not found: ${noteHandle}`);
     return await note.removeTag(tag);
   });
@@ -234,7 +288,7 @@ export const mockApp = seedNote => {
 
   const mockAddNoteTag = sinon.stub();
   mockAddNoteTag.callsFake(async (noteHandle, tag) => {
-    const note = app.findNote(noteHandle);
+    const note = notesFindFunction(noteHandle);
     if (!note) throw new Error(`Note not found: ${noteHandle}`);
     return await note.addTag(tag);
   });
@@ -242,7 +296,7 @@ export const mockApp = seedNote => {
 
   const mockSetNoteName = sinon.stub();
   mockSetNoteName.callsFake(async (noteHandle, name) => {
-    const note = app.findNote(noteHandle);
+    const note = notesFindFunction(noteHandle);
     if (!note) throw new Error(`Note not found: ${noteHandle}`);
     return await note.setName(name);
   });
@@ -250,7 +304,7 @@ export const mockApp = seedNote => {
 
   const mockReplaceNoteContent = sinon.stub();
   mockReplaceNoteContent.callsFake(async (noteHandle, newContent, sectionObject = null) => {
-    const note = app.findNote(noteHandle);
+    const note = notesFindFunction(noteHandle);
     if (!note) throw new Error(`Note not found: ${noteHandle}`);
     return await note.replaceContent(newContent, sectionObject);
   });
@@ -258,7 +312,7 @@ export const mockApp = seedNote => {
 
   const mockInsertNoteContent = sinon.stub();
   mockInsertNoteContent.callsFake(async (noteHandle, content, options = {}) => {
-    const note = app.findNote(noteHandle);
+    const note = notesFindFunction(noteHandle);
     if (!note) throw new Error(`Note not found: ${noteHandle}`);
     return await note.insertContent(content, options);
   });
@@ -266,9 +320,9 @@ export const mockApp = seedNote => {
 
   const mockDeleteNote = sinon.stub();
   mockDeleteNote.callsFake(async (noteHandle) => {
-    const note = app.findNote(noteHandle);
-    if (note) {
-      delete app._noteRegistry[note.uuid];
+    const noteHandleObj = appFindNote(noteHandle);
+    if (noteHandleObj) {
+      delete app._noteRegistry[noteHandleObj.uuid];
       return true;
     }
     return false;
@@ -281,7 +335,7 @@ export const mockApp = seedNote => {
   // Add missing app methods
   const mockGetNoteSections = sinon.stub();
   mockGetNoteSections.callsFake(async (noteHandle) => {
-    const note = app.findNote(noteHandle);
+    const note = notesFindFunction(noteHandle);
     if (!note) return [];
     return await note.sections();
   });
@@ -289,15 +343,23 @@ export const mockApp = seedNote => {
 
   const mockGetNoteTasks = sinon.stub();
   mockGetNoteTasks.callsFake(async (noteHandle) => {
-    const note = app.findNote(noteHandle);
+    const note = notesFindFunction(noteHandle);
     if (!note) return [];
     return await note.tasks();
   });
   app.getNoteTasks = mockGetNoteTasks;
 
+  const mockGetNoteURL = sinon.stub();
+  mockGetNoteURL.callsFake(async (noteHandle) => {
+    const noteHandleObj = appFindNote(noteHandle);
+    if (!noteHandleObj) return null;
+    return `https://www.amplenote.com/notes/${noteHandleObj.uuid}`;
+  });
+  app.getNoteURL = mockGetNoteURL;
+
   const mockUpdateNoteImage = sinon.stub();
   mockUpdateNoteImage.callsFake(async (noteHandle, image, updates) => {
-    const note = app.findNote(noteHandle);
+    const note = notesFindFunction(noteHandle);
     if (!note) throw new Error(`Note not found: ${noteHandle}`);
     return await note.updateImage(image, updates);
   });
@@ -369,10 +431,9 @@ export const mockApp = seedNote => {
   app.updateTask = mockUpdateTask;
 
   // Handle insertTask with both content and text properties
-  const originalInsertTask = app.insertTask;
   app.insertTask = sinon.stub();
   app.insertTask.callsFake(async (noteHandle, taskObject) => {
-    const note = app.findNote(noteHandle);
+    const note = notesFindFunction(noteHandle);
     if (!note) throw new Error(`Note not found: ${noteHandle}`);
     return await note.insertTask(taskObject);
   });
@@ -425,7 +486,6 @@ export const mockNote = (content, name, uuid, tags) => {
   note.content = () => note._content;
   note.created = new Date();
   note.updated = new Date();
-  note.lastUpdated = new Date();
 
 
   // --------------------------------------------------------------------------------------
@@ -440,9 +500,8 @@ export const mockNote = (content, name, uuid, tags) => {
     if (options.atEnd) {
       note._content += newContent;
     } else {
-      note._content = `${note._content}\n${newContent}`;
+      note._content = `${newContent}\n${note._content}`;
     }
-    note.lastUpdated = new Date();
     note.updated = new Date();
   }
 
@@ -456,8 +515,8 @@ export const mockNote = (content, name, uuid, tags) => {
     }
 
     _replaceNoteContent(note, newContent, sectionObject);
-    note.lastUpdated = new Date();
     note.updated = new Date();
+    return true;
   };
 
   // --------------------------------------------------------------------------------------
@@ -494,7 +553,7 @@ export const mockNote = (content, name, uuid, tags) => {
   };
 
   note.delete = async () => {
-    note._deleted = true;
+    note.deleted = true;
     return true;
   };
 
@@ -552,7 +611,7 @@ export const mockNote = (content, name, uuid, tags) => {
     if (taskObject.endAt) metadata.endAt = taskObject.endAt;
 
     taskMarkdown += `<!-- ${JSON.stringify(metadata)} -->`;
-    note._content += `\n${taskMarkdown}`;
+    note._content = `${taskMarkdown}\n${note._content}`;
     note.updated = new Date();
 
     return taskUUID;
@@ -622,7 +681,7 @@ export const mockNote = (content, name, uuid, tags) => {
     const images = await note.images();
     const targetImage = images.find(img =>
       img.src === image.src &&
-      (image.index === undefined || img.index === image.captionindex)
+      (image.index === undefined || img.index === image.index)
     );
 
     if (!targetImage) {
@@ -695,7 +754,6 @@ function _replaceNoteContent(note, newContent, sectionObject = null) {
   } else {
     note._content = newContent;
   }
-  note.lastUpdated = new Date();
   note.updated = new Date();
 }
 
