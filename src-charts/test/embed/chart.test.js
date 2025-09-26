@@ -10,7 +10,7 @@ import {
 import { allure } from 'jest-allure2-reporter/api';
 
 describe('chart embed', () => {
-    const { getPage } = createPlaywrightHooks(false);
+    const { getPage } = createPlaywrightHooks();
     beforeEach(() => {
         allure.epic('src-charts');
     });

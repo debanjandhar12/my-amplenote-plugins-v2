@@ -8,7 +8,7 @@ import {
 import { allure } from 'jest-allure2-reporter/api';
 
 describe('Update User Tasks tool', () => {
-    const { getPage } = createPlaywrightHooks(false);
+    const { getPage } = createPlaywrightHooks();
     beforeEach(() => {
         allure.epic('src-copilot');
     });

@@ -64,11 +64,11 @@ export function createPlaywrightHooks(headless = true) {
             const url = new URL(route.request().url());
             const hostname = url.hostname;
 
-            if (['cdn.jsdelivr.net', 'esm.sh'].some(domain => hostname.includes(domain))) {
+            if (['jsdelivr.net', 'esm.sh'].some(domain => hostname.includes(domain))) {
                 return route.continue();
             }
 
-            await new Promise(r => setTimeout(r, 60));
+            await new Promise(r => setTimeout(r, 320));
             return route.continue();
         });
 
