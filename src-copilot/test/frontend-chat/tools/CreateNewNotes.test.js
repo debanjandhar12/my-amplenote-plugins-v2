@@ -154,12 +154,12 @@ describe('Create New Notes tool', () => {
             const createNoteSpyInfo = await getSpyInfo(page, 'mockApp.createNote');
             expect(createNoteSpyInfo.callCount).toBe(2);    // called twice for 2 notes created
 
-            const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
             expect(allNotes.length).toBe(2);
         });
 
         await allure.step('Verify notes are created with correct name, content and tag', async () => {
-            const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
 
             const note1 = allNotes.find(note => note.name === 'Project Documentation');
             expect(note1).toBeDefined();
@@ -302,7 +302,7 @@ describe('Create New Notes tool', () => {
             const createNoteSpyInfo = await getSpyInfo(page, 'mockApp.createNote');
             expect(createNoteSpyInfo.callCount).toBe(0);
 
-            const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
             expect(allNotes.length).toBe(0);
         });
 
@@ -426,7 +426,7 @@ describe('Create New Notes tool', () => {
         });
 
         await allure.step('Verify no notes were created due to error', async () => {
-            const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
             expect(allNotes.length).toBe(0);
         });
 

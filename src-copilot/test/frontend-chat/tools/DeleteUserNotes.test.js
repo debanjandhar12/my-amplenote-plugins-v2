@@ -84,11 +84,11 @@ describe('Delete User Notes tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
                 getNoteTagsByUUID: async ({ uuid }) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.tags : [];
                 },
                 deleteNote: async ({ uuid }) => {
@@ -142,7 +142,7 @@ describe('Delete User Notes tool', () => {
             const deleteNoteSpyInfo = await getSpyInfo(page, 'mockApp.deleteNote');
             expect(deleteNoteSpyInfo.callCount).toBe(2);
 
-            const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
             expect(allNotes.length).toBe(0);
         });
 
@@ -222,11 +222,11 @@ describe('Delete User Notes tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
                 getNoteTagsByUUID: async ({ uuid }) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.tags : [];
                 },
                 deleteNote: async ({ uuid }) => {
@@ -261,7 +261,7 @@ describe('Delete User Notes tool', () => {
             const deleteNoteSpyInfo = await getSpyInfo(page, 'mockApp.deleteNote');
             expect(deleteNoteSpyInfo.callCount).toBe(0);
 
-            const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
             expect(allNotes.length).toBe(1);
         });
 
@@ -340,11 +340,11 @@ describe('Delete User Notes tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
                 getNoteTagsByUUID: async ({ uuid }) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.tags : [];
                 },
                 deleteNote: async ({ uuid }) => {
@@ -390,7 +390,7 @@ describe('Delete User Notes tool', () => {
         });
 
         await allure.step('Verify note was not deleted due to error', async () => {
-            const allNotes = await page.evaluate(() => window.mockApp.filterNotes({}));
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
             expect(allNotes.length).toBe(1);
         });
 

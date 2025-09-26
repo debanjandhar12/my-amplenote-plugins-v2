@@ -78,13 +78,13 @@ describe('Edit Note Content tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
                 getNoteContentByUUID: async (uuid) => {
                     // Add timeout so that test can capture state
                     await new Promise(resolve => setTimeout(resolve, 2000));
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.content() : null;
                 },
                 "getUserCurrentNoteData": async () => {
@@ -150,7 +150,7 @@ describe('Edit Note Content tool', () => {
             const replaceNoteContentSpyInfo = await getSpyInfo(page, 'mockApp.replaceNoteContent');
             expect(replaceNoteContentSpyInfo.callCount).toBe(1);
 
-            const note = await page.evaluate(() => window.mockApp.findNote("note-uuid-1"));
+            const note = await page.evaluate(() => window.mockApp.notes.find("note-uuid-1"));
             expect(note._content).not.toBe('# Test Note\n\nThis is the original content.');
         });
 
@@ -230,13 +230,13 @@ describe('Edit Note Content tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
                 getNoteContentByUUID: async (uuid) => {
                     // Add timeout so that test can capture state
                     await new Promise(resolve => setTimeout(resolve, 2000));
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.content() : null;
                 },
                 "getUserCurrentNoteData": async () => {
@@ -289,7 +289,7 @@ describe('Edit Note Content tool', () => {
             const replaceNoteContentSpyInfo = await getSpyInfo(page, 'mockApp.replaceNoteContent');
             expect(replaceNoteContentSpyInfo.callCount).toBe(0);
 
-            const note = await page.evaluate(() => window.mockApp.findNote("note-uuid-1"));
+            const note = await page.evaluate(() => window.mockApp.notes.find("note-uuid-1"));
             expect(note._content).toBe('# Test Note\n\nThis is the original content.');
         });
 
@@ -365,11 +365,11 @@ describe('Edit Note Content tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
                 getNoteContentByUUID: async (uuid) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.content() : null;
                 },
                 "getUserCurrentNoteData": async () => {
@@ -425,7 +425,7 @@ describe('Edit Note Content tool', () => {
         });
 
         await allure.step('Verify note content was not updated due to error', async () => {
-            const note = await page.evaluate(() => window.mockApp.findNote("note-uuid-1"));
+            const note = await page.evaluate(() => window.mockApp.notes.find("note-uuid-1"));
             expect(note._content).toBe('# Test Note\n\nThis is the original content.');
         });
     }, 20000);

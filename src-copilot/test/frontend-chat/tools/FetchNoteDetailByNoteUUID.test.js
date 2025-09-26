@@ -77,12 +77,12 @@ describe('Fetch Note Detail By Note UUID tool', () => {
 
             // Create spy functions for each API method
             window.getNoteTitleByUUID = sinon.spy(async (uuid) => {
-                const note = window.mockApp.findNote({ uuid });
+                const note = window.mockApp.notes.find({ uuid });
                 return note ? note.name : null;
             });
 
             window.getNoteContentByUUID = sinon.spy(async (uuid) => {
-                const note = window.mockApp.findNote({ uuid });
+                const note = window.mockApp.notes.find({ uuid });
                 return note ? note._content || "" : "";
             });
 
@@ -96,7 +96,7 @@ describe('Fetch Note Detail By Note UUID tool', () => {
             window.getNoteTagsByUUID = sinon.spy(async ({ uuid }) => {
                 // Add small delay to simulate async operation
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                const note = window.mockApp.findNote({ uuid });
+                const note = window.mockApp.notes.find({ uuid });
                 return note ? note.tags || [] : [];
             });
 

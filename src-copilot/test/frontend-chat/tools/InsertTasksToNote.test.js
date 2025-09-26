@@ -87,7 +87,7 @@ describe('Insert Tasks To Note tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
                 "getUserCurrentNoteData": async () => {
@@ -153,7 +153,7 @@ describe('Insert Tasks To Note tool', () => {
             const insertTaskSpyInfo = await getSpyInfo(page, 'mockApp.insertTask');
             expect(insertTaskSpyInfo.callCount).toBe(2);
 
-            const note = await page.evaluate(() => window.mockApp.findNote("12345678-1234-1234-1234-123456789012"));
+            const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
             expect(note._content).toContain('- [ ] Complete project documentation');
             expect(note._content).toContain('- [ ] Review code changes');
         });
@@ -244,7 +244,7 @@ describe('Insert Tasks To Note tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
                 "getUserCurrentNoteData": async () => {
@@ -298,7 +298,7 @@ describe('Insert Tasks To Note tool', () => {
             const insertTaskSpyInfo = await getSpyInfo(page, 'mockApp.insertTask');
             expect(insertTaskSpyInfo.callCount).toBe(0);
 
-            const note = await page.evaluate(() => window.mockApp.findNote("12345678-1234-1234-1234-123456789012"));
+            const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
             expect(note._content).toBe('# Test Note\n\nThis is the original content.');
         });
 
@@ -379,7 +379,7 @@ describe('Insert Tasks To Note tool', () => {
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
-                    const note = await window.mockApp.findNote(uuid);
+                    const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
                 "getUserCurrentNoteData": async () => {
@@ -439,7 +439,7 @@ describe('Insert Tasks To Note tool', () => {
         });
 
         await allure.step('Verify no tasks were inserted due to error', async () => {
-            const note = await page.evaluate(() => window.mockApp.findNote("12345678-1234-1234-1234-123456789012"));
+            const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
             expect(note._content).toBe('# Test Note\n\nThis is the original content.');
         });
     }, 20000);

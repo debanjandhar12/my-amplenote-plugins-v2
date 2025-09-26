@@ -500,7 +500,7 @@ export const mockNote = (content, name, uuid, tags) => {
         if (options.atEnd) {
             note._content += newContent;
         } else {
-            note._content = `${newContent}\n${note._content}`;
+            note._content = `${newContent}${note._content}`;
         }
         note.updated = new Date();
     }
