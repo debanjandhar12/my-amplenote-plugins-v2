@@ -1,5 +1,6 @@
 import dotenv from "dotenv"
 import sinon from "sinon"
+import { nanoid } from "nanoid"
 
 dotenv.config();
 
@@ -9,22 +10,20 @@ dotenv.config();
  */
 export const mockPlugin = (pluginObject) => {
     const plugin = { ...pluginObject };
-    if (plugin.insertText) {
-        Object.entries(plugin.insertText).forEach(([key]) => {
-            plugin.insertText[key] = plugin.insertText[key].run?.bind(plugin) || plugin.insertText[key].bind(plugin); // .insertText
-        });
-    }
-    if (plugin.noteOption) {
-        Object.entries(plugin.noteOption).forEach(([key]) => {
-            plugin.noteOption[key] = plugin.noteOption[key].run?.bind(plugin) || plugin.noteOption[key].bind(plugin);
-        });
-    }
 
-    if (plugin.replaceText) {
-        Object.entries(plugin.replaceText).forEach(([key]) => {
-            plugin.replaceText[key] = plugin.replaceText[key].run?.bind(plugin) || plugin.replaceText[key].bind(plugin);
-        });
-    }
+    const bindPluginMethods = (methodGroup) => {
+        if (plugin[methodGroup]) {
+            Object.entries(plugin[methodGroup]).forEach(([key]) => {
+                plugin[methodGroup][key] = plugin[methodGroup][key].run?.bind(plugin) || plugin[methodGroup][key].bind(plugin);
+            });
+        }
+    };
+    bindPluginMethods('appOption');
+    bindPluginMethods('insertText');
+    bindPluginMethods('replaceText');
+    bindPluginMethods('noteOption');
+    bindPluginMethods('taskOption');
+    bindPluginMethods('imageOption');
 
     return plugin;
 }
@@ -110,34 +109,7 @@ export const mockApp = seedNote => {
     app.notes.find = notesFindFunction;
     app.getNoteContent = getContent;
 
-    const mockFilterNotes = sinon.stub();
-    mockFilterNotes.callsFake(params => {
-        let notes = Object.values(app._noteRegistry);
-        // If no params provided, return all notes
-        if (!params || Object.keys(params).length === 0) {
-            return notes.map(note => ({ uuid: note.uuid, name: note.name, tags: note.tags }));
-        }
-        // Filter by tag
-        if (params.tag) {
-            notes = notes.filter(note => {
-                if (!note.tags) return false;
-                return note.tags.some(noteTag => noteTag.includes(params.tag));
-            });
-        }
-        // Filter by name
-        if (params.name) {
-            notes = notes.filter(note => note.name && note.name.includes(params.name));
-        }
-        // Filter by content
-        if (params.content) {
-            notes = notes.filter(note => note._content && note._content.includes(params.content));
-        }
-        return notes.map(note => ({ uuid: note.uuid, name: note.name, tags: note.tags })); // app.filterNotes returns note handles
-    })
-
-
-    const mockNotesFilter = sinon.stub();
-    mockNotesFilter.callsFake(params => {
+    const filterNotesByParams = (params) => {
         let notes = Object.values(app._noteRegistry);
         // If no params provided, return all notes
         if (!params || Object.keys(params).length === 0) {
@@ -158,15 +130,26 @@ export const mockApp = seedNote => {
         if (params.content) {
             notes = notes.filter(note => note._content && note._content.includes(params.content));
         }
-        return notes; // app.notes.filter returns note interfaces
-    })
+        return notes;
+    };
+
+    const mockFilterNotes = sinon.stub();
+    mockFilterNotes.callsFake(params => {
+        const notes = filterNotesByParams(params);
+        return notes.map(note => ({ uuid: note.uuid, name: note.name, tags: note.tags })); // app.filterNotes returns note handles
+    });
+
+    const mockNotesFilter = sinon.stub();
+    mockNotesFilter.callsFake(params => {
+        return filterNotesByParams(params); // app.notes.filter returns note interfaces
+    });
 
     app.notes.filter = mockNotesFilter;
     app.filterNotes = mockFilterNotes;
 
     const mockCreateNote = sinon.stub();
     mockCreateNote.callsFake((title, tags, content, uuid) => {
-        if (!uuid) uuid = _generateUUID();
+        if (!uuid) uuid = nanoid();
         const newNote = mockNote(content || '', title || 'Untitled', uuid, tags || []);
         app._noteRegistry[newNote.uuid] = newNote;
         return newNote.uuid; // app.createNote returns UUID
@@ -175,7 +158,7 @@ export const mockApp = seedNote => {
 
     const mockNotesCreate = sinon.stub();
     mockNotesCreate.callsFake((title, tags, content, uuid) => {
-        if (!uuid) uuid = _generateUUID();
+        if (!uuid) uuid = nanoid();
         const newNote = mockNote(content || '', title || 'Untitled', uuid, tags || []);
         app._noteRegistry[newNote.uuid] = newNote;
         return newNote; // app.notes.create returns note interface
@@ -448,7 +431,32 @@ export const mockNote = (content, name, uuid, tags) => {
             throw new Error('replaceContent: sectionObject must be an object');
         }
 
-        _replaceNoteContent(note, newContent, sectionObject);
+        if (sectionObject) {
+            const sectionHeadingText = sectionObject.section.heading.text;
+            let throughLevel = sectionObject.section.heading?.level;
+            if (!throughLevel) throughLevel = sectionHeadingText.match(/^#*/)[0].length;
+            if (!throughLevel) throughLevel = 1;
+
+            const indexes = Array.from(note._content.matchAll(/^#+\s*([^#\n\r]+)/gm));
+            const sectionMatch = indexes.find(m => m[1].trim() === sectionHeadingText.trim());
+            let startIndex, endIndex;
+            if (!sectionMatch) {
+                throw new Error(`Could not find section ${sectionHeadingText} that was looked up. This might be expected`);
+            } else {
+                const level = sectionMatch[0].match(/^#+/)[0].length;
+                const nextMatch = indexes.find(m => m.index > sectionMatch.index && m[0].match(/^#+/)[0].length <= level);
+                endIndex = nextMatch ? nextMatch.index : note._content.length;
+                startIndex = sectionMatch.index + sectionMatch[0].length + 1;
+            }
+
+            if (Number.isInteger(startIndex)) {
+                note._content = `${note._content.slice(0, startIndex)}${newContent.trim()}\n${note._content.slice(endIndex)}`;
+            } else {
+                throw new Error(`Could not find section ${sectionObject.section.heading.text} in note ${note.name}`);
+            }
+        } else {
+            note._content = newContent;
+        }
         note.updated = new Date();
         return true;
     };
@@ -535,7 +543,7 @@ export const mockNote = (content, name, uuid, tags) => {
             }
         }
 
-        const taskUUID = _generateUUID();
+        const taskUUID = nanoid();
         let taskMarkdown = `- [ ] ${taskContent}`;
         const metadata = { uuid: taskUUID };
 
@@ -563,12 +571,7 @@ export const mockNote = (content, name, uuid, tags) => {
             const metadataStr = match[3];
 
             let metadata = {};
-            try {
-                metadata = JSON.parse(metadataStr);
-            } catch (e) {
-                // If parsing fails, create basic metadata
-                metadata = { uuid: _generateUUID() };
-            }
+            metadata = JSON.parse(metadataStr)
 
             tasks.push({
                 completedAt: metadata.completedAt || (isCompleted ? Math.floor(Date.now() / 1000) : null),
@@ -635,72 +638,4 @@ export const mockNote = (content, name, uuid, tags) => {
     return note;
 }
 
-// --------------------------------------------------------------------------------------
 
-/**
- * Internal helper function to replace note content, optionally within a specific section.
- * This function handles both full note content replacement and section-specific replacement
- * based on markdown heading structure.
- *
- * @private
- * @param {Object} note - The note object to modify
- * @param {string} newContent - The new content to insert
- * @param {Object} [sectionObject] - Optional section specification for targeted replacement
- * @param {Object} sectionObject.section - Section details
- * @param {Object} sectionObject.section.heading - Heading information
- * @param {string} sectionObject.section.heading.text - The heading text to find
- * @param {number} [sectionObject.section.heading.level] - The heading level (1-6)
- * @throws {Error} When specified section cannot be found in the note
- *
- * @example
- * // Replace entire note content
- * _replaceNoteContent(note, 'New content');
- *
- * // Replace content within a specific section
- * _replaceNoteContent(note, 'New section content', {
- *   section: { heading: { text: 'My Section', level: 2 } }
- * });
- */
-function _replaceNoteContent(note, newContent, sectionObject = null) {
-    if (sectionObject) {
-        const sectionHeadingText = sectionObject.section.heading.text;
-        let throughLevel = sectionObject.section.heading?.level;
-        if (!throughLevel) throughLevel = sectionHeadingText.match(/^#*/)[0].length;
-        if (!throughLevel) throughLevel = 1;
-
-        const indexes = Array.from(note._content.matchAll(/^#+\s*([^#\n\r]+)/gm));
-        const sectionMatch = indexes.find(m => m[1].trim() === sectionHeadingText.trim());
-        let startIndex, endIndex;
-        if (!sectionMatch) {
-            throw new Error(`Could not find section ${sectionHeadingText} that was looked up. This might be expected`);
-        } else {
-            const level = sectionMatch[0].match(/^#+/)[0].length;
-            const nextMatch = indexes.find(m => m.index > sectionMatch.index && m[0].match(/^#+/)[0].length <= level);
-            endIndex = nextMatch ? nextMatch.index : note._content.length;
-            startIndex = sectionMatch.index + sectionMatch[0].length + 1;
-        }
-
-        if (Number.isInteger(startIndex)) {
-            note._content = `${note._content.slice(0, startIndex)}${newContent.trim()}\n${note._content.slice(endIndex)}`;
-        } else {
-            throw new Error(`Could not find section ${sectionObject.section.heading.text} in note ${note.name}`);
-        }
-    } else {
-        note._content = newContent;
-    }
-    note.updated = new Date();
-}
-
-// --------------------------------------------------------------------------------------
-/**
- * Generates a random UUID for testing purposes
- * @private
- * @returns {string} A UUID string
- */
-function _generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = Math.random() * 16 | 0;
-        const v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}

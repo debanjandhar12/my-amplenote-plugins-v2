@@ -8,14 +8,14 @@ describe('mockPlugin', () => {
 
     it('should properly bind plugin methods', () => {
         const plugin = mockPlugin({
+            appOption: {
+                'App Action': {
+                    run: function() { return `App action from ${this.name || 'plugin'}`; }
+                }
+            },
             insertText: {
                 'Insert Hello': {
                     run: function() { return `Hello from ${this.name || 'plugin'}`; }
-                }
-            },
-            noteOption: {
-                'Process Note': {
-                    run: function() { return `Processing with ${this.name || 'plugin'}`; }
                 }
             },
             replaceText: {
@@ -23,12 +23,30 @@ describe('mockPlugin', () => {
                     run: function() { return `Replacing with ${this.name || 'plugin'}`; }
                 }
             },
+            noteOption: {
+                'Process Note': {
+                    run: function() { return `Processing with ${this.name || 'plugin'}`; }
+                }
+            },
+            taskOption: {
+                'Task Action': {
+                    run: function() { return `Task action from ${this.name || 'plugin'}`; }
+                }
+            },
+            imageOption: {
+                'Image Action': {
+                    run: function() { return `Image action from ${this.name || 'plugin'}`; }
+                }
+            },
             name: 'Test Plugin'
         });
 
+        expect(plugin.appOption['App Action']()).toBe('App action from Test Plugin');
         expect(plugin.insertText['Insert Hello']()).toBe('Hello from Test Plugin');
-        expect(plugin.noteOption['Process Note']()).toBe('Processing with Test Plugin');
         expect(plugin.replaceText['Replace Text']()).toBe('Replacing with Test Plugin');
+        expect(plugin.noteOption['Process Note']()).toBe('Processing with Test Plugin');
+        expect(plugin.taskOption['Task Action']()).toBe('Task action from Test Plugin');
+        expect(plugin.imageOption['Image Action']()).toBe('Image action from Test Plugin');
     });
 
     it('should handle plugins without run methods', () => {
@@ -133,7 +151,7 @@ describe('mockNote', () => {
 
         await allure.step('Test insertContent at beginning (default)', async () => {
             const note = mockNote('Initial content', 'Test Note', 'test-uuid', ['initial-tag']);
-            await note.insertContent('## New Section\nNew section content');
+            await note.insertContent('## New Section\nNew section content\n');
             expect(note._content).toBe('## New Section\nNew section content\nInitial content');
         });
 
@@ -325,7 +343,7 @@ describe('mockApp', () => {
         });
 
         await allure.step('Test image operations', async () => {
-            await note.insertContent('\n![test image](https://example.com/image.jpg)');
+            await note.insertContent('![test image](https://example.com/image.jpg)\n');
             const images = await app.getNoteImages({ uuid: noteUUID });
             expect(images).toHaveLength(1);
             expect(images[0].src).toBe('https://example.com/image.jpg');
