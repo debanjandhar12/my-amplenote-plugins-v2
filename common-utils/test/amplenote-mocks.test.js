@@ -220,9 +220,9 @@ describe('mockApp', () => {
         // Verify seed note is in registry
         expect(app._noteRegistry['test-uuid']).toBe(seedNote);
         
-        // Test note finding functionality (returns note handle)
+        // Test note finding functionality (returns note interface)
         const foundNote = app.findNote('test-uuid');
-        expect(foundNote.uuid).toBe(seedNote.uuid);
+        expect(foundNote).toBe(seedNote);
         expect(foundNote.name).toBe('Test Note');
     });
 
@@ -259,15 +259,13 @@ describe('mockApp', () => {
             expect(filteredNotes[0]).toBe(newNote);
         });
 
-        await allure.step('Test app.filterNotes (returns note handles)', async () => {
+        await allure.step('Test app.filterNotes (returns note interfaces)', async () => {
             const app = mockApp();
             const newNote = await app.notes.create("daily note", ["daily-jots"]);
             
             const dailyNotes = await app.filterNotes({ tag: "daily-jots" });
             expect(dailyNotes).toHaveLength(1);
-            expect(dailyNotes[0].uuid).toBe(newNote.uuid);
-            expect(dailyNotes[0].name).toBe(newNote.name);
-            expect(dailyNotes[0].tags).toEqual(newNote.tags);
+            expect(dailyNotes[0]).toBe(newNote);
         });
 
         await allure.step('Test notes.find (returns note interface)', async () => {
@@ -284,14 +282,12 @@ describe('mockApp', () => {
             expect(foundByUUIDObj).toBe(newNote);
         });
 
-        await allure.step('Test app.findNote (returns note handle)', async () => {
+        await allure.step('Test app.findNote (returns note interface)', async () => {
             const app = mockApp();
             const newNote = await app.notes.create("some new note", ["some-tag"]);
             
             const foundNote = app.findNote({ uuid: newNote.uuid });
-            expect(foundNote.uuid).toBe(newNote.uuid);
-            expect(foundNote.name).toBe(newNote.name);
-            expect(foundNote.tags).toEqual(newNote.tags);
+            expect(foundNote).toBe(newNote);
         });
 
         await allure.step('Test deleteNote', async () => {

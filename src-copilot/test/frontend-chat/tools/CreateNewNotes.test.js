@@ -163,12 +163,12 @@ describe('Create New Notes tool', () => {
 
             const note1 = allNotes.find(note => note.name === 'Project Documentation');
             expect(note1).toBeDefined();
-            expect(note1._content).toBe('\n# Project Documentation\n\nThis is a placeholder for project documentation.');
+            expect(note1._content).toBe('# Project Documentation\n\nThis is a placeholder for project documentation.');
             expect(note1.tags).toEqual(['project', 'docs']);
 
             const note2 = allNotes.find(note => note.name === 'Meeting Notes');
             expect(note2).toBeDefined();
-            expect(note2._content).toBe('\n# Meeting Notes\n\nAgenda items for next meeting:');
+            expect(note2._content).toBe('# Meeting Notes\n\nAgenda items for next meeting:');
             expect(note2.tags).toEqual(['meeting']);
         });
 
