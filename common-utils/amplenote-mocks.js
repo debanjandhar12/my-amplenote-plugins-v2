@@ -116,6 +116,8 @@ export const mockApp = seedNote => {
       return app._noteRegistry[noteHandle] || null;
     } else if (noteHandle && noteHandle.uuid) {
       return app._noteRegistry[noteHandle.uuid] || null;
+    } else if (noteHandle && noteHandle.name) {
+      return Object.values(app._noteRegistry).find(note => note.name === noteHandle.name) || null;
     }
     return null;
   });
@@ -276,6 +278,105 @@ export const mockApp = seedNote => {
   // Add getTask method to notes object
   app.notes.getTask = mockGetTask;
 
+  // Add missing app methods
+  const mockGetNoteSections = sinon.stub();
+  mockGetNoteSections.callsFake(async (noteHandle) => {
+    const note = app.findNote(noteHandle);
+    if (!note) return [];
+    return await note.sections();
+  });
+  app.getNoteSections = mockGetNoteSections;
+
+  const mockGetNoteTasks = sinon.stub();
+  mockGetNoteTasks.callsFake(async (noteHandle) => {
+    const note = app.findNote(noteHandle);
+    if (!note) return [];
+    return await note.tasks();
+  });
+  app.getNoteTasks = mockGetNoteTasks;
+
+  const mockUpdateNoteImage = sinon.stub();
+  mockUpdateNoteImage.callsFake(async (noteHandle, image, updates) => {
+    const note = app.findNote(noteHandle);
+    if (!note) throw new Error(`Note not found: ${noteHandle}`);
+    return await note.updateImage(image, updates);
+  });
+  app.updateNoteImage = mockUpdateNoteImage;
+
+  const mockUpdateTask = sinon.stub();
+  mockUpdateTask.callsFake(async (taskUUID, updates) => {
+    if (typeof taskUUID !== 'string') {
+      throw new Error('updateTask: taskUUID must be a string');
+    }
+    if (!updates || typeof updates !== 'object') {
+      throw new Error('updateTask: updates must be an object');
+    }
+
+    // Validate timestamp fields
+    const timestampFields = ['dismissedAt', 'deadline', 'completedAt', 'endAt', 'startAt', 'hideUntil'];
+    for (const field of timestampFields) {
+      if (updates[field] !== undefined && updates[field] !== null) {
+        if (!Number.isInteger(updates[field])) {
+          throw new Error(`updateTask: ${field} must be an integer timestamp`);
+        }
+      }
+    }
+
+    // Find the task across all notes
+    for (const note of Object.values(app._noteRegistry)) {
+      const taskRegex = /- \[([ x])\] ([^<]+)<!-- (\{[^}]*\}) -->/g;
+      let match;
+      let updatedContent = note._content;
+      let taskFound = false;
+
+      while ((match = taskRegex.exec(note._content)) !== null) {
+        const metadataStr = match[3];
+        let metadata = {};
+        try {
+          metadata = JSON.parse(metadataStr);
+        } catch (e) {
+          continue;
+        }
+
+        if (metadata.uuid === taskUUID) {
+          taskFound = true;
+          let newTaskLine = match[0];
+
+          // Update completion status
+          if (updates.completedAt !== undefined) {
+            const isCompleted = updates.completedAt !== null;
+            newTaskLine = newTaskLine.replace(/- \[([ x])\]/, `- [${isCompleted ? 'x' : ' '}]`);
+          }
+
+          // Update metadata
+          Object.assign(metadata, updates);
+          newTaskLine = newTaskLine.replace(/<!-- \{[^}]*\} -->/, `<!-- ${JSON.stringify(metadata)} -->`);
+
+          updatedContent = updatedContent.replace(match[0], newTaskLine);
+          break;
+        }
+      }
+
+      if (taskFound) {
+        note._content = updatedContent;
+        note.updated = new Date();
+        return true;
+      }
+    }
+
+    throw new Error(`Task not found: ${taskUUID}`);
+  });
+  app.updateTask = mockUpdateTask;
+
+  // Handle insertTask with both content and text properties
+  const originalInsertTask = app.insertTask;
+  app.insertTask = sinon.stub();
+  app.insertTask.callsFake(async (noteHandle, taskObject) => {
+    const note = app.findNote(noteHandle);
+    if (!note) throw new Error(`Note not found: ${noteHandle}`);
+    return await note.insertTask(taskObject);
+  });
+
   return app;
 }
 
@@ -329,6 +430,13 @@ export const mockNote = (content, name, uuid, tags) => {
 
   // --------------------------------------------------------------------------------------
   note.insertContent = async (newContent, options = {}) => {
+    if (typeof newContent !== 'string') {
+      throw new Error('insertContent: newContent must be a string');
+    }
+    if (options && typeof options !== 'object') {
+      throw new Error('insertContent: options must be an object');
+    }
+
     if (options.atEnd) {
       note._content += newContent;
     } else {
@@ -340,6 +448,13 @@ export const mockNote = (content, name, uuid, tags) => {
 
   // --------------------------------------------------------------------------------------
   note.replaceContent = async (newContent, sectionObject = null) => {
+    if (typeof newContent !== 'string') {
+      throw new Error('replaceContent: newContent must be a string');
+    }
+    if (sectionObject && typeof sectionObject !== 'object') {
+      throw new Error('replaceContent: sectionObject must be an object');
+    }
+
     _replaceNoteContent(note, newContent, sectionObject);
     note.lastUpdated = new Date();
     note.updated = new Date();
@@ -356,6 +471,9 @@ export const mockNote = (content, name, uuid, tags) => {
   }
 
   note.addTag = async (tag) => {
+    if (typeof tag !== 'string') {
+      throw new Error('addTag: tag must be a string');
+    }
     if (!note.tags.includes(tag)) {
       note.tags.push(tag);
       note.updated = new Date();
@@ -364,6 +482,9 @@ export const mockNote = (content, name, uuid, tags) => {
   };
 
   note.removeTag = async (tag) => {
+    if (typeof tag !== 'string') {
+      throw new Error('removeTag: tag must be a string');
+    }
     const index = note.tags.indexOf(tag);
     if (index > -1) {
       note.tags.splice(index, 1);
@@ -387,7 +508,7 @@ export const mockNote = (content, name, uuid, tags) => {
     while ((match = imageRegex.exec(note._content)) !== null) {
       images.push({
         caption: match[1] || '',
-        captionindex: index,
+        index: index,
         src: match[2],
         text: `OCR text for ${match[2]}`, // Mock OCR text
         width: 800 // Mock width
@@ -398,14 +519,37 @@ export const mockNote = (content, name, uuid, tags) => {
     return images;
   };
 
-  note.insertTask = async (taskContent, taskObject = {}) => {
-    const taskUUID = _generateUUID();
+  note.insertTask = async (taskObject) => {
+    if (!taskObject || typeof taskObject !== 'object') {
+      throw new Error('insertTask: taskObject must be an object');
+    }
+    if (!taskObject.content && !taskObject.text) {
+      throw new Error('insertTask: taskObject must have content or text property');
+    }
 
+    const taskContent = taskObject.content || taskObject.text;
+    if (typeof taskContent !== 'string') {
+      throw new Error('insertTask: task content must be a string');
+    }
+
+    // Validate timestamp fields
+    const timestampFields = ['dismissedAt', 'deadline', 'completedAt', 'endAt', 'startAt', 'hideUntil'];
+    for (const field of timestampFields) {
+      if (taskObject[field] !== undefined && taskObject[field] !== null) {
+        if (!Number.isInteger(taskObject[field])) {
+          throw new Error(`insertTask: ${field} must be an integer timestamp`);
+        }
+      }
+    }
+
+    const taskUUID = _generateUUID();
     let taskMarkdown = `- [ ] ${taskContent}`;
     const metadata = { uuid: taskUUID };
 
     if (taskObject.hideUntil) metadata.hideUntil = taskObject.hideUntil;
     if (taskObject.startAt) metadata.startAt = taskObject.startAt;
+    if (taskObject.deadline) metadata.deadline = taskObject.deadline;
+    if (taskObject.endAt) metadata.endAt = taskObject.endAt;
 
     taskMarkdown += `<!-- ${JSON.stringify(metadata)} -->`;
     note._content += `\n${taskMarkdown}`;
@@ -416,27 +560,35 @@ export const mockNote = (content, name, uuid, tags) => {
 
   note.tasks = async () => {
     // Parse tasks from markdown content
-    const taskRegex = /- \[([ x])\] ([^<]+)<!-- \{"uuid":"([^"]+)"[^}]*\} -->/g;
+    const taskRegex = /- \[([ x])\] ([^<]+)<!-- (\{[^}]*\}) -->/g;
     const tasks = [];
     let match;
 
     while ((match = taskRegex.exec(note._content)) !== null) {
       const isCompleted = match[1] === 'x';
       const content = match[2].trim();
-      const taskUUID = match[3];
+      const metadataStr = match[3];
+
+      let metadata = {};
+      try {
+        metadata = JSON.parse(metadataStr);
+      } catch (e) {
+        // If parsing fails, create basic metadata
+        metadata = { uuid: _generateUUID() };
+      }
 
       tasks.push({
-        completedAt: isCompleted ? new Date() : null,
-        dismissedAt: null,
-        endAt: null,
-        hideUntil: null,
-        startAt: null,
+        completedAt: metadata.completedAt || (isCompleted ? Math.floor(Date.now() / 1000) : null),
+        dismissedAt: metadata.dismissedAt || null,
+        endAt: metadata.endAt || null,
+        hideUntil: metadata.hideUntil || null,
+        startAt: metadata.startAt || null,
         content: content,
         noteUUID: note.uuid,
-        taskUUID: taskUUID,
-        urgent: false,
-        important: false,
-        score: 2.4
+        taskUUID: metadata.uuid,
+        urgent: metadata.urgent || false,
+        important: metadata.important || false,
+        score: metadata.score || 2.4
       });
     }
 
@@ -445,8 +597,45 @@ export const mockNote = (content, name, uuid, tags) => {
 
   // Set note name
   note.setName = async (name) => {
+    if (typeof name !== 'string') {
+      throw new Error('setName: name must be a string');
+    }
     note.name = name;
     note.updated = new Date();
+    return true;
+  };
+
+  // Get note URL
+  note.url = async () => {
+    return `https://www.amplenote.com/notes/${note.uuid}`;
+  };
+
+  // Update image
+  note.updateImage = async (image, updates) => {
+    if (!image || typeof image !== 'object') {
+      throw new Error('updateImage: image must be an object');
+    }
+    if (!updates || typeof updates !== 'object') {
+      throw new Error('updateImage: updates must be an object');
+    }
+
+    const images = await note.images();
+    const targetImage = images.find(img =>
+      img.src === image.src &&
+      (image.index === undefined || img.index === image.captionindex)
+    );
+
+    if (!targetImage) {
+      throw new Error('updateImage: image not found in note');
+    }
+
+    // Update the image in the content
+    if (updates.caption !== undefined) {
+      const oldImageRegex = new RegExp(`!\\[([^\\]]*)\\]\\(${targetImage.src.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)`, 'g');
+      note._content = note._content.replace(oldImageRegex, `![${updates.caption}](${targetImage.src})`);
+      note.updated = new Date();
+    }
+
     return true;
   };
 
