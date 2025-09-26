@@ -352,6 +352,12 @@ export const mockApp = seedNote => {
                         newTaskLine = newTaskLine.replace(/- \[([ x])\]/, `- [${isCompleted ? 'x' : ' '}]`);
                     }
 
+                    // Update task content text
+                    if (updates.content !== undefined) {
+                        const currentContent = match[2].trim();
+                        newTaskLine = newTaskLine.replace(currentContent, updates.content);
+                    }
+
                     // Update metadata
                     Object.assign(metadata, updates);
                     newTaskLine = newTaskLine.replace(/<!-- \{[^}]*\} -->/, `<!-- ${JSON.stringify(metadata)} -->`);
