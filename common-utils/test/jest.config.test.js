@@ -21,7 +21,7 @@ describe('Environment Variable Verification', () => {
     test('process.env.NODE_ENV should be "test" in playwright environment when using compileJavascriptCode', async () => {
         
         // Create mock code that will check process.env.NODE_ENV in the browser
-        const mockCode = `
+        const mockCode = /* javascript */ `
             // Store the NODE_ENV value for verification
             window.testNodeEnv = process.env.NODE_ENV;
             window.testCompleted = true;

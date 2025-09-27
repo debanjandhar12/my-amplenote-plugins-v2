@@ -134,7 +134,7 @@ describe('chat embed', () => {
     it('handles user interactions', async () => {
         allure.description('Tests chat functionality with user input');
 
-        const mockCode = `
+        const mockCode = /* javascript */  `
             import { EMBED_COMMANDS_MOCK } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
 

@@ -26,7 +26,7 @@ describe('makeCustomMarkdownText component', () => {
             "createdAt": "2025-05-24T10:00:00.000Z"
         };
 
-        const mockCode = `
+        const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
@@ -83,7 +83,7 @@ describe('makeCustomMarkdownText component', () => {
             "createdAt": "2025-05-24T10:00:00.000Z"
         };
 
-        const mockCode = `
+        const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
@@ -142,7 +142,7 @@ describe('makeCustomMarkdownText component', () => {
             "createdAt": "2025-05-24T10:00:00.000Z"
         };
 
-        const mockCode = `
+        const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
@@ -201,7 +201,7 @@ describe('makeCustomMarkdownText component', () => {
             "createdAt": "2025-05-24T10:00:00.000Z"
         };
 
-        const mockCode = `
+        const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";

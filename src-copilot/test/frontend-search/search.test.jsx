@@ -12,7 +12,7 @@ describe('search embed', () => {
     });
 
     it('loads correctly', async () => {
-        const mockCode = `
+        const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
 
@@ -29,7 +29,7 @@ describe('search embed', () => {
     }, 20000);
 
     it('menu bar opens and closes', async () => {
-        const mockCode = `
+        const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
 
@@ -50,7 +50,7 @@ describe('search embed', () => {
     }, 20000);
 
     it('search works with mocked results', async () => {
-        const mockCode = `
+        const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK } from './src-copilot/test/frontend-chat/chat.testdata.js';
             import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
 

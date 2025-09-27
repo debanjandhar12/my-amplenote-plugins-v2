@@ -27,6 +27,7 @@ export async function compileJavascriptCode(code) {
     const defineObj = {};
     // In development and test environments, include all environment variables
     // In production, only include process.env.NODE_ENV for security
+    // TODO: use buildDefineObject from esbuild-options.js
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
         Object.keys(process.env).forEach(key => {
             defineObj[`process.env.${key}`] = JSON.stringify(process.env[key]);
