@@ -20,7 +20,9 @@ async function generateEmbedding(textArray, opts) {
     }
     const release = await mutex.acquire();
     if (!embeddingPipe || embeddingPipeModel !== opts.model) {
-      const pipeline = (await dynamicImportESM("@huggingface/transformers")).pipeline;
+      const huggingfacePkg = await dynamicImportESM("@huggingface/transformers");
+      huggingfacePkg.env.useWorker = false;
+      const pipeline = (huggingfacePkg).pipeline;
       embeddingPipe = await pipeline('feature-extraction', opts.model, {
         dtype: opts.webGpuAvailable ? 'fp16' : 'q8',
         device: opts.webGpuAvailable ? 'webgpu' : 'wasm'
