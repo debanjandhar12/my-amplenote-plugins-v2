@@ -1,23 +1,22 @@
 import {EmbeddingGeneratorBase} from "./EmbeddingGeneratorBase.js";
 import 'scheduler-polyfill';
-import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
-import {COPILOT_DB_MAX_TOKENS} from "../../constants.js";
+import workerString from 'inline:./LocalEmbeddingGenerator.worker.js';
+import {createWorkerFromString} from "../../../common-utils/embed-workers.js";
 
 export class LocalEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('Xenova/jina-embeddings-v2-small-en', 0, true, 1);
+        super('Xenova/jina-embeddings-v2-small-en', 0, true, Math.max(navigator?.hardwareConcurrency - 2 || 1, 1));
     }
 
     async generateEmbedding(app, textArray, inputType) {
         let embeddings;
         await scheduler.postTask(async () => {
-            await LocalEmbeddingGeneratorInner.initLocalEmbeddingWorker();
+            await LocalEmbeddingWorkerManager.initLocalEmbeddingWorker();
             textArray = this.getProcessedTextArray(textArray, inputType,
             "", "");
-            embeddings = await Promise.all(textArray.map(text =>
-                LocalEmbeddingGeneratorInner.generateEmbeddingUsingLocal(text, inputType)));
+            embeddings = await LocalEmbeddingWorkerManager.generateEmbeddingUsingWorker(textArray, this.MODEL_NAME);
         }, {priority: 'user-visible'});
-        return embeddings.map(embedding => new Float32Array(embedding));
+        return embeddings;
     }
 
     async isWebGpuAvailable() {
@@ -30,97 +29,55 @@ export class LocalEmbeddingGenerator extends EmbeddingGeneratorBase {
     }
 }
 
-class LocalEmbeddingGeneratorInner {
-    static isGenerateEmbeddingWorkerInitializing = false;
-    static generateEmbeddingWorker = null;
+class LocalEmbeddingWorkerManager {
+    static embeddingWorker = null;
+    static messagePromises = new Map();
 
-    static async initLocalEmbeddingWorker() {
-        if (!window.Worker) return;
-        while (LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        if (!LocalEmbeddingGeneratorInner.generateEmbeddingWorker
-            && !LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing) {
-            LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing = true;
-            const embeddingGenerator = new LocalEmbeddingGenerator();
-            const {createEasyWebWorker} = await dynamicImportESM('easy-web-worker');
-            LocalEmbeddingGeneratorInner.generateEmbeddingWorker = await createEasyWebWorker(generateEmbeddingWorkerSource, {
-                keepAlive: false,
-                maxWorkers: embeddingGenerator.MAX_CONCURRENCY,
-                terminationDelay: 30000});
-            await LocalEmbeddingGeneratorInner.generateEmbeddingUsingLocal('test', 'query');
-            LocalEmbeddingGeneratorInner.isGenerateEmbeddingWorkerInitializing = false;
-        }
+    static isWorkerSupported() {
+        return window.Worker;
     }
-    static async generateEmbeddingUsingLocal(text, inputType) {
-        const inputText = inputType === 'query' ? "Represent this sentence for searching relevant passages: " + text
-            : text;
-        const embeddingGenerator = new LocalEmbeddingGenerator();
-        if (!window.Worker) {
-            return new Promise((resolve, reject) => {
-                generateEmbeddingWorkerSource({onMessage: async (onMessageHandler) => {
-                        onMessageHandler({
-                            payload: {inputText, model: embeddingGenerator.MODEL_NAME},
-                            reject,
-                            resolve
-                        });
-                    }});
-            });
+    static initLocalEmbeddingWorker() {
+        if (LocalEmbeddingWorkerManager.embeddingWorker) return;
+
+        if (!LocalEmbeddingWorkerManager.isWorkerSupported()) {
+            throw new Error("Worker is not supported in current browser. It is required for local embedding. Please use a different embedding provider.");
         }
-        if (!LocalEmbeddingGeneratorInner.generateEmbeddingWorker) {
-            await LocalEmbeddingGeneratorInner.initLocalEmbeddingWorker();
+
+        LocalEmbeddingWorkerManager.embeddingWorker = createWorkerFromString(workerString);
+
+        LocalEmbeddingWorkerManager.embeddingWorker.onmessage = (event) => {
+            const { messageId, error, result } = event.data;
+            if (LocalEmbeddingWorkerManager.messagePromises.has(messageId)) {
+                const { resolve, reject } = LocalEmbeddingWorkerManager.messagePromises.get(messageId);
+                if (error) {
+                    reject(new Error(error));
+                } else {
+                    resolve(result);
+                }
+                LocalEmbeddingWorkerManager.messagePromises.delete(messageId);
+            }
+        };
+    }
+
+    static async generateEmbeddingUsingWorker(textArray, model) {
+        if (!LocalEmbeddingWorkerManager.embeddingWorker) {
+            LocalEmbeddingWorkerManager.initLocalEmbeddingWorker();
         }
-        return await LocalEmbeddingGeneratorInner.generateEmbeddingWorker.send({inputText, model: embeddingGenerator.MODEL_NAME, webGpuAvailable: await embeddingGenerator.isWebGpuAvailable()});
+
+        const messageId = Date.now() + Math.random();
+        const promise = new Promise((resolve, reject) => {
+            LocalEmbeddingWorkerManager.messagePromises.set(messageId, { resolve, reject });
+        });
+
+        const webGpuAvailable = await new LocalEmbeddingGenerator().isWebGpuAvailable();
+
+        LocalEmbeddingWorkerManager.embeddingWorker.postMessage({
+            textArray,
+            model,
+            webGpuAvailable,
+            messageId
+        });
+
+        return promise;
     }
 }
-
-
-const generateEmbeddingWorkerSource = ({ onMessage }) => {
-    let pipeline, embeddingPipe, mutex, tid;
-    const generateEmbedding = async (inputText, opts) => {
-        if (!tid) {
-            tid = Math.random().toString(36).substring(7);
-        }
-        if (!mutex) {
-            mutex = new (await import('https://cdn.jsdelivr.net/npm/async-mutex@0.5.0/+esm')).Mutex();
-        }
-        const release = await mutex.acquire();
-        if (!pipeline) {
-            // We cannot use dynamicImportEsm inside workers yet.
-            // This is ok for now as connection to jsdelivr is mandatory for huggingface to load models anyway.
-            pipeline = (await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.2/+esm')).pipeline;
-        }
-        if (!embeddingPipe) {
-            if (opts.webGpuAvailable) {
-                embeddingPipe = await pipeline('feature-extraction', opts.model, {
-                    dtype: 'fp16',
-                    device: 'webgpu'
-                });
-            } else {
-                embeddingPipe = await pipeline('feature-extraction', opts.model, {
-                    dtype: 'q8',
-                    device: 'wasm'
-                });
-            }
-        }
-        const output = await embeddingPipe(inputText, {
-            pooling: 'mean',
-            normalize: true,
-            truncate: true,
-            max_length: COPILOT_DB_MAX_TOKENS // required for jina-embeddings-v2-small-en
-        });
-        release();
-        return new Float32Array(output.data);
-    };
-
-    onMessage(async (message) => {
-        const { payload } = message;
-        const { inputText, model, webGpuAvailable } = payload;
-        try {
-            const result = await generateEmbedding(inputText, { model, webGpuAvailable });
-            message.resolve(result);
-        } catch (e) {
-            message.reject(e);
-        }
-    });
-};

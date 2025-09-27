@@ -59,6 +59,6 @@ async function processJS(jsCode, jsPath) {
         console.error(`Error processing ${jsPath}:`, error);
         errors.push({ text: `Error processing ${jsPath}:: ${error.message}` });
     }
-    console.log(resultJSCode);
+    // console.log(resultJSCode);
     return [resultJSCode, watchFiles, errors];
 }
