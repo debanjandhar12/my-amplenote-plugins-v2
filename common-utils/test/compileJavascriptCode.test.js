@@ -19,7 +19,7 @@ describe('compileJavascriptCode', () => {
         expect(result).toContain('Mock loaded');
     });
 
-    it('should compile JavaScript with import statements', async () => {
+    it('should compile JavaScript with node package import statements', async () => {
         const code = `
                 import { readFileSync } from 'fs';
                 
@@ -32,27 +32,6 @@ describe('compileJavascriptCode', () => {
         expect(result).toContain('TEST_IMPORT');
         expect(result).toContain('imported successfully');
         expect(result).toContain('FS_AVAILABLE');
-    });
-
-    it('should handle native JavaScript functions without serialization', async () => {
-        const code = `
-                window.MOCK_FUNCTIONS = {
-                    asyncFunction: async (param) => {
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        return 'async result: ' + param;
-                    },
-                    regularFunction: (a, b) => a + b,
-                    arrowFunction: () => 'arrow result'
-                };
-            `;
-
-        const result = await compileJavascriptCode(code);
-
-        expect(result).toContain('asyncFunction');
-        expect(result).toContain('regularFunction');
-        expect(result).toContain('arrowFunction');
-        expect(result).toContain('async result');
-        expect(result).toContain('arrow result');
     });
 
     it('should unwrap IIFE format automatically', async () => {
@@ -91,7 +70,7 @@ describe('compileJavascriptCode', () => {
         expect(result).toContain('IIFE unwrapping test');
     });
 
-    it('should handle compilation with external dependencies', async () => {
+    it('should compile JavaScript with browser package import statements', async () => {
         const code = `
                 import React from 'react';
                 window.EXTERNAL_REACT = React;

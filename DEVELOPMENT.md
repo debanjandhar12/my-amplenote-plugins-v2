@@ -111,9 +111,10 @@ Note: Generate allure test report will contain result from last execution comman
 - Use `compileJavascriptCode` from `common-utils/compileJavascriptCode.js` to compile mock code with proper ES6 imports and environment variables
 - Use `addScriptToHtmlString` from `common-utils/embed-helpers.js` to inject the compiled mock code into HTML
 - Use `createCallAmplenotePluginMock` from `common-utils/embed-comunication.js` to mock plugin.js calls
+- Use methods from `common-utils/amplenote-mocks.js` to mock Amplenote API inside passed object of `createCallAmplenotePluginMock`
 - Boot a Playwright page using `createPlaywrightHooks()` from `common-utils/playwright-helpers.ts` and call `page.setContent(htmlWithMocks)`
-- Interact with the UI using selectors and assertions. Some embeds (Copilot Chat/Search) emit custom events like `appLoaded`
-- Use `mockApp()` and `mockNote()` from `common-utils/amplenote-mocks.js` for Amplenote API mocks
+- Interact with the UI using selectors and assertions. Some embeds (Copilot Chat/Search/Speech) emit custom events like appLoaded which can be used to assert behavior using waitForCustomEvent utility during tests.
+
 
 ### Test Pattern Example
 

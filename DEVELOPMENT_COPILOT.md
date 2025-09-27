@@ -54,7 +54,7 @@ Tests are under `src-copilot/test/` and use Jest with Sinon mocking, Playwright 
 - **`provider.test.jsx`** - LLM Provider Integration
   - Validates all supported LLM providers (OpenAI, Anthropic, Groq, Fireworks, Google)
   - Tests provider-specific configuration and API interactions
-  - Ensures consistent behavior across different AI models
+  - Ensures different AI providers are working as expected
 
 - **`userprompt.test.jsx`** - Custom Prompt Handling
   - Tests user custom prompt injection and processing
