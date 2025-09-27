@@ -49,6 +49,7 @@ export async function compileJavascriptCode(code) {
         };
 
         // Create the compilation script that reads from stdin
+        // (needs to be done this way, otherwise cannot compile in test env)
         const compilerScript = `
             const path = require('path');
             
@@ -72,19 +73,19 @@ export async function compileJavascriptCode(code) {
                 // Plugin not available, continue without it
             }
 
-            const config = ${JSON.stringify(config)};
+            // Try to load the InlineJSLoader plugin if available
+            let InlineJSLoader = null;
+            const loadInlineJSLoader = async () => {
+                try {
+                    const inlineJSModule = await import('file://' + path.join(projectRoot, 'build/esbuild-plugins/inlineJSLoader.js'));
+                    return inlineJSModule.InlineJSLoader;
+                } catch (e) {
+                    // Plugin not available, continue without it
+                    return null;
+                }
+            };
 
-            // Build plugins array
-            const plugins = [];
-            if (nodeModulesPolyfillPlugin && config.enableNodeModulesPolyfill) {
-                plugins.push(nodeModulesPolyfillPlugin({
-                    globals: { 
-                        process: true,
-                        Buffer: true,
-                        global: true
-                    }
-                }));
-            }
+            const config = ${JSON.stringify(config)};
 
             // Enhanced external list for Node.js built-ins
             const nodeBuiltins = [
@@ -109,7 +110,26 @@ export async function compileJavascriptCode(code) {
                 inputCode += chunk;
             });
             
-            process.stdin.on('end', () => {
+            process.stdin.on('end', async () => {
+                // Load InlineJSLoader plugin
+                inlineJSLoader = await loadInlineJSLoader();
+
+                // Build plugins array
+                const plugins = [];
+                if (inlineJSLoader) {
+                    plugins.push(inlineJSLoader);
+                }
+                
+                if (nodeModulesPolyfillPlugin && config.enableNodeModulesPolyfill) {
+                    plugins.push(nodeModulesPolyfillPlugin({
+                        globals: { 
+                            process: true,
+                            Buffer: true,
+                            global: true
+                        }
+                    }));
+                }
+
                 esbuild.build({
                     stdin: {
                         contents: inputCode,
