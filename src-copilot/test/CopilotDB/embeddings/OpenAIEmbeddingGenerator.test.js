@@ -1,9 +1,14 @@
-import {mockApp} from "../../../../common-utils/test-helpers.js";
+import {mockApp} from "../../../../common-utils/amplenote-mocks.js";
 import {OpenAIEmbeddingGenerator} from "../../../CopilotDB/embeddings/OpenAIEmbeddingGenerator.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../../constants.js";
+import { allure } from 'jest-allure2-reporter/api';
 
 
 describe('OpenAi Embedding', () => {
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
+
     test.skipIf(!process.env.OPENAI_API_KEY, 'works with single string', async () => {
         const embeddingGenerator = new OpenAIEmbeddingGenerator();
         const app = mockApp();

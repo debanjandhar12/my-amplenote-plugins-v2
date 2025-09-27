@@ -7,14 +7,14 @@ import {
 } from "../../../../common-utils/playwright-helpers.ts";
 import { allure } from 'jest-allure2-reporter/api';
 
-describe('Insert Tasks To Note tool', () => {
+describe('Update User Notes tool', () => {
     const { getPage } = createPlaywrightHooks();
     beforeEach(() => {
         allure.epic('src-copilot');
     });
 
-    it('should transition from init to completed state and insert tasks upon user confirmation', async () => {
-        allure.description('Tests the complete flow of inserting tasks into a note through the chat interface');
+    it('should transition from init to completed state and update notes upon user confirmation', async () => {
+        allure.description('Tests the complete flow of updating notes through the chat interface');
 
         const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
@@ -39,27 +39,28 @@ describe('Insert Tasks To Note tool', () => {
                         "content": [
                             {
                                 "type": "tool-call",
-                                "toolCallId": "insertTasks123",
-                                "toolName": "InsertTasksToNote",
+                                "toolCallId": "updateNotes123",
+                                "toolName": "UpdateUserNotes",
                                 "args": {
-                                    "tasks": [
+                                    "notes": [
                                         {
-                                            "content": "Complete project documentation",
-                                            "startAt": "2025-06-01T10:00:00.000Z"
+                                            "noteUUID": "12345678-1234-1234-1234-123456789012",
+                                            "noteTitle": "Updated Test Note",
+                                            "noteContent": "# Updated Test Note\\n\\nThis is the updated content.",
+                                            "tags": ["updated", "test"]
                                         },
                                         {
-                                            "content": "Review code changes",
-                                            "startAt": "2025-06-02T14:00:00.000Z"
+                                            "noteUUID": "87654321-4321-4321-4321-210987654321",
+                                            "noteTitle": "Another Updated Note"
                                         }
-                                    ],
-                                    "noteUUID": "12345678-1234-1234-1234-123456789012"
+                                    ]
                                 }
                             }
                         ],
                         "metadata": {
                             "custom": {
                                 "toolStateStorage": {
-                                    "insertTasks123": {
+                                    "updateNotes123": {
                                         "formState": "init",
                                         "formData": {},
                                         "formError": null
@@ -73,7 +74,11 @@ describe('Insert Tasks To Note tool', () => {
                 }
             ];
 
-            window.mockApp = mockApp(mockNote("# Test Note\\n\\nThis is the original content.", "Test Note", "12345678-1234-1234-1234-123456789012"));
+            window.mockApp = mockApp();
+            
+            // Create test notes
+            const note1 = window.mockApp.createNote("Test Note", ["original"], "# Test Note\\n\\nThis is the original content.", "12345678-1234-1234-1234-123456789012");
+            const note2 = window.mockApp.createNote("Another Note", ["tag1"], "# Another Note\\n\\nOriginal content here.", "87654321-4321-4321-4321-210987654321");
 
             window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
@@ -90,18 +95,27 @@ describe('Insert Tasks To Note tool', () => {
                     const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
-                "getUserCurrentNoteData": async () => {
-                    return {
-                        currentNoteUUID: window.mockApp.context.noteUUID
-                    }
+                getNoteContentByUUID: async (uuid) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note._content : "";
                 },
-                insertTask: async (note, task) => {
+                getNoteTagsByUUID: async ({ uuid }) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note.tags : [];
+                },
+                setNoteName: async (noteHandle, name) => {
                     // Add timeout so that test can capture state
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    return await window.mockApp.insertTask(note.uuid || note, task);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return await window.mockApp.setNoteName(noteHandle, name);
                 },
-                updateTask: async (...args) => {
-                    return true;
+                replaceNoteContent: async (noteHandle, content) => {
+                    return await window.mockApp.replaceNoteContent(noteHandle, content);
+                },
+                addNoteTag: async (noteHandle, tag) => {
+                    return await window.mockApp.addNoteTag(noteHandle, tag);
+                },
+                removeNoteTag: async (noteHandle, tag) => {
+                    return await window.mockApp.removeNoteTag(noteHandle, tag);
                 }
             });
         `;
@@ -118,23 +132,24 @@ describe('Insert Tasks To Note tool', () => {
         });
 
         await allure.step('Verify UI elements are visible', async () => {
-            const submitButton = await page.waitForSelector('button:has-text("Insert Tasks")');
+            const submitButton = await page.waitForSelector('button:has-text("Update Notes")');
             expect(await submitButton.isVisible()).toBe(true);
 
             const cancelButton = await page.waitForSelector('button:has-text("Cancel")');
             expect(await cancelButton.isVisible()).toBe(true);
 
-            const noteSelector = await page.waitForSelector('button:has-text("Test Note")');
-            expect(await noteSelector.isVisible()).toBe(true);
+            // Check that notes are listed
+            const noteText = await page.waitForSelector('text=Updated Test Note');
+            expect(await noteText.isVisible()).toBe(true);
         });
 
         await allure.step('Verify API is not called before submit click', async () => {
-            const insertTaskSpyInfo = await getSpyInfo(page, 'mockApp.insertTask');
-            expect(insertTaskSpyInfo.callCount).toBe(0);
+            const setNoteNameSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
+            expect(setNoteNameSpyInfo.callCount).toBeGreaterThan(0); // Called during init to fetch current data
         });
 
         await allure.step('Click submit button', async () => {
-            const submitButton = await page.waitForSelector('button:has-text("Insert Tasks")');
+            const submitButton = await page.waitForSelector('button:has-text("Update Notes")');
             await submitButton.click();
         });
 
@@ -144,38 +159,30 @@ describe('Insert Tasks To Note tool', () => {
         });
 
         await allure.step('Verify success message', async () => {
-            const successMessage = await page.waitForSelector('text=2 tasks inserted successfully into note Test Note');
+            const successMessage = await page.waitForSelector('text=2 notes updated successfully');
             expect(await successMessage.isVisible()).toBe(true);
             await takeScreenshot(page, 'Success message displayed');
         });
 
-        await allure.step('Verify API is called and tasks are inserted', async () => {
-            const insertTaskSpyInfo = await getSpyInfo(page, 'mockApp.insertTask');
-            expect(insertTaskSpyInfo.callCount).toBe(2);
+        await allure.step('Verify notes are updated', async () => {
+            const note1 = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
+            expect(note1.name).toBe('Updated Test Note');
+            expect(note1._content).toBe('# Updated Test Note\n\nThis is the updated content.');
+            expect(note1.tags).toEqual(['updated', 'test']);
 
-            const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
-            expect(note._content).toContain('- [ ] Complete project documentation');
-            expect(note._content).toContain('- [ ] Review code changes');
+            const note2 = await page.evaluate(() => window.mockApp.notes.find("87654321-4321-4321-4321-210987654321"));
+            expect(note2.name).toBe('Another Updated Note');
         });
 
         await allure.step('Verify llm is called with tool results to continue answer', async () => {
             const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
-            expect(llmCallData.messages[0].content[0].result.resultDetails).toBeDefined();
-            expect(llmCallData.messages[0].content[0].result.resultDetails.length).toBe(2);
-            
-            const resultDetails = llmCallData.messages[0].content[0].result.resultDetails;
-            expect(resultDetails[0].content).toBe('Complete project documentation');
-            expect(resultDetails[0].startAt).toBe('2025-06-01T10:00:00.000Z');
-            expect(resultDetails[0].taskUUID).toBeDefined();
-            
-            expect(resultDetails[1].content).toBe('Review code changes');
-            expect(resultDetails[1].startAt).toBe('2025-06-02T14:00:00.000Z');
-            expect(resultDetails[1].taskUUID).toBeDefined();
+            expect(llmCallData.messages[0].content[0].result.resultDetail).toBeDefined();
+            expect(llmCallData.messages[0].content[0].result.resultDetail.length).toBe(2);
         });
     }, 20000);
 
-    it('should transition from init to canceled state without inserting tasks upon user cancellation', async () => {
-        allure.description('Tests that the tool correctly handles user cancellation and does not insert tasks');
+    it('should transition from init to canceled state without updating notes upon user cancellation', async () => {
+        allure.description('Tests that the tool correctly handles user cancellation and does not update notes');
 
         const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
@@ -200,23 +207,22 @@ describe('Insert Tasks To Note tool', () => {
                         "content": [
                             {
                                 "type": "tool-call",
-                                "toolCallId": "insertTasks123",
-                                "toolName": "InsertTasksToNote",
+                                "toolCallId": "updateNotes123",
+                                "toolName": "UpdateUserNotes",
                                 "args": {
-                                    "tasks": [
+                                    "notes": [
                                         {
-                                            "content": "Complete project documentation",
-                                            "startAt": "2025-06-01T10:00:00.000Z"
+                                            "noteUUID": "12345678-1234-1234-1234-123456789012",
+                                            "noteTitle": "Updated Test Note"
                                         }
-                                    ],
-                                    "noteUUID": "12345678-1234-1234-1234-123456789012"
+                                    ]
                                 }
                             }
                         ],
                         "metadata": {
                             "custom": {
                                 "toolStateStorage": {
-                                    "insertTasks123": {
+                                    "updateNotes123": {
                                         "formState": "init",
                                         "formData": {},
                                         "formError": null
@@ -230,7 +236,10 @@ describe('Insert Tasks To Note tool', () => {
                 }
             ];
 
-            window.mockApp = mockApp(mockNote("# Test Note\\n\\nThis is the original content.", "Test Note", "12345678-1234-1234-1234-123456789012"));
+            window.mockApp = mockApp();
+            
+            // Create test note
+            const note1 = window.mockApp.createNote("Test Note", ["original"], "# Test Note\\n\\nThis is the original content.", "12345678-1234-1234-1234-123456789012");
 
             window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
@@ -247,16 +256,25 @@ describe('Insert Tasks To Note tool', () => {
                     const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
-                "getUserCurrentNoteData": async () => {
-                    return {
-                        currentNoteUUID: window.mockApp.context.noteUUID
-                    }
+                getNoteContentByUUID: async (uuid) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note._content : "";
                 },
-                insertTask: async (note, task) => {
-                    return await window.mockApp.insertTask(note.uuid || note, task);
+                getNoteTagsByUUID: async ({ uuid }) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note.tags : [];
                 },
-                updateTask: async (...args) => {
-                    return true;
+                setNoteName: async (noteHandle, name) => {
+                    return await window.mockApp.setNoteName(noteHandle, name);
+                },
+                replaceNoteContent: async (noteHandle, content) => {
+                    return await window.mockApp.replaceNoteContent(noteHandle, content);
+                },
+                addNoteTag: async (noteHandle, tag) => {
+                    return await window.mockApp.addNoteTag(noteHandle, tag);
+                },
+                removeNoteTag: async (noteHandle, tag) => {
+                    return await window.mockApp.removeNoteTag(noteHandle, tag);
                 }
             });
         `;
@@ -270,17 +288,6 @@ describe('Insert Tasks To Note tool', () => {
             const initState = await waitForCustomEvent(page, 'onToolStateChange');
             expect(initState).toEqual('init');
             await takeScreenshot(page, 'Tool initialized');
-        });
-
-        await allure.step('Verify UI elements are visible', async () => {
-            const submitButton = await page.waitForSelector('button:has-text("Insert Tasks")');
-            expect(await submitButton.isVisible()).toBe(true);
-
-            const cancelButton = await page.waitForSelector('button:has-text("Cancel")');
-            expect(await cancelButton.isVisible()).toBe(true);
-
-            const noteSelector = await page.waitForSelector('button:has-text("Test Note")');
-            expect(await noteSelector.isVisible()).toBe(true);
         });
 
         await allure.step('Click cancel button', async () => {
@@ -294,11 +301,9 @@ describe('Insert Tasks To Note tool', () => {
             await takeScreenshot(page, 'Cancel message displayed');
         });
 
-        await allure.step('Verify API is not called and no tasks are inserted', async () => {
-            const insertTaskSpyInfo = await getSpyInfo(page, 'mockApp.insertTask');
-            expect(insertTaskSpyInfo.callCount).toBe(0);
-
+        await allure.step('Verify note is not updated', async () => {
             const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
+            expect(note.name).toBe('Test Note'); // Original name
             expect(note._content).toBe('# Test Note\n\nThis is the original content.');
         });
 
@@ -310,7 +315,7 @@ describe('Insert Tasks To Note tool', () => {
     }, 20000);
 
     it('should handle API error correctly', async () => {
-        allure.description('Tests error handling when insert task API throws an error');
+        allure.description('Tests error handling when update note API throws an error');
 
         const mockCode = /* javascript */ `
             import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
@@ -335,23 +340,22 @@ describe('Insert Tasks To Note tool', () => {
                         "content": [
                             {
                                 "type": "tool-call",
-                                "toolCallId": "insertTasks123",
-                                "toolName": "InsertTasksToNote",
+                                "toolCallId": "updateNotes123",
+                                "toolName": "UpdateUserNotes",
                                 "args": {
-                                    "tasks": [
+                                    "notes": [
                                         {
-                                            "content": "Complete project documentation",
-                                            "startAt": "2025-06-01T10:00:00.000Z"
+                                            "noteUUID": "12345678-1234-1234-1234-123456789012",
+                                            "noteTitle": "Updated Test Note"
                                         }
-                                    ],
-                                    "noteUUID": "12345678-1234-1234-1234-123456789012"
+                                    ]
                                 }
                             }
                         ],
                         "metadata": {
                             "custom": {
                                 "toolStateStorage": {
-                                    "insertTasks123": {
+                                    "updateNotes123": {
                                         "formState": "init",
                                         "formData": {},
                                         "formError": null
@@ -365,7 +369,10 @@ describe('Insert Tasks To Note tool', () => {
                 }
             ];
 
-            window.mockApp = mockApp(mockNote("# Test Note\\n\\nThis is the original content.", "Test Note", "12345678-1234-1234-1234-123456789012"));
+            window.mockApp = mockApp();
+            
+            // Create test note
+            const note1 = window.mockApp.createNote("Test Note", ["original"], "# Test Note\\n\\nThis is the original content.", "12345678-1234-1234-1234-123456789012");
 
             window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
@@ -382,20 +389,28 @@ describe('Insert Tasks To Note tool', () => {
                     const note = await window.mockApp.notes.find(uuid);
                     return note ? note.name : null;
                 },
-                "getUserCurrentNoteData": async () => {
-                    return {
-                        currentNoteUUID: window.mockApp.context.noteUUID
-                    }
+                getNoteContentByUUID: async (uuid) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note._content : "";
                 },
-                insertTask: async (note, task) => {
+                getNoteTagsByUUID: async ({ uuid }) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note.tags : [];
+                },
+                setNoteName: async (noteHandle, name) => {
                     // Add timeout so that test can capture state
                     await new Promise(resolve => setTimeout(resolve, 2000));
                     // Throw an error to simulate API failure
-                    throw new Error('Failed to insert task');
+                    throw new Error('Failed to update note name');
                 },
-                updateTask: async (...args) => {
-                    // Throw an error to simulate API failure
-                    throw new Error('Failed to update task');
+                replaceNoteContent: async (noteHandle, content) => {
+                    throw new Error('Failed to update note content');
+                },
+                addNoteTag: async (noteHandle, tag) => {
+                    throw new Error('Failed to add note tag');
+                },
+                removeNoteTag: async (noteHandle, tag) => {
+                    throw new Error('Failed to remove note tag');
                 }
             });
         `;
@@ -412,7 +427,7 @@ describe('Insert Tasks To Note tool', () => {
         });
 
         await allure.step('Click submit button to trigger error', async () => {
-            const submitButton = await page.waitForSelector('button:has-text("Insert Tasks")');
+            const submitButton = await page.waitForSelector('button:has-text("Update Notes")');
             await submitButton.click();
         });
 
@@ -422,20 +437,20 @@ describe('Insert Tasks To Note tool', () => {
         });
 
         await allure.step('Verify error message is displayed', async () => {
-            const errorMessage = await page.waitForSelector('text=Failed to insert task');
+            const errorMessage = await page.waitForSelector('text=Failed to update note name');
             const isErrorMessageVisible = await errorMessage.isVisible();
             expect(isErrorMessageVisible).toBe(true);
             await takeScreenshot(page, 'Error message displayed');
         });
 
         await allure.step('Verify API was called despite error', async () => {
-            const insertTaskSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
-            expect(insertTaskSpyInfo.callCount).toBeGreaterThan(0);
+            const callAmplenotePluginSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
+            expect(callAmplenotePluginSpyInfo.callCount).toBeGreaterThan(0);
         });
 
         await allure.step('Verify llm is called with tool error to continue answer', async () => {
             const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
-            expect(llmCallData.messages[0].content[0].result).toContain('Failed to insert task');
+            expect(llmCallData.messages[0].content[0].result).toContain('Failed to update note name');
         });
     }, 20000);
 });

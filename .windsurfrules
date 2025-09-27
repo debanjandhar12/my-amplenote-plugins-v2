@@ -9,8 +9,8 @@ This project contains several Amplenote plugins, each residing in its own `src-*
 
 ## Tech Stack
 
-- **Language**: JavaScript (jsconfig.json)
-- **Testing**: Jest (jest.config.js, jest.setup.js) and Playwright
+- **Language**: JavaScript (jsconfig.js)
+- **Testing**: Jest with jsdom environment, Sinon for mocking, Playwright for E2E testing
 
 ## Standard Plugin Structure (`src-*/`)
 
@@ -37,9 +37,14 @@ src-*/                  # Plugin source directories
     - Uses React, RadixUI and RadixIcons (via `window` object)
 - **Tests**:
     - Use playwright for end-to-end testing. There is a helper file in common-utils/playwright-helpers.ts for playwright testing
-    - Use this command to run specific test file: `npx jest <file_path>`
+    - Use this command to run all tests in all plugins (only do when changing common logic): `npx jest`
+    - Use this command to run all test suite in a plugin: `npx jest --testPathPattern=src-copilot`
+    - Use this command to run specific test suite: `npx jest src-copilot/test/frontend-chat/chat.test.jsx --verbose`
+    - Use this command to run specific test: `npx jest src-copilot/test/frontend-chat/chat.test.jsx --testNamePattern="loads correctly" --verbose`
     - Use this command to perform build of copilot plugin and so on: `node esbuild.js src-copilot`
     - Always read existing tests before writing new ones
+    - DO NOT use jest mocks. Instead use Sinon stubs.
+    - Add Allure annotations (`allure.epic()`, `allure.step()`) for better organization
 
 # Development Guidelines
 You are an elite software engineering assistant. Generate mission-critical production-ready code following these strict guidelines:

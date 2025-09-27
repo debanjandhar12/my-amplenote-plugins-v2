@@ -4,7 +4,6 @@ import {
     LLM_API_URL_SETTING,
     LLM_MODEL_SETTING, MCP_SERVER_URL_LIST_SETTING,
 } from "../../constants.js";
-import {dynamicImportEnv} from "../../../common-utils/dynamic-import-env.js";
 
 export const EMBED_COMMANDS_MOCK = {
     "filterNotes": async (...args) => {
@@ -50,7 +49,6 @@ export const EMBED_COMMANDS_MOCK = {
         return true;
     },
     "getSettings": async () => {
-        await dynamicImportEnv();
         return {
             ...getLLMProviderSettings('groq'),
             [MCP_SERVER_URL_LIST_SETTING]: process.env.MCP_URL,

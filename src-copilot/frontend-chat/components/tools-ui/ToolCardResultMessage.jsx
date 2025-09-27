@@ -51,7 +51,7 @@ export const ToolCardResultMessage = ({ children, icon, text, result, input, too
                         </>
                     )}
                     <Text size="1" style={{ color: 'var(--gray-11)', marginBottom: '4px', display: 'block' }}>Output:</Text>
-                    <Code highContrast wrap={'nowrap'}>
+                    <Code highContrast wrap={'nowrap'} className={'aui-tool-result'}>
                         {typeof result === 'string' ? result : JSON.stringify(result)}
                     </Code>
                 </ScrollArea>

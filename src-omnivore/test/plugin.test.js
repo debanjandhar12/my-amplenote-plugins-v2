@@ -1,4 +1,4 @@
-import {mockApp, mockNote, mockPlugin} from "../../common-utils/test-helpers.js";
+import {mockApp, mockNote, mockPlugin} from "../../common-utils/amplenote-mocks.js";
 import pluginObject from "../plugin.js"
 import {deleteOmnivoreItem, saveOmnivoreItem} from "../omnivore/api-extended.js";
 import 'cross-fetch/polyfill';
@@ -8,8 +8,13 @@ import {SAMPLE_OMNIVORE_STATE_DATA} from "./test-data.js";
 import MarkdownIt from "markdown-it";
 import {sortOmnivoreItemHighlights, sortOmnivoreItems} from "../amplenote/util.js";
 import {getOmnivoreApiUrl} from "../omnivore/getOmnivoreUrl.js";
+import { allure } from 'jest-allure2-reporter/api';
 
 describe("_syncStateWithOmnivore", () => {
+    beforeEach(() => {
+        allure.epic('src-omnivore');
+    });
+
     it('when adding / deleting articles, correct ' +
         'omnivoreItemsState, omnivoreItemsStateDelta and omnivoreDeletedItems needs to be returned', async function() {
         if(process.env.OMNIVORE_KEY === undefined || process.env.OMNIVORE_KEY === '') {
@@ -77,6 +82,10 @@ describe("_syncStateWithOmnivore", () => {
 
 
 describe('generateDashboardTable - Optional Columns', () => {
+    beforeEach(() => {
+        allure.epic('src-omnivore');
+    });
+
     function countColumnsInMarkdownTable(markdown) {
         const md = new MarkdownIt();
         const tokens = md.parse(markdown);
@@ -124,6 +133,10 @@ describe('generateDashboardTable - Optional Columns', () => {
 });
 
 describe('Util Function Test', () => {
+    beforeEach(() => {
+        allure.epic('src-omnivore');
+    });
+
     const sampleOmnivoreItems = SAMPLE_OMNIVORE_STATE_DATA;
 
     it('should sort omnivore items by updatedAt in ascending order', () => {

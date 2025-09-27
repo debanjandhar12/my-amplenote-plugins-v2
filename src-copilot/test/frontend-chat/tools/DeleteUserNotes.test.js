@@ -1,24 +1,34 @@
-import {addScriptToHtmlString} from "../../../../common-utils/embed-helpers.js";
-import {serializeWithFunctions} from "../../../../common-utils/embed-comunication.js";
-import {EMBED_COMMANDS_MOCK, getLLMProviderSettings} from ".././chat.testdata.js";
+import { compileJavascriptCode } from "../../../../common-utils/compileJavascriptCode.js";
+import { addScriptToHtmlString } from "../../../../common-utils/embed-helpers.js";
 import html from "inline:../../../embed/chat.html";
-
 import {
-    LLM_MAX_TOKENS_SETTING
-} from "../../../constants.js";
-import {createPlaywrightHooks, waitForCustomEvent} from "../../../../common-utils/playwright-helpers.ts";
+    createPlaywrightHooks, getSpyInfo,
+    waitForCustomEvent, takeScreenshot
+} from "../../../../common-utils/playwright-helpers.ts";
+import { allure } from 'jest-allure2-reporter/api';
+import { mockApp, mockNote } from "../../../../common-utils/amplenote-mocks.js";
 
 describe('Delete User Notes tool', () => {
-    const {getPage} = createPlaywrightHooks();
-    
-    it('works correctly through all states', async () => {
-        const htmlWithMocks = addScriptToHtmlString(html, `
-            window.INJECTED_SETTINGS = ${JSON.stringify({
+    const { getPage } = createPlaywrightHooks();
+    beforeEach(() => {
+        allure.epic('src-copilot');
+    });
+
+    it('should transition from init to completed state and delete notes upon user confirmation', async () => {
+        allure.description('Tests the complete flow of deleting notes through the chat interface');
+
+        const mockCode = /* javascript */ `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+            import { mockApp, mockNote } from "./common-utils/amplenote-mocks.js";
+
+            window.SETTINGS = {
                 ...getLLMProviderSettings('groq'),
                 [LLM_MAX_TOKENS_SETTING]: '100'
-            })};
+            };
 
-            window.INJECT_MESSAGES = [
+            window.INIT_MESSAGES = [
                 {
                     "message": {
                         "id": "test456",
@@ -32,15 +42,11 @@ describe('Delete User Notes tool', () => {
                                 "type": "tool-call",
                                 "toolCallId": "deleteNotes123",
                                 "toolName": "DeleteUserNotes",
-                                "argsText": '{notes: [{noteUUID: "12345678-1234-1234-1234-123456789012"}, {noteUUID: "87654321-4321-4321-4321-210987654321"}]}',
+                                "argsText": '{notes: [{noteUUID: "note-uuid-1"}, {noteUUID: "note-uuid-2"}]}',
                                 "args": {
                                     "notes": [
-                                        {
-                                            "noteUUID": "12345678-1234-1234-1234-123456789012"
-                                        },
-                                        {
-                                            "noteUUID": "87654321-4321-4321-4321-210987654321"
-                                        }
+                                        { "noteUUID": "note-uuid-1" },
+                                        { "noteUUID": "note-uuid-2" }
                                     ]
                                 }
                             }
@@ -62,76 +68,335 @@ describe('Delete User Notes tool', () => {
                 }
             ];
 
-            window.INJECTED_EMBED_COMMANDS_MOCK = ${JSON.stringify(serializeWithFunctions({
+            window.mockApp = mockApp();
+            window.mockApp._noteRegistry["note-uuid-1"] = mockNote("# Test Note 1", "Test Note 1", "note-uuid-1", ["tag1"]);
+            window.mockApp._noteRegistry["note-uuid-2"] = mockNote("# Test Note 2", "Test Note 2", "note-uuid-2", ["tag2"]);
+
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
                 ...EMBED_COMMANDS_MOCK,
-                getSettings: async () => window.INJECTED_SETTINGS,
+                getSettings: async () => window.SETTINGS,
                 receiveMessageFromPlugin: async (queue) => {
-                    if (queue === 'attachments' && window.INJECT_MESSAGES) {
-                        const injectMessages = window.INJECT_MESSAGES;
-                        window.INJECT_MESSAGES = null;
+                    if (queue === 'attachments' && window.INIT_MESSAGES) {
+                        const injectMessages = window.INIT_MESSAGES;
+                        window.INIT_MESSAGES = null;
                         return {type: 'new-chat', message: injectMessages};
                     }
                     return null;
                 },
                 getNoteTitleByUUID: async (uuid) => {
-                    if (uuid === "12345678-1234-1234-1234-123456789012") {
-                        return "Test Note 1";
-                    } else if (uuid === "87654321-4321-4321-4321-210987654321") {
-                        return "Test Note 2";
-                    }
-                    return null;
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note.name : null;
                 },
-                getNoteTagsByUUID: async ({uuid}) => {
-                    if (uuid === "12345678-1234-1234-1234-123456789012") {
-                        return ["tag1", "tag2"];
-                    } else if (uuid === "87654321-4321-4321-4321-210987654321") {
-                        return ["tag3"];
-                    }
-                    return [];
+                getNoteTagsByUUID: async ({ uuid }) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note.tags : [];
                 },
-                deleteNote: async ({uuid}) => {
-                    // Add timeout so that test can capture state
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    return {uuid, deleted: true};
+                deleteNote: async ({ uuid }) => {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return await window.mockApp.deleteNote({ uuid });
                 }
-            }))};
-        `);
+            });
+        `;
 
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
         const page = await getPage();
         await page.setContent(htmlWithMocks);
 
-        // Wait for the tool to initialize
-        const initState = await waitForCustomEvent(page, 'onToolStateChange');
-        expect(initState).toEqual('init');
+        await allure.step('Verify tool init state', async () => {
+            const initState = await waitForCustomEvent(page, 'onToolStateChange');
+            expect(initState).toEqual('init');
+            await takeScreenshot(page, 'Tool initialized');
+        });
 
-        // Cannot check waiting state as it is instantly changed
-        // const waitingState = await waitForCustomEvent(page, 'onToolStateChange');
-        // expect(waitingState).toEqual('waitingForUserInput');
+        await allure.step('Verify UI elements are visible', async () => {
+            const submitButton = await page.waitForSelector('button:has-text("Delete Notes")');
+            expect(await submitButton.isVisible()).toBe(true);
 
-        // Check if the submit button exists and is visible
-        const submitButton = await page.waitForSelector('button:has-text("Delete Notes")');
-        const isSubmitButtonVisible = await submitButton.isVisible();
-        expect(isSubmitButtonVisible).toBe(true);
+            const cancelButton = await page.waitForSelector('button:has-text("Cancel")');
+            expect(await cancelButton.isVisible()).toBe(true);
+        });
 
-        // Check if the cancel button exists and is visible
-        const cancelButton = await page.waitForSelector('button:has-text("Cancel")');
-        const isCancelButtonVisible = await cancelButton.isVisible();
-        expect(isCancelButtonVisible).toBe(true);
+        await allure.step('Verify API is not called before submit click', async () => {
+            const deleteNoteSpyInfo = await getSpyInfo(page, 'mockApp.deleteNote');
+            expect(deleteNoteSpyInfo.callCount).toBe(0);
+        });
 
-        // Simulate user clicking the submit button
-        await submitButton.click();
+        await allure.step('Click submit button', async () => {
+            const submitButton = await page.waitForSelector('button:has-text("Delete Notes")');
+            await submitButton.click();
+        });
 
-        // Cannot check submitted state as it is instantly changed
-        // const submittedState = await waitForCustomEvent(page, 'onToolStateChange');
-        // expect(submittedState).toEqual('submitted');
+        await allure.step('Verify tool completed state', async () => {
+            const completedState = await waitForCustomEvent(page, 'onToolStateChange');
+            expect(completedState).toEqual('completed');
+        });
 
-        // Wait for the tool to complete
-        const completedState = await waitForCustomEvent(page, 'onToolStateChange');
-        expect(completedState).toEqual('completed');
+        await allure.step('Verify success message', async () => {
+            const successMessage = await page.waitForSelector('text=2 notes deleted successfully');
+            expect(await successMessage.isVisible()).toBe(true);
+            await takeScreenshot(page, 'Success message displayed');
+        });
 
-        // Check if the success message is visible
-        const successMessage = await page.waitForSelector('text=2 notes deleted successfully');
-        const isSuccessMessageVisible = await successMessage.isVisible();
-        expect(isSuccessMessageVisible).toBe(true);
+        await allure.step('Verify API is called and notes are deleted', async () => {
+            const deleteNoteSpyInfo = await getSpyInfo(page, 'mockApp.deleteNote');
+            expect(deleteNoteSpyInfo.callCount).toBe(2);
+
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
+            expect(allNotes.length).toBe(0);
+        });
+
+        await allure.step('Verify llm is called with tool results to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result.resultDetail).toBeDefined();
+            expect(llmCallData.messages[0].content[0].result.resultDetail.length).toBe(2);
+            expect(llmCallData.messages[0].content[0].result.resultDetail).toEqual([true, true]);
+        });
+    }, 20000);
+
+    it('should transition from init to canceled state without deleting notes upon user cancellation', async () => {
+        allure.description('Tests that the tool correctly handles user cancellation and does not delete notes');
+
+        const mockCode = /* javascript */ `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+            import { mockApp, mockNote } from "./common-utils/amplenote-mocks.js";
+
+            window.SETTINGS = {
+                ...getLLMProviderSettings('groq'),
+                [LLM_MAX_TOKENS_SETTING]: '100'
+            };
+
+            window.INIT_MESSAGES = [
+                {
+                    "message": {
+                        "id": "test456",
+                        "role": "assistant",
+                        "status": {
+                            "type": "requires-action",
+                            "reason": "tool-calls"
+                        },
+                        "content": [
+                            {
+                                "type": "tool-call",
+                                "toolCallId": "deleteNotes123",
+                                "toolName": "DeleteUserNotes",
+                                "argsText": '{notes: [{noteUUID: "note-uuid-1"}]}',
+                                "args": {
+                                    "notes": [
+                                        { "noteUUID": "note-uuid-1" }
+                                    ]
+                                }
+                            }
+                        ],
+                        "metadata": {
+                            "custom": {
+                                "toolStateStorage": {
+                                    "deleteNotes123": {
+                                        "formState": "init",
+                                        "formData": {},
+                                        "formError": null
+                                    }
+                                }
+                            }
+                        },
+                        "createdAt": "2025-05-24T10:00:00.000Z"
+                    },
+                    "parentId": null
+                }
+            ];
+
+            window.mockApp = mockApp();
+            window.mockApp._noteRegistry["note-uuid-1"] = mockNote("# Test Note 1", "Test Note 1", "note-uuid-1", ["tag1"]);
+
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                ...EMBED_COMMANDS_MOCK,
+                getSettings: async () => window.SETTINGS,
+                receiveMessageFromPlugin: async (queue) => {
+                    if (queue === 'attachments' && window.INIT_MESSAGES) {
+                        const injectMessages = window.INIT_MESSAGES;
+                        window.INIT_MESSAGES = null;
+                        return {type: 'new-chat', message: injectMessages};
+                    }
+                    return null;
+                },
+                getNoteTitleByUUID: async (uuid) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note.name : null;
+                },
+                getNoteTagsByUUID: async ({ uuid }) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note.tags : [];
+                },
+                deleteNote: async ({ uuid }) => {
+                    return await window.mockApp.deleteNote({ uuid });
+                }
+            });
+        `;
+
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
+        await page.setContent(htmlWithMocks);
+
+        await allure.step('Verify tool init state', async () => {
+            const initState = await waitForCustomEvent(page, 'onToolStateChange');
+            expect(initState).toEqual('init');
+            await takeScreenshot(page, 'Tool initialized');
+        });
+
+        await allure.step('Click cancel button', async () => {
+            const cancelButton = await page.waitForSelector('button:has-text("Cancel")');
+            await cancelButton.click();
+        });
+
+        await allure.step('Verify cancel message', async () => {
+            const successMessage = await page.waitForSelector('text=canceled');
+            expect(await successMessage.isVisible()).toBe(true);
+            await takeScreenshot(page, 'Cancel message displayed');
+        });
+
+        await allure.step('Verify API is not called and no notes are deleted', async () => {
+            const deleteNoteSpyInfo = await getSpyInfo(page, 'mockApp.deleteNote');
+            expect(deleteNoteSpyInfo.callCount).toBe(0);
+
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
+            expect(allNotes.length).toBe(1);
+        });
+
+        await allure.step('Verify llm not called when tool is canceled', async () => {
+            const sendButton = page.getByRole('button', { name: 'Send' });
+            const isSendButtonVisible = await sendButton.isVisible();
+            expect(isSendButtonVisible).toBe(true);
+        });
+    }, 20000);
+
+    it('should handle API error correctly', async () => {
+        allure.description('Tests error handling when delete note API throws an error');
+
+        const mockCode = /* javascript */ `
+            import { EMBED_COMMANDS_MOCK, getLLMProviderSettings } from './src-copilot/test/frontend-chat/chat.testdata.js';
+            import { LLM_MAX_TOKENS_SETTING } from './src-copilot/constants.js';
+            import { createCallAmplenotePluginMock } from "./common-utils/embed-comunication.js";
+            import { mockApp, mockNote } from "./common-utils/amplenote-mocks.js";
+
+            window.SETTINGS = {
+                ...getLLMProviderSettings('groq'),
+                [LLM_MAX_TOKENS_SETTING]: '100'
+            };
+
+            window.INIT_MESSAGES = [
+                {
+                    "message": {
+                        "id": "test456",
+                        "role": "assistant",
+                        "status": {
+                            "type": "requires-action",
+                            "reason": "tool-calls"
+                        },
+                        "content": [
+                            {
+                                "type": "tool-call",
+                                "toolCallId": "deleteNotes123",
+                                "toolName": "DeleteUserNotes",
+                                "argsText": '{notes: [{noteUUID: "note-uuid-1"}]}',
+                                "args": {
+                                    "notes": [
+                                        { "noteUUID": "note-uuid-1" }
+                                    ]
+                                }
+                            }
+                        ],
+                        "metadata": {
+                            "custom": {
+                                "toolStateStorage": {
+                                    "deleteNotes123": {
+                                        "formState": "init",
+                                        "formData": {},
+                                        "formError": null
+                                    }
+                                }
+                            }
+                        },
+                        "createdAt": "2025-05-24T10:00:00.000Z"
+                    },
+                    "parentId": null
+                }
+            ];
+
+            window.mockApp = mockApp();
+            window.mockApp._noteRegistry["note-uuid-1"] = mockNote("# Test Note 1", "Test Note 1", "note-uuid-1", ["tag1"]);
+
+            window.callAmplenotePlugin = createCallAmplenotePluginMock({
+                ...EMBED_COMMANDS_MOCK,
+                getSettings: async () => window.SETTINGS,
+                receiveMessageFromPlugin: async (queue) => {
+                    if (queue === 'attachments' && window.INIT_MESSAGES) {
+                        const injectMessages = window.INIT_MESSAGES;
+                        window.INIT_MESSAGES = null;
+                        return {type: 'new-chat', message: injectMessages};
+                    }
+                    return null;
+                },
+                getNoteTitleByUUID: async (uuid) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note.name : null;
+                },
+                getNoteTagsByUUID: async ({ uuid }) => {
+                    const note = await window.mockApp.notes.find(uuid);
+                    return note ? note.tags : [];
+                },
+                deleteNote: async ({ uuid }) => {
+                    // Add timeout so that test can capture state
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    // Throw an error to simulate API failure
+                    throw new Error('Failed to delete note');
+                }
+            });
+        `;
+
+        const compiledCode = await compileJavascriptCode(mockCode);
+        const htmlWithMocks = addScriptToHtmlString(html, compiledCode);
+        const page = await getPage();
+        await page.setContent(htmlWithMocks);
+
+        await allure.step('Verify tool init state', async () => {
+            const initState = await waitForCustomEvent(page, 'onToolStateChange');
+            expect(initState).toEqual('init');
+            await takeScreenshot(page, 'Tool initialized');
+        });
+
+        await allure.step('Click submit button to trigger error', async () => {
+            const submitButton = await page.waitForSelector('button:has-text("Delete Notes")');
+            await submitButton.click();
+        });
+
+        await allure.step('Verify tool transitions to error state', async () => {
+            const errorState = await waitForCustomEvent(page, 'onToolStateChange');
+            expect(errorState).toEqual('error');
+        });
+
+        await allure.step('Verify error message is displayed', async () => {
+            const errorMessage = await page.waitForSelector('text=Failed to delete note');
+            const isErrorMessageVisible = await errorMessage.isVisible();
+            expect(isErrorMessageVisible).toBe(true);
+            await takeScreenshot(page, 'Error message displayed');
+        });
+
+        await allure.step('Verify API was called despite error', async () => {
+            const deleteNoteSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
+            expect(deleteNoteSpyInfo.callCount).toBeGreaterThan(0);
+        });
+
+        await allure.step('Verify note was not deleted due to error', async () => {
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
+            expect(allNotes.length).toBe(1);
+        });
+
+        await allure.step('Verify llm is called with tool error to continue answer', async () => {
+            const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
+            expect(llmCallData.messages[0].content[0].result).toContain('Failed to delete note');
+        });
     }, 20000);
 });

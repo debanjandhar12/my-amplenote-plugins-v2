@@ -4,3 +4,7 @@ node_modules/
 .zed
 dist/
 *.parquet
+.kiro
+package-lock.json
+.vscode
+allure/

@@ -8,17 +8,11 @@ import {
 } from "../constants.js";
 import {hideEmbedLoader, showEmbedLoader} from "../../common-utils/embed-ui.js";
 import {EMBED_COMMANDS_MOCK, EMBED_NOTE_UUID_MOCK} from "../test/embed/embed.testdata.js";
-import {createCallAmplenotePluginMock, deserializeWithFunctions} from "../../common-utils/embed-comunication.js";
+import {createCallAmplenotePluginMock} from "../../common-utils/embed-comunication.js";
 
 if(process.env.NODE_ENV === 'development') {
     window.noteUUID = window.noteUUID || EMBED_NOTE_UUID_MOCK;
     window.callAmplenotePlugin = window.callAmplenotePlugin || createCallAmplenotePluginMock(EMBED_COMMANDS_MOCK);
-}
-else {
-    if (window.INJECTED_NOTE_UUID_MOCK)
-        window.noteUUID = deserializeWithFunctions(window.INJECTED_NOTE_UUID_MOCK);
-    if (window.INJECTED_EMBED_COMMANDS_MOCK)
-        window.callAmplenotePlugin = createCallAmplenotePluginMock(deserializeWithFunctions(window.INJECTED_EMBED_COMMANDS_MOCK));
 }
 window.appConnector = new Proxy({}, {
     get: function(target, prop, receiver) {

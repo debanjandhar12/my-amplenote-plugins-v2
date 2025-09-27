@@ -1,13 +1,13 @@
 import * as esbuild from 'esbuild';
-import {promises as fs} from "fs";
+import { promises as fs } from "fs";
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
 import _ from 'lodash-es';
-import {DistWriterPlugin} from "./build/esbuild-plugins/distWriter.js";
-import {esbuildOptions} from "./build/esbuild-options.js";
-import {HtmlLoaderPlugin} from "./build/esbuild-plugins/htmlLoader.js";
-import {InlineJSLoader} from "./build/esbuild-plugins/inlineJSLoader.js";
+import { DistWriterPlugin } from "./build/esbuild-plugins/distWriter.js";
+import { esbuildOptions } from "./build/esbuild-options.js";
+import { HtmlLoaderPlugin } from "./build/esbuild-plugins/htmlLoader.js";
+import { InlineJSLoader } from "./build/esbuild-plugins/inlineJSLoader.js";
 
 
 // -- Start the server --
@@ -85,7 +85,7 @@ async function main() {
             htmlFiles.forEach(file => {
                 opts.entryPoints.push(`${pluginTargetPath}/embed/${file}`);
             });
-        } catch {}
+        } catch { }
         try {
             await fs.access(`${pluginTargetPath}/plugin.about.js`);
             opts.entryPoints.push(`${pluginTargetPath}/plugin.about.js`);
@@ -107,5 +107,5 @@ async function main() {
 }
 
 main().catch((e) => {
-    console.log("error"+e);
+    console.log("error" + e);
 })

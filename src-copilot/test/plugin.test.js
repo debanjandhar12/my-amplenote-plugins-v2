@@ -1,9 +1,9 @@
 import pluginObject from "../plugin.js";
 import { allure } from 'jest-allure2-reporter/api';
 
-describe('mindmap plugin object', () => {
+describe('copilot plugin', () => {
     beforeEach(() => {
-        allure.epic('src-mindmap');
+        allure.epic('src-copilot');
     });
 
     it('should load successfully', async () => {

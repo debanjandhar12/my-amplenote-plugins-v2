@@ -1,6 +1,7 @@
-import {chromium, expect as playwrightExpect} from '@playwright/test';
-import type { Page, Locator } from '@playwright/test';
+import type {Locator, Page} from '@playwright/test';
+import {chromium, expect as playwrightExpected} from '@playwright/test';
 import express from "express";
+import {allure} from 'jest-allure2-reporter/api';
 
 // === Utility helpers for playwright tests environment ===
 export function createPlaywrightHooks(headless = true) {
@@ -9,7 +10,7 @@ export function createPlaywrightHooks(headless = true) {
     beforeAll(async () => {
         const app = express();
         app.get('/', (req, res) => {
-            res.send('<!DOCTYPE html><html><body></body></html>');
+            res.send('<!DOCTYPE html><html><head><link rel="icon" href="data:,"></head><body></body></html>');
         });
         server = app.listen(0);
         browser = await chromium.launch({
@@ -25,19 +26,52 @@ export function createPlaywrightHooks(headless = true) {
     beforeEach(async () => {
         context = await browser.newContext();
         page = await context.newPage();
-        page.on('console', err => {
-            if (err.type() === 'error') {
-                // Log browser console errors
-                console.error(err.text());
+
+        // Intercept browser console messages and forward them to Node.js console
+        page.on('console', (msg) => {
+            const logType = msg.type().toUpperCase();
+            const logText = msg.text();
+
+            // Forward browser console messages to Node.js console (which will be captured by our setup)
+            switch (msg.type()) {
+                case 'error':
+                    console.error(`[BROWSER] ${logText}`);
+                    break;
+                case 'warning':
+                    console.warn(`[BROWSER] ${logText}`);
+                    break;
+                case 'info':
+                    console.info(`[BROWSER] ${logText}`);
+                    break;
+                default:
+                    console.log(`[BROWSER] ${logText}`);
             }
         });
+
+        // Enhanced waitForSelector with step logging
         const originalWaitForSelector = page.waitForSelector;
         page.waitForSelector = async (...args) => {
-            console.info(`page.waitForSelector: Waiting for ${args[0]}`);
-            const result = await originalWaitForSelector.apply(page, args);
-            console.info(`page.waitForSelector: Found ${args[0]}`);
-            return result;
+            return await allure.step(`Wait for selector: ${args[0]}`, async () => {
+                console.info(`page.waitForSelector: Waiting for ${args[0]}`);
+                const result = await originalWaitForSelector.apply(page, args);
+                console.info(`page.waitForSelector: Found ${args[0]}`);
+                return result;
+            });
         };
+
+        // Throttle network speed for non-cdn requests
+        await context.route('**/*', async (route) => {
+            const url = new URL(route.request().url());
+            const hostname = url.hostname;
+
+            if (['jsdelivr.net', 'esm.sh'].some(domain => hostname.includes(domain))) {
+                return route.continue();
+            }
+
+            await new Promise(r => setTimeout(r, 320));
+            return route.continue();
+        });
+
         await page.goto(`http://localhost:${server.address().port}`);
     });
 
@@ -66,6 +100,28 @@ export async function waitForCustomEvent(page: Page, eventName: string): Promise
     return result;
 }
 
+export async function getSpyInfo(page: Page, spyName: string) {
+    return page.evaluate((name) => {
+        const parts = name.split('.');
+        const spy = parts.reduce((obj, prop) => obj && obj[prop], window as any);
+
+        if (!spy) {
+            return { callCount: 0, args: [] };
+        }
+
+        return { callCount: spy.callCount, args: spy.args };
+    }, spyName);
+}
+
+export async function takeScreenshot(page: Page, name: string): Promise<void> {
+    try {
+        const screenshot = await page.screenshot({fullPage: true});
+        await allure.attachment(name, screenshot, 'image/png');
+    } catch (error) {
+        console.warn(`Failed to take screenshot ${name}:`, error.message);
+    }
+}
+
 // ==== Create jest matchers from playwright matchers ====
 // https://playwright.dev/docs/test-assertions#list-of-assertions
 const matcherNames= [
@@ -92,7 +148,7 @@ const matchers = Object.fromEntries(
         async function(elementHandle: Locator, ...args: any[]) {
             try {
                 // @ts-ignore - using dynamic method name
-                await playwrightExpect(elementHandle)[name](...args);
+                await playwrightExpected(elementHandle)[name](...args);
                 return { pass: true, message: () => '' };
             } catch (e) {
                 return { pass: false, message: () => (e as Error).message || String(e) };

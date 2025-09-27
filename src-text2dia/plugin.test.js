@@ -1,8 +1,12 @@
 import { Buffer } from 'buffer';
-
 import pluginObject from "./plugin.js";
+import { allure } from 'jest-allure2-reporter/api';
 
 describe('text2dia plugin', () => {
+    beforeEach(() => {
+        allure.epic('src-text2dia');
+    });
+
     it('should load successfully', async () => {
         expect(pluginObject).toBeDefined();
         expect(typeof pluginObject).toBe('object');
@@ -10,6 +14,10 @@ describe('text2dia plugin', () => {
 });
 
 describe('encoding test', () => {
+    beforeEach(() => {
+        allure.epic('src-text2dia');
+    });
+
     test('Old Encoding and decoding result in same', () => {
         const text = 'Hello World';
         const encoded = window.encodeURIComponent(Buffer.from(text, "utf8").toString('base64'));

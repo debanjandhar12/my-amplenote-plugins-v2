@@ -8,7 +8,7 @@ import { fetch } from "cross-fetch";
 import { TransformStream } from 'stream/web';
 import { cloneDeep } from "lodash-es";
 import { Splitter } from "../src-copilot/CopilotDB/splitter/Splitter.js";
-import { mockApp, mockNote } from "../common-utils/test-helpers.js";
+import { mockApp, mockNote } from "../common-utils/amplenote-mocks.js";
 import { getCorsBypassUrl } from "../common-utils/cors-helpers.js";
 import { EMBEDDING_API_KEY_SETTING, EMBEDDING_API_URL_SETTING, COPILOT_DB_MAX_TOKENS } from "../src-copilot/constants.js";
 import { OpenAIEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/OpenAIEmbeddingGenerator.js";
