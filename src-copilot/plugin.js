@@ -334,8 +334,8 @@ const plugin = {
         "getUserCurrentNoteData": async (app) => {
             try {
                 let currentNoteUUID = app.context.noteUUID;
-                if (!currentNoteUUID) {
-                    const currentURL = app.context.url;
+                const currentURL = app.context.url;
+                if (!currentNoteUUID && currentURL) {
                     const regex = /amplenote\.com\/notes\/([a-f0-9-]+)/;
                     const matches = currentURL.match(regex);
                     if (matches && matches.length > 1) {
