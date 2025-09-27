@@ -6,19 +6,18 @@ export const SpeechToTextApp = () => {
     const [status, setStatus] = useState('initializing'); // 'initializing', 'processing', 'stopped', 'error'
     const [errorObj, setErrorObj] = useState(null);
     const [transcriptionText, setTranscriptionText] = useState('');
-    const { Theme, Flex, Box, Button, Text, Spinner } = window.RadixUI;
-    const currentNoteUUIDRef = useRef(null);
-    const initialSelectionRef = useRef('');
+    const [currentNoteInfo, setCurrentNoteInfo] = useState(null);
+    const [isInserting, setIsInserting] = useState(false);
+    const { Theme, Flex, Button, Text, Spinner, TextArea, Card } = window.RadixUI;
     const confirmedTextRef = useRef('');
     const partialTextRef = useRef('');
-    const lastAppliedTextRef = useRef('');
 
     useEffect(() => {
         const initializeVoskletSpeechToText = async () => {
             try {
-                // Get current note data for text replacement
+                // Get current note data
                 const noteData = await window.appConnector.getUserCurrentNoteData();
-                currentNoteUUIDRef.current = noteData.currentNoteUUID;
+                setCurrentNoteInfo(noteData);
                 
                 // Initialize Vosklet
                 const initResult = await window.appConnector.initializeVoskletSpeechToText();
@@ -43,10 +42,6 @@ export const SpeechToTextApp = () => {
                 }
 
                 setStatus('processing');
-                
-                // Set initial placeholder text
-                await window.appConnector.replaceSelection('Say something...');
-                initialSelectionRef.current = 'Say something...';
 
                 // Flush any stale messages from previous sessions
                 try {
@@ -118,13 +113,7 @@ export const SpeechToTextApp = () => {
                         .filter(Boolean)
                         .join(' ');
 
-                    if (combined !== lastAppliedTextRef.current) {
-                        setTranscriptionText(combined);
-                        await window.appConnector.replaceSelection(
-                            combined || initialSelectionRef.current || ''
-                        );
-                        lastAppliedTextRef.current = combined;
-                    }
+                    setTranscriptionText(combined);
                 }
 
             } catch (error) {
@@ -134,7 +123,7 @@ export const SpeechToTextApp = () => {
 
         const interval = setInterval(pollForMessages, 200);
         return () => clearInterval(interval);
-    }, [status, transcriptionText]);
+    }, [status]);
 
     useIntervalPingPlugin(status === 'initializing' || status === 'processing');
 
@@ -150,21 +139,67 @@ export const SpeechToTextApp = () => {
         }
     };
 
+    const handleInsertToCurrentNote = async () => {
+        if (!transcriptionText.trim()) return;
+        
+        setIsInserting(true);
+        try {
+            await window.appConnector.replaceSelection(transcriptionText);
+            // Close the embed after successful insertion
+            await window.appConnector.forceEmbedClose();
+        } catch (error) {
+            console.error('Error inserting text:', error);
+            setErrorObj({ message: error.message || 'Failed to insert text', type: 'INSERT_ERROR' });
+        } finally {
+            setIsInserting(false);
+        }
+    };
+
+    const handleInsertToSelectedNote = async () => {
+        if (!transcriptionText.trim()) return;
+        
+        setIsInserting(true);
+        try {
+            const result = await window.appConnector.promptNoteSelection(
+                'Select a note to insert the transcribed text:',
+                transcriptionText
+            );
+            
+            if (result && result.success) {
+                // Close the embed after successful insertion
+                await window.appConnector.forceEmbedClose();
+            } else if (result && result.cancelled) {
+                // User cancelled, just continue
+            } else {
+                throw new Error(result?.error || 'Failed to insert text to selected note');
+            }
+        } catch (error) {
+            console.error('Error inserting text to selected note:', error);
+            setErrorObj({ message: error.message || 'Failed to insert text', type: 'INSERT_ERROR' });
+        } finally {
+            setIsInserting(false);
+        }
+    };
+
+    const handleClearText = () => {
+        setTranscriptionText('');
+        confirmedTextRef.current = '';
+        partialTextRef.current = '';
+    };
+
     return (
         <Theme appearance="dark" accentColor="blue">
-            <Flex direction="column" align="center" justify="center" gap="4" style={{ height: '100vh', padding: '16px' }}>
+            <Flex direction="column" gap="4" style={{ height: '100vh', padding: '16px' }}>
                 {status === 'initializing' && (
-                    <Box style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', gap: '24px' }}>
+                    <Flex direction="column" align="center" justify="center" gap="4" style={{ height: '100%' }}>
                         <Spinner size="5" />
                         <Text size="3">Initializing speech recognition...</Text>
-                    </Box>
+                    </Flex>
                 )}
 
                 {status === 'processing' && (
                     <>
-                        <>{transcriptionText}</>
-                        <Box style={{ textAlign: 'center' }}>
-                            {/* Animated voice processing icon */}
+                        <Flex direction="column" align="center" gap="3" style={{ marginBottom: '16px' }}>
                             <div className="voice-processing-animation">
                                 <div className="voice-wave"></div>
                                 <div className="voice-wave"></div>
@@ -172,30 +207,117 @@ export const SpeechToTextApp = () => {
                                 <div className="voice-wave"></div>
                                 <div className="voice-wave"></div>
                             </div>
-                            <Text size="3" style={{ marginTop: '16px' }}>Listening...</Text>
-                        </Box>
-                        <Button 
-                            size="3" 
-                            color="red" 
-                            onClick={handleStopClick}
-                            style={{ marginTop: '24px' }}
-                        >
-                            Stop
-                        </Button>
+                            <Text size="3">Listening...</Text>
+                        </Flex>
+
+                        <Card style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Text size="2" color="gray" style={{ marginBottom: '8px' }}>
+                                Transcribed Text:
+                            </Text>
+                            <TextArea
+                                value={transcriptionText || 'Say something...'}
+                                readOnly
+                                style={{ 
+                                    flex: 1, 
+                                    minHeight: '200px',
+                                    fontStyle: !transcriptionText ? 'italic' : 'normal',
+                                    color: !transcriptionText ? 'gray' : 'inherit'
+                                }}
+                            />
+                        </Card>
+
+                        <Flex gap="2" justify="center">
+                            <Button 
+                                size="3" 
+                                color="red" 
+                                onClick={handleStopClick}
+                            >
+                                Stop Recording
+                            </Button>
+                            {transcriptionText && (
+                                <Button 
+                                    size="3" 
+                                    variant="outline"
+                                    onClick={handleClearText}
+                                >
+                                    Clear
+                                </Button>
+                            )}
+                        </Flex>
                     </>
                 )}
 
                 {status === 'stopped' && (
-                    <Box style={{ textAlign: 'center' }}>
-                        <Text size="4">Please close the window</Text>
-                    </Box>
+                    <>
+                        <Card style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                            <Text size="2" color="gray" style={{ marginBottom: '8px' }}>
+                                Final Transcription:
+                            </Text>
+                            <TextArea
+                                value={transcriptionText || 'No text was transcribed.'}
+                                onChange={(e) => setTranscriptionText(e.target.value)}
+                                style={{ 
+                                    flex: 1, 
+                                    minHeight: '200px',
+                                    fontStyle: !transcriptionText ? 'italic' : 'normal',
+                                    color: !transcriptionText ? 'gray' : 'inherit'
+                                }}
+                                placeholder="You can edit the transcribed text here..."
+                            />
+                        </Card>
+
+                        {transcriptionText && (
+                            <Flex direction="column" gap="2">
+                                {currentNoteInfo?.currentNoteUUID && (
+                                    <Button 
+                                        size="3" 
+                                        onClick={handleInsertToCurrentNote}
+                                        disabled={isInserting}
+                                        style={{ width: '100%' }}
+                                    >
+                                        {isInserting ? (
+                                            <Flex align="center" gap="2">
+                                                <Spinner size="1" />
+                                                Inserting...
+                                            </Flex>
+                                        ) : (
+                                            `Insert to Current Note (${currentNoteInfo.currentNoteName || 'Untitled'})`
+                                        )}
+                                    </Button>
+                                )}
+                                <Button 
+                                    size="3" 
+                                    variant="outline"
+                                    onClick={handleInsertToSelectedNote}
+                                    disabled={isInserting}
+                                    style={{ width: '100%' }}
+                                >
+                                    {isInserting ? (
+                                        <Flex align="center" gap="2">
+                                            <Spinner size="1" />
+                                            Inserting...
+                                        </Flex>
+                                    ) : (
+                                        'Insert to Note...'
+                                    )}
+                                </Button>
+                            </Flex>
+                        )}
+                    </>
                 )}
 
                 {status === 'error' && (
-                    <Box style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <Text size="3">Error initializing speech recognition</Text>
-                        <Text size="2" color={'red'}>{errorToString(errorObj)}</Text>
-                    </Box>
+                    <Flex direction="column" align="center" justify="center" gap="4" style={{ height: '100%' }}>
+                        <Text size="3">Error with speech recognition</Text>
+                        <Text size="2" color="red">{errorToString(errorObj)}</Text>
+                        <Button 
+                            size="3" 
+                            variant="outline"
+                            onClick={() => window.location.reload()}
+                        >
+                            Try Again
+                        </Button>
+                    </Flex>
                 )}
             </Flex>
         </Theme>

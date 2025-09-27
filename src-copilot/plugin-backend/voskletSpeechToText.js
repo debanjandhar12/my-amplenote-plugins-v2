@@ -11,8 +11,7 @@ export class VoskletSpeechToText {
       modelName: "vosk-model-small-en-us-0.15",
       language: "English",
       bufferSize: 4096,
-      sampleRate: 48000,
-      voskLoader: null, // For dependency injection in tests
+      sampleRate: 16000,
       ...options
     };
     
@@ -35,10 +34,6 @@ export class VoskletSpeechToText {
    * @returns {Promise<any>}
    */
   async _loadVoskModule() {
-    if (this.options.voskLoader) {
-      return await this.options.voskLoader();
-    }
-    
     try {
       const module = await dynamicImportESM('vosk-browser');
       
@@ -122,13 +117,14 @@ export class VoskletSpeechToText {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          channelCount: 1
+          channelCount: 1,
+          autoGainControl: false,
+          sampleRate: this.options.sampleRate
         }
       });
 
       // Create recognizer
-      const effectiveSampleRate = (this.options.sampleRate || (this.audioContext && this.audioContext.sampleRate) || 16000);
-      this.recognizer = new this.model.KaldiRecognizer(effectiveSampleRate);
+      this.recognizer = new this.model.KaldiRecognizer(this.options.sampleRate);
 
       // Set up event listeners for recognition results
         this.recognizer.on("result", (message) => {
