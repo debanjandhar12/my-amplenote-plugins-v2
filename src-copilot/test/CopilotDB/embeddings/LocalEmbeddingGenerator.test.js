@@ -3,7 +3,7 @@ import { addScriptToHtmlString } from "../../../../common-utils/embed-helpers.js
 import { createPlaywrightHooks } from "../../../../common-utils/playwright-helpers.ts";
 import { allure } from 'jest-allure2-reporter/api';
 
-describe('LocalEmbeddingGenerator', () => {
+describe('Local Embedding', () => {
     const { getPage } = createPlaywrightHooks();
     
     beforeEach(() => {
