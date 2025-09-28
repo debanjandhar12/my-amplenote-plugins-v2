@@ -1,77 +1,91 @@
 import {useIntervalPingPlugin} from "../frontend-chat/hooks/useIntervalPingPlugin.jsx";
 import {errorToString} from "../frontend-chat/helpers/errorToString.js";
+import {useCurrentNotePolling} from "./hooks/useCurrentNotePolling.jsx";
 
 export const SpeechToTextApp = () => {
     const { useState, useEffect, useRef } = window.React;
-    const [status, setStatus] = useState('initializing'); // 'initializing', 'processing', 'stopped', 'error'
+    const [status, setStatus] = useState('initializing');
     const [errorObj, setErrorObj] = useState(null);
     const [transcriptionText, setTranscriptionText] = useState('');
-    const [currentNoteInfo, setCurrentNoteInfo] = useState(null);
     const [isInserting, setIsInserting] = useState(false);
     const { Theme, Flex, Button, Text, Spinner, TextArea, Card } = window.RadixUI;
     const confirmedTextRef = useRef('');
     const partialTextRef = useRef('');
 
-    useEffect(() => {
-        const initializeVoskletSpeechToText = async () => {
-            try {
-                // Get current note data
-                const noteData = await window.appConnector.getUserCurrentNoteData();
-                setCurrentNoteInfo(noteData);
-                
-                // Initialize Vosklet
-                const initResult = await window.appConnector.initializeVoskletSpeechToText();
-                if (!initResult.success) {
-                    setStatus('error');
-                    setErrorObj({ message: initResult.error, type: initResult.errorType });
-                    return;
-                }
+    const currentNoteInfo = useCurrentNotePolling();
 
-                // Start recording with callback channels
-                const startResult = await window.appConnector.startVoskletRecording({
-                    partialResult: 'vosklet-partial',
-                    result: 'vosklet-result', 
-                    error: 'vosklet-error',
-                    ready: 'vosklet-ready'
-                });
+    const resetTranscription = () => {
+        setTranscriptionText('');
+        confirmedTextRef.current = '';
+        partialTextRef.current = '';
+    };
 
-                if (!startResult.success) {
-                    setStatus('error');
-                    setErrorObj({ message: startResult.error, type: startResult.errorType });
-                    return;
-                }
+    const setError = (message, type = 'UNKNOWN_ERROR') => {
+        setStatus('error');
+        setErrorObj({ message, type });
+    };
 
-                setStatus('processing');
-
-                // Flush any stale messages from previous sessions
-                try {
-                    while (await window.appConnector.receiveMessageFromPlugin('vosklet-partial') != null) {}
-                    while (await window.appConnector.receiveMessageFromPlugin('vosklet-result') != null) {}
-                    while (await window.appConnector.receiveMessageFromPlugin('vosklet-error') != null) {}
-                    while (await window.appConnector.receiveMessageFromPlugin('vosklet-ready') != null) {}
-                } catch (e) {
-                    console.warn('Failed to flush initial Vosklet messages', e);
-                }
-                 
-            } catch (error) {
-                console.error('Failed to initialize Vosklet speech-to-text:', error);
-                setStatus('error');
-                setErrorObj({ message: error.message || 'Unknown error', type: 'INITIALIZATION_ERROR' });
+    const flushVoskletMessages = async () => {
+        try {
+            const channels = ['vosklet-partial', 'vosklet-result', 'vosklet-error', 'vosklet-ready'];
+            for (const channel of channels) {
+                while (await window.appConnector.receiveMessageFromPlugin(channel) != null) {}
             }
-        };
+        } catch (e) {
+            console.warn('Failed to flush initial Vosklet messages', e);
+        }
+    };
 
-        initializeVoskletSpeechToText();
+    const cleanupExistingVosklet = async () => {
+        try {
+            await window.appConnector.stopVoskletRecording();
+            await window.appConnector.cleanupVoskletSpeechToText();
+        } catch (error) {
+            console.warn('No existing Vosklet session to cleanup:', error);
+        }
+    };
+
+    const initializeVosklet = async () => {
+        try {
+            await cleanupExistingVosklet();
+
+            const initResult = await window.appConnector.initializeVoskletSpeechToText();
+            if (!initResult.success) {
+                setError(initResult.error, initResult.errorType);
+                return;
+            }
+
+            const startResult = await window.appConnector.startVoskletRecording({
+                partialResult: 'vosklet-partial',
+                result: 'vosklet-result', 
+                error: 'vosklet-error',
+                ready: 'vosklet-ready'
+            });
+
+            if (!startResult.success) {
+                setError(startResult.error, startResult.errorType);
+                return;
+            }
+
+            setStatus('processing');
+            await flushVoskletMessages();
+        } catch (error) {
+            console.error('Failed to initialize Vosklet speech-to-text:', error);
+            setError(error.message || 'Unknown error', 'INITIALIZATION_ERROR');
+        }
+    };
+
+    useEffect(() => {
+        initializeVosklet();
     }, []);
 
     useEffect(() => {
-        // Listen for Vosklet callback messages
         const pollForMessages = async () => {
             if (status !== 'processing') return;
 
             try {
                 let updated = false;
 
-                // Drain and append all confirmed result chunks
                 while (true) {
                     const resultMessage = await window.appConnector.receiveMessageFromPlugin('vosklet-result');
                     if (!resultMessage) break;
@@ -81,14 +95,12 @@ export const SpeechToTextApp = () => {
                             confirmedTextRef.current = confirmedTextRef.current
                                 ? `${confirmedTextRef.current} ${chunk}`
                                 : chunk;
-                            // Clear partial when a result is confirmed
                             partialTextRef.current = '';
                             updated = true;
                         }
                     }
                 }
 
-                // Drain partials but keep only the most recent partial text
                 let latestPartial = null;
                 while (true) {
                     const partialMessage = await window.appConnector.receiveMessageFromPlugin('vosklet-partial');
@@ -100,11 +112,9 @@ export const SpeechToTextApp = () => {
                     updated = true;
                 }
 
-                // Drain errors and surface the first one immediately
                 const errorMessage = await window.appConnector.receiveMessageFromPlugin('vosklet-error');
                 if (errorMessage) {
-                    setStatus('error');
-                    setErrorObj({ message: errorMessage.error, type: errorMessage.errorType });
+                    setError(errorMessage.error, errorMessage.errorType);
                     return;
                 }
 
@@ -112,10 +122,8 @@ export const SpeechToTextApp = () => {
                     const combined = [confirmedTextRef.current, partialTextRef.current]
                         .filter(Boolean)
                         .join(' ');
-
                     setTranscriptionText(combined);
                 }
-
             } catch (error) {
                 console.error('Error polling for Vosklet messages:', error);
             }
@@ -134,58 +142,75 @@ export const SpeechToTextApp = () => {
             setStatus('stopped');
         } catch (error) {
             console.error('Error stopping recording:', error);
-            setStatus('error');
-            setErrorObj({ message: error.message || 'Failed to stop recording', type: 'STOP_ERROR' });
+            setError(error.message || 'Failed to stop recording', 'STOP_ERROR');
         }
     };
 
-    const handleInsertToCurrentNote = async () => {
+    const insertText = async (insertFn, errorType = 'INSERT_ERROR') => {
         if (!transcriptionText.trim()) return;
         
         setIsInserting(true);
         try {
-            await window.appConnector.replaceSelection(transcriptionText);
-            // Close the embed after successful insertion
+            await insertFn();
             await window.appConnector.forceEmbedClose();
         } catch (error) {
             console.error('Error inserting text:', error);
-            setErrorObj({ message: error.message || 'Failed to insert text', type: 'INSERT_ERROR' });
+            setErrorObj({ message: error.message || 'Failed to insert text', type: errorType });
         } finally {
             setIsInserting(false);
         }
     };
 
-    const handleInsertToSelectedNote = async () => {
-        if (!transcriptionText.trim()) return;
+    const handleInsertToCurrentNote = () => insertText(
+        () => window.appConnector.replaceSelection(transcriptionText)
+    );
+
+    const handleInsertToSelectedNote = () => insertText(async () => {
+        const result = await window.appConnector.promptNoteSelection(
+            'Select a note to insert the transcribed text:',
+            transcriptionText
+        );
         
-        setIsInserting(true);
-        try {
-            const result = await window.appConnector.promptNoteSelection(
-                'Select a note to insert the transcribed text:',
-                transcriptionText
-            );
-            
-            if (result && result.success) {
-                // Close the embed after successful insertion
-                await window.appConnector.forceEmbedClose();
-            } else if (result && result.cancelled) {
-                // User cancelled, just continue
-            } else {
-                throw new Error(result?.error || 'Failed to insert text to selected note');
-            }
-        } catch (error) {
-            console.error('Error inserting text to selected note:', error);
-            setErrorObj({ message: error.message || 'Failed to insert text', type: 'INSERT_ERROR' });
-        } finally {
-            setIsInserting(false);
+        if (result?.success) {
+            return;
+        } else if (result?.cancelled) {
+            throw new Error('User cancelled');
+        } else {
+            throw new Error(result?.error || 'Failed to insert text to selected note');
         }
-    };
+    });
 
-    const handleClearText = () => {
-        setTranscriptionText('');
-        confirmedTextRef.current = '';
-        partialTextRef.current = '';
-    };
+    const renderInsertButton = (onClick, children, primary = false) => (
+        <Button 
+            size="3" 
+            variant={primary ? "solid" : "outline"}
+            onClick={onClick}
+            disabled={isInserting}
+            style={{ width: '100%' }}
+        >
+            {isInserting ? (
+                <Flex align="center" gap="2">
+                    <Spinner size="1" />
+                    Inserting...
+                </Flex>
+            ) : children}
+        </Button>
+    );
+
+    const renderTextArea = (value, onChange = null, placeholder = null) => (
+        <TextArea
+            value={value}
+            onChange={onChange}
+            readOnly={!onChange}
+            placeholder={placeholder}
+            style={{ 
+                flex: 1, 
+                minHeight: '200px',
+                fontStyle: !value ? 'italic' : 'normal',
+                color: !value ? 'gray' : 'inherit'
+            }}
+        />
+    );
 
     return (
         <Theme appearance="dark" accentColor="blue">
@@ -201,11 +226,7 @@ export const SpeechToTextApp = () => {
                     <>
                         <Flex direction="column" align="center" gap="3" style={{ marginBottom: '16px' }}>
                             <div className="voice-processing-animation">
-                                <div className="voice-wave"></div>
-                                <div className="voice-wave"></div>
-                                <div className="voice-wave"></div>
-                                <div className="voice-wave"></div>
-                                <div className="voice-wave"></div>
+                                {[...Array(5)].map((_, i) => <div key={i} className="voice-wave"></div>)}
                             </div>
                             <Text size="3">Listening...</Text>
                         </Flex>
@@ -214,32 +235,15 @@ export const SpeechToTextApp = () => {
                             <Text size="2" color="gray" style={{ marginBottom: '8px' }}>
                                 Transcribed Text:
                             </Text>
-                            <TextArea
-                                value={transcriptionText || 'Say something...'}
-                                readOnly
-                                style={{ 
-                                    flex: 1, 
-                                    minHeight: '200px',
-                                    fontStyle: !transcriptionText ? 'italic' : 'normal',
-                                    color: !transcriptionText ? 'gray' : 'inherit'
-                                }}
-                            />
+                            {renderTextArea(transcriptionText || 'Say something...')}
                         </Card>
 
                         <Flex gap="2" justify="center">
-                            <Button 
-                                size="3" 
-                                color="red" 
-                                onClick={handleStopClick}
-                            >
+                            <Button size="3" color="red" onClick={handleStopClick}>
                                 Stop Recording
                             </Button>
                             {transcriptionText && (
-                                <Button 
-                                    size="3" 
-                                    variant="outline"
-                                    onClick={handleClearText}
-                                >
+                                <Button size="3" variant="outline" onClick={resetTranscription}>
                                     Clear
                                 </Button>
                             )}
@@ -253,54 +257,21 @@ export const SpeechToTextApp = () => {
                             <Text size="2" color="gray" style={{ marginBottom: '8px' }}>
                                 Final Transcription:
                             </Text>
-                            <TextArea
-                                value={transcriptionText || 'No text was transcribed.'}
-                                onChange={(e) => setTranscriptionText(e.target.value)}
-                                style={{ 
-                                    flex: 1, 
-                                    minHeight: '200px',
-                                    fontStyle: !transcriptionText ? 'italic' : 'normal',
-                                    color: !transcriptionText ? 'gray' : 'inherit'
-                                }}
-                                placeholder="You can edit the transcribed text here..."
-                            />
+                            {renderTextArea(
+                                transcriptionText || 'No text was transcribed.',
+                                (e) => setTranscriptionText(e.target.value),
+                                "You can edit the transcribed text here..."
+                            )}
                         </Card>
 
                         {transcriptionText && (
                             <Flex direction="column" gap="2">
-                                {currentNoteInfo?.currentNoteUUID && (
-                                    <Button 
-                                        size="3" 
-                                        onClick={handleInsertToCurrentNote}
-                                        disabled={isInserting}
-                                        style={{ width: '100%' }}
-                                    >
-                                        {isInserting ? (
-                                            <Flex align="center" gap="2">
-                                                <Spinner size="1" />
-                                                Inserting...
-                                            </Flex>
-                                        ) : (
-                                            `Insert to Current Note (${currentNoteInfo.currentNoteName || 'Untitled'})`
-                                        )}
-                                    </Button>
+                                {currentNoteInfo?.currentNoteUUID && renderInsertButton(
+                                    handleInsertToCurrentNote,
+                                    `Insert to Current Note (${currentNoteInfo.currentNoteName || 'Untitled'})`,
+                                    true
                                 )}
-                                <Button 
-                                    size="3" 
-                                    variant="outline"
-                                    onClick={handleInsertToSelectedNote}
-                                    disabled={isInserting}
-                                    style={{ width: '100%' }}
-                                >
-                                    {isInserting ? (
-                                        <Flex align="center" gap="2">
-                                            <Spinner size="1" />
-                                            Inserting...
-                                        </Flex>
-                                    ) : (
-                                        'Insert to Note...'
-                                    )}
-                                </Button>
+                                {renderInsertButton(handleInsertToSelectedNote, 'Insert to Note...')}
                             </Flex>
                         )}
                     </>
@@ -310,11 +281,7 @@ export const SpeechToTextApp = () => {
                     <Flex direction="column" align="center" justify="center" gap="4" style={{ height: '100%' }}>
                         <Text size="3">Error with speech recognition</Text>
                         <Text size="2" color="red">{errorToString(errorObj)}</Text>
-                        <Button 
-                            size="3" 
-                            variant="outline"
-                            onClick={() => window.location.reload()}
-                        >
+                        <Button size="3" variant="outline" onClick={() => window.location.reload()}>
                             Try Again
                         </Button>
                     </Flex>
