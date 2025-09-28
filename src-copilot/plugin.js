@@ -522,45 +522,11 @@ const plugin = {
                     error: error.message 
                 };
             }
-        },
-        "promptNoteSelection": async function (app, message, transcriptionText) {
-            try {
-                // Use app.prompt to get note selection from user
-                const noteUUID = await app.prompt(message, {
-                    inputs: [
-                        {
-                            type: "note",
-                            label: "Select Note"
-                        }
-                    ]
-                });
-
-                if (!noteUUID) {
-                    return { success: false, cancelled: true };
-                }
-
-                // Navigate to the selected note and insert the text
-                await app.navigate(`https://www.amplenote.com/notes/${noteUUID}`);
-                
-                // Wait a bit for navigation to complete
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                // Insert the transcribed text
-                await app.context.replaceSelection(transcriptionText);
-                
-                return { success: true, noteUUID: noteUUID };
-            } catch (error) {
-                console.error('Failed to prompt note selection:', error);
-                return { 
-                    success: false, 
-                    error: error.message 
-                };
-            }
         }
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
         'getAllChatThreadsFromCopilotDB', 'saveChatThreadToCopilotDB', 'getChatThreadFromCopilotDB',
         'getLastOpenedChatThreadFromCopilotDB',
-        'receiveMessageFromPlugin', 'ping', 'replaceSelection', 'promptNoteSelection',
+        'receiveMessageFromPlugin', 'ping', 'replaceSelection',
         'initializeVoskletSpeechToText', 'startVoskletRecording', 'stopVoskletRecording', 
         'getVoskletRecordingStatus', 'cleanupVoskletSpeechToText'])
 }

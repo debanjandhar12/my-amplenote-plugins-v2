@@ -161,24 +161,44 @@ export const SpeechToTextApp = () => {
         }
     };
 
-    const handleInsertToCurrentNote = () => insertText(
-        () => window.appConnector.replaceSelection(transcriptionText)
-    );
-
-    const handleInsertToSelectedNote = () => insertText(async () => {
-        const result = await window.appConnector.promptNoteSelection(
-            'Select a note to insert the transcribed text:',
-            transcriptionText
-        );
-        
-        if (result?.success) {
+    const handleInsertToCurrentNote = () => {
+        if (!currentNoteInfo?.currentNoteUUID) {
+            setErrorObj({ message: 'No current note available', type: 'NOTE_NOT_FOUND' });
             return;
-        } else if (result?.cancelled) {
-            throw new Error('User cancelled');
-        } else {
-            throw new Error(result?.error || 'Failed to insert text to selected note');
         }
-    });
+        return insertText(
+            () => window.appConnector.insertNoteContent({uuid: currentNoteInfo.currentNoteUUID}, transcriptionText)
+        );
+    };
+
+    const handleInsertToSelectedNote = async () => {
+        if (!transcriptionText.trim()) return;
+        
+        setIsInserting(true);
+        try {
+            const noteUUID = await window.appConnector.prompt('Select a note to insert the transcribed text:', {
+                inputs: [
+                    {
+                        type: "note",
+                        label: "Select Note"
+                    }
+                ]
+            });
+            
+            if (!noteUUID) {
+                // User cancelled
+                return;
+            }
+            
+            await window.appConnector.insertNoteContent({uuid: noteUUID}, transcriptionText);
+            await window.appConnector.forceEmbedClose();
+        } catch (error) {
+            console.error('Error inserting text to selected note:', error);
+            setErrorObj({ message: error.message || 'Failed to insert text', type: 'INSERT_ERROR' });
+        } finally {
+            setIsInserting(false);
+        }
+    };
 
     const renderInsertButton = (onClick, children, primary = false) => (
         <Button 
