@@ -152,7 +152,6 @@ export const SpeechToTextApp = () => {
         setIsInserting(true);
         try {
             await insertFn();
-            await window.appConnector.forceEmbedClose();
         } catch (error) {
             console.error('Error inserting text:', error);
             setErrorObj({ message: error.message || 'Failed to insert text', type: errorType });
@@ -176,7 +175,7 @@ export const SpeechToTextApp = () => {
         
         setIsInserting(true);
         try {
-            const noteUUID = await window.appConnector.prompt('Select a note to insert the transcribed text:', {
+            const selectedNote = await window.appConnector.prompt('Select a note to insert the transcribed text:', {
                 inputs: [
                     {
                         type: "note",
@@ -185,19 +184,22 @@ export const SpeechToTextApp = () => {
                 ]
             });
             
-            if (!noteUUID) {
-                // User cancelled
-                return;
-            }
+            if (!selectedNote.uuid) return;
             
-            await window.appConnector.insertNoteContent({uuid: noteUUID}, transcriptionText);
-            await window.appConnector.forceEmbedClose();
+            await window.appConnector.insertNoteContent({uuid: selectedNote.uuid}, transcriptionText);
         } catch (error) {
             console.error('Error inserting text to selected note:', error);
             setErrorObj({ message: error.message || 'Failed to insert text', type: 'INSERT_ERROR' });
         } finally {
             setIsInserting(false);
         }
+    };
+
+    const handleStartNewRecording = async () => {
+        resetTranscription();
+        setStatus('initializing');
+        setErrorObj(null);
+        await initializeVosklet();
     };
 
     const renderInsertButton = (onClick, children, primary = false) => (
@@ -284,16 +286,26 @@ export const SpeechToTextApp = () => {
                             )}
                         </Card>
 
-                        {transcriptionText && (
-                            <Flex direction="column" gap="2">
-                                {currentNoteInfo?.currentNoteUUID && renderInsertButton(
-                                    handleInsertToCurrentNote,
-                                    `Insert to Current Note (${currentNoteInfo.currentNoteName || 'Untitled'})`,
-                                    true
-                                )}
-                                {renderInsertButton(handleInsertToSelectedNote, 'Insert to Note...')}
-                            </Flex>
-                        )}
+                        <Flex direction="column" gap="2">
+                            {transcriptionText && (
+                                <>
+                                    {currentNoteInfo?.currentNoteUUID && renderInsertButton(
+                                        handleInsertToCurrentNote,
+                                        `Insert to Current Note (${currentNoteInfo.currentNoteName || 'Untitled'})`,
+                                        true
+                                    )}
+                                    {renderInsertButton(handleInsertToSelectedNote, 'Insert to Note...')}
+                                </>
+                            )}
+                            <Button 
+                                size="3" 
+                                variant="outline"
+                                onClick={handleStartNewRecording}
+                                style={{ width: '100%' }}
+                            >
+                                Start New Recording
+                            </Button>
+                        </Flex>
                     </>
                 )}
 

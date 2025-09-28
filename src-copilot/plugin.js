@@ -314,11 +314,7 @@ const plugin = {
             window.lastHeartbeatFromChatEmbed = Date.now();
             return true;
         },
-        // This doesn't actually close the embed, it just sets isEmbedOpen to false
-        "forceEmbedClose": async function (app) {
-            window.lastHeartbeatFromChatEmbed = null;
-            return true;
-        },
+
         "receiveMessageFromPlugin": async function (app, channel) {
             if (window.messageQueue && window.messageQueue[channel] &&
                 window.messageQueue[channel].length > 0) {
