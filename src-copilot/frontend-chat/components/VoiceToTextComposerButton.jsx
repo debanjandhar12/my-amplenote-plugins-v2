@@ -28,7 +28,7 @@ export const VoiceToTextComposerButton = () => {
 
             try {
                 // Initialize Vosklet API
-                const result = await window.appConnector.onEmbedCall('initializeVoskletSpeechToText');
+                const result = await window.appConnector.initializeVoskletSpeechToText();
                 if (result.success) {
                     setIsSupported(true);
                     setIsInitialized(true);

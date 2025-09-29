@@ -8,6 +8,7 @@ export const SpeechToTextApp = () => {
     const [errorObj, setErrorObj] = useState(null);
     const [transcriptionText, setTranscriptionText] = useState('');
     const [isInserting, setIsInserting] = useState(false);
+    const [isInserted, setIsInserted] = useState(false);
     const { Theme, Flex, Button, Text, Spinner, TextArea, Card } = window.RadixUI;
     const confirmedTextRef = useRef('');
     const partialTextRef = useRef('');
@@ -18,6 +19,7 @@ export const SpeechToTextApp = () => {
         setTranscriptionText('');
         confirmedTextRef.current = '';
         partialTextRef.current = '';
+        setIsInserted(false);
     };
 
     const setError = (message, type = 'UNKNOWN_ERROR') => {
@@ -146,28 +148,26 @@ export const SpeechToTextApp = () => {
         }
     };
 
-    const insertText = async (insertFn, errorType = 'INSERT_ERROR') => {
-        if (!transcriptionText.trim()) return;
-        
-        setIsInserting(true);
-        try {
-            await insertFn();
-        } catch (error) {
-            console.error('Error inserting text:', error);
-            setErrorObj({ message: error.message || 'Failed to insert text', type: errorType });
-        } finally {
-            setIsInserting(false);
-        }
-    };
 
-    const handleInsertToCurrentNote = () => {
+
+    const handleInsertToCurrentNote = async () => {
         if (!currentNoteInfo?.currentNoteUUID) {
             setErrorObj({ message: 'No current note available', type: 'NOTE_NOT_FOUND' });
             return;
         }
-        return insertText(
-            () => window.appConnector.insertNoteContent({uuid: currentNoteInfo.currentNoteUUID}, transcriptionText)
-        );
+        
+        if (!transcriptionText.trim()) return;
+        
+        setIsInserting(true);
+        try {
+            await window.appConnector.insertNoteContent({uuid: currentNoteInfo.currentNoteUUID}, transcriptionText);
+            setIsInserted(true);
+        } catch (error) {
+            console.error('Error inserting text:', error);
+            setErrorObj({ message: error.message || 'Failed to insert text', type: 'INSERT_ERROR' });
+        } finally {
+            setIsInserting(false);
+        }
     };
 
     const handleInsertToSelectedNote = async () => {
@@ -184,9 +184,13 @@ export const SpeechToTextApp = () => {
                 ]
             });
             
-            if (!selectedNote.uuid) return;
+            if (!selectedNote.uuid) {
+                setIsInserting(false);
+                return;
+            }
             
             await window.appConnector.insertNoteContent({uuid: selectedNote.uuid}, transcriptionText);
+            setIsInserted(true);
         } catch (error) {
             console.error('Error inserting text to selected note:', error);
             setErrorObj({ message: error.message || 'Failed to insert text', type: 'INSERT_ERROR' });
@@ -202,22 +206,7 @@ export const SpeechToTextApp = () => {
         await initializeVosklet();
     };
 
-    const renderInsertButton = (onClick, children, primary = false) => (
-        <Button 
-            size="3" 
-            variant={primary ? "solid" : "outline"}
-            onClick={onClick}
-            disabled={isInserting}
-            style={{ width: '100%' }}
-        >
-            {isInserting ? (
-                <Flex align="center" gap="2">
-                    <Spinner size="1" />
-                    Inserting...
-                </Flex>
-            ) : children}
-        </Button>
-    );
+
 
     const renderTextArea = (value, onChange = null, placeholder = null) => (
         <TextArea
@@ -289,12 +278,40 @@ export const SpeechToTextApp = () => {
                         <Flex direction="column" gap="2">
                             {transcriptionText && (
                                 <>
-                                    {currentNoteInfo?.currentNoteUUID && renderInsertButton(
-                                        handleInsertToCurrentNote,
-                                        `Insert to Current Note (${currentNoteInfo.currentNoteName || 'Untitled'})`,
-                                        true
+                                    {currentNoteInfo?.currentNoteUUID && (
+                                        <Button 
+                                            size="3" 
+                                            variant="solid"
+                                            onClick={handleInsertToCurrentNote}
+                                            disabled={isInserting || isInserted}
+                                            style={{ width: '100%' }}
+                                        >
+                                            {isInserting ? (
+                                                <Flex align="center" gap="2">
+                                                    <Spinner size="1" />
+                                                    Inserting...
+                                                </Flex>
+                                            ) : (
+                                                `Insert to Current Note (${currentNoteInfo.currentNoteName || 'Untitled'})`
+                                            )}
+                                        </Button>
                                     )}
-                                    {renderInsertButton(handleInsertToSelectedNote, 'Insert to Note...')}
+                                    <Button 
+                                        size="3" 
+                                        variant="outline"
+                                        onClick={handleInsertToSelectedNote}
+                                        disabled={isInserting || isInserted}
+                                        style={{ width: '100%' }}
+                                    >
+                                        {isInserting ? (
+                                            <Flex align="center" gap="2">
+                                                <Spinner size="1" />
+                                                Inserting...
+                                            </Flex>
+                                        ) : (
+                                            'Insert to Note...'
+                                        )}
+                                    </Button>
                                 </>
                             )}
                             <Button 
