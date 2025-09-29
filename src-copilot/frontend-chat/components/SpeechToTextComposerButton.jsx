@@ -1,6 +1,6 @@
 import { useSpeechToTextForComposer } from "../hooks/useSpeechToTextForComposer.js";
 
-export const VoiceToTextComposerButton = () => {
+export const SpeechToTextComposerButton = () => {
     const threadRuntime = AssistantUI.useThreadRuntime();
     const composerText = AssistantUI.useComposer((composer) => composer.text);
     const hasComposerText = composerText.trim().length > 0;
@@ -42,10 +42,7 @@ export const VoiceToTextComposerButton = () => {
                 transition: 'all 0.2s ease',
                 color: isRecording ? '#ef4444' : 'var(--aui-muted-foreground)',
                 opacity: isRecording ? 1 : 0.7,
-                position: 'absolute',
-                right: showSendButton ? '48px' : '8px',
-                top: '50%',
-                transform: 'translateY(-50%)'
+                alignSelf: 'center'
             }}
             onMouseEnter={(e) => {
                 if (!isRecording) {

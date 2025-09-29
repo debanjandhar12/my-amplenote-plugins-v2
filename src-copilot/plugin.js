@@ -314,7 +314,11 @@ const plugin = {
             window.lastHeartbeatFromChatEmbed = Date.now();
             return true;
         },
-
+        // This doesn't actually close the embed, it just sets isEmbedOpen to false
+        "forceEmbedClose": async function (app) {
+            window.lastHeartbeatFromChatEmbed = null;
+            return true;
+        },
         "receiveMessageFromPlugin": async function (app, channel) {
             if (window.messageQueue && window.messageQueue[channel] &&
                 window.messageQueue[channel].length > 0) {
@@ -393,7 +397,6 @@ const plugin = {
         "searchUserTasks": async function (app, sqlQuery) {
             return await searchUserTasks(app, sqlQuery);
         },
-        // Vosklet Speech-to-Text API handlers
         "initializeVoskletSpeechToText": async function (app, config = {}) {
             try {
                 const voskletAPI = getVoskletInstance(config);
@@ -477,23 +480,6 @@ const plugin = {
                 };
             }
         },
-        "getVoskletRecordingStatus": async function (app) {
-            try {
-                const voskletAPI = getVoskletInstance();
-                return { 
-                    success: true, 
-                    isRecording: voskletAPI.isRecording(),
-                    isInitialized: voskletAPI.isInitialized
-                };
-            } catch (error) {
-                console.error('Failed to get Vosklet status:', error);
-                return { 
-                    success: false, 
-                    error: error.message, 
-                    errorType: error.type || 'UNKNOWN_ERROR' 
-                };
-            }
-        },
         "cleanupVoskletSpeechToText": async function (app) {
             try {
                 resetVoskletInstance();
@@ -506,25 +492,11 @@ const plugin = {
                     errorType: error.type || 'UNKNOWN_ERROR' 
                 };
             }
-        },
-        "replaceSelection": async function (app, text) {
-            try {
-                await app.context.replaceSelection(text);
-                return { success: true };
-            } catch (error) {
-                console.error('Failed to replace selection:', error);
-                return { 
-                    success: false, 
-                    error: error.message 
-                };
-            }
         }
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
         'getAllChatThreadsFromCopilotDB', 'saveChatThreadToCopilotDB', 'getChatThreadFromCopilotDB',
         'getLastOpenedChatThreadFromCopilotDB',
-        'receiveMessageFromPlugin', 'ping', 'replaceSelection',
-        'initializeVoskletSpeechToText', 'startVoskletRecording', 'stopVoskletRecording', 
-        'getVoskletRecordingStatus', 'cleanupVoskletSpeechToText'])
+        'receiveMessageFromPlugin', 'ping'])
 }
 
 export default plugin;

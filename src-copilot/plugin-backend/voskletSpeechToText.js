@@ -93,7 +93,6 @@ export class VoskletSpeechToText {
         echoCancellation: true,
         noiseSuppression: true,
         channelCount: 1,
-        autoGainControl: false,
         sampleRate: this.options.sampleRate
       }
     });
@@ -148,10 +147,6 @@ export class VoskletSpeechToText {
       this.callbacks.onError?.(stopError);
       throw stopError;
     }
-  }
-
-  isRecording() {
-    return this.isRecordingActive;
   }
 
   async cleanup() {
