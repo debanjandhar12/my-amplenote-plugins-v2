@@ -19,6 +19,7 @@ export const StoppedView = ({
                 onChange={(e) => onTranscriptionChange(e.target.value)}
                 placeholder="You can edit the transcribed text here..."
                 label="Final Transcription:"
+                showFixButton={true}
             />
 
             <Flex direction="column" gap="2">
