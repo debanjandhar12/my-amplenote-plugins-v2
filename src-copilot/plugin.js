@@ -7,7 +7,7 @@ import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
 import {getSyncState, syncNotes, searchNotes, searchHelpCenter, clearCopilotDBData, getAllChatThreads, deleteChatThread, getChatThread, saveChatThread, getLastUpdatedChatThread, getLastOpenedChatThread, searchUserTasks} from "./CopilotDB";
 import {getMatchedPartWithFuzzySearch} from "./plugin-backend/getMatchedPartWithFuzzySearch.jsx";
 import {validatePluginSettings} from "./validatePluginSettings.js";
-import {getVoskletInstance, resetVoskletInstance} from "./plugin-backend/voskletSpeechToText.js";
+import {getVoskletInstance, resetVoskletInstance, VoskletSpeechToText} from "./plugin-backend/voskletSpeechToText.js";
 import {handleContinue} from "./plugin-backend/handleContinue.js";
 import {handleRefineSelection} from "./plugin-backend/handleRefineSelection.js";
 import {handleImageGeneration, checkImageGenerationAvailability} from "./plugin-backend/handleImageGeneration.js";
@@ -492,7 +492,20 @@ const plugin = {
                     errorType: error.type || 'UNKNOWN_ERROR' 
                 };
             }
-        }
+        },
+        "checkVoskletMicrophoneAvailability": async function (app) {
+            try {
+                return await VoskletSpeechToText.checkMicrophoneAvailability();
+            } catch (error) {
+                console.error('Failed to check microphone availability:', error);
+                return {
+                    isAvailable: false,
+                    reason: 'CHECK_ERROR',
+                    message: `Error checking microphone: ${error.message}`
+                };
+            }
+        },
+
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
         'getAllChatThreadsFromCopilotDB', 'saveChatThreadToCopilotDB', 'getChatThreadFromCopilotDB',
         'getLastOpenedChatThreadFromCopilotDB',

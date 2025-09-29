@@ -9,14 +9,19 @@ export const useSpeechToTextForComposer = (threadRuntime) => {
     const partialTextRef = useRef('');
     const baseComposerTextRef = useRef('');
 
-    // Check browser support
+    // Check microphone availability using VoskletSpeechToText
     useEffect(() => {
         const checkSupport = async () => {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.AudioContext) {
+            try {
+                const availabilityResult = await window.appConnector.checkVoskletMicrophoneAvailability();
+                setIsSupported(availabilityResult.isAvailable);
+                if (!availabilityResult.isAvailable) {
+                    console.warn('Microphone not available:', availabilityResult.message);
+                }
+            } catch (error) {
+                console.warn('Failed to check microphone availability:', error);
                 setIsSupported(false);
-                return;
             }
-            setIsSupported(true);
         };
 
         checkSupport();

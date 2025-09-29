@@ -1,5 +1,3 @@
-import { useIntervalPingPlugin } from "../../frontend-chat/hooks/useIntervalPingPlugin.jsx";
-
 export const useSpeechToText = () => {
     const { useState, useEffect, useRef } = window.React;
     
@@ -147,9 +145,6 @@ export const useSpeechToText = () => {
         const interval = setInterval(pollForMessages, 200);
         return () => clearInterval(interval);
     }, [status]);
-
-    // Ping plugin while active
-    useIntervalPingPlugin(status === 'initializing' || status === 'processing');
 
     return {
         status,

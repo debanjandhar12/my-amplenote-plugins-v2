@@ -189,6 +189,45 @@ export class VoskletSpeechToText {
     }
   }
 
+  static async checkMicrophoneAvailability() {
+    try {
+      // Check if browser supports required APIs
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.AudioContext) {
+        return {
+          isAvailable: false,
+          reason: 'BROWSER_NOT_SUPPORTED',
+          message: 'Browser does not support required audio APIs'
+        };
+      }
+
+      // Check if microphone devices are available (doesn't require permission)
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const hasAudioInput = devices.some(device => device.kind === 'audioinput');
+      
+      if (!hasAudioInput) {
+        return {
+          isAvailable: false,
+          reason: 'NO_MICROPHONE_DEVICES',
+          message: 'No microphone devices detected'
+        };
+      }
+
+      return {
+        isAvailable: true,
+        reason: 'AVAILABLE',
+        message: 'Microphone is available'
+      };
+    } catch (error) {
+      return {
+        isAvailable: false,
+        reason: 'DETECTION_ERROR',
+        message: `Failed to check microphone availability: ${error.message}`
+      };
+    }
+  }
+
+
+
   _getErrorType(error) {
     const errorMap = {
       'NotAllowedError': 'PERMISSION_ERROR',
