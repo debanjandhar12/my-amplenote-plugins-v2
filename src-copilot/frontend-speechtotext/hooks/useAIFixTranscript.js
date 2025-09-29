@@ -17,7 +17,7 @@ export const useAIFixTranscript = () => {
 1. Add proper punctuation (periods, commas, question marks, exclamation marks)
 2. Fix capitalization (proper nouns, sentence beginnings)
 3. Replace words that appear to be incorrectly transcribed with the most likely intended words based on context
-4. Remove unnecessary filler words or repetitions if they seem like transcription errors
+4. Fix mistaken words or filler words or repetitions if they seem like transcription errors
 5. Maintain the original meaning and tone
 
 Note: DO NOT return anything other than fixed transcript.

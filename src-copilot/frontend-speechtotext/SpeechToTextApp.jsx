@@ -108,7 +108,7 @@ export const SpeechToTextApp = () => {
                     />
                 );
             case 'error':
-                return <ErrorView errorObj={errorObj} />;
+                return <ErrorView errorObj={errorObj} onTryAgain={handleStartNew} />;
             default:
                 return null;
         }

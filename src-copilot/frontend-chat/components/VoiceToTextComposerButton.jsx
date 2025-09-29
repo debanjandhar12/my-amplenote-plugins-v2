@@ -1,7 +1,6 @@
+import { useSpeechToTextForComposer } from "../hooks/useSpeechToTextForComposer.js";
+
 export const VoiceToTextComposerButton = () => {
-    const [isRecording, setIsRecording] = React.useState(false);
-    const [isSupported, setIsSupported] = React.useState(false);
-    const [isInitialized, setIsInitialized] = React.useState(false);
     const threadRuntime = AssistantUI.useThreadRuntime();
     const composerText = AssistantUI.useComposer((composer) => composer.text);
     const hasComposerText = composerText.trim().length > 0;
@@ -13,108 +12,10 @@ export const VoiceToTextComposerButton = () => {
         }
     });
 
-    // Determine which button to show (same logic as parent component)
+    const { isRecording, isSupported, toggleRecording } = useSpeechToTextForComposer(threadRuntime);
+
     const isRunning = isLLMCallRunning || isToolCallRunning;
     const showSendButton = !isRunning || (isToolCallRunning && hasComposerText);
-
-    // Check browser support and initialize Vosklet
-    React.useEffect(() => {
-        const checkSupport = async () => {
-            // Check for required browser APIs
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.AudioContext) {
-                setIsSupported(false);
-                return;
-            }
-
-            try {
-                // Initialize Vosklet API
-                const result = await window.appConnector.initializeVoskletSpeechToText();
-                if (result.success) {
-                    setIsSupported(true);
-                    setIsInitialized(true);
-                } else {
-                    console.error('Failed to initialize Vosklet:', result.error);
-                    setIsSupported(false);
-                }
-            } catch (error) {
-                console.error('Error checking Vosklet support:', error);
-                setIsSupported(false);
-            }
-        };
-
-        checkSupport();
-
-        // Setup message listener for Vosklet callbacks
-        const handleMessage = (event) => {
-            if (event.data?.type === 'voskletCallback') {
-                const { callbackType, data } = event.data;
-                
-                switch (callbackType) {
-                    case 'onPartialResult':
-                        // Handle partial results (could show interim text)
-                        break;
-                    case 'onResult':
-                        // Append final result to existing composer text
-                        if (data?.text) {
-                            const currentText = threadRuntime.composer.getState().text;
-                            const newText = currentText ? `${currentText} ${data.text}` : data.text;
-                            threadRuntime.composer.setText(newText);
-                        }
-                        break;
-                    case 'onError':
-                        console.error('Vosklet error:', data);
-                        setIsRecording(false);
-                        break;
-                    case 'onReady':
-                        // Recording is ready
-                        break;
-                }
-            }
-        };
-
-        window.addEventListener('message', handleMessage);
-
-        return () => {
-            window.removeEventListener('message', handleMessage);
-            // Cleanup Vosklet on unmount
-            if (isInitialized) {
-                window.appConnector.onEmbedCall('cleanupVoskletSpeechToText').catch(console.error);
-            }
-        };
-    }, [threadRuntime, isInitialized]);
-
-    const toggleRecording = async () => {
-        if (!isSupported || !isInitialized) return;
-
-        try {
-            if (isRecording) {
-                const result = await window.appConnector.onEmbedCall('stopVoskletRecording');
-                if (result.success) {
-                    setIsRecording(false);
-                } else {
-                    console.error('Failed to stop recording:', result.error);
-                }
-            } else {
-                // Setup callback channels for message queue communication
-                const callbackChannels = {
-                    onPartialResult: 'voskletCallback',
-                    onResult: 'voskletCallback',
-                    onError: 'voskletCallback',
-                    onReady: 'voskletCallback'
-                };
-
-                const result = await window.appConnector.onEmbedCall('startVoskletRecording', callbackChannels);
-                if (result.success) {
-                    setIsRecording(true);
-                } else {
-                    console.error('Failed to start recording:', result.error);
-                }
-            }
-        } catch (error) {
-            console.error('Error toggling recording:', error);
-            setIsRecording(false);
-        }
-    };
 
     // Don't render if not supported
     if (!isSupported) {
