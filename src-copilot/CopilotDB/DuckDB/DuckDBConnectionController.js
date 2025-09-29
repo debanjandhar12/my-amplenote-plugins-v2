@@ -57,12 +57,13 @@ export default class DuckDBConnectionController {
                 accessMode: 3, // DuckDBAccessMode.READ_WRITE = 3
                 filesystem: {
                     forceFullHTTPReads: true
-                }
+                },
+                opfs: {fileHandling: 'auto'}    // will create and drop opfs automatically
             });
             const conn = await db.connect();
             // await conn.query("INSTALL fts");
             // await conn.query("LOAD fts");
-            await conn.query("SET temp_directory='tmp'"); // does not work atm even with registerOPFSFilename
+            await conn.query("SET temp_directory='opfs://tmp'"); // does not work atm even with registerOPFSFilename
             await conn.close();
             currentCollectionName = collectionName;
             isTerminated = false;
