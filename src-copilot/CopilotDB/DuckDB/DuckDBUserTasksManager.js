@@ -48,18 +48,22 @@ export class DuckDBUserTasksManager {
             let allTasks = [];
 
             // Fetch tasks from notes (required to include tasks not present in any task domians)
-            const notesArr = [...await app.filterNotes({ group: "taskLists" }),
-            // these two are required as sometimes taskLists group is not added instantly in amplenote
-            ...await app.filterNotes({ tag: "daily-jots" }),
-            ...await app.filterNotes({ tag: "today" }),
-            ];
+            const notesArr = [];
+            await Promise.all([
+                app.filterNotes({ group: "taskLists" }).then(r => notesArr.push(...r)).catch(e => console.error("taskLists", e)),
+                app.filterNotes({ tag: "daily-jots" }).then(r => notesArr.push(...r)).catch(e => console.error("daily-jots", e)),
+                app.filterNotes({ tag: "today" }).then(r => notesArr.push(...r)).catch(e => console.error("today", e)),
+            ]);
             const notesMap = new Map();
             for (const note of notesArr) {
-                notesMap.set(note.noteId, note);
+                notesMap.set(note.uuid, note);
             }
             const notes = Array.from(notesMap.values()); // unique notes
             for (const note of notes) {
+                if (!note) continue;
+                if (!note.uuid) continue;
                 const tasks = await app.getNoteTasks({ uuid: note.uuid }, {includeDone: true});
+                if (!tasks) continue;
                 for (const task of tasks) {
                     allTasks.push({
                         completedAt: typeof task.completedAt === 'number' ? dayjs(task.completedAt*1000).format() : null,
@@ -83,6 +87,7 @@ export class DuckDBUserTasksManager {
             const taskDomains = await app.getTaskDomains();
             for (const taskDomain of taskDomains) {
                 const tasks = await app.getTaskDomainTasks(taskDomain.uuid);
+                if (!tasks) continue;
                 for (const task of tasks) {
                     allTasks.push({
                         completedAt: typeof task.completedAt === 'number' ? dayjs(task.completedAt*1000).format() : null,

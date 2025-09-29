@@ -1,11 +1,12 @@
 /**
- * Utility class for IndexedDB operations with JSON data storage.
- * Provides a simple key-value interface for storing and retrieving JSON objects.
+ * Utility class for IndexedDB operations with direct object storage.
+ * Provides a simple key-value interface for storing and retrieving JavaScript objects.
  * Each file is stored as a separate IndexedDB database for better isolation.
  */
 export class IndexedDBStorageUtils {
     static KEY_PREFIX = 'copilot_json_file_';
     static STORE_NAME = 'data';
+    static DB_VERSION = 1;
 
     /**
      * Checks if IndexedDB is supported by the browser.
@@ -66,10 +67,44 @@ export class IndexedDBStorageUtils {
     }
 
     /**
-     * Reads and parses a JSON object from IndexedDB.
+     * Estimates the size of an object in bytes by converting it to JSON
+     * This is used for size reporting since we can't directly measure IndexedDB object size
+     * @param {any} obj The object to measure
+     * @returns {number} Estimated size in bytes
+     * @private
+     */
+    static _estimateObjectSize(obj) {
+        try {
+            return new Blob([JSON.stringify(obj)]).size;
+        } catch (error) {
+            // Fallback for non-serializable objects
+            return 0;
+        }
+    }
+
+    /**
+     * Validates that data can be stored in IndexedDB
+     * @param {any} data The data to validate
+     * @throws {Error} If data cannot be stored in IndexedDB
+     * @private
+     */
+    static _validateData(data) {
+        // IndexedDB can store most JavaScript objects directly, but there are some limitations
+        if (typeof data === 'function') {
+            throw new Error('Cannot store functions in IndexedDB');
+        }
+        if (typeof data === 'symbol') {
+            throw new Error('Cannot store symbols in IndexedDB');
+        }
+        // Note: IndexedDB handles circular references by throwing an error during storage
+        // We'll let IndexedDB handle that validation during the actual store operation
+    }
+
+    /**
+     * Reads an object directly from IndexedDB.
      * @param {string} key The key to read from
-     * @returns {Promise<Object|null>} The parsed JSON object or null if not found
-     * @throws {Error} If an error occurs during reading or parsing
+     * @returns {Promise<Object|null>} The stored object or null if not found
+     * @throws {Error} If an error occurs during reading
      */
     static async readJsonFile(key) {
         if (!key || typeof key !== 'string') {
@@ -77,14 +112,14 @@ export class IndexedDBStorageUtils {
         }
 
         if (!IndexedDBStorageUtils.checkSupport()) {
-            console.warn("IndexedDB not supported, returning null for JSON file read");
+            console.warn("IndexedDB not supported, returning null for file read");
             return null;
         }
 
         try {
             // Check if database exists first to avoid creating it unnecessarily
             const dbName = IndexedDBStorageUtils._getPrefixedKey(key);
-            
+
             // Try to check if database exists (not supported in all browsers)
             let dbExists = true; // Default to true if we can't check
             try {
@@ -97,7 +132,7 @@ export class IndexedDBStorageUtils {
                 console.warn('Cannot check database existence, will attempt to open:', error);
                 dbExists = true;
             }
-            
+
             if (!dbExists) {
                 return null;
             }
@@ -128,29 +163,26 @@ export class IndexedDBStorageUtils {
                 request.onsuccess = () => {
                     db.close();
                     const result = request.result;
-                    if (result && result.content) {
-                        try {
-                            resolve(JSON.parse(result.content));
-                        } catch (parseError) {
-                            reject(new Error(`Invalid JSON in IndexedDB for key '${key}': ${parseError.message}`));
-                        }
+                    if (result && 'content' in result) {
+                        // Return the object directly - no JSON parsing needed
+                        resolve(result.content);
                     } else {
                         resolve(null);
                     }
                 };
             });
         } catch (error) {
-            console.error(`Error reading JSON from IndexedDB with key '${key}':`, error);
+            console.error(`Error reading data from IndexedDB with key '${key}':`, error);
             throw error;
         }
     }
 
     /**
-     * Writes a JSON object to IndexedDB.
+     * Writes an object directly to IndexedDB.
      * @param {string} key The key to store the data under
-     * @param {Object} data The object to serialize and store
+     * @param {any} data The object to store directly
      * @returns {Promise<boolean>} True if successful, false if IndexedDB not supported
-     * @throws {Error} If an error occurs during writing or serialization
+     * @throws {Error} If an error occurs during writing or if data is not serializable
      */
     static async writeJsonFile(key, data) {
         if (!key || typeof key !== 'string') {
@@ -158,14 +190,16 @@ export class IndexedDBStorageUtils {
         }
 
         if (!IndexedDBStorageUtils.checkSupport()) {
-            console.warn("IndexedDB not supported, cannot write JSON file");
+            console.warn("IndexedDB not supported, cannot write file");
             return false;
         }
 
         try {
-            const jsonString = JSON.stringify(data);
+            // Validate that the data can be stored in IndexedDB
+            IndexedDBStorageUtils._validateData(data);
+
             let db;
-            
+
             try {
                 db = await IndexedDBStorageUtils._openDatabase(key, false);
             } catch (error) {
@@ -184,7 +218,7 @@ export class IndexedDBStorageUtils {
                 const store = transaction.objectStore(IndexedDBStorageUtils.STORE_NAME);
                 const request = store.put({
                     id: 'data',
-                    content: jsonString,
+                    content: data, // Store the object directly
                     timestamp: Date.now()
                 });
 
@@ -193,6 +227,8 @@ export class IndexedDBStorageUtils {
                     const error = request.error;
                     if (error && error.name === 'QuotaExceededError') {
                         reject(new Error(`IndexedDB quota exceeded for key '${key}': ${error.message}`));
+                    } else if (error && error.name === 'DataCloneError') {
+                        reject(new Error(`Cannot store data in IndexedDB for key '${key}': ${error.message}. Data contains non-serializable values.`));
                     } else {
                         reject(new Error(`Error writing to IndexedDB: ${error?.message || 'Unknown error'}`));
                     }
@@ -204,13 +240,8 @@ export class IndexedDBStorageUtils {
                 };
             });
         } catch (error) {
-            if (error instanceof TypeError && error.message.includes('JSON')) {
-                console.error(`Error serializing data for IndexedDB key '${key}':`, error);
-                throw new Error(`Cannot serialize data to JSON for key '${key}': ${error.message}`);
-            } else {
-                console.error(`Error writing JSON to IndexedDB with key '${key}':`, error);
-                throw error;
-            }
+            console.error(`Error writing data to IndexedDB with key '${key}':`, error);
+            throw error;
         }
     }
 
@@ -232,14 +263,14 @@ export class IndexedDBStorageUtils {
 
         try {
             const dbName = IndexedDBStorageUtils._getPrefixedKey(key);
-            
+
             // Check if database exists first (if supported)
             let exists = true; // Default to true if we can't check
             try {
                 if (typeof indexedDB.databases === 'function') {
                     const databases = await indexedDB.databases();
                     exists = databases.some(db => db.name === dbName);
-                    
+
                     if (!exists) {
                         return false;
                     }
@@ -251,15 +282,15 @@ export class IndexedDBStorageUtils {
 
             return new Promise((resolve, reject) => {
                 const deleteRequest = indexedDB.deleteDatabase(dbName);
-                
+
                 deleteRequest.onerror = () => {
                     reject(new Error(`Error deleting IndexedDB database '${dbName}': ${deleteRequest.error?.message || 'Unknown error'}`));
                 };
-                
+
                 deleteRequest.onsuccess = () => {
                     resolve(true);
                 };
-                
+
                 deleteRequest.onblocked = () => {
                     console.warn(`Delete blocked for database '${dbName}'. Retrying...`);
                     // The deletion will complete when other connections are closed
@@ -283,7 +314,7 @@ export class IndexedDBStorageUtils {
 
         try {
             let fileList = [];
-            
+
             // Try to get database list if supported
             try {
                 if (typeof indexedDB.databases === 'function') {
@@ -293,12 +324,11 @@ export class IndexedDBStorageUtils {
                     for (const dbInfo of databases) {
                         if (dbInfo.name && dbInfo.name.startsWith(IndexedDBStorageUtils.KEY_PREFIX)) {
                             const fileName = dbInfo.name.substring(prefixLength);
-                            
+
                             try {
-                                // Estimate file size by reading the data
+                                // Estimate file size by reading the data and converting to JSON
                                 const data = await IndexedDBStorageUtils.readJsonFile(fileName);
-                                const jsonString = data ? JSON.stringify(data) : '';
-                                const fileSizeMB = Math.round(new Blob([jsonString]).size / 1024 / 1024 * 100) / 100;
+                                const fileSizeMB = data ? Math.round(IndexedDBStorageUtils._estimateObjectSize(data) / 1024 / 1024 * 100) / 100 : 0;
 
                                 fileList.push({
                                     fileName,
@@ -341,7 +371,7 @@ export class IndexedDBStorageUtils {
             // Calculate used space by our databases
             let usedBytes = 0;
             const fileList = await IndexedDBStorageUtils.getFileList();
-            
+
             for (const file of fileList) {
                 usedBytes += file.fileSizeMB * 1024 * 1024;
             }
