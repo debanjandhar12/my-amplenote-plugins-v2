@@ -6,6 +6,12 @@ export const errorToString = (error) => {
     else if (error instanceof Error) {
         baseMessage = error.message;
     }
+    else if (error && typeof error.message === 'string') {
+        baseMessage = error.message;
+    }
+    else if (error && typeof error.error === 'string') {
+        baseMessage = error.error;
+    }
     else if (error !== null && error !== undefined) {
         try {
             baseMessage = String(error);

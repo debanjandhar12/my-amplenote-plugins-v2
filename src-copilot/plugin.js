@@ -1,13 +1,13 @@
 import chatHTML from 'inline:./embed/chat.html';
 import searchHTML from 'inline:./embed/search.html';
-// import speechtotextHTML from 'inline:./embed/speechtotext.html';
+import speechtotextHTML from 'inline:./embed/speechtotext.html';
 import {COMMON_EMBED_COMMANDS, createOnEmbedCallHandler} from "../common-utils/embed-comunication.js";
 import {generateText} from "./aisdk-wrappers/generateText.js";
 import {getLLMModel} from "./aisdk-wrappers/getLLMModel.js";
 import {getSyncState, syncNotes, searchNotes, searchHelpCenter, clearCopilotDBData, getAllChatThreads, deleteChatThread, getChatThread, saveChatThread, getLastUpdatedChatThread, getLastOpenedChatThread, searchUserTasks} from "./CopilotDB";
 import {getMatchedPartWithFuzzySearch} from "./plugin-backend/getMatchedPartWithFuzzySearch.jsx";
 import {validatePluginSettings} from "./validatePluginSettings.js";
-// import {handleSpeechToText} from "./plugin-backend/handleSpeechToText.js";
+import {getVoskletInstance, resetVoskletInstance, VoskletSpeechToText} from "./plugin-backend/voskletSpeechToText.js";
 import {handleContinue} from "./plugin-backend/handleContinue.js";
 import {handleRefineSelection} from "./plugin-backend/handleRefineSelection.js";
 import {handleImageGeneration, checkImageGenerationAvailability} from "./plugin-backend/handleImageGeneration.js";
@@ -32,8 +32,7 @@ const plugin = {
         },
         "Speech to Text": async function (app) {
             try {
-                // await handleSpeechToText(app, plugin);
-                await app.alert('Speech to Text is under development.');
+                await plugin.openEmbedStrategy(app, {openSpeechToText: true});
             } catch (e) {
                 console.error(e);
                 await app.alert(e);
@@ -397,7 +396,116 @@ const plugin = {
         },
         "searchUserTasks": async function (app, sqlQuery) {
             return await searchUserTasks(app, sqlQuery);
-        }
+        },
+        "initializeVoskletSpeechToText": async function (app, config = {}) {
+            try {
+                const voskletAPI = getVoskletInstance(config);
+                await voskletAPI.initialize();
+                return { success: true, message: "Vosklet initialized successfully" };
+            } catch (error) {
+                console.error('Failed to initialize Vosklet:', error);
+                return { 
+                    success: false, 
+                    error: error.message, 
+                    errorType: error.type || 'UNKNOWN_ERROR' 
+                };
+            }
+        },
+        "startVoskletRecording": async function (app, callbackChannels = {}) {
+            try {
+                const voskletAPI = getVoskletInstance();
+                
+                // Create callbacks that send messages to embed via message queue
+                const callbacks = {
+                    onPartialResult: (text) => {
+                        if (callbackChannels.partialResult) {
+                            plugin.sendMessageToEmbed(app, callbackChannels.partialResult, { 
+                                type: 'partialResult', 
+                                text: text,
+                                timestamp: Date.now()
+                            }).catch(console.error);
+                        }
+                    },
+                    onResult: (text) => {
+                        if (callbackChannels.result) {
+                            plugin.sendMessageToEmbed(app, callbackChannels.result, { 
+                                type: 'result', 
+                                text: text,
+                                timestamp: Date.now()
+                            }).catch(console.error);
+                        }
+                    },
+                    onError: (error) => {
+                        if (callbackChannels.error) {
+                            plugin.sendMessageToEmbed(app, callbackChannels.error, { 
+                                type: 'error', 
+                                error: error.message,
+                                errorType: error.type || 'UNKNOWN_ERROR',
+                                timestamp: Date.now()
+                            }).catch(console.error);
+                        }
+                    },
+                    onReady: () => {
+                        if (callbackChannels.ready) {
+                            plugin.sendMessageToEmbed(app, callbackChannels.ready, { 
+                                type: 'ready',
+                                timestamp: Date.now()
+                            }).catch(console.error);
+                        }
+                    }
+                };
+                
+                await voskletAPI.startRecording(callbacks);
+                return { success: true, message: "Recording started successfully" };
+            } catch (error) {
+                console.error('Failed to start Vosklet recording:', error);
+                return { 
+                    success: false, 
+                    error: error.message, 
+                    errorType: error.type || 'UNKNOWN_ERROR' 
+                };
+            }
+        },
+        "stopVoskletRecording": async function (app) {
+            try {
+                const voskletAPI = getVoskletInstance();
+                await voskletAPI.stopRecording();
+                return { success: true, message: "Recording stopped successfully" };
+            } catch (error) {
+                console.error('Failed to stop Vosklet recording:', error);
+                return { 
+                    success: false, 
+                    error: error.message, 
+                    errorType: error.type || 'UNKNOWN_ERROR' 
+                };
+            }
+        },
+        "cleanupVoskletSpeechToText": async function (app) {
+            try {
+                resetVoskletInstance();
+                return { success: true, message: "Vosklet cleanup completed" };
+            } catch (error) {
+                console.error('Failed to cleanup Vosklet:', error);
+                return { 
+                    success: false, 
+                    error: error.message, 
+                    errorType: error.type || 'UNKNOWN_ERROR' 
+                };
+            }
+        },
+        "checkVoskletMicrophoneAvailability": async function (app) {
+            try {
+                return await VoskletSpeechToText.checkMicrophoneAvailability();
+            } catch (error) {
+                console.error('Failed to check microphone availability:', error);
+                return {
+                    isAvailable: false,
+                    reason: 'CHECK_ERROR',
+                    message: `Error checking microphone: ${error.message}`
+                };
+            }
+        },
+
     }, ['getUserCurrentNoteData', 'getUserDailyJotNote',
         'getAllChatThreadsFromCopilotDB', 'saveChatThreadToCopilotDB', 'getChatThreadFromCopilotDB',
         'getLastOpenedChatThreadFromCopilotDB',
