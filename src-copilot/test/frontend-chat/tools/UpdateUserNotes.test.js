@@ -144,8 +144,17 @@ describe('Update User Notes tool', () => {
         });
 
         await allure.step('Verify notes are not modified before submit click', async () => {
-            const setNoteNameSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
-            expect(setNoteNameSpyInfo.callCount).toBeGreaterThan(0); // Called during init to fetch current data
+            const setNoteNameSpyInfo = await getSpyInfo(page, 'mockApp.setNoteName');
+            expect(setNoteNameSpyInfo.callCount).toBe(0);
+
+            const replaceNoteContentSpyInfo = await getSpyInfo(page, 'mockApp.replaceNoteContent');
+            expect(replaceNoteContentSpyInfo.callCount).toBe(0);
+
+            const addNoteTagSpyInfo = await getSpyInfo(page, 'mockApp.addNoteTag');
+            expect(addNoteTagSpyInfo.callCount).toBe(0);
+
+            const removeNoteTagSpyInfo = await getSpyInfo(page, 'mockApp.removeNoteTag');
+            expect(removeNoteTagSpyInfo.callCount).toBe(0);
 
             const note1 = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
             expect(note1.name).toBe('Test Note');
@@ -454,8 +463,8 @@ describe('Update User Notes tool', () => {
         });
 
         await allure.step('Verify API was called despite error', async () => {
-            const callAmplenotePluginSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
-            expect(callAmplenotePluginSpyInfo.callCount).toBeGreaterThan(0);
+            const setNoteNameSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
+            expect(setNoteNameSpyInfo.callCount).toBeGreaterThan(0);
         });
 
         await allure.step('Verify llm is called with tool error to continue answer', async () => {

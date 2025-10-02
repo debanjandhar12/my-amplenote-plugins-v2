@@ -133,8 +133,8 @@ describe('Update User Tasks tool', () => {
         });
 
         await allure.step('Verify tasks are not modified before submit click', async () => {
-            const getTaskSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
-            expect(getTaskSpyInfo.callCount).toBeGreaterThan(0); // Called during init to fetch current data
+            const updateTaskSpyInfo = await getSpyInfo(page, 'mockApp.updateTask');
+            expect(updateTaskSpyInfo.callCount).toBe(0);
 
             const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
             expect(note._content).toContain('- [ ] Original task content');
@@ -163,7 +163,7 @@ describe('Update User Tasks tool', () => {
             const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
             expect(note._content).toContain('Updated task content');
             expect(note._content).toContain('Another updated task');
-            
+
             // Check that the task is marked as completed
             expect(note._content).toContain('- [x] Updated task content');
         });
@@ -406,8 +406,8 @@ describe('Update User Tasks tool', () => {
         });
 
         await allure.step('Verify API was called despite error', async () => {
-            const callAmplenotePluginSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
-            expect(callAmplenotePluginSpyInfo.callCount).toBeGreaterThan(0);
+            const updateTaskSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
+            expect(updateTaskSpyInfo.callCount).toBeGreaterThan(0);
         });
 
         await allure.step('Verify llm is called with tool error to continue answer', async () => {
