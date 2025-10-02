@@ -124,9 +124,12 @@ describe('Edit Note Content tool', () => {
             expect(isNoteSelectorVisible).toBe(true);
         });
 
-        await allure.step('Verify API is not called before submit click', async () => {
+        await allure.step('Verify API is not called before submit click and note content is unchanged', async () => {
             const replaceNoteContentSpyInfo = await getSpyInfo(page, 'mockApp.replaceNoteContent');
             expect(replaceNoteContentSpyInfo.callCount).toBe(0);
+
+            const note = await page.evaluate(() => window.mockApp.notes.find("note-uuid-1"));
+            expect(note._content).toBe('# Test Note\n\nThis is the original content.');
         });
 
         await allure.step('Click submit button', async () => {

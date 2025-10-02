@@ -117,9 +117,14 @@ describe('Delete User Notes tool', () => {
             expect(await cancelButton.isVisible()).toBe(true);
         });
 
-        await allure.step('Verify API is not called before submit click', async () => {
+        await allure.step('Verify API is not called before submit click and notes still exist', async () => {
             const deleteNoteSpyInfo = await getSpyInfo(page, 'mockApp.deleteNote');
             expect(deleteNoteSpyInfo.callCount).toBe(0);
+
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
+            expect(allNotes.length).toBe(2);
+            expect(allNotes.find(note => note.uuid === 'note-uuid-1')).toBeDefined();
+            expect(allNotes.find(note => note.uuid === 'note-uuid-2')).toBeDefined();
         });
 
         await allure.step('Click submit button', async () => {

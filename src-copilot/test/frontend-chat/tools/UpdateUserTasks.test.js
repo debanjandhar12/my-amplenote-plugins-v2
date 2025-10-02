@@ -132,9 +132,15 @@ describe('Update User Tasks tool', () => {
             expect(await taskText.isVisible()).toBe(true);
         });
 
-        await allure.step('Verify API is not called before submit click', async () => {
+        await allure.step('Verify tasks are not modified before submit click', async () => {
             const getTaskSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
             expect(getTaskSpyInfo.callCount).toBeGreaterThan(0); // Called during init to fetch current data
+
+            const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
+            expect(note._content).toContain('- [ ] Original task content');
+            expect(note._content).toContain('- [ ] Another original task');
+            expect(note._content).not.toContain('Updated task content');
+            expect(note._content).not.toContain('Another updated task');
         });
 
         await allure.step('Click submit button', async () => {

@@ -143,9 +143,19 @@ describe('Update User Notes tool', () => {
             expect(await noteText.isVisible()).toBe(true);
         });
 
-        await allure.step('Verify API is not called before submit click', async () => {
+        await allure.step('Verify notes are not modified before submit click', async () => {
             const setNoteNameSpyInfo = await getSpyInfo(page, 'callAmplenotePlugin');
             expect(setNoteNameSpyInfo.callCount).toBeGreaterThan(0); // Called during init to fetch current data
+
+            const note1 = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
+            expect(note1.name).toBe('Test Note');
+            expect(note1._content).toBe('# Test Note\n\nThis is the original content.');
+            expect(note1.tags).toEqual(['original']);
+
+            const note2 = await page.evaluate(() => window.mockApp.notes.find("87654321-4321-4321-4321-210987654321"));
+            expect(note2.name).toBe('Another Note');
+            expect(note2._content).toBe('# Another Note\n\nOriginal content here.');
+            expect(note2.tags).toEqual(['tag1']);
         });
 
         await allure.step('Click submit button', async () => {

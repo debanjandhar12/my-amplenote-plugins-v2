@@ -128,9 +128,12 @@ describe('Insert Tasks To Note tool', () => {
             expect(await noteSelector.isVisible()).toBe(true);
         });
 
-        await allure.step('Verify API is not called before submit click', async () => {
+        await allure.step('Verify API is not called before submit click and note content is unchanged', async () => {
             const insertTaskSpyInfo = await getSpyInfo(page, 'mockApp.insertTask');
             expect(insertTaskSpyInfo.callCount).toBe(0);
+
+            const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
+            expect(note._content).toBe('# Test Note\n\nThis is the original content.');
         });
 
         await allure.step('Click submit button', async () => {

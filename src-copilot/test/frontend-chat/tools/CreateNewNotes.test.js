@@ -122,9 +122,12 @@ describe('Create New Notes tool', () => {
             expect(isCancelButtonVisible).toBe(true);
         });
 
-        await allure.step('Verify API is not called before submit click', async () => {
+        await allure.step('Verify API is not called before submit click and no notes created yet', async () => {
             const createNoteSpyInfo = await getSpyInfo(page, 'mockApp.createNote');
             expect(createNoteSpyInfo.callCount).toBe(0);
+
+            const allNotes = await page.evaluate(() => window.mockApp.notes.filter({}));
+            expect(allNotes.length).toBe(0);
         });
 
         await allure.step('Click submit button', async () => {
