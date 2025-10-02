@@ -440,5 +440,11 @@ describe('Insert Tasks To Note tool', () => {
             const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
             expect(llmCallData.messages[0].content[0].result).toContain('Failed to insert task');
         });
+
+        await allure.step('Verify no tasks were inserted due to error', async () => {
+            const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
+            expect(note._content).toBe('# Test Note\n\nThis is the original content.');
+            expect(note._content).not.toContain('Complete project documentation');
+        });
     }, 20000);
 });

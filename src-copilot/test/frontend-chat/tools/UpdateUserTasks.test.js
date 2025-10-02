@@ -414,5 +414,11 @@ describe('Update User Tasks tool', () => {
             const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
             expect(llmCallData.messages[0].content[0].result).toContain('Failed to update task');
         });
+
+        await allure.step('Verify task was not modified due to error', async () => {
+            const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
+            expect(note._content).toContain('- [ ] Original task content');
+            expect(note._content).not.toContain('Updated task content');
+        });
     }, 20000);
 });

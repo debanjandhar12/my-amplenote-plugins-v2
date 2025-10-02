@@ -471,5 +471,12 @@ describe('Update User Notes tool', () => {
             const llmCallData = await waitForCustomEvent(page, 'onLLMCallFinish');
             expect(llmCallData.messages[0].content[0].result).toContain('Failed to update note name');
         });
+
+        await allure.step('Verify note was not modified due to error', async () => {
+            const note = await page.evaluate(() => window.mockApp.notes.find("12345678-1234-1234-1234-123456789012"));
+            expect(note.name).toBe('Test Note');
+            expect(note._content).toBe('# Test Note\n\nThis is the original content.');
+            expect(note.tags).toEqual(['original']);
+        });
     }, 20000);
 });
