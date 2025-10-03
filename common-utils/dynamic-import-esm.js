@@ -153,8 +153,8 @@ const dynamicImportESM = async (pkg, pkgVersion = null) => {
     const importPromises = cdnList.map(async (cdn, index) => {
         const url = buildCDNUrl(cdn, pkg, resolvedVersion);
         if (index > 0) {
-            // wait 1 sec as we want the first CDN to be preferred
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // wait 2.5 sec as we want the first CDN to be preferred
+            await new Promise(resolve => setTimeout(resolve, 2500));
         }
         if (abortController.signal.aborted)
             throw new Error(`Terminating as ${pkg} has already been imported`);
@@ -212,7 +212,7 @@ function getCDNList(pkg) {
         || basePkg.includes('dotenv')) {
         return ['https://esm.sh/', 'https://legacy.esm.sh/'];
     }
-    return ['https://cdn.jsdelivr.net/npm/', 'https://esm.sh/'];
+    return ['https://cdn.jsdelivr.net/npm/', 'https://esm.sh/', 'https://unpkg.com/'];
 }
 
 function buildCDNUrl(cdn, pkg, version) {
