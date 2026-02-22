@@ -44,7 +44,7 @@ export async function getLLMModel(appSettings) {
             headers: { 'anthropic-dangerous-direct-browser-access': 'true' }
         }).languageModel(model);
     }
-    else if (apiUrl.includes('openai') || apiUrl.includes('openrouter')) {
+    else if (apiUrl.includes('openai') || apiUrl.includes('openrouter') || apiUrl.includes('alterhq')) {
         const {createOpenAI} = await dynamicImportESM("@ai-sdk/openai");
         return createOpenAI({
             apiKey: apiKey,
