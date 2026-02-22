@@ -5,7 +5,7 @@ import {EMBEDDING_API_KEY_SETTING} from "../../constants.js";
 let createGoogleGenerativeAI, embedMany;
 export class GoogleEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('text-embedding-004', 0, true, 64);
+        super('gemini-embedding-001', 0, true, 64);
     }
 
     async generateEmbedding(app, textArray, inputType) {
@@ -22,6 +22,7 @@ export class GoogleEmbeddingGenerator extends EmbeddingGeneratorBase {
                 apiKey: app.settings[EMBEDDING_API_KEY_SETTING]
             }).textEmbeddingModel(this.MODEL_NAME, {
                 taskType: inputType.toLowerCase() === "query" ? 'RETRIEVAL_QUERY' : 'RETRIEVAL_DOCUMENT',
+                outputDimensionality: 512
             }),
             values: textArray,
         });
