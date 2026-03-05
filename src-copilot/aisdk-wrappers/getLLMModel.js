@@ -51,6 +51,13 @@ export async function getLLMModel(appSettings) {
             baseURL: apiUrl    // Default: https://api.openai.com/v1
         }).languageModel(model);
     }
+    else if (apiUrl.includes('vercel')) {
+        const {createOpenAI} = await dynamicImportESM("@ai-sdk/openai");
+        return createOpenAI({
+            apiKey: apiKey,
+            baseURL: apiUrl
+        }).languageModel(model);
+    }
     else if (apiUrl.includes('fireworks')) {
         const {createFireworks} = await dynamicImportESM("@ai-sdk/fireworks");
         return createFireworks({

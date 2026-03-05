@@ -3,22 +3,25 @@ import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../constants.js";
 import {embedManyWithRateLimitAvoidanceRetry} from "../../aisdk-wrappers/embedManyWithRateLimitAvoidanceRetry.js";
 
-let createFireworks;
-export class FireworksEmbeddingGenerator extends EmbeddingGeneratorBase {
+const VERCEL_AI_GATEWAY_URL = 'https://ai-gateway.vercel.sh/v1';
+
+let createOpenAI;
+export class VercelAIGatewayEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
-        super('nomic-ai/nomic-embed-text-v1.5', 0.008, false, 64);
+        super('text-embedding-3-small', 0.02, true, 64);
     }
 
     async generateEmbedding(app, textArray, inputType) {
-        if (!createFireworks) {
-            createFireworks = (await dynamicImportESM("@ai-sdk/fireworks")).createFireworks;
+        if (!createOpenAI) {
+            createOpenAI = (await dynamicImportESM("@ai-sdk/openai")).createOpenAI;
         }
         textArray = this.getProcessedTextArray(textArray, inputType,
-            "search_query: ", "search_query: ");
+            "", "");
         const { embeddings } = await embedManyWithRateLimitAvoidanceRetry({
-            model: createFireworks({
-                apiKey: app.settings[EMBEDDING_API_KEY_SETTING]
-            }).textEmbeddingModel(this.MODEL_NAME),
+            model: createOpenAI({
+                apiKey: app.settings[EMBEDDING_API_KEY_SETTING],
+                baseURL: VERCEL_AI_GATEWAY_URL
+            }).embedding(this.MODEL_NAME),
             values: textArray,
         });
         return embeddings.map(embedding => new Float32Array(embedding));

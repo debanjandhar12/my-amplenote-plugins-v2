@@ -22,6 +22,9 @@ export function getEmbeddingProviderName(app) {
     if (embedApiUrl.includes('api.openai.com')) {
         return "openai";
     }
+    else if (embedApiUrl.includes('vercel')) {
+        return "vercel";
+    }
     else if (embedApiUrl.includes('googleapis')) {
         return "google";
     }

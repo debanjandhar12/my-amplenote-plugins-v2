@@ -12,6 +12,7 @@ import { mockApp, mockNote } from "../common-utils/amplenote-mocks.js";
 import { getCorsBypassUrl } from "../common-utils/cors-helpers.js";
 import { EMBEDDING_API_KEY_SETTING, EMBEDDING_API_URL_SETTING, COPILOT_DB_MAX_TOKENS } from "../src-copilot/constants.js";
 import { OpenAIEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/OpenAIEmbeddingGenerator.js";
+import { VercelAIGatewayEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/VercelAIGatewayEmbeddingGenerator.js";
 import { FireworksEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/FireworksEmbeddingGenerator.js";
 import { OllamaEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/OllamaEmbeddingGenerator.js";
 import { PineconeEmbeddingGenerator } from "../src-copilot/CopilotDB/embeddings/PineconeEmbeddingGenerator.js";
@@ -270,6 +271,7 @@ async function generateHelpCenterEmbeddings() {
 
     const ollamaEmbeddingGenerator = new OllamaEmbeddingGenerator();
     const openaiEmbeddingGenerator = new OpenAIEmbeddingGenerator();
+    const vercelEmbeddingGenerator = new VercelAIGatewayEmbeddingGenerator();
     const googleEmbeddingGenerator = new GoogleEmbeddingGenerator();
     const pineconeEmbeddingGenerator = new PineconeEmbeddingGenerator();
     const fireworksEmbeddingGenerator = new FireworksEmbeddingGenerator();
@@ -303,10 +305,19 @@ async function generateHelpCenterEmbeddings() {
         allRecordsPinecone.push(...pineconeRecords);
         await saveRecords(allRecordsPinecone, CONFIG.OUTPUT_PATH.PINECONE);
 
-        // Generate OpenAI embeddings
-        app.settings[EMBEDDING_API_KEY_SETTING] = process.env.OPENAI_API_KEY;
-        const openaiRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsOpenAI, openaiEmbeddingGenerator);
-        allRecordsOpenAI.push(...openaiRecords);
+        // Generate OpenAI embeddings (try with vercel first otherwise use OpenAI - vercel prefered as cheaper)
+        // We can use vercel since same underlying modal is used for both
+        if (vercelEmbeddingGenerator.MODEL_NAME != openaiEmbeddingGenerator.MODEL_NAME)
+            throw new Error('geneareHelpCenterEmbeddings was written with understanding that openai and vercel embeddings modals are same.');
+        if (process.env.VERCELAIGATEWAY_API_KEY) {
+            app.settings[EMBEDDING_API_KEY_SETTING] = process.env.VERCELAIGATEWAY_API_KEY;
+            const openaiRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsOpenAI, vercelEmbeddingGenerator);
+            allRecordsOpenAI.push(...openaiRecords);
+        } else {
+            app.settings[EMBEDDING_API_KEY_SETTING] = process.env.OPENAI_API_KEY;
+            const openaiRecords = await generateEmbeddings(app, cloneDeep(splitRecords), oldAllRecordsOpenAI, openaiEmbeddingGenerator);
+            allRecordsOpenAI.push(...openaiRecords);
+        }
         await saveRecords(allRecordsOpenAI, CONFIG.OUTPUT_PATH.OPENAI);
 
         // Generate Google embeddings

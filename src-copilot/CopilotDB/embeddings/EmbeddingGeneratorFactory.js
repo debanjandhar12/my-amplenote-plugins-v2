@@ -1,5 +1,6 @@
 import {getEmbeddingProviderName} from "./getEmbeddingProviderName.js";
 import {OpenAIEmbeddingGenerator} from "./OpenAIEmbeddingGenerator.js";
+import {VercelAIGatewayEmbeddingGenerator} from "./VercelAIGatewayEmbeddingGenerator.js";
 import {LocalEmbeddingGenerator} from "./LocalEmbeddingGenerator.js";
 import {FireworksEmbeddingGenerator} from "./FireworksEmbeddingGenerator.js";
 import {OllamaEmbeddingGenerator} from "./OllamaEmbeddingGenerator.js";
@@ -12,6 +13,8 @@ export class EmbeddingGeneratorFactory {
         switch (embeddingProviderName) {
             case 'openai':
                 return new OpenAIEmbeddingGenerator();
+            case 'vercel':
+                return new VercelAIGatewayEmbeddingGenerator();
             case 'fireworks':
                 return new FireworksEmbeddingGenerator();
             case 'ollama':

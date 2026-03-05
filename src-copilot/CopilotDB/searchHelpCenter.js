@@ -7,7 +7,8 @@ function calculateHelpCenterFilename(embeddingProviderName) {
     if (embeddingProviderName === 'local' || embeddingProviderName === 'ollama') {
         return 'localHelpCenterEmbeddings.parquet';
     }
-    else if (embeddingProviderName === 'openai') {
+    else if (embeddingProviderName === 'openai' || embeddingProviderName === 'vercel') {
+        // Vercel AI Gateway uses same model/config as OpenAI, so same embedding file
         return 'openaiHelpCenterEmbeddings.parquet';
     }
     else if (embeddingProviderName === 'google') {
