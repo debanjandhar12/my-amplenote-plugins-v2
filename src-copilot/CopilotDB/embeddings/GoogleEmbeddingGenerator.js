@@ -1,8 +1,9 @@
 import {EmbeddingGeneratorBase} from "./EmbeddingGeneratorBase.js";
 import dynamicImportESM from "../../../common-utils/dynamic-import-esm.js";
 import {EMBEDDING_API_KEY_SETTING} from "../../constants.js";
+import {embedManyWithRateLimitAvoidanceRetry} from "../../aisdk-wrappers/embedManyWithRateLimitAvoidanceRetry.js";
 
-let createGoogleGenerativeAI, embedMany;
+let createGoogleGenerativeAI;
 export class GoogleEmbeddingGenerator extends EmbeddingGeneratorBase {
     constructor() {
         super('gemini-embedding-001', 0, true, 64);
@@ -12,12 +13,9 @@ export class GoogleEmbeddingGenerator extends EmbeddingGeneratorBase {
         if (!createGoogleGenerativeAI) {
             createGoogleGenerativeAI = (await dynamicImportESM("@ai-sdk/google")).createGoogleGenerativeAI;
         }
-        if (!embedMany) {
-            embedMany = (await dynamicImportESM("ai")).embedMany;
-        }
         textArray = this.getProcessedTextArray(textArray, inputType,
             "", "");
-        const { embeddings } = await embedMany({
+        const { embeddings } = await embedManyWithRateLimitAvoidanceRetry({
             model: createGoogleGenerativeAI({
                 apiKey: app.settings[EMBEDDING_API_KEY_SETTING]
             }).textEmbeddingModel(this.MODEL_NAME, {
