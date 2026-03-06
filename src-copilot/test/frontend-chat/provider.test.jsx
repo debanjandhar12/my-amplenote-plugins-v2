@@ -16,7 +16,7 @@ describe('chat embed', () => {
     });
 
     describe('works with provider:', () => {
-        ['groq', 'openai', 'google', 'fireworks'].forEach(provider => {
+        ['groq', 'openai', 'google', 'fireworks', 'vercel-ai-gateway'].forEach(provider => {
             it(provider, async () => {
                 allure.description(`Tests chat functionality with ${provider} provider`);
                 

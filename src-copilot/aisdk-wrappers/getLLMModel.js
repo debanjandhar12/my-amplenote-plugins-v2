@@ -59,8 +59,8 @@ export async function getLLMModel(appSettings) {
         }).languageModel(model);
     }
     else if (apiUrl.includes('fireworks')) {
-        const {createFireworks} = await dynamicImportESM("@ai-sdk/fireworks");
-        return createFireworks({
+        const {createOpenAI} = await dynamicImportESM("@ai-sdk/openai");    // use openai compatible api instead of @ai-sdk/fireworks
+        return createOpenAI({
             apiKey: apiKey,
             baseURL: apiUrl
         }).languageModel(model.startsWith('accounts/fireworks/models/') ? model : `accounts/fireworks/models/${model}`);
